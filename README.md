@@ -1,8 +1,45 @@
-# Create: Guided Railways
+# Create: Guided Railways 0.1.0
 
-Independent prototype using Minecraft 1.21.1, NeoForge 21.1.228, Create 6.0.10 and Sable 2.0.3.
+全新实现的轨道导向物理火车原型，优先验证自由造车与驾驶手感
 
-Original implementation; no Simurail sources, old wheel physics or native patches are included.
-Design: standard Create track graph, two constraint anchors per bogie, independent bogie/carrier bodies, yaw pivot and limited suspension, gradual traction and braking.
+## 环境与边界
 
-Client-only manual driving verification follows implementation. Never start a dedicated server for automated driving tests.
+Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
+只复用已有工程的构建环境，不包含旧轮轨物理、原生补丁或参考项目的实现代码
+直接读取机械动力原版轨道网络，不新增轨道、轨道碰撞体或 Create Train 实体
+原版直轨与贝塞尔弯轨用于导向；原型暂不提供道岔选路、信号、跨维度或移动轨道支持
+
+## 使用
+
+1. 新建创造模式测试世界，从“导向铁路原型”物品栏取出“物理导向转向架”
+2. 右键机械动力轨道放置，前后轮轴下方都要有连续轨道
+3. 顶部平面是车体安装座，可搭建方块，中心顶部接入机械动力旋转
+4. 扳手右键安装座或转向架切换制动；潜行扳手拆卸，或创造破坏任一组件拆除整副；生存用镐拆除并返还转向架物品
+5. 允许拿转向架右键已有物理车体底部安装，安装位置必须对准附近轨道
+6. 可以把多个顶部安装座所属车体粘合，转向架下部各自保持独立；不要把下部转向架也粘进车体
+7. 此原型尚未实现扳手选中后重新放轨；失去轨道导向后请拆除重放
+
+## 运动模型
+
+每副独立安装时只有两个物理体：可扩展的上部车体安装座、下部转向架。共用车体时为一个车体加 N 个转向架
+每个转向架通过两个轨道采样点与静态世界建立导向关节，沿轨道方向自由，不直接修改前进位置或速度
+枢轴允许偏航，带有限竖向悬挂、俯仰和侧倾弹簧阻尼
+动力按目标速度误差施加有上限的牵引冲量，不模拟独立旋转轮体，轮子显示调用 Create 的标准转向架渲染 API
+输入为零滑行，独立服务制动；固定动力下，载重增大后加速变慢
+轨道缺失或导向点超出可捕获范围时解除导向；第一阶段不启用超速脱轨规则
+
+默认满输入 256 RPM 的目标为 10.24 格/秒，每 RPM 对应 0.04 格/秒
+最大加速度 2.5 格/秒²，最大制动减速度 4 格/秒²，单副最大牵引力 abs(RPM)×6
+共用车体的载重按已注册转向架数平均分摊；应力系数为单副承担质量 / 32，Create 再乘输入转速计算应力负载
+参数保存在新存档的 serverconfig/guidedrailways-server.toml
+
+## 验证
+
+离线构建：gradlew.bat build --offline
+客户端：gradlew.bat runClient --offline
+279 项动力控制断言通过；这些只验证控制公式，不代表实际行驶已通过
+不启动专用服务器或自动驾驶试验，行驶效果由用户客户端观测
+
+测试场景：直轨静止、32/64/256 RPM 正反向起步、断电滑行、扳手制动、左右弯转直线、上下坡、同一车体两个转向架、加铁块载重、保存重进、拆卸保留车体
+日志：[GuidedBogie] 给出实际速度、目标速度、输入、承担质量、制动、车体 UUID 和安装座数；[GuideReleased] 记录导向释放
+当前尚未进行用户客户端行驶验证，尤其需要确认约束接续、安装高度与多人/粘合后的生命周期

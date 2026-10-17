@@ -1,0 +1,8 @@
+{
+  "selector": "guidedrailways:bogie_mount",
+  "properties": {
+    "sable:mass": 20,
+    "sable:friction": 0.2,
+    "sable:restitution": 0
+  }
+}

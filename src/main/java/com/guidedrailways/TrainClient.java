@@ -1,0 +1,24 @@
+package com.guidedrailways;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.nbt.CompoundTag;
+import com.simibubi.create.content.trains.bogey.StandardBogeyRenderer;
+public final class TrainClient {
+    static void register(IEventBus bus){bus.addListener((EntityRenderersEvent.RegisterRenderers e)->e.registerBlockEntityRenderer(Content.BOGIE_ENTITY.get(),Renderer::new));}
+    private static final class Renderer implements BlockEntityRenderer<BogieEntity> {
+        private final StandardBogeyRenderer.Small renderer=new StandardBogeyRenderer.Small();
+        private final CompoundTag data=new CompoundTag();
+        Renderer(BlockEntityRendererProvider.Context c){}
+        @Override public void render(BogieEntity entity,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
+            double distance=entity.distance+entity.speed*partial/20;
+            pose.pushPose();pose.translate(.5,-.5,.5);
+            renderer.render(data,(float)(distance/.375*180/Math.PI),partial,pose,buffers,light,overlay,false);
+            pose.popPose();
+        }
+        @Override public boolean shouldRenderOffScreen(BogieEntity entity){return true;}
+    }
+}

@@ -6,10 +6,10 @@ public final class TrainConfig {
     static {
         var b=new ModConfigSpec.Builder();
         SPEED_PER_RPM=b.comment("Target blocks per second per input RPM").defineInRange("speedPerRpm",.04,.001,1);
-        FORCE_PER_RPM=b.comment("Maximum traction force per input RPM per powered bogie").defineInRange("forcePerRpm",6,0,10000);
+        FORCE_PER_RPM=b.comment("Maximum traction force per input RPM per powered bogie").defineInRange("forcePerRpm",6.0,0,10000);
         ACCELERATION=b.comment("Maximum powered acceleration in blocks/s^2").defineInRange("maxAcceleration",2.5,.1,50);
         BRAKING=b.comment("Service brake deceleration in blocks/s^2").defineInRange("brakeDeceleration",4,.1,50);
-        STRESS_MASS=b.comment("Supported mass per stress impact unit").defineInRange("massPerStress",32,1,10000);
+        STRESS_MASS=b.comment("Supported mass per stress impact unit").defineInRange("massPerStress",32.0,1,10000);
         SPEC=b.build();
     }
 }
