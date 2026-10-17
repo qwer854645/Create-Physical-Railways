@@ -6,7 +6,12 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import com.simibubi.create.AllItems;
+import com.simibubi.create.content.trains.track.ITrackBlock;
 
 @Mod(GuidedRailways.ID)
 public final class GuidedRailways {
@@ -17,9 +22,26 @@ public final class GuidedRailways {
         NeoForge.EVENT_BUS.addListener((LevelTickEvent.Pre e)->{
             if(e.getLevel() instanceof ServerLevel level){if(VehiclePhysics.hasVehicles(level))TrackNetwork.refresh(level);VehiclePhysics.tick(level);}
         });
-        NeoForge.EVENT_BUS.addListener((dev.ryanhcode.sable.neoforge.event.ForgeSablePrePhysicsTickEvent e)->VehiclePhysics.step(e.getPhysicsSystem(),e.getTimeStep()));
+        NeoForge.EVENT_BUS.addListener((dev.ryanhcode.sable.neoforge.event.ForgeSablePrePhysicsTickEvent e)->{
+            VehiclePhysics.step(e.getPhysicsSystem(),e.getTimeStep());
+            CouplerConnections.step(e.getPhysicsSystem());
+        });
         NeoForge.EVENT_BUS.addListener((LevelEvent.Unload e)->{
-            if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);}
+            if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);}
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock e)->{
+            if(!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;
+            if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePhysics.hasRelocation(player))return;
+            if(VehiclePhysics.owner(level,e.getPos())!=null)return;
+            var hit=e.getHitVec();if(hit==null)return;
+            if(!VehiclePhysics.relocateClick(player))return;
+            player.swing(e.getHand(),true);e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickItem e)->{
+            if(!(e.getEntity() instanceof ServerPlayer player)||!(e.getLevel() instanceof ServerLevel level))return;
+            if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePhysics.hasRelocation(player))return;
+            if(!VehiclePhysics.relocateClick(player))return;
+            player.swing(e.getHand(),true);e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
         });
     }
 }

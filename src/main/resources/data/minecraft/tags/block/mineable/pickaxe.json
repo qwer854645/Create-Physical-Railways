@@ -3,6 +3,7 @@
   "values": [
     "guidedrailways:bogie_mount",
     "guidedrailways:bogie_frame",
-    "guidedrailways:bogie_collision"
+    "guidedrailways:bogie_collision",
+    "guidedrailways:coupler"
   ]
 }

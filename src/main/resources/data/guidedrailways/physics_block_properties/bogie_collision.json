@@ -4,5 +4,19 @@
     "sable:mass": 0,
     "sable:friction": 0.2,
     "sable:restitution": 0
+  },
+  "overrides": {
+    "part=9": {
+      "sable:mass": 8
+    },
+    "part=11": {
+      "sable:mass": 8
+    },
+    "part=15": {
+      "sable:mass": 8
+    },
+    "part=17": {
+      "sable:mass": 8
+    }
   }
 }

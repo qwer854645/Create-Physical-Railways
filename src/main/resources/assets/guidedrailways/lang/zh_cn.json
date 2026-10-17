@@ -1,8 +1,13 @@
 {
   "itemGroup.guidedrailways": "导向铁路原型",
   "item.guidedrailways.bogie": "物理导向转向架",
+  "item.guidedrailways.coupler": "车钩",
   "block.guidedrailways.bogie_mount": "转向架安装座",
   "block.guidedrailways.bogie_frame": "导向转向架",
-  "tooltip.guidedrailways.bogie": "右键机械动力轨道放置，或安装到物理车体底部\n顶部接入动力，扳手右键切换制动，潜行扳手拆卸",
-  "block.guidedrailways.bogie_collision": "转向架碰撞部件"
+  "block.guidedrailways.coupler": "车钩",
+  "tooltip.guidedrailways.bogie": "对准机械动力直轨或弯轨中段右键放置，也可安装到无轨道的物理车体底部\\n顶部接入动力；扳手切换制动；离轨时扳手选车再对准轨道右键上轨；潜行扳手拆卸",
+  "tooltip.guidedrailways.coupler": "装在物理车体两端，钩头相向靠近后使用连挂工具连接\\n关节允许转动并保留少量缓冲；扳手旋转未连接车钩，潜行扳手拆卸",
+  "block.guidedrailways.bogie_collision": "转向架碰撞部件",
+  "item.guidedrailways.coupling_tool": "连挂工具",
+  "tooltip.guidedrailways.coupling_tool": "依次右键两个车钩进行连挂，再点同一车钩取消选择\\n潜行右键车钩解开连接"
 }

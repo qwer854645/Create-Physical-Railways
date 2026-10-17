@@ -12,10 +12,10 @@ public final class TrainConfig {
         BRAKING=b.comment("Service brake deceleration in blocks/s^2").defineInRange("brakeDeceleration",4,.1,50);
         COASTING=b.comment("Unpowered coasting resistance in blocks/s^2; zero restores free coasting, not a parking brake").defineInRange("coastDeceleration",.6,0,20);
         STRESS_MASS=b.comment("Supported mass per stress impact unit").defineInRange("massPerStress",32.0,1,10000);
-        DERAILMENT=b.comment("Enable curve overload and lateral impact guide release; missing track always releases guidance").define("derailmentEnabled",true);
-        DERAIL_LATERAL=b.comment("Allowed lateral acceleration at a 1.5-block centre of mass height, in blocks/s^2; higher allows faster bends").defineInRange("derailLateralAcceleration",12.0,1,100);
-        DERAIL_DELAY=b.comment("Accumulated curve overload seconds before release; safe travel recovers twice as fast").defineInRange("derailOverloadSeconds",.25,.05,5);
-        DERAIL_IMPACT=b.comment("Residual sideways axle speed causing impact release, in blocks/s").defineInRange("derailImpactSpeed",4,.5,50);
+        DERAILMENT=b.comment("Enable curve overload and lateral impact guide release; missing track always releases guidance").define("derailmentEnabled",false);
+        DERAIL_LATERAL=b.comment("Allowed lateral acceleration at a 1.5-block centre of mass height, in blocks/s^2; higher allows faster bends").defineInRange("derailLateralAcceleration",14.0,1,100);
+        DERAIL_DELAY=b.comment("Accumulated curve overload seconds before release; safe travel recovers twice as fast").defineInRange("derailOverloadSeconds",.35,.05,5);
+        DERAIL_IMPACT=b.comment("Residual sideways axle speed causing impact release, in blocks/s").defineInRange("derailImpactSpeed",4.5,.5,50);
         DETAILED_LOGGING=b.comment("Verbose joint diagnostics; turn off outside debugging").define("detailedLogging",false);
         PERFORMANCE_LOGGING=b.comment("Java guidance timing only; excludes native solver and rendering").define("performanceLogging",false);
         SPEC=b.build();

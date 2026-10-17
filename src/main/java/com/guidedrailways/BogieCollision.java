@@ -12,6 +12,13 @@ public final class BogieCollision {
     public record Cell(int part,int x,int y,int z,List<Box> boxes){}
     public static final int CENTRE_PART=13;
     public static final List<Cell> CELLS=partition();
+    /** Preserve the pre-distribution central block's bounds-based vertical mass centre. */
+    public static double massCenterY(){
+        var cell=CELLS.stream().filter(c->c.part==CENTRE_PART).findFirst().orElseThrow();
+        double lo=cell.boxes.stream().mapToDouble(Box::y0).min().orElseThrow();
+        double hi=cell.boxes.stream().mapToDouble(Box::y1).max().orElseThrow();
+        return (lo+hi)*.5;
+    }
     private static void frame(List<Box> boxes,double x0,double y0,double z0,double x1,double y1,double z1){
         boxes.add(new Box(.5+x0*FRAME_SCALE,BogieGeometry.RENDER_Y+y0*FRAME_SCALE,.5+z0*FRAME_SCALE,.5+x1*FRAME_SCALE,BogieGeometry.RENDER_Y+y1*FRAME_SCALE,.5+z1*FRAME_SCALE));
     }

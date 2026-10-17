@@ -96,6 +96,7 @@ configurations {
 }
 
 dependencies {
+    testImplementation("com.google.code.gson:gson:2.10.1")
     testImplementation 'org.joml:joml:1.10.5'
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 
@@ -200,3 +201,31 @@ tasks.register('checkDerailmentModel', JavaExec) {
     mainClass = 'com.guidedrailways.DerailmentModelCheck'
 }
 tasks.named('check') { dependsOn 'checkDerailmentModel' }
+
+tasks.register('checkBranchSelect', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.BranchSelectCheck'
+}
+tasks.named('check') { dependsOn 'checkBranchSelect' }
+
+tasks.register('checkMoveBatch', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.MoveBatchCheck'
+}
+tasks.named('check') { dependsOn 'checkMoveBatch' }
+
+tasks.register('checkRailPlacement', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.RailPlacementCheck'
+}
+tasks.named('check') { dependsOn 'checkRailPlacement' }
+
+tasks.register('checkCoupler', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.CouplerCheck'
+}
+tasks.named('check') { dependsOn 'checkCoupler' }

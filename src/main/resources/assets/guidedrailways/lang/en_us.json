@@ -1,8 +1,13 @@
 {
   "itemGroup.guidedrailways": "Guided Railways Prototype",
   "item.guidedrailways.bogie": "Guided Physics Bogie",
+  "item.guidedrailways.coupler": "Coupler",
   "block.guidedrailways.bogie_mount": "Bogie Mount",
   "block.guidedrailways.bogie_frame": "Guided Bogie",
-  "tooltip.guidedrailways.bogie": "Place on Create tracks or beneath a physical body\nSupply rotation at the top; wrench toggles brake; sneak-wrench removes",
-  "block.guidedrailways.bogie_collision": "Bogie Collision Part"
+  "block.guidedrailways.coupler": "Coupler",
+  "tooltip.guidedrailways.bogie": "Aim at straight or curved Create track and use to place, or install beneath a physical body without rails\\nSupply rotation at the top; wrench toggles brake; when off-rail, select the vehicle then use the wrench while aiming at track; sneak-wrench removes",
+  "tooltip.guidedrailways.coupler": "Mount on carriage ends with heads facing each other, then use the coupling tool\\nArticulating joint with limited draft travel; wrench rotates unlinked couplers, sneak-wrench removes",
+  "block.guidedrailways.bogie_collision": "Bogie Collision Part",
+  "item.guidedrailways.coupling_tool": "Coupling Tool",
+  "tooltip.guidedrailways.coupling_tool": "Use on two couplers to connect; use the selected coupler again to cancel\\nSneak-use to uncouple"
 }

@@ -20,6 +20,11 @@ public class ComponentBlock extends Block implements IWrenchable {
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;
         if(c.getLevel().isClientSide)return InteractionResult.SUCCESS;
         var unit=VehiclePhysics.owner(c.getLevel(),c.getClickedPos());if(unit==null)return InteractionResult.PASS;
+        if(unit.detached){
+            if(!(c.getPlayer() instanceof net.minecraft.server.level.ServerPlayer player))return InteractionResult.FAIL;
+            VehiclePhysics.beginRelocate(player,unit);
+            c.getPlayer().swing(c.getHand(),true);return InteractionResult.CONSUME;
+        }
         unit.mount.braking=!unit.mount.braking;unit.mount.setChanged();unit.mount.sendData();
         c.getPlayer().displayClientMessage(net.minecraft.network.chat.Component.literal(unit.mount.braking?"制动已启用":"制动已释放"),true);
         c.getPlayer().swing(c.getHand(),true);return InteractionResult.CONSUME;

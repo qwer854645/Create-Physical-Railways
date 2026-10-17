@@ -1,0 +1,8 @@
+{
+  "selector": "guidedrailways:coupler",
+  "properties": {
+    "sable:mass": 4,
+    "sable:friction": 0.2,
+    "sable:restitution": 0
+  }
+}

@@ -41,6 +41,28 @@ public final class BogieCollisionCheck {
         }
         check(!BogieCollision.containsAfterCellClipping(.5+.6*.998046875,BogieGeometry.RENDER_Y+.41*.998046875,.5+1.32*.998046875),"empty frame diamond corner must not collide");
         check(BogieCollision.BOXES.size()<=300,"keep collision primitives bounded without adding bodies");
+        var resource=Path.of("src/main/resources/data/guidedrailways/physics_block_properties");
+        var core=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(resource.resolve("bogie_frame.json"))).getAsJsonObject();
+        var parts=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(resource.resolve("bogie_collision.json"))).getAsJsonObject();
+        double total=0,cx=0,cyMass=0,cz=0,ix=0,iy=0,iz=0;
+        for(var cell:BogieCollision.CELLS){
+            double mass;
+            if(cell.part()==BogieCollision.CENTRE_PART)mass=core.getAsJsonObject("properties").get("sable:mass").getAsDouble();
+            else{
+                var overrides=parts.getAsJsonObject("overrides");var override=overrides.getAsJsonObject("part="+cell.part());
+                mass=override==null?parts.getAsJsonObject("properties").get("sable:mass").getAsDouble():override.get("sable:mass").getAsDouble();
+            }
+            check(mass>=0,"mass may not be negative");
+            total+=mass;cx+=mass*cell.x();cyMass+=mass*cell.y();cz+=mass*cell.z();
+            ix+=mass*(1.0/6+cell.y()*cell.y()+cell.z()*cell.z());
+            iy+=mass*(1.0/6+cell.x()*cell.x()+cell.z()*cell.z());
+            iz+=mass*(1.0/6+cell.x()*cell.x()+cell.y()*cell.y());
+        }
+        check(Math.abs(total-80)<1e-9,"distributed layout preserves 80 total mass");
+        check(Math.abs(cx)+Math.abs(cyMass)+Math.abs(cz)<1e-9,"distributed layout preserves the original centre of mass");
+        check(ix>3*(80.0/6)&&iy>5*(80.0/6)&&iz>3*(80.0/6),"distributed point-mass layout increases inertia; native shape inertia is verified at runtime");
+        check(Math.abs(BogieCollision.massCenterY()-.49853515625)<1e-9,"explicit mass centre preserves original central collision bounds");
+        check(core.getAsJsonObject("properties").get("sable:restitution").getAsDouble()==0&&parts.getAsJsonObject("properties").get("sable:restitution").getAsDouble()==0,"bogie contacts remain non-bouncy");
         System.out.println("BogieCollisionCheck: "+checks+" assertions passed; primitives="+BogieCollision.BOXES.size());
     }
 }

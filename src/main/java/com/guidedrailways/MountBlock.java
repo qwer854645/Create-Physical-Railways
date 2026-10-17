@@ -13,7 +13,7 @@ public final class MountBlock extends ComponentBlock implements IRotate,IBE<Moun
     private record Transfer(UUID bogie,boolean brake,long expires){}
     private static final Map<GlobalPos,Transfer> TRANSFERS=new HashMap<>();
     MountBlock(Properties p){super(p);}
-    @Override protected VoxelShape getShape(BlockState s,BlockGetter l,BlockPos p,CollisionContext c){return box(0,6,0,16,10,16);}
+    @Override protected VoxelShape getShape(BlockState s,BlockGetter l,BlockPos p,CollisionContext c){return box(0,12,0,16,16,16);}
     @Override public Direction.Axis getRotationAxis(BlockState s){return Direction.Axis.Y;}
     @Override public boolean hasShaftTowards(LevelReader l,BlockPos p,BlockState s,Direction face){return face==Direction.UP;}
     @Override public Class<MountEntity> getBlockEntityClass(){return MountEntity.class;}

@@ -33,6 +33,7 @@ public final class TrackNetwork {
     private static final Map<ServerLevel,Index> INDEX=new WeakHashMap<>();
     private static long cell(double x,double z){return net.minecraft.world.level.ChunkPos.asLong((int)Math.floor(x/16),(int)Math.floor(z/16));}
     private static PathKey key(Path p){return new PathKey(p.graph,p.a,p.b);}
+    private static PathKey key(UUID graph,int a,int b){return a<=b?new PathKey(graph,a,b):new PathKey(graph,b,a);}
     public static void refresh(ServerLevel level){
         var idx=INDEX.computeIfAbsent(level,l->new Index());if(level.getGameTime()<idx.next)return;idx.next=level.getGameTime()+10;
         long start=TrainConfig.PERFORMANCE_LOGGING.get()?System.nanoTime():0;
@@ -76,6 +77,17 @@ public final class TrackNetwork {
         return new Sample(path,t,p,x,up);
     }
     public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,double radius){
+        return follow(level,point,heading,previous,null,radius);
+    }
+    /**
+     * Stay on the current edge while mid-span; at a node, pick the next edge like Create
+     * ({@code steer} from heading, or {@code follow} a leader sample for the trailing axle).
+     */
+    public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius){
+        return follow(level,point,heading,previous,leader,radius,false);
+    }
+    /** Heading fixes body/traction orientation; reverse changes traversal only. */
+    public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse){
         PerfCounters.query(level);
         var idx=INDEX.get(level);if(previous!=null&&idx!=null){
             var live=idx.paths.get(key(previous.path));
@@ -83,10 +95,71 @@ public final class TrackNetwork {
                 var sample=project(live,point,heading,previous.t);
                 if(sample!=null&&sample.t>.0001&&sample.t<.9999&&sample.position.distanceSquared(point)<.09
                         &&sample.tangent.dot(heading)>.75&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return sample;
+                var branched=advance(level,idx,live,point,heading,previous,leader,radius,reverse);
+                if(branched!=null)return branched;
             }
         }
         return nearest(level,point,heading,previous==null?null:previous.path,radius);
     }
+    /** Create-style node transition: enumerate outgoing edges, then steer / follow. */
+    private static Sample advance(ServerLevel level,Index idx,Path live,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse){
+        var increasing=PathGeometry.tangent(live::at,previous.t);
+        boolean alongIncreasing=BranchSelect.exitsIncreasing(increasing,heading,reverse);
+        double endT=alongIncreasing?1:0;
+        if(Math.abs(previous.t-endT)>.12&&(previous.position.distanceSquared(live.at(endT))>.36))return null;
+        int exitId=alongIncreasing?live.b:live.a,enterId=alongIncreasing?live.a:live.b;
+        var exit=live.network.getNode(exitId);var enter=live.network.getNode(enterId);
+        if(exit==null||enter==null)return null;
+        var current=live.network.getConnectionsFrom(enter).get(exit);
+        if(current==null)return null;
+        var options=new ArrayList<Branch>();
+        for(var entry:live.network.getConnectionsFrom(exit).entrySet()){
+            if(entry.getKey()==enter||entry.getValue().isInterDimensional())continue;
+            if(!current.canTravelTo(entry.getValue()))continue;
+            var path=idx.paths.get(key(live.graph,exit.getNetId(),entry.getKey().getNetId()));
+            if(path==null)continue;
+            options.add(new Branch(entry.getKey(),entry.getValue(),path));
+        }
+        if(options.isEmpty())return null;
+        options.sort(Comparator.comparingInt(c->c.node.getNetId()));
+        Branch chosen=options.size()==1?options.get(0):leader!=null?followLeader(options,leader):steerBranch(options,current,previous.up,reverse?new Vector3d(heading).negate():heading);
+        double hint=chosen.path.a==exit.getNetId()?0:1;
+        var sample=project(chosen.path,point,heading,hint);
+        if(sample==null||sample.position.distanceSquared(point)>radius*radius)return null;
+        if(!level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return null;
+        return sample;
+    }
+    private record Branch(TrackNode node,TrackEdge edge,Path path){}
+    private static Branch steerBranch(List<Branch> options,TrackEdge current,Vector3dc up,Vector3dc heading){
+        var exitDir=vec(current.getDirection(false));
+        var entries=new Vector3d[options.size()];
+        for(int i=0;i<options.size();i++)entries[i]=vec(options.get(i).edge.getDirection(true));
+        int pick=BranchSelect.steer(BranchSelect.fromHeading(exitDir,up,heading),exitDir,up,entries);
+        return options.get(Math.max(0,pick));
+    }
+    /** Prefer the outgoing edge that reaches the leader's current nodes (Create {@code follow}). */
+    private static Branch followLeader(List<Branch> options,Sample leader){
+        int la=leader.path.a,lb=leader.path.b;
+        for(var c:options)if(c.path.equals(leader.path)||c.node.getNetId()==la||c.node.getNetId()==lb)return c;
+        record Step(TrackNode node,TrackEdge via){}
+        var frontiers=new ArrayList<ArrayDeque<Step>>();
+        var visited=new ArrayList<HashSet<TrackEdge>>();
+        for(var c:options){
+            var q=new ArrayDeque<Step>();q.add(new Step(c.node,c.edge));frontiers.add(q);
+            var seen=new HashSet<TrackEdge>();seen.add(c.edge);visited.add(seen);
+        }
+        for(int depth=0;depth<20;depth++)for(int j=0;j<options.size();j++){
+            var frontier=frontiers.get(j);if(frontier.isEmpty())continue;
+            var step=frontier.removeFirst();
+            if(step.node.getNetId()==la||step.node.getNetId()==lb)return options.get(j);
+            for(var next:options.get(j).path.network.getConnectionsFrom(step.node).entrySet()){
+                if(!visited.get(j).add(next.getValue())||!step.via.canTravelTo(next.getValue()))continue;
+                frontier.add(new Step(next.getKey(),next.getValue()));
+            }
+        }
+        return options.get(0);
+    }
+    private static Vector3d vec(Vec3 v){return new Vector3d(v.x,v.y,v.z);}
     public static Sample nearest(ServerLevel level,Vector3dc point,Vector3dc heading,Path previous,double radius){
         var idx=INDEX.get(level);if(idx==null)return null;var candidates=idx.cells.getOrDefault(cell(point.x(),point.z()),Set.of());
         Sample best=null;double score=Double.POSITIVE_INFINITY;
@@ -100,5 +173,92 @@ public final class TrackNetwork {
         }
         return best;
     }
+    /** Interactive actions must not use the half-second background index throttle. */
+    public static void refreshNow(ServerLevel level){INDEX.computeIfAbsent(level,l->new Index()).next=0;refresh(level);}
+    /** Server-side rail picking also hits Bezier track drawn through air, without an ITrackBlock hit. */
+    public static Sample pick(net.minecraft.server.level.ServerPlayer player){
+        var level=player.serverLevel();refreshNow(level);
+        var eye=player.getEyePosition();var look=player.getLookAngle();double reach=player.blockInteractionRange();
+        var end=eye.add(look.scale(reach));
+        var block=level.clip(new net.minecraft.world.level.ClipContext(eye,end,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,player));
+        if(block.getType()!=net.minecraft.world.phys.HitResult.Type.MISS)end=block.getLocation().add(look.scale(.05));
+        var a=new Vector3d(eye.x,eye.y,eye.z);var b=new Vector3d(end.x,end.y,end.z);var heading=new Vector3d(look.x,look.y,look.z);
+        var idx=INDEX.get(level);var candidates=new HashSet<Path>();
+        for(int i=0;i<=16;i++){var q=new Vector3d(a).lerp(b,i/16.0);candidates.addAll(idx.cells.getOrDefault(cell(q.x,q.z),Set.of()));}
+        Sample best=null;double score=Double.POSITIVE_INFINITY;
+        for(var path:candidates){
+            int n=Math.clamp((int)Math.ceil(path.edge.getLength()/.25),1,16384);
+            var prev=at(path,0,heading);
+            for(int i=1;i<=n;i++){
+                var next=at(path,(double)i/n,heading);
+                for(double offset:new double[]{0,-.875,.875}){
+                    var prevTop=new Vector3d(prev.position).fma(BogieGeometry.RAIL_TOP,prev.up).fma(offset,new Vector3d(prev.tangent).cross(prev.up));
+                    var top=new Vector3d(next.position).fma(BogieGeometry.RAIL_TOP,next.up).fma(offset,new Vector3d(next.tangent).cross(next.up));
+                    var hit=RailPlacement.raySegment(a,b,prevTop,top);double tolerance=offset==0?.55:.30;
+                    double rank=hit.distanceSquared()+hit.rayFraction()*1e-5;
+                    if(hit.distanceSquared()<=tolerance*tolerance&&rank<score){
+                        var selectedTop=new Vector3d(prevTop).lerp(top,hit.segmentFraction());
+                        double depth=new Vector3d(selectedTop).sub(a).dot(heading);if(depth<0||depth>a.distance(b)+.02)continue;
+                        double t=(i-1+hit.segmentFraction())/n;var chosen=at(path,t,heading);
+                        if(level.hasChunkAt(BlockPos.containing(chosen.position.x,chosen.position.y,chosen.position.z))){best=chosen;score=rank;}
+                    }
+                }
+                prev=next;
+            }
+        }
+        return best;
+    }
+    private static Sample at(Path path,double t,Vector3dc heading){
+        var tangent=PathGeometry.tangent(path::at,t);if(tangent.dot(heading)<0)tangent.negate();
+        var normal=path.edge.getNormal(path.network,t);return new Sample(path,t,path.at(t),tangent,new Vector3d(normal.x,normal.y,normal.z).normalize());
+    }
+    private static final class ArcTable {
+        final double[] distance;
+        ArcTable(Path p){int n=Math.clamp((int)Math.ceil(p.edge.getLength()/.2),1,16384);distance=new double[n+1];var prev=p.at(0);for(int i=1;i<=n;i++){var next=p.at((double)i/n);distance[i]=distance[i-1]+prev.distance(next);prev=next;}}
+        double length(){return distance[distance.length-1];}
+        double distance(double t){double index=Math.clamp(t,0,1)*(distance.length-1);int i=Math.min(distance.length-2,(int)index);return distance[i]+(distance[i+1]-distance[i])*(index-i);}
+        double parameter(double d){d=Math.clamp(d,0,length());int lo=0,hi=distance.length-1;while(hi-lo>1){int mid=(lo+hi)/2;if(distance[mid]<d)lo=mid;else hi=mid;}double span=distance[hi]-distance[lo];return (lo+(span>1e-12?(d-distance[lo])/span:0))/(distance.length-1);}
+    }
+    /** One connected, deterministic route, sampled by arc length for placing and fitting bodies. */
+    public static final class PlacementRoute implements RailPlacement.Route {
+        private record Span(Path path,boolean increasing,double start,ArcTable arc){double end(){return start+arc.length();}}
+        final ServerLevel level;final List<Span> spans=new ArrayList<>();final Map<Path,ArcTable> tables=new HashMap<>();
+        PlacementRoute(ServerLevel level,Sample anchor,double extent){
+            this.level=level;var arc=table(anchor.path);boolean increasing=PathGeometry.tangent(anchor.path::at,anchor.t).dot(anchor.tangent)>=0;
+            spans.add(new Span(anchor.path,increasing,-(increasing?arc.distance(anchor.t):arc.length()-arc.distance(anchor.t)),arc));
+            for(int i=0;i<256&&spans.get(spans.size()-1).end()<extent;i++)if(!extend(true))break;
+            for(int i=0;i<256&&spans.get(0).start> -extent;i++)if(!extend(false))break;
+        }
+        private ArcTable table(Path p){return tables.computeIfAbsent(p,ArcTable::new);}
+        private boolean extend(boolean positive){
+            var span=positive?spans.get(spans.size()-1):spans.get(0);boolean increasing=positive?span.increasing:!span.increasing;
+            int exitId=increasing?span.path.b:span.path.a,entryId=increasing?span.path.a:span.path.b;
+            var exit=span.path.network.getNode(exitId);var entry=span.path.network.getNode(entryId);if(exit==null||entry==null)return false;
+            var incoming=span.path.network.getConnectionsFrom(entry).get(exit);if(incoming==null)return false;
+            var wanted=PathGeometry.tangent(span.path::at,increasing?1:0).mul(increasing?1:-1);
+            Path best=null;double alignment=-2;int bestId=Integer.MAX_VALUE;var idx=INDEX.get(level);
+            for(var e:span.path.network.getConnectionsFrom(exit).entrySet()){
+                if(e.getKey()==entry||e.getValue().isInterDimensional()||!incoming.canTravelTo(e.getValue()))continue;
+                var p=idx.paths.get(key(span.path.graph,exitId,e.getKey().getNetId()));if(p==null)continue;
+                var dir=PathGeometry.tangent(p::at,p.a==exitId?0:1).mul(p.a==exitId?1:-1);double dot=dir.dot(wanted);
+                if(dot>alignment+1e-9||(Math.abs(dot-alignment)<1e-9&&e.getKey().getNetId()<bestId)){best=p;alignment=dot;bestId=e.getKey().getNetId();}
+            }
+            if(best==null||alignment<.25)return false;
+            var arc=table(best);if(arc.length()<1e-6)return false;
+            boolean nextIncreasing=positive?best.a==exitId:best.b==exitId;
+            var next=new Span(best,nextIncreasing,positive?span.end():span.start-arc.length(),arc);
+            if(positive)spans.add(next);else spans.add(0,next);return true;
+        }
+        public Sample sample(double d){
+            for(var span:spans)if(d>=span.start-1e-6&&d<=span.end()+1e-6){
+                double local=Math.clamp(d-span.start,0,span.arc.length());double t=span.arc.parameter(span.increasing?local:span.arc.length()-local);
+                var forward=PathGeometry.tangent(span.path::at,t).mul(span.increasing?1:-1);var result=TrackNetwork.at(span.path,t,forward);
+                return level.hasChunkAt(BlockPos.containing(result.position.x,result.position.y,result.position.z))?result:null;
+            }
+            return null;
+        }
+        @Override public RailPlacement.Point at(double d){var s=sample(d);return s==null?null:new RailPlacement.Point(s.position,s.tangent,s.up);}
+    }
+    public static PlacementRoute placementRoute(ServerLevel level,Sample anchor,double extent){return new PlacementRoute(level,anchor,extent);}
     static void unload(ServerLevel level){INDEX.remove(level);}
 }

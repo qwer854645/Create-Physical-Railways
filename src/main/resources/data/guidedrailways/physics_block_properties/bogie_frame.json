@@ -1,7 +1,7 @@
 {
   "selector": "guidedrailways:bogie_frame",
   "properties": {
-    "sable:mass": 80,
+    "sable:mass": 48,
     "sable:friction": 0.2,
     "sable:restitution": 0
   }
