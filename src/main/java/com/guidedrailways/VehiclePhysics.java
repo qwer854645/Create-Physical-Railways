@@ -139,6 +139,7 @@ public final class VehiclePhysics {
                 // Longitudinal translation is not locked: the solver never sets the vehicle's forward position.
                 double speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(sample.tangent());u.speed+=speed*.5;
                 double force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.SPEED_PER_RPM.get(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get());
+                if(!u.mount.braking&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
                 var impulse=new Vector3d(sample.tangent()).mul(force*dt*.5).rotate(new Quaterniond(pose.orientation()).conjugate());
                 // Apply traction at the frame centre height, with front/rear positions distributed along its length.
                 var point=new Vector3d(u.localCenter).add(0,0,i==0?HALF_WHEELBASE:-HALF_WHEELBASE);

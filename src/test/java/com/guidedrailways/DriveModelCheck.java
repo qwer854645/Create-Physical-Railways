@@ -4,7 +4,7 @@ public final class DriveModelCheck {
     private static void check(boolean condition,String text){checks++;if(!condition)throw new AssertionError(text);}
     private static double f(double v,double rpm,double mass,boolean brake){return DriveModel.force(v,rpm,mass,brake,.05,6,2.5,4);}
     public static void main(String[] args){
-        check(f(5,0,100,false)==0,"zero input must coast");
+        check(f(5,0,100,false)==0,"zero input must produce no traction");
         check(f(14,256,100,false)==0,"overspeed must coast without an implicit brake");
         check(f(0,256,100,false)>0,"forward launch");check(f(0,-256,100,false)<0,"reverse launch");
         for(double mass:new double[]{20,100,1000})for(double rpm:new double[]{16,64,256})for(double v:new double[]{-10,-1,0,1,10}){
@@ -20,6 +20,19 @@ public final class DriveModelCheck {
         check(Math.abs(speed-12.8)<.01,"unloaded drive approaches target");
         double positive=speed;for(int i=0;i<1400;i++)speed+=f(speed,0,100,true)/100*.005;
         check(speed>=0&&speed<.001&&speed<positive,"brake converges without reversing");
+        for(double mass:new double[]{20,100,1000})for(double dt:new double[]{.005,.025,.05,.1})for(double initial:new double[]{-.001,-5,-12.8,0,.001,5,12.8}){
+            double v=initial;
+            for(int i=0;i<(int)Math.ceil(23/dt);i++){
+                double force=DriveModel.coastForce(v,mass,.6,dt),next=v+force/mass*dt;
+                check(force*v<=0,"coasting resistance cannot add energy");
+                check(Math.abs(force)<=mass*.6+1e-8,"coasting deceleration cap");
+                check(Math.abs(next)<=Math.abs(v)+1e-8&&next*initial>=-1e-8,"coasting cannot accelerate or reverse");v=next;
+            }
+            check(Math.abs(v)<1e-8,"unpowered vehicle reaches rest without engine damping");
+        }
+        check(DriveModel.coastForce(5,100,0,.025)==0,"zero configuration restores free coasting");
+        check(DriveModel.coastForce(Double.NaN,100,.6,.025)==0,"invalid coasting velocity rejected");
+        check(DriveModel.coastForce(5,100,.6,0)==0,"invalid step rejected");
         System.out.println("DriveModelCheck: "+checks+" assertions passed");
     }
 }
