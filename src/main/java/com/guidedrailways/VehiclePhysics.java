@@ -64,10 +64,21 @@ public final class VehiclePhysics {
             if(level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual){visual.speed=u.speed;visual.distance+=u.speed/20;if(level.getGameTime()%2==0)visual.sendData();}
             if(level.getGameTime()>=u.nextLog){u.nextLog=level.getGameTime()+20;
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()));
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),anchorSummary(u));
                 }
             }
         }
+    }
+    private static String anchorSummary(Unit u){
+        var text=new StringBuilder();
+        var pipe=SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
+        var forward=new Vector3d(0,0,1).rotate(pipe.readPose(u.bogie,new Pose3d()).orientation());
+        for(int i=0;i<2;i++){
+            if(i>0)text.append(';');var s=u.samples[i];
+            if(s==null){text.append("missing");continue;}
+            text.append(String.format(java.util.Locale.ROOT,"%s:%d-%d,t=%.4f,curve=%s,error=%.5f,align=%.4f,joint=%s",i==0?"front":"rear",s.path().a(),s.path().b(),s.t(),s.path().edge().isTurn(),world(u.bogie,u.axle(i)).distance(s.position()),forward.dot(s.tangent()),u.guides[i]!=null&&u.guides[i].isValid()));
+        }
+        return text.toString();
     }
     private static void connectPivot(Unit u){
         var pipe=SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
@@ -85,13 +96,15 @@ public final class VehiclePhysics {
     static void step(SubLevelPhysicsSystem physics,double dt){
         if(!(dt>0&&Double.isFinite(dt)))return;var level=physics.getLevel();var pipe=physics.getPipeline();
         for(var u:ACTIVE.getOrDefault(level,Map.of()).values()){
-            if(u.detached||u.carrier.isRemoved()||u.bogie.isRemoved()||u.mount.isRemoved()||u.lastSeen+2<level.getGameTime())continue;
-            var pose=pipe.readPose(u.bogie,new Pose3d());var heading=new Vector3d(0,0,1).rotate(pose.orientation());boolean valid=true;
+            if(u.carrier.isRemoved()||u.bogie.isRemoved()||u.mount.isRemoved()||u.lastSeen+2<level.getGameTime())continue;
+            var pose=pipe.readPose(u.bogie,new Pose3d());var heading=new Vector3d(0,0,1).rotate(pose.orientation());
+            if(u.detached){u.speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading);continue;}
+            boolean valid=true;
             for(int i=0;i<2;i++){
                 var at=world(u.bogie,u.axle(i));u.samples[i]=TrackNetwork.follow(level,at,heading,u.samples[i],.8);
                 if(u.samples[i]==null){valid=false;break;}
             }
-            if(!valid){u.clearGuides();u.detached=true;org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuideReleased] body={} reason=track_missing_or_out_of_range",u.bogie.getUniqueId());continue;}
+            if(!valid){u.clearGuides();u.detached=true;org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuideReleased] body={} reason=track_missing_or_out_of_range anchors={}",u.bogie.getUniqueId(),anchorSummary(u));continue;}
             u.speed=0;
             for(int i=0;i<2;i++){
                 var sample=u.samples[i];u.routes[i]=sample.path();var q=sample.orientation();
@@ -118,8 +131,12 @@ public final class VehiclePhysics {
         var level=u.bogie.getLevel();u.close();ACTIVE.getOrDefault(level,Map.of()).remove(u.bogie.getUniqueId());
         var container=SubLevelContainer.getContainer(level);container.removeSubLevel(u.bogie,SubLevelRemovalReason.REMOVED);
         u.mount.bogieId=null;level.setBlock(u.mount.getBlockPos(),Blocks.AIR.defaultBlockState(),3);
-        u.carrier.buildMassTracker();u.carrier.updateMergedMassData(1);SubLevelPhysicsSystem.get(level).getPipeline().onStatsChanged(u.carrier);
-        if(u.carrier.getMassTracker().getMass()<=.001)container.removeSubLevel(u.carrier,SubLevelRemovalReason.REMOVED);
+        // Removing the final mount can already remove the carrier's native body.
+        if(!u.carrier.isRemoved()){
+            u.carrier.buildMassTracker();u.carrier.updateMergedMassData(1);
+            if(u.carrier.getMassTracker().getMass()<=.001){if(!u.carrier.isRemoved())container.removeSubLevel(u.carrier,SubLevelRemovalReason.REMOVED);}
+            else if(!u.carrier.isRemoved())SubLevelPhysicsSystem.get(level).getPipeline().onStatsChanged(u.carrier);
+        }
         if(!player.getAbilities().instabuild){var stack=new ItemStack(Content.BOGIE_ITEM.get());if(!player.getInventory().add(stack))player.drop(stack,false);}
     }
     static void place(ServerLevel level,UseOnContext context){

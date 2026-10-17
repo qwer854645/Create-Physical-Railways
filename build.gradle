@@ -178,3 +178,10 @@ tasks.named('check') { dependsOn 'checkDriveModel' }
 
 // Controller checks are standalone mains; this prototype does not declare a JUnit engine.
 tasks.named('test') { failOnNoDiscoveredTests = false }
+
+tasks.register('checkPathGeometry', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.PathGeometryCheck'
+}
+tasks.named('check') { dependsOn 'checkPathGeometry' }

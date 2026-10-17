@@ -20,3 +20,5 @@ Thumbs.db
 verification/**/*bytecode*.txt
 
 api-*.txt
+
+*bytecode*.txt

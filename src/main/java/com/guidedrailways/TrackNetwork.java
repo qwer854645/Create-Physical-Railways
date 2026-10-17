@@ -53,12 +53,10 @@ public final class TrackNetwork {
         double lo=Math.max(0,seed-span),hi=Math.min(1,seed+span);
         for(int i=0;i<18;i++){double a=(2*lo+hi)/3,b=(lo+2*hi)/3;if(path.at(a).distanceSquared(query)<path.at(b).distanceSquared(query))hi=b;else lo=a;}
         double t=(lo+hi)*.5;var p=path.at(t);if(path.at(0).distanceSquared(query)<p.distanceSquared(query)){t=0;p=path.at(0);}if(path.at(1).distanceSquared(query)<p.distanceSquared(query)){t=1;p=path.at(1);}
-        var direction=path.edge.getDirectionAt(t);var x=new Vector3d(direction.x,direction.y,direction.z).normalize();
+        var original=PathGeometry.tangent(path::at,t);var x=new Vector3d(original);
         if(x.dot(heading)<0)x.negate();var normal=path.edge.getNormal(path.network,t);var up=new Vector3d(normal.x,normal.y,normal.z).normalize();
         // Reject longitudinal overrun at a finite endpoint; no invisible guide beyond a broken rail.
-        var raw=path.edge.getDirectionAt(t);var original=new Vector3d(raw.x,raw.y,raw.z).normalize();
-        double over=new Vector3d(query).sub(p).dot(original);
-        if((t==0&&over<-.08)||(t==1&&over>.08))return null;
+        if(PathGeometry.beyondEndpoint(t,p,query,original,.08))return null;
         return new Sample(path,t,p,x,up);
     }
     public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,double radius){
