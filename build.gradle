@@ -229,3 +229,10 @@ tasks.register('checkCoupler', JavaExec) {
     mainClass = 'com.guidedrailways.CouplerCheck'
 }
 tasks.named('check') { dependsOn 'checkCoupler' }
+
+tasks.register('checkCouplerVisual', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.CouplerVisualCheck'
+}
+tasks.named('check') { dependsOn 'checkCouplerVisual' }

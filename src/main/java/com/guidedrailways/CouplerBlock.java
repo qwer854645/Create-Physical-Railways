@@ -23,7 +23,7 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
     @Override public BlockState getStateForPlacement(BlockPlaceContext c){var face=c.getClickedFace();return defaultBlockState().setValue(FACING,face.getAxis().isHorizontal()?face:c.getHorizontalDirection().getOpposite());}
     @Override protected VoxelShape getShape(BlockState s,BlockGetter level,BlockPos pos,CollisionContext context){return SHAPES.get(s.getValue(FACING));}
     private static Map<Direction,VoxelShape> shapes(){
-        var base=Shapes.or(box(3,3,13,13,13,16),box(5,5,6,11,11,13),box(3,4,0,10,12,6),box(10,4,0,13,12,3));
+        var base=Shapes.or(box(3,4,12,13,12,16),box(4,5,8,12,11,14));
         var map=new EnumMap<Direction,VoxelShape>(Direction.class);map.put(Direction.NORTH,base);
         for(var direction:List.of(Direction.EAST,Direction.SOUTH,Direction.WEST)){
             var next=Shapes.empty();for(var a:base.toAabbs())next=Shapes.or(next,Shapes.box(1-a.maxZ,a.minY,a.minX,1-a.minZ,a.maxY,a.maxX));
@@ -34,8 +34,8 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
     @Override public BlockEntityType<? extends CouplerEntity> getBlockEntityType(){return Content.COUPLER_ENTITY.get();}
     @Override public BlockEntity newBlockEntity(BlockPos pos,BlockState state){return new CouplerEntity(pos,state);}
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,BlockState state,BlockEntityType<T> type){
-        if(level.isClientSide||type!=Content.COUPLER_ENTITY.get())return null;
-        return (l,p,s,be)->{if(l instanceof ServerLevel server&&be instanceof CouplerEntity coupler)CouplerConnections.register(server,coupler);};
+        if(type!=Content.COUPLER_ENTITY.get())return null;
+        return (l,p,s,be)->{if(be instanceof CouplerEntity coupler){if(l instanceof ServerLevel server)CouplerConnections.register(server,coupler);else coupler.clientTick();}};
     }
     @Override public InteractionResult onWrenched(BlockState state,UseOnContext c){
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;

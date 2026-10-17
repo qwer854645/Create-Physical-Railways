@@ -15,10 +15,10 @@ import java.util.*;
 public final class CouplerConnections {
     private record Pending(UUID endpoint,long expires){}
     private static final class Live {
-        final GenericConstraintHandle joint;final ServerSubLevel a,b;final BlockPos pa,pb;
+        final GenericConstraintHandle joint;final ServerSubLevel a,b;final BlockPos pa,pb;final CouplerEntity visualA,visualB;
         double ma,mb;long nextLog;
-        Live(GenericConstraintHandle joint,ServerSubLevel a,ServerSubLevel b,BlockPos pa,BlockPos pb){this.joint=joint;this.a=a;this.b=b;this.pa=pa;this.pb=pb;}
-        void close(){if(joint.isValid())joint.remove();}
+        Live(GenericConstraintHandle joint,ServerSubLevel a,ServerSubLevel b,CouplerEntity ea,CouplerEntity eb){this.joint=joint;this.a=a;this.b=b;this.pa=ea.getBlockPos().immutable();this.pb=eb.getBlockPos().immutable();visualA=ea;visualB=eb;}
+        void close(){if(joint.isValid())joint.remove();visualA.visualPeer(null);visualB.visualPeer(null);}
     }
     private static final class State {
         final Map<UUID,CouplerEntity> endpoints=new HashMap<>();final Map<UUID,Live> live=new HashMap<>();
@@ -56,7 +56,7 @@ public final class CouplerConnections {
     private static void disconnect(ServerLevel level,UUID endpoint,String reason){
         var data=CouplerSavedData.get(level);var link=data.links.forEndpoint(endpoint);if(link==null)return;
         var s=state(level);close(s,link.id());data.remove(link.id());s.warned.remove(link.id());
-        for(var id:List.of(link.a(),link.b())){var e=s.endpoints.get(id);if(e!=null){e.hasGeometry=false;e.setChanged();}}
+        for(var id:List.of(link.a(),link.b())){var e=s.endpoints.get(id);if(e!=null){e.hasGeometry=false;e.setChanged();e.visualPeer(null);}}
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] disconnected link={} reason={}",link.id(),reason);
     }
     private static boolean moving(ServerLevel level,CouplerEntity e){var moving=MOVING.get(GlobalPos.of(level.dimension(),e.getBlockPos()));return moving!=null&&moving.expires>=level.getGameTime()&&moving.endpoint.equals(e.endpointId);}
@@ -128,10 +128,11 @@ public final class CouplerConnections {
                 joint=pipe.addConstraint(ba,bb,new GenericConstraintConfiguration(anchorA,anchorB,a.frame,b.frame,EnumSet.of(ConstraintJointAxis.LINEAR_Y,ConstraintJointAxis.LINEAR_Z)));
                 joint.setLimit(ConstraintJointAxis.LINEAR_X,-CouplerGeometry.HALF_STROKE,CouplerGeometry.HALF_STROKE);
                 joint.setContactsEnabled(true);
-                old=new Live(joint,ba,bb,a.getBlockPos().immutable(),b.getBlockPos().immutable());tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
+                old=new Live(joint,ba,bb,a,b);tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} stroke={} savedAnchorError={}",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
             }catch(RuntimeException errorCreating){if(joint!=null&&joint.isValid())joint.remove();throw errorCreating;}
         }else tune(old);
+        a.visualPeer(b);b.visualPeer(a);
         if(level.getGameTime()>=old.nextLog){
             old.nextLog=level.getGameTime()+20;
             var wa=VehiclePhysics.world(ba,blockOrigin(a).add(a.anchor));var wb=VehiclePhysics.world(bb,blockOrigin(b).add(b.anchor));
