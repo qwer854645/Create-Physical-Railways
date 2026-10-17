@@ -39,10 +39,10 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
     }
     @Override public InteractionResult onWrenched(BlockState state,UseOnContext c){
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;
-        if(c.getLevel() instanceof ServerLevel server&&server.getBlockEntity(c.getClickedPos()) instanceof CouplerEntity e&&CouplerConnections.connected(server,e)){
-            c.getPlayer().displayClientMessage(Component.literal("请先用连挂工具解开车钩再旋转"),true);return InteractionResult.CONSUME;
-        }
-        return IWrenchable.super.onWrenched(state,c);
+        if(c.getLevel().isClientSide)return InteractionResult.SUCCESS;
+        if(!(c.getPlayer() instanceof net.minecraft.server.level.ServerPlayer player)||!(c.getLevel() instanceof ServerLevel level)||!(level.getBlockEntity(c.getClickedPos()) instanceof CouplerEntity e))return InteractionResult.FAIL;
+        try{CouplerConnections.wrench(level,e,player);player.swing(c.getHand(),true);return InteractionResult.CONSUME;}
+        catch(IllegalArgumentException|IllegalStateException error){player.displayClientMessage(Component.literal(error.getMessage()),true);return InteractionResult.FAIL;}
     }
     @Override public InteractionResult onSneakWrenched(BlockState state,UseOnContext c){
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;

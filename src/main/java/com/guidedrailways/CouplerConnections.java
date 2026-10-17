@@ -64,14 +64,17 @@ public final class CouplerConnections {
         if(moving(level,e))return;
         disconnect(level,e.endpointId,"removed");suspend(level,e.endpointId);state(level).pending.values().removeIf(p->p.endpoint.equals(e.endpointId));
     }
+    static void wrench(ServerLevel level,CouplerEntity e,ServerPlayer player){
+        tool(level,e,player,connected(level,e));
+    }
     static void tool(ServerLevel level,CouplerEntity e,ServerPlayer player,boolean unlink){
         register(level,e);var s=state(level);var data=CouplerSavedData.get(level);
         if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.literal("这个车钩尚未连接"),true);else{disconnect(level,e.endpointId,"tool");player.displayClientMessage(Component.literal("车钩已解开"),true);}return;}
-        if(data.links.forEndpoint(e.endpointId)!=null){player.displayClientMessage(Component.literal("车钩已连接，潜行使用连挂工具可解开"),true);return;}
+        if(data.links.forEndpoint(e.endpointId)!=null){player.displayClientMessage(Component.literal("车钩已连接，扳手右键可解开"),true);return;}
         var pending=s.pending.get(player.getUUID());
         if(pending==null||pending.expires<level.getGameTime()){
             if(body(level,e)==null)throw new IllegalArgumentException("请先把车钩装到物理车体上");
-            s.pending.put(player.getUUID(),new Pending(e.endpointId,level.getGameTime()+600));player.displayClientMessage(Component.literal("已选择车钩，请右键另一节车体上相向的车钩"),true);return;
+            s.pending.put(player.getUUID(),new Pending(e.endpointId,level.getGameTime()+600));player.displayClientMessage(Component.literal("已选择车钩，请用扳手右键另一节车体上的车钩"),true);return;
         }
         if(pending.endpoint.equals(e.endpointId)){s.pending.remove(player.getUUID());player.displayClientMessage(Component.literal("已取消选择车钩"),true);return;}
         var first=s.endpoints.get(pending.endpoint);
@@ -84,7 +87,7 @@ public final class CouplerConnections {
         var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null)throw new IllegalArgumentException("两端车钩都必须装在物理车体上");
         if(ba==bb)throw new IllegalArgumentException("不能连接同一物理车体上的两个车钩");
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
-        if(pipe.getLinearVelocity(ba,new Vector3d()).length()>.5||pipe.getLinearVelocity(bb,new Vector3d()).length()>.5||pipe.getAngularVelocity(ba,new Vector3d()).length()>.5||pipe.getAngularVelocity(bb,new Vector3d()).length()>.5)throw new IllegalArgumentException("请先让两节车停稳再连挂");
+        if(!CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d())))throw new IllegalArgumentException("两节车速度或相对速度过高，请减速后再连挂");
         var geometry=CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));
         a.geometry(local(ba,geometry.point()).sub(blockOrigin(a)),localFrame(ba,geometry.frame()));
         b.geometry(local(bb,geometry.point()).sub(blockOrigin(b)),localFrame(bb,geometry.frame()));

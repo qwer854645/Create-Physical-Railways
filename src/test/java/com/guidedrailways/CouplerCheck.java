@@ -28,13 +28,21 @@ public final class CouplerCheck {
                 check(Math.abs(new Quaterniond(bodyRot).mul(storedFrame).dot(plan.frame()))>1-1e-12,"saved local frame restores the same world orientation");
             }
         }
-        check(CouplerGeometry.engage(a,forward,up,new Vector3d(0,0,.6),backward,up).point().isFinite(),"near maximum engagement gap is valid");
-        rejects(()->CouplerGeometry.engage(a,forward,up,b,forward,up),"same-facing couplers must be rejected");
-        rejects(()->CouplerGeometry.engage(a,forward,up,new Vector3d(0,0,.61),backward,up),"distant heads must be rejected");
-        rejects(()->CouplerGeometry.engage(a,forward,up,new Vector3d(.31,0,.1),backward,up),"sideways offset must be rejected");
-        rejects(()->CouplerGeometry.engage(a,forward,up,new Vector3d(0,.26,.1),backward,up),"height mismatch must be rejected");
-        rejects(()->CouplerGeometry.engage(a,forward,up,new Vector3d(0,0,-.2),backward,up),"crossed heads must be rejected");
+        check(CouplerGeometry.engage(a,forward,up,new Vector3d(0,0,2),backward,up).point().isFinite(),"near maximum engagement gap is valid");
+        check(CouplerGeometry.engage(a,forward,up,b,forward,up).point().isFinite(),"manual coupling accepts same-facing heads");
+        rejects(()->CouplerGeometry.engage(a,forward,up,new Vector3d(0,0,2.01),backward,up),"distant heads must be rejected");
+        check(CouplerGeometry.engage(a,forward,up,new Vector3d(.8,0,.5),backward,up).point().isFinite(),"manual coupling accepts sideways offset");
+        rejects(()->CouplerGeometry.engage(a,forward,up,new Vector3d(0,1.01,.1),backward,up),"height mismatch must be rejected");
+        check(CouplerGeometry.engage(a,forward,up,new Vector3d(0,0,-.2),backward,up).point().isFinite(),"small crossed head offset is allowed without snapping");
         rejects(()->CouplerGeometry.engage(a,forward,up,b,backward,new Vector3d(0,-1,0)),"opposed carriage up directions must be rejected");
+        check(CouplerGeometry.engage(a,forward,up,new Vector3d(0,1,.5),backward,up).point().isFinite(),"one-block height tolerance is inclusive");
+        check(CouplerGeometry.engage(a,forward,up,a,forward,up).frame().isFinite(),"coincident same-facing heads have a valid fallback frame");
+        var zero=new Vector3d();
+        check(CouplerGeometry.slowEnough(new Vector3d(0,0,1),zero,zero,zero),"slow rolling coupling allowed");
+        check(CouplerGeometry.slowEnough(new Vector3d(0,0,2),new Vector3d(0,0,2),zero,zero),"same-speed rolling cars allowed at limit");
+        check(!CouplerGeometry.slowEnough(new Vector3d(0,0,2),new Vector3d(0,0,-2),zero,zero),"fast closing motion rejected even below individual speed limits");
+        check(!CouplerGeometry.slowEnough(new Vector3d(0,0,2.01),zero,zero,zero),"excessive speed rejected");
+        check(!CouplerGeometry.slowEnough(zero,zero,new Vector3d(0,2,0),zero),"rapidly rotating bodies rejected");
         for(double ma:new double[]{4,20,100,1000})for(double mb:new double[]{4,20,100,1000}){
             var spring=CouplerGeometry.spring(ma,mb);double reduced=1/(1/ma+1/mb);
             check(Math.abs(spring.damping()*spring.damping()/(4*spring.stiffness()*reduced)-1)<1e-12,"native spring uses critical damping for supported reduced mass");
