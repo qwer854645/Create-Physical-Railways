@@ -15,8 +15,8 @@ public final class TrainClient {
         Renderer(BlockEntityRendererProvider.Context c){}
         @Override public void render(BogieEntity entity,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
             double distance=entity.distance+entity.speed*partial/20;
-            pose.pushPose();pose.translate(.5,-.5,.5);
-            renderer.render(data,(float)(distance/.375*180/Math.PI),partial,pose,buffers,light,overlay,false);
+            pose.pushPose();pose.translate(.5,BogieGeometry.RENDER_Y,.5);
+            renderer.render(data,(float)(distance/BogieGeometry.TREAD_RADIUS*180/Math.PI),partial,pose,buffers,light,overlay,false);
             pose.popPose();
         }
         @Override public boolean shouldRenderOffScreen(BogieEntity entity){return true;}

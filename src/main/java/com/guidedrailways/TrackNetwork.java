@@ -20,24 +20,34 @@ public final class TrackNetwork {
     public record Sample(Path path,double t,Vector3d position,Vector3d tangent,Vector3d up){
         Quaterniond orientation(){var x=new Vector3d(tangent);var y=new Vector3d(up);var z=new Vector3d(x).cross(y).normalize();y.set(z).cross(x).normalize();return new Quaterniond().setFromNormalized(new Matrix3d(x,y,z));}
     }
+    private record PathKey(UUID graph,int a,int b){}
     private static final class Index {
-        long next; final Map<Long,Set<Path>> cells=new HashMap<>();final Map<String,Path> paths=new HashMap<>();
+        long next; final Map<Long,Set<Path>> cells=new HashMap<>();final Map<PathKey,Path> paths=new HashMap<>();
     }
     private static final Map<ServerLevel,Index> INDEX=new WeakHashMap<>();
     private static long cell(double x,double z){return net.minecraft.world.level.ChunkPos.asLong((int)Math.floor(x/16),(int)Math.floor(z/16));}
-    private static String key(Path p){return p.graph+":"+p.a+":"+p.b;}
+    private static PathKey key(Path p){return new PathKey(p.graph,p.a,p.b);}
     public static void refresh(ServerLevel level){
         var idx=INDEX.computeIfAbsent(level,l->new Index());if(level.getGameTime()<idx.next)return;idx.next=level.getGameTime()+10;
-        idx.cells.clear();idx.paths.clear();
+        long start=TrainConfig.PERFORMANCE_LOGGING.get()?System.nanoTime():0;
+        var next=new HashMap<PathKey,Path>();boolean changed=false;
         for(var graph:Create.RAILWAYS.sided(level).trackNetworks.values())for(var loc:graph.getNodes()){
             if(!loc.dimension.equals(level.dimension()))continue;var node=graph.locateNode(loc);if(node==null)continue;
             for(var entry:graph.getConnectionsFrom(node).entrySet()){
                 var other=entry.getKey();var edge=entry.getValue();if(node.getNetId()>=other.getNetId()||edge.isInterDimensional())continue;
-                var path=new Path(graph.id,node.getNetId(),other.getNetId(),graph,edge);idx.paths.put(key(path),path);
-                int n=Math.max(1,(int)Math.ceil(edge.getLength()/4));
-                for(int i=0;i<=n;i++){var p=path.at((double)i/n);for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)idx.cells.computeIfAbsent(cell(p.x+dx*16,p.z+dz*16),v->new HashSet<>()).add(path);}
+                var key=new PathKey(graph.id,node.getNetId(),other.getNetId());var old=idx.paths.get(key);
+                if(old!=null&&old.network==graph&&old.edge==edge)next.put(key,old);
+                else{next.put(key,new Path(graph.id,key.a,key.b,graph,edge));changed=true;}
             }
         }
+        if(next.size()!=idx.paths.size())changed=true;
+        if(!changed){if(start!=0)PerfCounters.index(level,System.nanoTime()-start,false);return;}
+        idx.paths.clear();idx.paths.putAll(next);idx.cells.clear();
+        for(var path:idx.paths.values()){
+            int n=Math.max(1,(int)Math.ceil(path.edge.getLength()/4));
+            for(int i=0;i<=n;i++){var p=path.at((double)i/n);for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)idx.cells.computeIfAbsent(cell(p.x+dx*16,p.z+dz*16),v->new HashSet<>()).add(path);}
+        }
+        if(start!=0)PerfCounters.index(level,System.nanoTime()-start,true);
     }
     private static Sample project(Path path,Vector3dc query,Vector3dc heading,Double hint){
         double seed=0,span;
@@ -51,7 +61,7 @@ public final class TrackNetwork {
             span=1.0/n;
         }
         double lo=Math.max(0,seed-span),hi=Math.min(1,seed+span);
-        for(int i=0;i<18;i++){double a=(2*lo+hi)/3,b=(lo+2*hi)/3;if(path.at(a).distanceSquared(query)<path.at(b).distanceSquared(query))hi=b;else lo=a;}
+        for(int i=0;i<18&&hi>lo;i++){double a=(2*lo+hi)/3,b=(lo+2*hi)/3;if(path.at(a).distanceSquared(query)<path.at(b).distanceSquared(query))hi=b;else lo=a;}
         double t=(lo+hi)*.5;var p=path.at(t);if(path.at(0).distanceSquared(query)<p.distanceSquared(query)){t=0;p=path.at(0);}if(path.at(1).distanceSquared(query)<p.distanceSquared(query)){t=1;p=path.at(1);}
         var original=PathGeometry.tangent(path::at,t);var x=new Vector3d(original);
         if(x.dot(heading)<0)x.negate();var normal=path.edge.getNormal(path.network,t);var up=new Vector3d(normal.x,normal.y,normal.z).normalize();
@@ -60,6 +70,7 @@ public final class TrackNetwork {
         return new Sample(path,t,p,x,up);
     }
     public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,double radius){
+        PerfCounters.query(level);
         var idx=INDEX.get(level);if(previous!=null&&idx!=null){
             var live=idx.paths.get(key(previous.path));
             if(live!=null){

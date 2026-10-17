@@ -25,7 +25,7 @@ import java.util.*;
 
 /** Independently written guided-body prototype. No per-wheel bodies or patched native library. */
 public final class VehiclePhysics {
-    static final double RIDE_HEIGHT=.75,HALF_WHEELBASE=1.0,PLATE_OFFSET=.5;
+    static final double RIDE_HEIGHT=BogieGeometry.RIDE_HEIGHT,HALF_WHEELBASE=1.0,PLATE_OFFSET=.5;
     private static final Quaterniond ANCHOR_ROT=new Quaterniond().rotateY(-Math.PI/2);
     private static final Map<ServerLevel,Map<BlockPos,MountEntity>> INPUTS=new WeakHashMap<>();
     private static final Map<ServerLevel,Map<UUID,Unit>> ACTIVE=new WeakHashMap<>();
@@ -43,6 +43,7 @@ public final class VehiclePhysics {
     private VehiclePhysics(){}
     static Vector3d center(ServerSubLevel body){var p=body.getPlot().getCenterBlock();return new Vector3d(p.getX()+.5,p.getY()+.5,p.getZ()+.5);}
     static Vector3d world(ServerSubLevel body,Vector3dc local){var pose=SubLevelPhysicsSystem.get(body.getLevel()).getPipeline().readPose(body,new Pose3d());return new Vector3d(local).sub(body.logicalPose().rotationPoint()).rotate(pose.orientation()).add(pose.position());}
+    static boolean hasVehicles(ServerLevel level){return !INPUTS.getOrDefault(level,Map.of()).isEmpty()||!ACTIVE.getOrDefault(level,Map.of()).isEmpty();}
     static void register(MountEntity mount){if(mount.getLevel() instanceof ServerLevel level&&mount.bogieId!=null)INPUTS.computeIfAbsent(level,l->new HashMap<>()).put(mount.getBlockPos().immutable(),mount);}
     static void tick(ServerLevel level){
         var container=SubLevelContainer.getContainer(level);var system=SubLevelPhysicsSystem.get(level);if(container==null||system==null)return;
@@ -58,6 +59,7 @@ public final class VehiclePhysics {
             unit.lastSeen=level.getGameTime();
         }
         units.entrySet().removeIf(e->{var u=e.getValue();if(u.carrier.isRemoved()||u.bogie.isRemoved()||level.getGameTime()-u.lastSeen>40){u.close();return true;}return false;});
+        PerfCounters.report(level,units.size());
         var counts=new HashMap<UUID,Integer>();for(var u:units.values())counts.merge(u.carrier.getUniqueId(),1,Integer::sum);
         for(var u:units.values()){
             int supports=counts.get(u.carrier.getUniqueId());
@@ -66,7 +68,7 @@ public final class VehiclePhysics {
             if(level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual){visual.speed=u.speed;visual.distance+=u.speed/20;if(level.getGameTime()%2==0)visual.sendData();}
             if(level.getGameTime()>=u.nextLog){u.nextLog=level.getGameTime()+20;
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),pivotSummary(u),anchorSummary(u));
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
                 }
             }
         }
@@ -111,6 +113,10 @@ public final class VehiclePhysics {
         }
     }
     static void step(SubLevelPhysicsSystem physics,double dt){
+        if(!TrainConfig.PERFORMANCE_LOGGING.get()){stepVehicle(physics,dt);return;}
+        long start=System.nanoTime();try{stepVehicle(physics,dt);}finally{PerfCounters.step(physics.getLevel(),System.nanoTime()-start);}
+    }
+    private static void stepVehicle(SubLevelPhysicsSystem physics,double dt){
         if(!(dt>0&&Double.isFinite(dt)))return;var level=physics.getLevel();var pipe=physics.getPipeline();
         for(var u:ACTIVE.getOrDefault(level,Map.of()).values()){
             if(u.carrier.isRemoved()||u.bogie.isRemoved()||u.mount.isRemoved()||u.lastSeen+2<level.getGameTime())continue;
@@ -165,7 +171,7 @@ public final class VehiclePhysics {
             if(context.getClickedFace()!=Direction.DOWN)throw new IllegalArgumentException("请右键物理车体底部或机械动力轨道");
             var pos=clicked.below();if(!level.getBlockState(pos).canBeReplaced())throw new IllegalArgumentException("底部没有安装空间");
             var upper=world(carrier,new Vector3d(pos.getX()+.5,pos.getY()+.5,pos.getZ()+.5));
-            var wanted=new Vector3d(upper).add(new Vector3d(0,-1.25,0).rotate(carrier.logicalPose().orientation()));
+            var wanted=new Vector3d(upper).add(new Vector3d(0,-(RIDE_HEIGHT+PLATE_OFFSET),0).rotate(carrier.logicalPose().orientation()));
             var sample=TrackNetwork.nearest(level,wanted,heading,null,1.0);if(sample==null)throw new IllegalArgumentException("安装位置附近没有可用轨道");
             var rotation=bodyOrientation(sample);var origin=new Vector3d(upper).add(new Vector3d(0,-PLATE_OFFSET,0).rotate(rotation));
             validatePlacement(level,origin,rotation);var bogie=createBody(level,Content.BOGIE.get().defaultBlockState(),origin,rotation);
@@ -206,5 +212,5 @@ public final class VehiclePhysics {
             SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(state.is(Content.MOUNT.get())?"自由车体安装座":"轨道导向转向架");return body;
         }catch(RuntimeException error){container.removeSubLevel(body,SubLevelRemovalReason.REMOVED);throw error;}
     }
-    static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null)units.values().forEach(Unit::close);INPUTS.remove(level);MountBlock.clear(level);}
+    static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null)units.values().forEach(Unit::close);INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);}
 }

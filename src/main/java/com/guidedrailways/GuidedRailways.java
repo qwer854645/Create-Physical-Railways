@@ -15,7 +15,7 @@ public final class GuidedRailways {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,TrainConfig.SPEC);
         Content.register(bus);
         NeoForge.EVENT_BUS.addListener((LevelTickEvent.Pre e)->{
-            if(e.getLevel() instanceof ServerLevel level){TrackNetwork.refresh(level);VehiclePhysics.tick(level);}
+            if(e.getLevel() instanceof ServerLevel level){if(VehiclePhysics.hasVehicles(level))TrackNetwork.refresh(level);VehiclePhysics.tick(level);}
         });
         NeoForge.EVENT_BUS.addListener((dev.ryanhcode.sable.neoforge.event.ForgeSablePrePhysicsTickEvent e)->VehiclePhysics.step(e.getPhysicsSystem(),e.getTimeStep()));
         NeoForge.EVENT_BUS.addListener((LevelEvent.Unload e)->{
