@@ -33,6 +33,7 @@ public final class VehiclePhysics {
     private static final Map<ServerLevel,Map<UUID,Unit>> ACTIVE=new WeakHashMap<>();
     static final class Unit {
         final MountEntity mount;final ServerSubLevel carrier,bogie;final Vector3d localCenter;
+        DriverConsoleEntity driver;
         GenericConstraintHandle pivot;final GenericConstraintHandle[] guides=new GenericConstraintHandle[2];
         final TrackNetwork.Path[] routes=new TrackNetwork.Path[2];
         final TrackNetwork.Sample[] samples=new TrackNetwork.Sample[2];
@@ -66,6 +67,7 @@ public final class VehiclePhysics {
             unit.lastSeen=level.getGameTime();
         }
         units.entrySet().removeIf(e->{var u=e.getValue();if(u.carrier.isRemoved()||u.bogie.isRemoved()||level.getGameTime()-u.lastSeen>40){u.close();return true;}return false;});
+        DriverControls.refresh(level,units.values());
         PerfCounters.report(level,units.size());
         var counts=new HashMap<UUID,Integer>();for(var u:units.values())counts.merge(u.carrier.getUniqueId(),1,Integer::sum);
         for(var u:units.values()){
@@ -77,7 +79,7 @@ public final class VehiclePhysics {
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
                     var pipeline=system.getPipeline();
                     double verticalSpeed=pipeline.getLinearVelocity(u.bogie,new Vector3d()).y,angularSpeed=pipeline.getAngularVelocity(u.bogie,new Vector3d()).length();
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get():driverRpm(u,new Vector3d(0,0,1).rotate(system.getPipeline().readPose(u.bogie,new Pose3d()).orientation())),u.mount.getSpeed(),u.mass,u.mount.braking||u.driver!=null&&(!u.driver.active||u.driver.brake>0||u.driver.powered==0),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
                 }
             }
         }
@@ -132,7 +134,7 @@ public final class VehiclePhysics {
             var pose=pipe.readPose(u.bogie,new Pose3d());var heading=new Vector3d(0,0,1).rotate(pose.orientation());
             if(u.detached){u.speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading);continue;}
             // Leading axle steers at junctions (Create TravellingPoint.steer); trailing axle follows it.
-            u.reverseTravel=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading),u.mount.getSpeed(),u.reverseTravel);
+            u.reverseTravel=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading),driverRpm(u,heading),u.reverseTravel);
             boolean reverse=u.reverseTravel;
             int lead=reverse?1:0,trail=1-lead;
             var atLead=world(u.bogie,u.axle(lead));
@@ -154,14 +156,37 @@ public final class VehiclePhysics {
                 }else u.guides[i].setFrame1(sample.position(),q);
                 // Longitudinal translation is not locked: the solver never sets the vehicle's forward position.
                 double speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(sample.tangent());u.speed+=speed*.5;
-                double force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.SPEED_PER_RPM.get(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get());
-                if(!u.mount.braking&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
+                double force;
+                if(u.driver!=null){
+                    var driver=u.driver;
+                    boolean safe=driver.active&&!driver.isRemoved()&&DriverControls.body(driver)==u.carrier;
+                    int brake=!safe?Math.max(1,driver.brake):Math.max(driver.brake,u.mount.braking||driver.powered==0?1:0);
+                    double target=DriverModel.target(driver.direction,Math.min(driver.setting,driver.available),u.mount.getSpeed(),TrainConfig.SPEED_PER_RPM.get())*driverSign(u,sample.tangent());
+                    force=DriverModel.force(speed,target,u.mount.getSpeed(),u.mass,brake,driver.direction==0,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);
+                }else{
+                    force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.SPEED_PER_RPM.get(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get());
+                    if(!u.mount.braking&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
+                }
                 var impulse=new Vector3d(sample.tangent()).mul(force*dt*.5).rotate(new Quaterniond(pose.orientation()).conjugate());
                 // Apply traction at the frame centre height, with front/rear positions distributed along its length.
                 var point=new Vector3d(u.localCenter).add(0,0,i==0?HALF_WHEELBASE:-HALF_WHEELBASE);
                 pipe.applyImpulse(u.bogie,point,impulse);
             }
         }
+    }
+    private static double driverSign(Unit u,Vector3dc heading){
+        var f=u.driver.getBlockState().getValue(DriverConsoleBlock.FACING);
+        var q=SubLevelPhysicsSystem.get(u.carrier.getLevel()).getPipeline().readPose(u.carrier,new Pose3d()).orientation();
+        return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(q).dot(heading)<0?-1:1;
+    }
+    private static double driverRpm(Unit u,Vector3dc heading){
+        return u.driver==null?u.mount.getSpeed():u.driver.active&&u.driver.brake==0?DriverModel.target(u.driver.direction,Math.min(u.driver.setting,u.driver.available),u.mount.getSpeed(),TrainConfig.SPEED_PER_RPM.get())*driverSign(u,heading):0;
+    }
+    static void consoleRemoved(DriverConsoleEntity console){
+        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console){u.mount.braking=true;u.mount.setChanged();u.mount.sendData();}
+    }
+    static void releaseMountBrakes(DriverConsoleEntity console){
+        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(DriverControls.body(console)==u.carrier){u.mount.braking=false;u.mount.setChanged();u.mount.sendData();}
     }
     private static void release(Unit u,String reason){
         // Keep current velocity and the carrier bearing; remove only world-to-track constraints.

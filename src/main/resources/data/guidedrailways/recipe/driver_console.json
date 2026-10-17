@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " L ",
+    "BCB",
+    " I "
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:lever"
+    },
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "C": {
+      "item": "create:railway_casing"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "id": "guidedrailways:driver_console",
+    "count": 1
+  }
+}

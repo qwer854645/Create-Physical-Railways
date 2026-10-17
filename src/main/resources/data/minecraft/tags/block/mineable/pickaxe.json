@@ -4,6 +4,7 @@
     "guidedrailways:bogie_mount",
     "guidedrailways:bogie_frame",
     "guidedrailways:bogie_collision",
-    "guidedrailways:coupler"
+    "guidedrailways:coupler",
+    "guidedrailways:driver_console"
   ]
 }
