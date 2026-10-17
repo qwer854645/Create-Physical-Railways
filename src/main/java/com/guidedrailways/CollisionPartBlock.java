@@ -1,0 +1,13 @@
+package com.guidedrailways;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.state.*;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.shapes.*;
+/** Invisible collision cells in the existing bogie sublevel; no block entities and no extra bodies. */
+public final class CollisionPartBlock extends ComponentBlock {
+    public static final IntegerProperty PART=IntegerProperty.create("part",0,17);
+    CollisionPartBlock(Properties p){super(p);registerDefaultState(stateDefinition.any().setValue(PART,0));}
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block,BlockState> builder){builder.add(PART);}
+    @Override protected VoxelShape getShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){return BogieCollisionShape.get(state.getValue(PART));}
+}

@@ -1,0 +1,8 @@
+{
+  "selector": "guidedrailways:bogie_collision",
+  "properties": {
+    "sable:mass": 0,
+    "sable:friction": 0.2,
+    "sable:restitution": 0
+  }
+}

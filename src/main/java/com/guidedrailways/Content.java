@@ -14,6 +14,7 @@ public final class Content {
     static final DeferredRegister<CreativeModeTab> TABS=DeferredRegister.create(Registries.CREATIVE_MODE_TAB,GuidedRailways.ID);
     static BlockBehaviour.Properties metal(){return BlockBehaviour.Properties.of().strength(3).sound(SoundType.METAL).noOcclusion();}
     public static final DeferredBlock<MountBlock> MOUNT=BLOCKS.register("bogie_mount",()->new MountBlock(metal()));
+    public static final DeferredBlock<CollisionPartBlock> COLLISION=BLOCKS.register("bogie_collision",()->new CollisionPartBlock(metal()));
     public static final DeferredBlock<BogieBlock> BOGIE=BLOCKS.register("bogie_frame",()->new BogieBlock(metal()));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<MountEntity>> MOUNT_ENTITY=ENTITIES.register("bogie_mount",()->BlockEntityType.Builder.of(MountEntity::new,MOUNT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<BogieEntity>> BOGIE_ENTITY=ENTITIES.register("bogie_frame",()->BlockEntityType.Builder.of(BogieEntity::new,BOGIE.get()).build(null));

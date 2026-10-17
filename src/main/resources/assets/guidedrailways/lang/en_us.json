@@ -3,5 +3,6 @@
   "item.guidedrailways.bogie": "Guided Physics Bogie",
   "block.guidedrailways.bogie_mount": "Bogie Mount",
   "block.guidedrailways.bogie_frame": "Guided Bogie",
-  "tooltip.guidedrailways.bogie": "Place on Create tracks or beneath a physical body\nSupply rotation at the top; wrench toggles brake; sneak-wrench removes"
+  "tooltip.guidedrailways.bogie": "Place on Create tracks or beneath a physical body\nSupply rotation at the top; wrench toggles brake; sneak-wrench removes",
+  "block.guidedrailways.bogie_collision": "Bogie Collision Part"
 }

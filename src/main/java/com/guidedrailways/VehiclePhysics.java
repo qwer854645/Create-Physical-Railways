@@ -52,6 +52,7 @@ public final class VehiclePhysics {
         for(var mount:inputs.values()){
             if(!(SableCompanion.INSTANCE.getContaining(level,mount.getBlockPos()) instanceof ServerSubLevel carrier)||carrier.isRemoved())continue;
             if(!(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)||bogie.isRemoved()||bogie==carrier)continue;
+            if(!populateCollision(bogie,true))continue;
             var unit=units.get(mount.bogieId);
             if(unit==null||unit.carrier!=carrier||unit.mount!=mount){
                 if(unit!=null)unit.close();unit=new Unit(mount,carrier,bogie);connectPivot(unit);units.put(mount.bogieId,unit);
@@ -204,10 +205,29 @@ public final class VehiclePhysics {
         }
         for(var u:ACTIVE.getOrDefault(level,Map.of()).values())if(world(u.bogie,u.localCenter).distanceSquared(origin)<4)throw new IllegalArgumentException("这里已有转向架");
     }
+    private static boolean populateCollision(ServerSubLevel body,boolean refreshMass){
+        var tag=body.getUserDataTag();if(tag.getInt("GuidedCollisionLayout")>=1)return true;
+        var level=body.getLevel();var centre=body.getPlot().getCenterBlock();
+        for(var cell:BogieCollision.CELLS){
+            if(cell.part()==BogieCollision.CENTRE_PART)continue;
+            var state=level.getBlockState(centre.offset(cell.x(),cell.y(),cell.z()));
+            if(!state.isAir()&&!state.is(Content.COLLISION.get()))return false;
+        }
+        for(var cell:BogieCollision.CELLS){
+            if(cell.part()==BogieCollision.CENTRE_PART)continue;
+            var pos=centre.offset(cell.x(),cell.y(),cell.z());var state=Content.COLLISION.get().defaultBlockState().setValue(CollisionPartBlock.PART,cell.part());
+            var chunk=level.getChunkAt(pos);var old=chunk.getBlockState(pos);if(old.equals(state))continue;
+            chunk.setBlockState(pos,state,true);SubLevelAssemblyHelper.markAndNotifyBlock(level,pos,chunk,old,state,3,512);
+        }
+        tag.putInt("GuidedCollisionLayout",1);body.setUserDataTag(tag);
+        if(refreshMass){body.buildMassTracker();body.updateMergedMassData(1);SubLevelPhysicsSystem.get(level).getPipeline().onStatsChanged(body);body.updateBoundingBox();}
+        return true;
+    }
     private static ServerSubLevel createBody(ServerLevel level,BlockState state,Vector3d origin,Quaterniond rotation){
         var container=SubLevelContainer.getContainer(level);var body=(ServerSubLevel)container.allocateNewSubLevel(new Pose3d());
         try{
             var plot=body.getPlot();plot.newEmptyChunk(plot.getCenterChunk());var pos=plot.getCenterBlock();var ref=center(body);var chunk=level.getChunkAt(pos);var old=chunk.getBlockState(pos);chunk.setBlockState(pos,state,true);SubLevelAssemblyHelper.markAndNotifyBlock(level,pos,chunk,old,state,3,512);
+            if(state.is(Content.BOGIE.get())&&!populateCollision(body,false))throw new IllegalStateException("转向架碰撞占位初始化失败");
             body.buildMassTracker();body.updateMergedMassData(1);var com=body.getMassTracker().getCenterOfMass();body.logicalPose().rotationPoint().set(com);
             SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(state.is(Content.MOUNT.get())?"自由车体安装座":"轨道导向转向架");return body;
         }catch(RuntimeException error){container.removeSubLevel(body,SubLevelRemovalReason.REMOVED);throw error;}

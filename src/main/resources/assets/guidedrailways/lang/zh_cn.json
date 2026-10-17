@@ -3,5 +3,6 @@
   "item.guidedrailways.bogie": "物理导向转向架",
   "block.guidedrailways.bogie_mount": "转向架安装座",
   "block.guidedrailways.bogie_frame": "导向转向架",
-  "tooltip.guidedrailways.bogie": "右键机械动力轨道放置，或安装到物理车体底部\n顶部接入动力，扳手右键切换制动，潜行扳手拆卸"
+  "tooltip.guidedrailways.bogie": "右键机械动力轨道放置，或安装到物理车体底部\n顶部接入动力，扳手右键切换制动，潜行扳手拆卸",
+  "block.guidedrailways.bogie_collision": "转向架碰撞部件"
 }
