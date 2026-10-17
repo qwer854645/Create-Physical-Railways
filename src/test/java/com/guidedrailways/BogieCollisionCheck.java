@@ -28,7 +28,19 @@ public final class BogieCollisionCheck {
         double minZ=BogieCollision.BOXES.stream().mapToDouble(BogieCollision.Box::z0).min().orElseThrow();
         double maxZ=BogieCollision.BOXES.stream().mapToDouble(BogieCollision.Box::z1).max().orElseThrow();
         check(Math.abs((maxZ-minZ)-2.973994)<1e-6,"front-rear envelope matches rotating wheel rims");
-        check(BogieCollision.BOXES.size()<=32,"keep collision primitives bounded without adding bodies");
+        // Reject the old square wheel corners while retaining the full swept rim.
+        double cy=BogieGeometry.RENDER_Y+.75;
+        for(double side:new double[]{-1,1})for(double end:new double[]{-1,1}){
+            double x=.5+side*.8,z=.5+end;
+            check(!BogieCollision.containsAfterCellClipping(x,cy-.4,z+end*.4),"empty diagonal wheel corner must not collide");
+            for(int angle=0;angle<360;angle++){
+                double a=Math.toRadians(angle);
+                check(BogieCollision.containsAfterCellClipping(x,cy+BogieCollision.RIM_RADIUS*Math.sin(a),z+BogieCollision.RIM_RADIUS*Math.cos(a)),"swept flange circumference must remain covered");
+            }
+            check(!BogieCollision.containsAfterCellClipping(.5+side*1.0,cy-.45,z),"tread must not inherit flange radius");
+        }
+        check(!BogieCollision.containsAfterCellClipping(.5+.6*.998046875,BogieGeometry.RENDER_Y+.41*.998046875,.5+1.32*.998046875),"empty frame diamond corner must not collide");
+        check(BogieCollision.BOXES.size()<=300,"keep collision primitives bounded without adding bodies");
         System.out.println("BogieCollisionCheck: "+checks+" assertions passed; primitives="+BogieCollision.BOXES.size());
     }
 }

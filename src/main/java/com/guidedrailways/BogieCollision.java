@@ -1,7 +1,7 @@
 package com.guidedrailways;
 import java.util.ArrayList;
 import java.util.List;
-/** Coarse compound collision fitted to Create's standard small bogie, not triangle-mesh contact. */
+/** Cached compound collision fitted to frame components and circular wheel envelopes. */
 public final class BogieCollision {
     public record Box(double x0,double y0,double z0,double x1,double y1,double z1){
         public boolean contains(double x,double y,double z){return x>=x0-1e-6&&x<=x1+1e-6&&y>=y0-1e-6&&y<=y1+1e-6&&z>=z0-1e-6&&z<=z1+1e-6;}
@@ -20,31 +20,54 @@ public final class BogieCollision {
         frame(boxes,-0.4375000,0.7500000,-0.4375000,0.4375000,1.2500000,0.4375000);
         frame(boxes,-0.3125000,0.4375000,-0.5625000,0.3125000,1.0625000,0.5625000);
         frame(boxes,-0.2500000,1.2500000,-0.2500000,0.2500000,1.5000000,0.2500000);
-        frame(boxes,0.2241120,0.5000000,0.1250000,0.5776650,0.8535530,0.3125000);
-        frame(boxes,-0.5776650,0.5000000,0.1250000,-0.2241120,0.8535530,0.3125000);
-        frame(boxes,0.2241120,0.5000000,-0.3125000,0.5776650,0.8535530,-0.1250000);
-        frame(boxes,-0.5776650,0.5000000,-0.3125000,-0.2241120,0.8535530,-0.1250000);
+        for(double side:new double[]{-1,1})for(double z:new double[]{-.3125,.125})
+            prism(boxes,false,z,z+.1875,new double[][]{{side*.224112,.588388},{side*.3125,.5},{side*.577665,.765165},{side*.489277,.853553}});
         frame(boxes,0.3125000,0.6875000,-0.5000000,0.9375000,1.3125000,0.5000000);
         frame(boxes,-0.9375000,0.6875000,-0.5000000,-0.3125000,1.3125000,0.5000000);
-        frame(boxes,0.3750000,0.3964470,-1.3535530,0.7500000,1.1035530,-0.6464470);
-        frame(boxes,-0.7500000,0.3964470,-1.3535530,-0.3750000,1.1035530,-0.6464470);
-        frame(boxes,0.3750000,0.3964470,0.6464460,0.7500000,1.1035530,1.3535530);
-        frame(boxes,-0.7500000,0.3964470,0.6464460,-0.3750000,1.1035530,1.3535530);
-        frame(boxes,0.4375000,0.8383880,-0.9116120,0.6875000,1.4571070,-0.2928930);
-        frame(boxes,-0.6875000,0.8383880,-0.9116120,-0.4375000,1.4571070,-0.2928930);
-        frame(boxes,0.4375000,0.8383880,0.2928930,0.6875000,1.4571070,0.9116120);
-        frame(boxes,-0.6875000,0.8383880,0.2928930,-0.4375000,1.4571070,0.9116120);
+        for(double side:new double[]{-1,1})for(double end:new double[]{-1,1}){
+            prism(boxes,true,side<0?-.75:.375,side<0?-.375:.75,new double[][]{{.396447,end},{.75,end-.353553},{1.103553,end},{.75,end+.353553}});
+            prism(boxes,true,side<0?-.6875:.4375,side<0?-.4375:.6875,new double[][]{{.838388,end*.734835},{1.015165,end*.911612},{1.457107,end*.469670},{1.280330,end*.292893}});
+        }
         frame(boxes,-0.3125000,0.4375000,-1.3125000,0.3125000,1.0625000,-0.6875000);
         frame(boxes,-0.0937500,1.0625000,-1.0937500,0.0937500,1.2500000,-0.9062500);
         frame(boxes,-0.3125000,0.4375000,0.6875000,0.3125000,1.0625000,1.3125000);
         frame(boxes,-0.0937500,1.0625000,0.9062500,0.0937500,1.2500000,1.0937500);
-        // Four tyre/flange envelopes plus two narrow axle caps; all in the existing frame body.
-        double axleY=BogieGeometry.RENDER_Y+BogieGeometry.AXLE_RENDER_Y,r=RIM_RADIUS;
-        for(double z:new double[]{-1,1}){
-            for(double side:new double[]{-1,1})boxes.add(new Box(.5+(side<0?-1.0625:.75),axleY-r,.5+z-r,.5+(side<0?-.75:1.0625),axleY+r,.5+z+r));
-            boxes.add(new Box(.5-1.1875,axleY-.176777,.5+z-.176777,.5+1.1875,axleY+.176777,.5+z+.176777));
+        // Static swept circles: separate tread, flange and shaft widths. No per-frame rebaking.
+        double axleY=BogieGeometry.RENDER_Y+BogieGeometry.AXLE_RENDER_Y;
+        for(double z:new double[]{-1,1})for(double side:new double[]{-1,1}){
+            cylinder(boxes,side<0?-1.0625:.875,side<0?-.875:1.0625,axleY,z,.419347);
+            cylinder(boxes,side<0?-.875:.75,side<0?-.75:.875,axleY,z,RIM_RADIUS);
+            cylinder(boxes,side<0?-1.1875:.1875,side<0?-.1875:1.1875,axleY,z,.176777);
         }
         return List.copyOf(boxes);
+    }
+    /** Horizontal strips circumscribe each circle with less than one pixel radial excess. */
+    private static void cylinder(List<Box> boxes,double x0,double x1,double cy,double cz,double radius){
+        for(int i=0;i<12;i++){
+            double a=-Math.PI/2+i*Math.PI/12,b=-Math.PI/2+(i+1)*Math.PI/12;
+            double near=a<=0&&b>=0?0:Math.min(Math.abs(a),Math.abs(b));
+            double width=radius*Math.cos(near);
+            boxes.add(new Box(.5+x0,cy+radius*Math.sin(a),.5+cz-width,.5+x1,cy+radius*Math.sin(b),.5+cz+width));
+        }
+    }
+    /** Slice a convex frame cross-section; yz=true extrudes along x, otherwise along z. */
+    private static void prism(List<Box> boxes,boolean yz,double start,double end,double[][] polygon){
+        double min=Double.POSITIVE_INFINITY,max=Double.NEGATIVE_INFINITY;
+        for(var p:polygon){double h=p[yz?0:1];min=Math.min(min,h);max=Math.max(max,h);}
+        for(int i=0;i<12;i++){
+            double lo=min+(max-min)*i/12,hi=min+(max-min)*(i+1)/12;
+            double left=Double.POSITIVE_INFINITY,right=Double.NEGATIVE_INFINITY;
+            for(int j=0;j<polygon.length;j++){
+                var p=polygon[j];var q=polygon[(j+1)%polygon.length];
+                double ph=p[yz?0:1],qh=q[yz?0:1],pw=p[yz?1:0],qw=q[yz?1:0];
+                if(ph>=lo-1e-9&&ph<=hi+1e-9){left=Math.min(left,pw);right=Math.max(right,pw);}
+                if(Math.abs(qh-ph)>1e-9)for(double h:new double[]{lo,hi}){
+                    double t=(h-ph)/(qh-ph);
+                    if(t>=-1e-9&&t<=1+1e-9){double w=pw+(qw-pw)*Math.clamp(t,0,1);left=Math.min(left,w);right=Math.max(right,w);}
+                }
+            }
+            if(yz)frame(boxes,start,lo,left,end,hi,right);else frame(boxes,left,lo,start,right,hi,end);
+        }
     }
     private static List<Cell> partition(){
         var cells=new ArrayList<Cell>();
