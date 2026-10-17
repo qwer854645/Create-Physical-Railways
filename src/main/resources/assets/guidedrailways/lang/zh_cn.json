@@ -8,8 +8,6 @@
   "tooltip.guidedrailways.bogie": "对准机械动力直轨或弯轨中段右键放置，也可安装到无轨道的物理车体底部\\n顶部接入动力；扳手切换制动；离轨时扳手选车再对准轨道右键上轨；潜行扳手拆卸",
   "tooltip.guidedrailways.coupler": "扳手依次右键两个车钩连挂，右键已连接车钩解开；潜行扳手拆卸\\n钩头间距最多 2 格，高差最多 1 格，无需严格对齐朝向",
   "block.guidedrailways.bogie_collision": "转向架碰撞部件",
-  "item.guidedrailways.coupling_tool": "连挂工具",
-  "tooltip.guidedrailways.coupling_tool": "旧版连挂工具仍可使用，现可直接使用扳手连接车钩\\n潜行右键解开连接",
   "gui.guidedrailways.driver.take": "接管驾驶",
   "gui.guidedrailways.driver.leave": "退出并制动",
   "gui.guidedrailways.driver.slower": "− 1",

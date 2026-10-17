@@ -31,7 +31,6 @@ public final class Content {
     public static final DeferredItem<BlockItem> COUPLER_ITEM=ITEMS.register("coupler",()->new BlockItem(COUPLER.get(),new Item.Properties()){
         @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){text.add(Component.translatable("tooltip.guidedrailways.coupler"));}
     });
-    public static final DeferredItem<CouplingToolItem> COUPLING_TOOL=ITEMS.register("coupling_tool",()->new CouplingToolItem(new Item.Properties().stacksTo(1)));
     static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());o.accept(COUPLER_ITEM.get());o.accept(DRIVER_ITEM.get());}).build());}
     static void register(IEventBus bus){BLOCKS.register(bus);MENUS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);TABS.register(bus);
         if(net.neoforged.fml.loading.FMLEnvironment.dist==net.neoforged.api.distmarker.Dist.CLIENT)TrainClient.register(bus);

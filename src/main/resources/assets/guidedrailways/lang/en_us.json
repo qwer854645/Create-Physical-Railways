@@ -8,8 +8,6 @@
   "tooltip.guidedrailways.bogie": "Aim at straight or curved Create track and use to place, or install beneath a physical body without rails\\nSupply rotation at the top; wrench toggles brake; when off-rail, select the vehicle then use the wrench while aiming at track; sneak-wrench removes",
   "tooltip.guidedrailways.coupler": "Wrench two couplers to connect; wrench a linked coupler to disconnect; sneak-wrench removes\\nUp to 2 blocks apart and 1 block height difference, without strict facing alignment",
   "block.guidedrailways.bogie_collision": "Bogie Collision Part",
-  "item.guidedrailways.coupling_tool": "Coupling Tool",
-  "tooltip.guidedrailways.coupling_tool": "Legacy tool remains usable; a wrench now connects couplers directly\\nSneak-use to disconnect",
   "gui.guidedrailways.driver.take": "Take control",
   "gui.guidedrailways.driver.leave": "Release & brake",
   "gui.guidedrailways.driver.slower": "− 1",

@@ -65,11 +65,9 @@ public final class CouplerConnections {
         disconnect(level,e.endpointId,"removed");suspend(level,e.endpointId);state(level).pending.values().removeIf(p->p.endpoint.equals(e.endpointId));
     }
     static void wrench(ServerLevel level,CouplerEntity e,ServerPlayer player){
-        tool(level,e,player,connected(level,e));
-    }
-    static void tool(ServerLevel level,CouplerEntity e,ServerPlayer player,boolean unlink){
+        boolean unlink=connected(level,e);
         register(level,e);var s=state(level);var data=CouplerSavedData.get(level);
-        if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.literal("这个车钩尚未连接"),true);else{disconnect(level,e.endpointId,"tool");player.displayClientMessage(Component.literal("车钩已解开"),true);}return;}
+        if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.literal("这个车钩尚未连接"),true);else{disconnect(level,e.endpointId,"wrench");player.displayClientMessage(Component.literal("车钩已解开"),true);}return;}
         if(data.links.forEndpoint(e.endpointId)!=null){player.displayClientMessage(Component.literal("车钩已连接，扳手右键可解开"),true);return;}
         var pending=s.pending.get(player.getUUID());
         if(pending==null||pending.expires<level.getGameTime()){
