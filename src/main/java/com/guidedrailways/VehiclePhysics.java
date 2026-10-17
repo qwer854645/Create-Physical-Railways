@@ -34,7 +34,7 @@ public final class VehiclePhysics {
         GenericConstraintHandle pivot;final GenericConstraintHandle[] guides=new GenericConstraintHandle[2];
         final TrackNetwork.Path[] routes=new TrackNetwork.Path[2];
         final TrackNetwork.Sample[] samples=new TrackNetwork.Sample[2];
-        double mass,speed;long lastSeen,nextLog;boolean detached;
+        double mass,speed;long lastSeen,nextLog;boolean detached;int supports=1;
         Unit(MountEntity mount,ServerSubLevel carrier,ServerSubLevel bogie){this.mount=mount;this.carrier=carrier;this.bogie=bogie;localCenter=center(bogie);}
         Vector3d axle(int i){return new Vector3d(localCenter).add(0,-RIDE_HEIGHT,i==0?HALF_WHEELBASE:-HALF_WHEELBASE);}
         void clearGuides(){for(int i=0;i<2;i++){if(guides[i]!=null&&guides[i].isValid())guides[i].remove();guides[i]=null;}}
@@ -60,14 +60,27 @@ public final class VehiclePhysics {
         units.entrySet().removeIf(e->{var u=e.getValue();if(u.carrier.isRemoved()||u.bogie.isRemoved()||level.getGameTime()-u.lastSeen>40){u.close();return true;}return false;});
         var counts=new HashMap<UUID,Integer>();for(var u:units.values())counts.merge(u.carrier.getUniqueId(),1,Integer::sum);
         for(var u:units.values()){
-            u.mass=u.carrier.getMassTracker().getMass()/counts.get(u.carrier.getUniqueId())+u.bogie.getMassTracker().getMass();u.mount.setLoad(u.mass);
+            int supports=counts.get(u.carrier.getUniqueId());
+            if(u.supports!=supports){if(u.pivot!=null&&u.pivot.isValid())u.pivot.remove();u.supports=supports;connectPivot(u);}
+            u.mass=u.carrier.getMassTracker().getMass()/supports+u.bogie.getMassTracker().getMass();u.mount.setLoad(u.mass);
             if(level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual){visual.speed=u.speed;visual.distance+=u.speed/20;if(level.getGameTime()%2==0)visual.sendData();}
             if(level.getGameTime()>=u.nextLog){u.nextLog=level.getGameTime()+20;
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),anchorSummary(u));
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),pivotSummary(u),anchorSummary(u));
                 }
             }
         }
+    }
+    private static String pivotSummary(Unit u){
+        var pipe=SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
+        var upper=new Vector3d(u.mount.getBlockPos().getX()+.5,u.mount.getBlockPos().getY()+.375,u.mount.getBlockPos().getZ()+.5);
+        var lower=new Vector3d(u.localCenter).add(0,.375,0);
+        var a=pipe.readPose(u.carrier,new Pose3d());var b=pipe.readPose(u.bogie,new Pose3d());
+        var relative=new Quaterniond(b.orientation()).conjugate().mul(a.orientation());
+        var rate=pipe.getAngularVelocity(u.carrier,new Vector3d()).sub(pipe.getAngularVelocity(u.bogie,new Vector3d())).rotate(new Quaterniond(b.orientation()).conjugate());
+        var up=new Vector3d(0,1,0).rotate(relative);
+        double tilt=Math.toDegrees(Math.acos(Math.clamp(up.y,-1,1)));
+        return String.format(java.util.Locale.ROOT,"anchorError=%.5f,tiltDeg=%.3f,yawRateDeg=%.3f,pitchRateDeg=%.3f,rollRateDeg=%.3f,mode=%s",world(u.carrier,upper).distance(world(u.bogie,lower)),tilt,Math.toDegrees(rate.y),Math.toDegrees(rate.x),Math.toDegrees(rate.z),u.supports==1?"stable":"articulated");
     }
     private static String anchorSummary(Unit u){
         var text=new StringBuilder();
@@ -84,14 +97,18 @@ public final class VehiclePhysics {
         var pipe=SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
         var upper=new Vector3d(u.mount.getBlockPos().getX()+.5,u.mount.getBlockPos().getY()+.375,u.mount.getBlockPos().getZ()+.5);
         var lower=new Vector3d(u.localCenter).add(0,.375,0);
-        u.pivot=pipe.addConstraint(u.carrier,u.bogie,new GenericConstraintConfiguration(upper,lower,new Quaterniond(),new Quaterniond(),EnumSet.of(ConstraintJointAxis.LINEAR_X,ConstraintJointAxis.LINEAR_Z)));
+        var locks=EnumSet.of(ConstraintJointAxis.LINEAR_X,ConstraintJointAxis.LINEAR_Y,ConstraintJointAxis.LINEAR_Z,ConstraintJointAxis.ANGULAR_Z);
+        if(u.supports==1)locks.add(ConstraintJointAxis.ANGULAR_X);
+        u.pivot=pipe.addConstraint(u.carrier,u.bogie,new GenericConstraintConfiguration(upper,lower,new Quaterniond(),new Quaterniond(),locks));
         u.pivot.setContactsEnabled(false);
-        u.pivot.setLimit(ConstraintJointAxis.LINEAR_Y,-.06,.04);
-        u.pivot.setMotor(ConstraintJointAxis.LINEAR_Y,0,300,35,true,20000);
-        for(var a:List.of(ConstraintJointAxis.ANGULAR_X,ConstraintJointAxis.ANGULAR_Z)){
-            u.pivot.setLimit(a,-.12,.12);u.pivot.setMotor(a,0,90,20,true,8000);
+        // A stable bearing replaces the prototype's spring-supported empty plate.
+        // Zero stiffness means no yaw-centering torque: only relative rotation is damped.
+        u.pivot.setMotor(ConstraintJointAxis.ANGULAR_Y,0,0,6,true,2000);
+        if(u.supports>1){
+            // Bogies at opposite ends of a long car may meet different grades.
+            u.pivot.setLimit(ConstraintJointAxis.ANGULAR_X,-.35,.35);
+            u.pivot.setMotor(ConstraintJointAxis.ANGULAR_X,0,0,12,true,4000);
         }
-        // Yaw remains free: both bogies can independently turn beneath a shared carrier.
     }
     static void step(SubLevelPhysicsSystem physics,double dt){
         if(!(dt>0&&Double.isFinite(dt)))return;var level=physics.getLevel();var pipe=physics.getPipeline();
