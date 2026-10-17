@@ -206,7 +206,7 @@ public final class VehiclePhysics {
         for(var u:ACTIVE.getOrDefault(level,Map.of()).values())if(world(u.bogie,u.localCenter).distanceSquared(origin)<4)throw new IllegalArgumentException("这里已有转向架");
     }
     private static boolean populateCollision(ServerSubLevel body,boolean refreshMass){
-        var tag=body.getUserDataTag();if(tag.getInt("GuidedCollisionLayout")>=1)return true;
+        var tag=body.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();if(tag.getInt("GuidedCollisionLayout")>=1)return true;
         var level=body.getLevel();var centre=body.getPlot().getCenterBlock();
         for(var cell:BogieCollision.CELLS){
             if(cell.part()==BogieCollision.CENTRE_PART)continue;
