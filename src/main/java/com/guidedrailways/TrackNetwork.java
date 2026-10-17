@@ -18,6 +18,12 @@ public final class TrackNetwork {
         boolean adjacent(Path p){return graph.equals(p.graph)&&(a==p.a||a==p.b||b==p.a||b==p.b);}
     }
     public record Sample(Path path,double t,Vector3d position,Vector3d tangent,Vector3d up){
+        double lateralCurvature(){
+            if(!path.edge.isTurn())return 0;
+            double span=.25/Math.max(.01,path.edge.getLength()),lo=Math.max(0,t-span),hi=Math.min(1,t+span);
+            var a=PathGeometry.tangent(path::at,lo);var b=PathGeometry.tangent(path::at,hi);
+            return DerailmentModel.lateralCurvature(a,b,tangent,up,path.at(lo).distance(path.at(hi)));
+        }
         Quaterniond orientation(){var x=new Vector3d(tangent);var y=new Vector3d(up);var z=new Vector3d(x).cross(y).normalize();y.set(z).cross(x).normalize();return new Quaterniond().setFromNormalized(new Matrix3d(x,y,z));}
     }
     private record PathKey(UUID graph,int a,int b){}

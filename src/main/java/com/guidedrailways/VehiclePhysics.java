@@ -34,8 +34,9 @@ public final class VehiclePhysics {
         GenericConstraintHandle pivot;final GenericConstraintHandle[] guides=new GenericConstraintHandle[2];
         final TrackNetwork.Path[] routes=new TrackNetwork.Path[2];
         final TrackNetwork.Sample[] samples=new TrackNetwork.Sample[2];
-        double mass,speed;long lastSeen,nextLog;boolean detached;int supports=1;
-        Unit(MountEntity mount,ServerSubLevel carrier,ServerSubLevel bogie){this.mount=mount;this.carrier=carrier;this.bogie=bogie;localCenter=center(bogie);}
+        final DerailmentModel.Exposure exposure=new DerailmentModel.Exposure();
+        double mass,speed,curveRisk,lateralSpeed;long lastSeen,nextLog;boolean detached;int supports=1;
+        Unit(MountEntity mount,ServerSubLevel carrier,ServerSubLevel bogie){this.mount=mount;this.carrier=carrier;this.bogie=bogie;localCenter=center(bogie);var tag=bogie.getUserDataTag();detached=tag!=null&&tag.getBoolean("GuidedDerailed");}
         Vector3d axle(int i){return new Vector3d(localCenter).add(0,-RIDE_HEIGHT,i==0?HALF_WHEELBASE:-HALF_WHEELBASE);}
         void clearGuides(){for(int i=0;i<2;i++){if(guides[i]!=null&&guides[i].isValid())guides[i].remove();guides[i]=null;}}
         void close(){clearGuides();if(pivot!=null&&pivot.isValid())pivot.remove();}
@@ -69,7 +70,7 @@ public final class VehiclePhysics {
             if(level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual){visual.speed=u.speed;visual.distance+=u.speed/20;if(level.getGameTime()%2==0)visual.sendData();}
             if(level.getGameTime()>=u.nextLog){u.nextLog=level.getGameTime()+20;
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get(),u.mount.getSpeed(),u.mass,u.mount.braking,!u.detached,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
                 }
             }
         }
@@ -128,7 +129,8 @@ public final class VehiclePhysics {
                 var at=world(u.bogie,u.axle(i));u.samples[i]=TrackNetwork.follow(level,at,heading,u.samples[i],.8);
                 if(u.samples[i]==null){valid=false;break;}
             }
-            if(!valid){u.clearGuides();u.detached=true;org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuideReleased] body={} reason=track_missing_or_out_of_range anchors={}",u.bogie.getUniqueId(),anchorSummary(u));continue;}
+            if(!valid){release(u,"track_missing_or_out_of_range");continue;}
+            if(TrainConfig.DERAILMENT.get()&&checkDerailment(u,physics,dt))continue;
             u.speed=0;
             for(int i=0;i<2;i++){
                 var sample=u.samples[i];u.routes[i]=sample.path();var q=sample.orientation();
@@ -146,6 +148,34 @@ public final class VehiclePhysics {
                 pipe.applyImpulse(u.bogie,point,impulse);
             }
         }
+    }
+    private static void release(Unit u,String reason){
+        // Keep current velocity and the carrier bearing; remove only world-to-track constraints.
+        var anchors=anchorSummary(u);u.clearGuides();u.detached=true;
+        var tag=u.bogie.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();
+        tag.putBoolean("GuidedDerailed",true);u.bogie.setUserDataTag(tag);
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuideReleased] body={} reason={} speed={} curveRisk={} lateralSpeed={} curveSeconds={} impactSeconds={} anchors={}",u.bogie.getUniqueId(),reason,u.speed,u.curveRisk,u.lateralSpeed,u.exposure.curveSeconds,u.exposure.impactSeconds,anchors);
+    }
+    private static boolean checkDerailment(Unit u,SubLevelPhysicsSystem physics,double dt){
+        var pipe=physics.getPipeline();var velocity=pipe.getLinearVelocity(u.bogie,new Vector3d());
+        var angular=pipe.getAngularVelocity(u.bogie,new Vector3d());
+        var bogieCom=world(u.bogie,u.bogie.logicalPose().rotationPoint());
+        var carrierCom=world(u.carrier,u.carrier.logicalPose().rotationPoint());
+        double lowerMass=u.bogie.getMassTracker().getMass(),upperMass=u.carrier.getMassTracker().getMass()/u.supports;
+        var supportedCom=new Vector3d(bogieCom).mul(lowerMass).fma(upperMass,carrierCom).div(Math.max(.001,lowerMass+upperMass));
+        u.curveRisk=0;u.lateralSpeed=0;u.speed=0;
+        for(int i=0;i<2;i++){
+            var sample=u.samples[i];double speed=velocity.dot(sample.tangent());u.speed+=speed*.5;
+            double height=new Vector3d(supportedCom).sub(sample.position()).dot(sample.up());
+            u.curveRisk=Math.max(u.curveRisk,DerailmentModel.curveRisk(speed,sample.lateralCurvature(),height,TrainConfig.DERAIL_LATERAL.get()));
+            // Use axle point velocity, including yaw, so normal turning is not a side impact.
+            var lever=world(u.bogie,u.axle(i)).sub(bogieCom);
+            var pointVelocity=new Vector3d(angular).cross(lever).add(velocity);
+            var side=new Vector3d(sample.tangent()).cross(sample.up()).normalize();
+            u.lateralSpeed=Math.max(u.lateralSpeed,Math.abs(pointVelocity.dot(side)));
+        }
+        var reason=u.exposure.update(u.curveRisk,u.lateralSpeed,TrainConfig.DERAIL_IMPACT.get(),TrainConfig.DERAIL_DELAY.get(),dt);
+        if(reason==null)return false;release(u,reason);return true;
     }
     static Unit owner(Level level,BlockPos pos){
         if(!(level instanceof ServerLevel server))return null;var units=ACTIVE.getOrDefault(server,Map.of());
