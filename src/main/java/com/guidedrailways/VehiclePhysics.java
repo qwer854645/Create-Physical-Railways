@@ -218,57 +218,57 @@ public final class VehiclePhysics {
     /** Wrench a derailed vehicle, then wrench the destination track. Same gesture as Create's train relocator. */
     static void beginRelocate(net.minecraft.server.level.ServerPlayer player,Unit u){
         var level=u.bogie.getLevel();var pipeline=SubLevelPhysicsSystem.get(level).getPipeline();
-        if(pipeline.getLinearVelocity(u.carrier,new Vector3d()).length()>.25||pipeline.getLinearVelocity(u.bogie,new Vector3d()).length()>.25){player.displayClientMessage(net.minecraft.network.chat.Component.literal("请先让车体停稳再选择上轨"),true);return;}
+        if(pipeline.getLinearVelocity(u.carrier,new Vector3d()).length()>.25||pipeline.getLinearVelocity(u.bogie,new Vector3d()).length()>.25){player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.stop_select"),true);return;}
         var existing=RELOCATING.get(player.getUUID());
         if(existing!=null&&existing.bogie.equals(u.bogie.getUniqueId())&&existing.expires>=level.getGameTime()){
             RELOCATING.remove(player.getUUID());
-            player.displayClientMessage(net.minecraft.network.chat.Component.literal("已取消重上轨"),true);
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.cancelled"),true);
             return;
         }
         RELOCATING.put(player.getUUID(),new Relocate(u.bogie.getUniqueId(),level.getGameTime()+600));
-        player.displayClientMessage(net.minecraft.network.chat.Component.literal("请用扳手右击要上的轨道"),true);
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.selected"),true);
     }
     static boolean hasRelocation(net.minecraft.server.level.ServerPlayer player){return RELOCATING.containsKey(player.getUUID());}
     /** @return true when this click was a relocate attempt and should not reach the track */
     static boolean relocateClick(net.minecraft.server.level.ServerPlayer player){
         var level=player.serverLevel();
         var pending=RELOCATING.get(player.getUUID());if(pending==null)return false;
-        if(pending.expires<level.getGameTime()){RELOCATING.remove(player.getUUID());player.displayClientMessage(net.minecraft.network.chat.Component.literal("重上轨已取消"),true);return true;}
+        if(pending.expires<level.getGameTime()){RELOCATING.remove(player.getUUID());player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.expired"),true);return true;}
         var unit=ACTIVE.getOrDefault(level,Map.of()).get(pending.bogie);
-        if(unit==null){RELOCATING.remove(player.getUUID());player.displayClientMessage(net.minecraft.network.chat.Component.literal("该转向架已失效"),true);return true;}
+        if(unit==null){RELOCATING.remove(player.getUUID());player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.missing_bogie"),true);return true;}
         var sample=TrackNetwork.pick(player);
-        if(sample==null){player.displayClientMessage(net.minecraft.network.chat.Component.literal("请把准星对准触及范围内的铁轨，可直接选择弯轨中段"),true);return true;}
+        if(sample==null){player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.aim"),true);return true;}
         var targetPos=BlockPos.containing(sample.position().x,sample.position().y,sample.position().z);
-        if(!player.mayBuild()||!level.mayInteract(player,targetPos)){player.displayClientMessage(net.minecraft.network.chat.Component.literal("你没有在这段轨道上轨的权限"),true);return true;}
-        try{reraileCarriage(unit,sample);RELOCATING.remove(player.getUUID());player.displayClientMessage(net.minecraft.network.chat.Component.literal("已重新上轨"),true);}
+        if(!player.mayBuild()||!level.mayInteract(player,targetPos)){player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.denied"),true);return true;}
+        try{reraileCarriage(unit,sample);RELOCATING.remove(player.getUUID());player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.completed"),true);}
         catch(IllegalArgumentException|IllegalStateException e){
-            player.displayClientMessage(net.minecraft.network.chat.Component.literal(e.getMessage()),true);
+            player.displayClientMessage(UserText.error(e),true);
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[RailPlacement] action=rerail_rejected reason={}",e.getMessage());
         }catch(RuntimeException e){
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[RailPlacement] rerail failed",e);
-            player.displayClientMessage(net.minecraft.network.chat.Component.literal("上轨执行失败，已尝试恢复车辆，请查看日志"),true);
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.rail.failed"),true);
         }
         return true;
     }
     /** Place every bogie on the same carrier onto the track around the clicked sample. */
     static void reraileCarriage(Unit selected,TrackNetwork.Sample sample){
-        if(selected.carrier.isRemoved()||selected.bogie.isRemoved()||selected.mount.isRemoved())throw new IllegalStateException("转向架或车体已失效");
-        if(CouplerConnections.blocksRelocation(selected.carrier))throw new IllegalArgumentException("请先解开车钩，再重新上轨");
+        if(selected.carrier.isRemoved()||selected.bogie.isRemoved()||selected.mount.isRemoved())throw new IllegalStateException("message.guidedrailways.rail.missing_body");
+        if(CouplerConnections.blocksRelocation(selected.carrier))throw new IllegalArgumentException("message.guidedrailways.rail.uncouple");
         var level=selected.bogie.getLevel();var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
         var units=new ArrayList<Unit>();
         for(var u:ACTIVE.getOrDefault(level,Map.of()).values())if(u.carrier==selected.carrier&&!u.bogie.isRemoved()&&!u.mount.isRemoved())units.add(u);
         if(units.isEmpty())units.add(selected);
         units.sort(Comparator.comparing(u->u.bogie.getUniqueId()));
-        int selectedIndex=units.indexOf(selected);if(selectedIndex<0)throw new IllegalStateException("所选转向架已不属于该车体");
+        int selectedIndex=units.indexOf(selected);if(selectedIndex<0)throw new IllegalStateException("message.guidedrailways.rail.changed");
         var carrierPose=pipe.readPose(selected.carrier,new Pose3d());var seats=new ArrayList<Vector3d>();
         for(var u:units)seats.add(new Vector3d(u.mount.getBlockPos().getX()+.5,u.mount.getBlockPos().getY()+PLATE_BOTTOM,u.mount.getBlockPos().getZ()+.5).sub(u.carrier.logicalPose().rotationPoint()));
         var localForward=new Vector3d(0,0,1).rotate(pipe.readPose(selected.bogie,new Pose3d()).orientation()).rotate(new Quaterniond(carrierPose.orientation()).conjugate());
         localForward.y=0;if(localForward.lengthSquared()<1e-8)localForward.set(0,0,1);else localForward.normalize();
         double extent=4;for(var seat:seats)extent=Math.max(extent,seat.distance(seats.get(selectedIndex))*1.8+4);
-        if(extent>256)throw new IllegalArgumentException("本节车厢过长，请分成独立车体后上轨");
+        if(extent>256)throw new IllegalArgumentException("message.guidedrailways.rail.too_long");
         var route=TrackNetwork.placementRoute(level,sample,extent);
         var plan=RailPlacement.carriage(route,seats,selectedIndex,localForward,RIDE_HEIGHT,HALF_WHEELBASE);
-        if(pipe.getLinearVelocity(selected.carrier,new Vector3d()).length()>.25)throw new IllegalArgumentException("车体正在移动，请停稳后再上轨");
+        if(pipe.getLinearVelocity(selected.carrier,new Vector3d()).length()>.25)throw new IllegalArgumentException("message.guidedrailways.rail.stop");
         record Move(ServerSubLevel body,Vector3d position,Quaterniond rotation,Pose3d before,Vector3d velocity,Vector3d angular){}
         var moves=new ArrayList<Move>();
         moves.add(new Move(selected.carrier,plan.position(),plan.rotation(),carrierPose,pipe.getLinearVelocity(selected.carrier,new Vector3d()),pipe.getAngularVelocity(selected.carrier,new Vector3d())));
@@ -278,8 +278,8 @@ public final class VehiclePhysics {
             moves.add(new Move(u.bogie,target,fit.rotation(),pipe.readPose(u.bogie,new Pose3d()),pipe.getLinearVelocity(u.bogie,new Vector3d()),pipe.getAngularVelocity(u.bogie,new Vector3d())));
         }
         MoveBatch.commit(moves,m->{
-            if(m.body.isRemoved()||!m.position.isFinite()||!m.rotation.isFinite())throw new IllegalStateException("车体状态已改变，请重新选择");
-            if(!level.getWorldBorder().isWithinBounds(BlockPos.containing(m.position.x,m.position.y,m.position.z)))throw new IllegalArgumentException("目标位置超出世界边界");
+            if(m.body.isRemoved()||!m.position.isFinite()||!m.rotation.isFinite())throw new IllegalStateException("message.guidedrailways.body.changed");
+            if(!level.getWorldBorder().isWithinBounds(BlockPos.containing(m.position.x,m.position.y,m.position.z)))throw new IllegalArgumentException("message.guidedrailways.placement.border");
         },m->{
             pipe.teleport(m.body,m.position,m.rotation);pipe.resetVelocity(m.body);
             m.body.updateLastPose();m.body.updateBoundingBox();
@@ -339,7 +339,7 @@ public final class VehiclePhysics {
     }
     static void place(ServerLevel level,UseOnContext context){
         var player=(net.minecraft.server.level.ServerPlayer)context.getPlayer();
-        if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("当前世界未启用物理，请检查 Sable 配置");
+        if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("message.guidedrailways.placement.no_physics");
         var carrierBody=SableCompanion.INSTANCE.getContaining(level,context.getClickedPos());
         if(carrierBody instanceof ServerSubLevel carrier){installBelow(level,context,carrier);return;}
         placeAimed(player);
@@ -347,12 +347,12 @@ public final class VehiclePhysics {
     /** Shared by block-use and air-use: the server picks the visible rail, including Bezier spans. */
     static void placeAimed(net.minecraft.server.level.ServerPlayer player){
         var level=player.serverLevel();
-        if(!player.mayBuild())throw new IllegalArgumentException("你没有在这里放置的权限");
-        if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("当前世界未启用物理，请检查 Sable 配置");
+        if(!player.mayBuild())throw new IllegalArgumentException("message.guidedrailways.placement.denied");
+        if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("message.guidedrailways.placement.no_physics");
         var sample=TrackNetwork.pick(player);
-        if(sample==null)throw new IllegalArgumentException("请把准星对准触及范围内的铁轨，可直接选择弯轨中段");
+        if(sample==null)throw new IllegalArgumentException("message.guidedrailways.rail.aim");
         var pos=BlockPos.containing(sample.position().x,sample.position().y,sample.position().z);
-        if(!level.mayInteract(player,pos))throw new IllegalArgumentException("你没有在这段轨道放置的权限");
+        if(!level.mayInteract(player,pos))throw new IllegalArgumentException("message.guidedrailways.placement.track_denied");
         var route=TrackNetwork.placementRoute(level,sample,4);
         var fit=RailPlacement.bogie(route,0,RIDE_HEIGHT,HALF_WHEELBASE);checkPlacementSpace(level,fit.origin(),List.of());
         ServerSubLevel bogie=null,carrier=null;
@@ -360,7 +360,7 @@ public final class VehiclePhysics {
             bogie=createBody(level,Content.BOGIE.get().defaultBlockState(),fit.origin(),fit.rotation());
             var upperOrigin=new Vector3d(fit.origin()).add(new Vector3d(0,PLATE_OFFSET,0).rotate(fit.rotation()));
             carrier=createBody(level,Content.MOUNT.get().defaultBlockState(),upperOrigin,fit.rotation());
-            var mount=(MountEntity)level.getBlockEntity(carrier.getPlot().getCenterBlock());if(mount==null)throw new IllegalStateException("安装座初始化失败");
+            var mount=(MountEntity)level.getBlockEntity(carrier.getPlot().getCenterBlock());if(mount==null)throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
             mount.bogieId=bogie.getUniqueId();mount.setChanged();register(mount);tick(level);
             var u=ACTIVE.getOrDefault(level,Map.of()).get(bogie.getUniqueId());if(u!=null)seedPlacement(u,fit,route);
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[RailPlacement] action=place curve={} position={} frontArc={} rearArc={}",sample.path().edge().isTurn(),fit.origin(),fit.front(),fit.rear());
@@ -368,8 +368,8 @@ public final class VehiclePhysics {
     }
     /** Mounting is a construction operation: rail is optional, the bearing position is exact. */
     private static void installBelow(ServerLevel level,UseOnContext context,ServerSubLevel carrier){
-        if(context.getClickedFace()!=Direction.DOWN)throw new IllegalArgumentException("请右键物理车体底部，或对准铁轨放置");
-        var pos=context.getClickedPos().below();if(!level.getBlockState(pos).canBeReplaced())throw new IllegalArgumentException("车体底部没有安装空间");
+        if(context.getClickedFace()!=Direction.DOWN)throw new IllegalArgumentException("message.guidedrailways.placement.underside");
+        var pos=context.getClickedPos().below();if(!level.getBlockState(pos).canBeReplaced())throw new IllegalArgumentException("message.guidedrailways.placement.no_space");
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();var rotation=new Quaterniond(pipe.readPose(carrier,new Pose3d()).orientation());
         var pivot=world(carrier,new Vector3d(pos.getX()+.5,pos.getY()+PLATE_BOTTOM,pos.getZ()+.5));
         var origin=new Vector3d(pivot).sub(new Vector3d(0,.375,0).rotate(rotation));
@@ -377,9 +377,9 @@ public final class VehiclePhysics {
         var tag=bogie.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();tag.putBoolean("GuidedDerailed",true);bogie.setUserDataTag(tag);
         try{
             level.setBlock(pos,Content.MOUNT.get().defaultBlockState(),3);
-            if(!(level.getBlockEntity(pos) instanceof MountEntity mount))throw new IllegalStateException("安装座初始化失败");
+            if(!(level.getBlockEntity(pos) instanceof MountEntity mount))throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
             mount.bogieId=bogie.getUniqueId();mount.setChanged();register(mount);carrier.buildMassTracker();carrier.updateMergedMassData(1);pipe.onStatsChanged(carrier);tick(level);
-            context.getPlayer().displayClientMessage(net.minecraft.network.chat.Component.literal("已安装转向架，可用扳手选择后将整节车放上轨道"),true);
+            context.getPlayer().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.placement.installed"),true);
         }catch(RuntimeException e){SubLevelContainer.getContainer(level).removeSubLevel(bogie,SubLevelRemovalReason.REMOVED);level.setBlock(pos,Blocks.AIR.defaultBlockState(),3);throw e;}
     }
     private static void seedPlacement(Unit u,RailPlacement.Bogie fit,TrackNetwork.PlacementRoute route){
@@ -387,8 +387,8 @@ public final class VehiclePhysics {
         u.derailGraceUntil=u.bogie.getLevel().getGameTime()+40;
     }
     private static void checkPlacementSpace(ServerLevel level,Vector3dc origin,List<Unit> excluded){
-        if(!level.getWorldBorder().isWithinBounds(BlockPos.containing(origin.x(),origin.y(),origin.z())))throw new IllegalArgumentException("目标位置超出世界边界");
-        for(var u:ACTIVE.getOrDefault(level,Map.of()).values())if(!excluded.contains(u)&&!u.bogie.isRemoved()&&world(u.bogie,u.localCenter).distanceSquared(origin)<4)throw new IllegalArgumentException("这里与另一副转向架太近，请选择旁边的位置");
+        if(!level.getWorldBorder().isWithinBounds(BlockPos.containing(origin.x(),origin.y(),origin.z())))throw new IllegalArgumentException("message.guidedrailways.placement.border");
+        for(var u:ACTIVE.getOrDefault(level,Map.of()).values())if(!excluded.contains(u)&&!u.bogie.isRemoved()&&world(u.bogie,u.localCenter).distanceSquared(origin)<4)throw new IllegalArgumentException("message.guidedrailways.placement.too_close");
     }
     private static boolean populateCollision(ServerSubLevel body,boolean refreshMass){
         var tag=body.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();if(tag.getInt("GuidedCollisionLayout")>=3)return true;
@@ -425,9 +425,9 @@ public final class VehiclePhysics {
         var container=SubLevelContainer.getContainer(level);var body=(ServerSubLevel)container.allocateNewSubLevel(new Pose3d());
         try{
             var plot=body.getPlot();plot.newEmptyChunk(plot.getCenterChunk());var pos=plot.getCenterBlock();var ref=center(body);var chunk=level.getChunkAt(pos);var old=chunk.getBlockState(pos);chunk.setBlockState(pos,state,true);SubLevelAssemblyHelper.markAndNotifyBlock(level,pos,chunk,old,state,3,512);
-            if(state.is(Content.BOGIE.get())&&!populateCollision(body,false))throw new IllegalStateException("转向架碰撞占位初始化失败");
+            if(state.is(Content.BOGIE.get())&&!populateCollision(body,false))throw new IllegalStateException("message.guidedrailways.placement.bogie_failed");
             body.buildMassTracker();body.updateMergedMassData(1);var com=body.getMassTracker().getCenterOfMass();body.logicalPose().rotationPoint().set(com);
-            SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(state.is(Content.MOUNT.get())?"自由车体安装座":"轨道导向转向架");return body;
+            SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(net.minecraft.network.chat.Component.translatable(state.is(Content.MOUNT.get())?"block.guidedrailways.bogie_mount":"block.guidedrailways.bogie_frame").getString());return body;
         }catch(RuntimeException error){container.removeSubLevel(body,SubLevelRemovalReason.REMOVED);throw error;}
     }
     static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);ConsistRoutes.unload(level);}

@@ -17,7 +17,7 @@ public final class Content {
     public static final DeferredBlock<DriverConsoleBlock> DRIVER=BLOCKS.register("driver_console",()->new DriverConsoleBlock(metal()));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<DriverConsoleEntity>> DRIVER_ENTITY=ENTITIES.register("driver_console",()->BlockEntityType.Builder.of(DriverConsoleEntity::new,DRIVER.get()).build(null));
     public static final DeferredItem<BlockItem> DRIVER_ITEM=ITEMS.register("driver_console",()->new BlockItem(DRIVER.get(),new Item.Properties()){
-        @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){text.add(Component.translatable("tooltip.guidedrailways.driver_console"));}
+        @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.driver_console");}
     });
     static BlockBehaviour.Properties metal(){return BlockBehaviour.Properties.of().strength(3).sound(SoundType.METAL).noOcclusion();}
     public static final DeferredBlock<MountBlock> MOUNT=BLOCKS.register("bogie_mount",()->new MountBlock(metal()));
@@ -29,7 +29,7 @@ public final class Content {
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CouplerEntity>> COUPLER_ENTITY=ENTITIES.register("coupler",()->BlockEntityType.Builder.of(CouplerEntity::new,COUPLER.get()).build(null));
     public static final DeferredItem<BogieItem> BOGIE_ITEM=ITEMS.register("bogie",()->new BogieItem(new Item.Properties()));
     public static final DeferredItem<BlockItem> COUPLER_ITEM=ITEMS.register("coupler",()->new BlockItem(COUPLER.get(),new Item.Properties()){
-        @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){text.add(Component.translatable("tooltip.guidedrailways.coupler"));}
+        @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.coupler");}
     });
     static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());o.accept(COUPLER_ITEM.get());o.accept(DRIVER_ITEM.get());}).build());}
     static void register(IEventBus bus){bus.addListener(DriverNetwork::register);BLOCKS.register(bus);MENUS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);TABS.register(bus);

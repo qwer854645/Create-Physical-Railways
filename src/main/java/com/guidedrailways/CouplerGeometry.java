@@ -12,20 +12,20 @@ public final class CouplerGeometry {
     public record Spring(double stiffness,double damping,double maxForce){}
     private CouplerGeometry(){}
     public static Engagement engage(Vector3dc a,Vector3dc facingA,Vector3dc upA,Vector3dc b,Vector3dc facingB,Vector3dc upB){
-        if(!a.isFinite()||!b.isFinite()||!facingA.isFinite()||!facingB.isFinite()||facingA.lengthSquared()<.5||facingB.lengthSquared()<.5)throw new IllegalArgumentException("车钩姿态无效");
+        if(!a.isFinite()||!b.isFinite()||!facingA.isFinite()||!facingB.isFinite()||facingA.lengthSquared()<.5||facingB.lengthSquared()<.5)throw new IllegalArgumentException("message.guidedrailways.coupler.invalid_pose");
         var fa=new Vector3d(facingA).normalize();var fb=new Vector3d(facingB).normalize();
         var delta=new Vector3d(b).sub(a);
-        if(delta.length()>MAX_GAP)throw new IllegalArgumentException("两端车钩相距超过 2 格，请再靠近一些");
+        if(delta.length()>MAX_GAP)throw new IllegalArgumentException("message.guidedrailways.coupler.too_far");
         var up=new Vector3d(upA).add(upB);
-        if(!up.isFinite()||up.lengthSquared()<.1)throw new IllegalArgumentException("请先把车体摆正再连挂");
-        up.normalize();if(Math.abs(delta.dot(up))>MAX_HEIGHT)throw new IllegalArgumentException("两端车钩高差超过 1 格");
+        if(!up.isFinite()||up.lengthSquared()<.1)throw new IllegalArgumentException("message.guidedrailways.coupler.align");
+        up.normalize();if(Math.abs(delta.dot(up))>MAX_HEIGHT)throw new IllegalArgumentException("message.guidedrailways.coupler.height");
         // Manual coupling may bridge a curve or sideways offset; only derive the initial axis.
         var x=new Vector3d(delta);
         if(x.lengthSquared()<1e-8)x.set(fa).sub(fb);
         if(x.lengthSquared()<1e-8)x.set(fa);
         x.normalize();
         if(new Vector3d(x).cross(up).lengthSquared()<.1)up.set(Math.abs(x.y)<.9?new Vector3d(0,1,0):new Vector3d(1,0,0));
-        var z=new Vector3d(x).cross(up);if(z.lengthSquared()<.1)throw new IllegalArgumentException("车钩姿态无效");z.normalize();var y=new Vector3d(z).cross(x).normalize();
+        var z=new Vector3d(x).cross(up);if(z.lengthSquared()<.1)throw new IllegalArgumentException("message.guidedrailways.coupler.invalid_pose");z.normalize();var y=new Vector3d(z).cross(x).normalize();
         return new Engagement(new Vector3d(a).add(b).mul(.5),new Quaterniond().setFromNormalized(new Matrix3d(x,y,z)));
     }
     /** World X follows the current drawbar, with no stored yaw/pitch/roll reference. */
@@ -44,7 +44,7 @@ public final class CouplerGeometry {
         return va.isFinite()&&vb.isFinite()&&wa.isFinite()&&wb.isFinite()&&va.lengthSquared()<=4&&vb.lengthSquared()<=4&&va.distanceSquared(vb)<=4&&wa.lengthSquared()<=2.25&&wb.lengthSquared()<=2.25;
     }
     public static Spring spring(double ma,double mb){
-        if(!Double.isFinite(ma)||!Double.isFinite(mb)||ma<=0||mb<=0)throw new IllegalArgumentException("车体质量无效");
+        if(!Double.isFinite(ma)||!Double.isFinite(mb)||ma<=0||mb<=0)throw new IllegalArgumentException("message.guidedrailways.body.invalid_mass");
         double reduced=1/(1/ma+1/mb),omega=2*Math.PI*2;
         return new Spring(reduced*omega*omega,2*reduced*omega,reduced*MAX_RELATIVE_ACCELERATION);
     }

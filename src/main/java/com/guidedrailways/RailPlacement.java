@@ -14,7 +14,7 @@ public final class RailPlacement {
     private RailPlacement(){}
     public static Quaterniond orientation(Vector3dc forward,Vector3dc up){
         var z=new Vector3d(forward).normalize();var x=new Vector3d(up).cross(z);
-        if(x.lengthSquared()<1e-12)throw new IllegalArgumentException("轨道方向无效");
+        if(x.lengthSquared()<1e-12)throw new IllegalArgumentException("message.guidedrailways.rail.invalid_direction");
         x.normalize();var y=new Vector3d(z).cross(x).normalize();
         return new Quaterniond().setFromNormalized(new Matrix3d(x,y,z));
     }
@@ -43,10 +43,10 @@ public final class RailPlacement {
             for(int i=0;i<26;i++){double mid=(available+missing)*.5;if(route.at(centre+mid)!=null&&route.at(centre-mid)!=null)available=mid;else missing=mid;}
             hi=available;a=route.at(centre+hi);b=route.at(centre-hi);
         }
-        if(a==null||b==null||a.position.distance(b.position)<2*halfWheelbase-1e-5)throw new IllegalArgumentException("目标前后轨道长度不足以容纳转向架，或弯道过急");
+        if(a==null||b==null||a.position.distance(b.position)<2*halfWheelbase-1e-5)throw new IllegalArgumentException("message.guidedrailways.rail.no_room");
         for(int i=0;i<24;i++){
             double mid=(lo+hi)*.5;var front=route.at(centre+mid);var rear=route.at(centre-mid);
-            if(front==null||rear==null)throw new IllegalArgumentException("目标前后轨道不连续");
+            if(front==null||rear==null)throw new IllegalArgumentException("message.guidedrailways.rail.disconnected");
             if(front.position.distance(rear.position)<2*halfWheelbase)lo=mid;else hi=mid;
         }
         double half=(lo+hi)*.5;a=route.at(centre+half);b=route.at(centre-half);
@@ -57,7 +57,7 @@ public final class RailPlacement {
     }
     /** Fit one rigid carrier to every mounting seat; invalid plans never mutate a body. */
     public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,double ride,double halfWheelbase){
-        if(seats.isEmpty()||selected<0||selected>=seats.size())throw new IllegalArgumentException("车体没有有效安装座");
+        if(seats.isEmpty()||selected<0||selected>=seats.size())throw new IllegalArgumentException("message.guidedrailways.rail.no_mount");
         var arcs=new double[seats.size()];var anchor=seats.get(selected);
         int pa=0,pb=0;double spread=0;
         for(int i=0;i<seats.size();i++)for(int j=i+1;j<seats.size();j++)if(seats.get(i).distanceSquared(seats.get(j))>spread){spread=seats.get(i).distanceSquared(seats.get(j));pa=i;pb=j;}
@@ -83,9 +83,9 @@ public final class RailPlacement {
         }
         for(int i=0;i<seats.size();i++){
             double error=new Vector3d(seats.get(i)).rotate(rotation).add(position).distance(bogies.get(i).pivot);
-            if(error>.12)throw new IllegalArgumentException("这段轨道无法同时对齐所有转向架，请换更缓的弯道或更长的轨道");
+            if(error>.12)throw new IllegalArgumentException("message.guidedrailways.rail.alignment");
             var carrierUp=new Vector3d(0,1,0).rotate(rotation);var bogieUp=new Vector3d(0,1,0).rotate(bogies.get(i).rotation);
-            if(carrierUp.dot(bogieUp)<Math.cos(.32))throw new IllegalArgumentException("车体跨越的坡度变化过大，请换一段轨道");
+            if(carrierUp.dot(bogieUp)<Math.cos(.32))throw new IllegalArgumentException("message.guidedrailways.rail.grade");
         }
         return new Car(new Vector3d(position),new Quaterniond(rotation),List.copyOf(bogies));
     }

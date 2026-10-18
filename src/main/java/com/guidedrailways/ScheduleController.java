@@ -45,7 +45,8 @@ final class ScheduleController {
     }
     boolean canInsert(Player player,ItemStack held){
         if(!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
-        if(!allowed(player)||!DriverControls.stopped(owner)){hint(player,"stop_first");return false;}
+        if(!allowed(player)){hint(player,"unavailable");return false;}
+        if(!DriverControls.stopped(owner)){hint(player,"stop_first");return false;}
         Schedule parsed;
         try{parsed=ScheduleItem.getSchedule(owner.getLevel().registryAccess(),held);}
         catch(RuntimeException error){hint(player,"invalid");return false;}

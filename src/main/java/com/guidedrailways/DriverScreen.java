@@ -120,9 +120,9 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         super.render(g,x,y,partial);renderTooltip(g,x,y);
         if(!gearTab&&isHovering(12,123,276,10,x,y))g.renderTooltip(font,List.of(Component.translatable("gui.guidedrailways.auto.state."+menu.value(13))),Optional.empty(),x,y);
         if(!gearTab&&isHovering(12,76,276,10,x,y)&&!menu.details.target().isEmpty())g.renderTooltip(font,List.of(Component.translatable("gui.guidedrailways.auto.target",menu.details.target())),Optional.empty(),x,y);
-        if(isHovering(12,gearTab?195:211,276,20,x,y))g.renderTooltip(font,List.of(text("gears_help")),Optional.empty(),x,y);
-        if(gearTab&&!isDragging()&&lever.isHoveredOrFocused())g.renderTooltip(font,List.of(text("lever_help")),Optional.empty(),x,y);
-        if(gearTab&&!isDragging()&&speedSlider.isHoveredOrFocused())g.renderTooltip(font,List.of(text("slider_help")),Optional.empty(),x,y);
+        if(isHovering(12,gearTab?195:211,276,20,x,y))g.renderTooltip(font,UserText.lines(text("gears_help")),Optional.empty(),x,y);
+        if(gearTab&&!isDragging()&&lever.isHoveredOrFocused())g.renderTooltip(font,UserText.lines(text("lever_help")),Optional.empty(),x,y);
+        if(gearTab&&!isDragging()&&speedSlider.isHoveredOrFocused())g.renderTooltip(font,UserText.lines(text("slider_help")),Optional.empty(),x,y);
     }
     @Override public boolean mouseClicked(double x,double y,int button){
         if(gearTab&&button==0)for(int i=0;i<gears.length;i++)if(isHovering(106+(i<4?0:92),138+(i%4)*14,90,13,x,y)){selectGear(i);setFocused(lever);return true;}

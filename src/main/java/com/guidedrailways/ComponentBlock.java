@@ -26,7 +26,7 @@ public class ComponentBlock extends Block implements IWrenchable {
             c.getPlayer().swing(c.getHand(),true);return InteractionResult.CONSUME;
         }
         unit.mount.braking=!unit.mount.braking;unit.mount.setChanged();unit.mount.sendData();
-        c.getPlayer().displayClientMessage(net.minecraft.network.chat.Component.literal(unit.mount.braking?"制动已启用":"制动已释放"),true);
+        c.getPlayer().displayClientMessage(net.minecraft.network.chat.Component.translatable(unit.mount.braking?"message.guidedrailways.brake.applied":"message.guidedrailways.brake.released"),true);
         c.getPlayer().swing(c.getHand(),true);return InteractionResult.CONSUME;
     }
     @Override public boolean onDestroyedByPlayer(BlockState state,Level level,BlockPos pos,Player player,boolean harvest,net.minecraft.world.level.material.FluidState fluid){

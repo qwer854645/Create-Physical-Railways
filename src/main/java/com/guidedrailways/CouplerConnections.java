@@ -68,32 +68,32 @@ public final class CouplerConnections {
     static void wrench(ServerLevel level,CouplerEntity e,ServerPlayer player){
         boolean unlink=connected(level,e);
         register(level,e);var s=state(level);var data=CouplerSavedData.get(level);
-        if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.literal("这个车钩尚未连接"),true);else{disconnect(level,e.endpointId,"wrench");player.displayClientMessage(Component.literal("车钩已解开"),true);}return;}
-        if(data.links.forEndpoint(e.endpointId)!=null){player.displayClientMessage(Component.literal("车钩已连接，扳手右键可解开"),true);return;}
+        if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.not_connected"),true);else{disconnect(level,e.endpointId,"wrench");player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.disconnected"),true);}return;}
+        if(data.links.forEndpoint(e.endpointId)!=null){player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.already_connected_hint"),true);return;}
         var pending=s.pending.get(player.getUUID());
         if(pending==null||pending.expires<level.getGameTime()){
-            if(body(level,e)==null)throw new IllegalArgumentException("请先把车钩装到物理车体上");
-            s.pending.put(player.getUUID(),new Pending(e.endpointId,level.getGameTime()+600));player.displayClientMessage(Component.literal("已选择车钩，请用扳手右键另一节车体上的车钩"),true);return;
+            if(body(level,e)==null)throw new IllegalArgumentException("message.guidedrailways.coupler.install");
+            s.pending.put(player.getUUID(),new Pending(e.endpointId,level.getGameTime()+600));player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.selected"),true);return;
         }
-        if(pending.endpoint.equals(e.endpointId)){s.pending.remove(player.getUUID());player.displayClientMessage(Component.literal("已取消选择车钩"),true);return;}
+        if(pending.endpoint.equals(e.endpointId)){s.pending.remove(player.getUUID());player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.cancelled"),true);return;}
         var first=s.endpoints.get(pending.endpoint);
-        if(!loaded(level,first)){s.pending.remove(player.getUUID());throw new IllegalArgumentException("所选车钩未加载，请重新选择");}
-        if(!level.mayInteract(player,first.getBlockPos()))throw new IllegalArgumentException("你没有操作另一端车钩的权限");
-        connect(level,first,e);s.pending.remove(player.getUUID());player.displayClientMessage(Component.literal("车钩已连接"),true);
+        if(!loaded(level,first)){s.pending.remove(player.getUUID());throw new IllegalArgumentException("message.guidedrailways.coupler.unloaded");}
+        if(!level.mayInteract(player,first.getBlockPos()))throw new IllegalArgumentException("message.guidedrailways.coupler.denied");
+        connect(level,first,e);s.pending.remove(player.getUUID());player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.connected"),true);
     }
     private static void connect(ServerLevel level,CouplerEntity a,CouplerEntity b){
-        var data=CouplerSavedData.get(level);if(data.links.forEndpoint(a.endpointId)!=null||data.links.forEndpoint(b.endpointId)!=null)throw new IllegalArgumentException("其中一端车钩已经连接");
-        var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null)throw new IllegalArgumentException("两端车钩都必须装在物理车体上");
-        if(ba==bb)throw new IllegalArgumentException("不能连接同一物理车体上的两个车钩");
+        var data=CouplerSavedData.get(level);if(data.links.forEndpoint(a.endpointId)!=null||data.links.forEndpoint(b.endpointId)!=null)throw new IllegalArgumentException("message.guidedrailways.coupler.occupied");
+        var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null)throw new IllegalArgumentException("message.guidedrailways.coupler.install_both");
+        if(ba==bb)throw new IllegalArgumentException("message.guidedrailways.coupler.same_body");
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
-        if(!CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d())))throw new IllegalArgumentException("两节车速度或相对速度过高，请减速后再连挂");
+        if(!CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d())))throw new IllegalArgumentException("message.guidedrailways.coupler.too_fast");
         var geometry=CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));
         var socketA=socket(a);var socketB=socket(b);
         double length=CouplerGeometry.REST_LENGTH;
         a.geometry(socketA.sub(blockOrigin(a)),localFrame(ba,geometry.frame()),length);
         b.geometry(socketB.sub(blockOrigin(b)),localFrame(bb,geometry.frame()),length);
         var link=new CouplingLinks.Link(UUID.randomUUID(),a.endpointId,b.endpointId);data.add(link);
-        try{reconcile(level,link);if(!state(level).live.containsKey(link.id()))throw new IllegalStateException("车钩关节未能建立，请重新选择");}
+        try{reconcile(level,link);if(!state(level).live.containsKey(link.id()))throw new IllegalStateException("message.guidedrailways.coupler.failed");}
         catch(RuntimeException error){disconnect(level,a.endpointId,"creation_failed");throw error;}
     }
     static boolean connected(ServerLevel level,CouplerEntity e){return CouplerSavedData.get(level).links.forEndpoint(e.endpointId)!=null;}
