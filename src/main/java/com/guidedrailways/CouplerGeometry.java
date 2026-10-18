@@ -5,7 +5,9 @@ import org.joml.Matrix3d;
 import org.joml.Quaterniond;
 /** Pure initial engagement geometry. There is no scripted pulling force. */
 public final class CouplerGeometry {
+    /** Nominal buffer travel, not a hard solver limit. */
     public static final double HALF_STROKE=.1,MAX_GAP=2.0,MAX_HEIGHT=1.0;
+    public static final double MAX_RELATIVE_ACCELERATION=24;
     public record Engagement(Vector3d point,Quaterniond frame){}
     public record Spring(double stiffness,double damping,double maxForce){}
     private CouplerGeometry(){}
@@ -39,6 +41,6 @@ public final class CouplerGeometry {
     public static Spring spring(double ma,double mb){
         if(!Double.isFinite(ma)||!Double.isFinite(mb)||ma<=0||mb<=0)throw new IllegalArgumentException("车体质量无效");
         double reduced=1/(1/ma+1/mb),omega=2*Math.PI*2;
-        return new Spring(reduced*omega*omega,2*reduced*omega,reduced*400);
+        return new Spring(reduced*omega*omega,2*reduced*omega,reduced*MAX_RELATIVE_ACCELERATION);
     }
 }

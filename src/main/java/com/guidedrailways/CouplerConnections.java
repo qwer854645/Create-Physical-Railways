@@ -139,17 +139,18 @@ public final class CouplerConnections {
         var frame=CouplerGeometry.distanceFrame(worldA,worldB);var frameA=localFrame(ba,frame);var frameB=localFrame(bb,frame);
         if(old==null){
             double error=Math.abs(CouplerGeometry.extension(worldA,worldB,a.restLength));
-            if(error>.35){if(s.warned.add(link.id()))org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[Coupler] rebind deferred link={} savedAnchorError={} (uncouple to reconnect)",link.id(),error);return;}
+            if(error>.35)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] restoring stretched buffer link={} extension={} with capped spring",link.id(),error);
             GenericConstraintHandle joint=null;
             try{
                 joint=pipe.addConstraint(ba,bb,new GenericConstraintConfiguration(anchorA,anchorB,frameA,frameB,EnumSet.noneOf(ConstraintJointAxis.class)));
-                joint.setLimit(ConstraintJointAxis.LINEAR_X,Math.max(0,a.restLength-CouplerGeometry.HALF_STROKE),a.restLength+CouplerGeometry.HALF_STROKE);
+                // A hard end stop can contradict wheel contact and track guidance on curves.
+                // The capped native spring takes up clearance without a second position lock.
                 joint.setContactsEnabled(true);
                 old=new Live(joint,ba,bb,a,b);tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
-                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} stroke={} savedAnchorError={} mode=swivelling_distance",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} nominalStroke={} savedAnchorError={} mode=soft_swivelling_distance",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
             }catch(RuntimeException errorCreating){if(joint!=null&&joint.isValid())joint.remove();throw errorCreating;}
         }else{
-            // Only the radial axis is limited/motorised; Y/Z and all rotations stay free.
+            // Only the radial axis is motorised; no hard limits, Y/Z and all rotations stay free.
             // Reorient each physics step, never aim back toward the engagement heading.
             old.joint.setFrame1(anchorA,frameA);old.joint.setFrame2(anchorB,frameB);tune(old);
         }

@@ -62,6 +62,10 @@ public final class CouplerCheck {
             check(Math.abs(spring.damping()*spring.damping()/(4*spring.stiffness()*reduced)-1)<1e-12,"native spring uses critical damping for supported reduced mass");
             check(spring.maxForce()>spring.stiffness()*CouplerGeometry.HALF_STROKE,"force budget covers the full buffer stroke");
             check(spring.equals(CouplerGeometry.spring(mb,ma)),"mass tuning is symmetric between ends");
+            double relativeAcceleration=spring.maxForce()*(1/ma+1/mb);
+            check(Math.abs(relativeAcceleration-24)<1e-10,"coupler spring cap bounds relative acceleration for mismatched masses");
+            for(double dt:new double[]{.05,1d/60,1d/120})
+                check(relativeAcceleration*dt<=1.2+1e-10,"even a stretched reload cannot command an unbounded spring velocity kick");
         }
         rejects(()->CouplerGeometry.spring(0,100),"invalid masses rejected");
         var links=new CouplingLinks();var ids=new ArrayList<UUID>();var endpoints=new ArrayList<UUID>();
@@ -75,7 +79,7 @@ public final class CouplerCheck {
         rejects(()->links.add(new CouplingLinks.Link(UUID.randomUUID(),endpoints.get(0),endpoints.get(0))),"self-pair rejected");
         reload.remove(ids.get(0));check(reload.forEndpoint(endpoints.get(0))==null&&reload.forEndpoint(endpoints.get(1))==null,"disconnect clears both endpoints even without endpoint objects loaded");
         check(reload.all().size()==49&&links.all().size()==50,"unlink affects only the chosen pair");
-        check(Math.abs(CouplerGeometry.HALF_STROKE*2-.2)<1e-12,"total bounded draft travel is 0.2 blocks");
+        check(Math.abs(CouplerGeometry.HALF_STROKE*2-.2)<1e-12,"nominal draft travel is 0.2 blocks; collision may extend the soft buffer");
         System.out.println("CouplerCheck: "+checks+" assertions passed");
     }
 }

@@ -71,7 +71,6 @@ public final class BogieCollisionCheck {
         check(ix>3*(80.0/6)&&iy>5*(80.0/6)&&iz>3*(80.0/6),"distributed point-mass layout increases inertia; native shape inertia is verified at runtime");
         check(Math.abs(BogieCollision.massCenterY()-.49853515625)<1e-9,"explicit mass centre preserves original central collision bounds");
         check(core.getAsJsonObject("properties").get("sable:restitution").getAsDouble()==0&&parts.getAsJsonObject("properties").get("sable:restitution").getAsDouble()==0,"bogie contacts remain non-bouncy");
-        BogieContactPolicyCheck.run();
         System.out.println("BogieCollisionCheck: "+checks+" assertions passed; primitives="+BogieCollision.BOXES.size());
     }
 }

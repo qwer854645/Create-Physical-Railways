@@ -67,7 +67,6 @@ public final class VehiclePhysics {
             unit.lastSeen=level.getGameTime();
         }
         units.entrySet().removeIf(e->{var u=e.getValue();if(u.carrier.isRemoved()||u.bogie.isRemoved()||level.getGameTime()-u.lastSeen>40){u.close();return true;}return false;});
-        BogieContacts.refresh(level,units.values());
         DriverControls.refresh(level,units.values());
         PerfCounters.report(level,units.size());
         var counts=new HashMap<UUID,Integer>();for(var u:units.values())counts.merge(u.carrier.getUniqueId(),1,Integer::sum);
@@ -415,5 +414,5 @@ public final class VehiclePhysics {
             SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(state.is(Content.MOUNT.get())?"自由车体安装座":"轨道导向转向架");return body;
         }catch(RuntimeException error){container.removeSubLevel(body,SubLevelRemovalReason.REMOVED);throw error;}
     }
-    static void unload(ServerLevel level){BogieContacts.unload(level);var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);ConsistRoutes.unload(level);}
+    static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);ConsistRoutes.unload(level);}
 }
