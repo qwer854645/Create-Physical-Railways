@@ -28,7 +28,7 @@ public final class CouplerEntity extends BlockEntity {
         if(visualPeerId!=null&&visualPeerPos!=null){tag.putUUID("VisualPeer",visualPeerId);tag.putLong("VisualPeerPos",visualPeerPos.asLong());}return tag;
     }
     CouplerEntity(BlockPos pos,BlockState state){super(Content.COUPLER_ENTITY.get(),pos,state);}
-    void geometry(Vector3d anchor,Quaterniond frame,double length){restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
+    void geometry(Vector3d anchor,Quaterniond frame,double length){livingShape=null;restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.saveAdditional(tag,registries);tag.putInt("CouplerVersion",4);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
         tag.putDouble("RestLength",restLength);tag.putDouble("Ax",anchor.x);tag.putDouble("Ay",anchor.y);tag.putDouble("Az",anchor.z);

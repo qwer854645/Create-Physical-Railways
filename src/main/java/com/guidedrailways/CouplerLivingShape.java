@@ -3,7 +3,7 @@ import dev.ryanhcode.sable.companion.SableCompanion;
 import dev.ryanhcode.sable.companion.SubLevelAccess;
 import net.minecraft.world.phys.shapes.*;
 import org.joml.Vector3d;
-/** Only entity movement queries this; native vehicle colliders remain the fixed buffer shape. */
+/** Entity movement, including Sable's context-free queries; native colliders use the fixed buffer. */
 final class CouplerLivingShape {
     private static SubLevelAccess body(CouplerEntity e){return SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos());}
     private static Vector3d anchor(CouplerEntity e,SubLevelAccess body){return body.logicalPose().transformPosition(new Vector3d(e.anchor).add(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ()),new Vector3d());}

@@ -25,7 +25,10 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
     @Override public VoxelShape getSubLevelCollisionShape(BlockGetter level,BlockState state){return SHAPES.get(state.getValue(FACING));}
     @Override protected VoxelShape getCollisionShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){
         var fixed=SHAPES.get(state.getValue(FACING));
-        if(context instanceof EntityCollisionContext entity&&entity.getEntity() instanceof net.minecraft.world.entity.LivingEntity&&level.getBlockEntity(pos) instanceof CouplerEntity coupler)
+        // Sable 2.0.3 queries ordinary entity movement with the no-context overload.
+        // Native rigid bodies use getSubLevelCollisionShape above and keep the fixed buffer.
+        if((!(context instanceof EntityCollisionContext entity)||entity.getEntity() instanceof net.minecraft.world.entity.LivingEntity)
+                &&level.getBlockEntity(pos) instanceof CouplerEntity coupler)
             return Shapes.or(fixed,CouplerLivingShape.get(coupler));
         return fixed;
     }
