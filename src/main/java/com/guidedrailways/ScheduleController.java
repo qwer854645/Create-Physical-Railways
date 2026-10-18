@@ -13,13 +13,14 @@ import java.util.*;
 /** An original runtime for Create schedule DATA; never ticks a fake Create Train. */
 final class ScheduleController {
     static final int EMPTY=0,PAUSED=1,PLANNING=2,TRAVELLING=3,WAITING=4,FINISHED=5,UNSUPPORTED=6,
-        NO_ROUTE=7,NO_POWER=8,TRACK_MISSING=9,CONFLICT=10,CHANGED=11,OVERSHOOT=12,UNLOADED=13,EMERGENCY=14,SIGNAL_WAIT=16;
+        NO_ROUTE=7,NO_POWER=8,TRACK_MISSING=9,CONFLICT=10,CHANGED=11,OVERSHOOT=12,UNLOADED=13,EMERGENCY=14,SIGNAL_WAIT=16,CARGO_CONNECTOR=17,DOCK_WAIT=18;
     final DriverConsoleEntity owner;ItemStack item=ItemStack.EMPTY;Schedule program;
     boolean running,manualOverride,waiting,releaseBrakes;long nextPlan,nextVisual;boolean visualDirty;int entry,status,stableTicks;UUID station;
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
     boolean resumePending;private ScheduleReloadGate reloadGate;
     double remaining=Double.NaN;
     double throttle=1;String currentTitle="";
+    Set<UUID> cargoBodies;
     final List<Integer> progress=new ArrayList<>();final List<CompoundTag> contexts=new ArrayList<>();
     ScheduleController(DriverConsoleEntity owner){this.owner=owner;}
     boolean present(){return !item.isEmpty();}
@@ -42,9 +43,10 @@ final class ScheduleController {
     }
     private static boolean supportedCondition(ScheduleWaitCondition c){
         return c!=null&&(c.getClass()==ScheduledDelay.class||c.getClass()==TimeOfDayCondition.class
-            ||c.getClass()==StationPoweredCondition.class||c.getClass()==RedstoneLinkCondition.class);
+            ||c.getClass()==StationPoweredCondition.class||c.getClass()==RedstoneLinkCondition.class
+            ||c.getClass()==ItemThresholdCondition.class||c.getClass()==FluidThresholdCondition.class||c.getClass()==IdleCargoCondition.class);
     }
-    private void resetSettings(){throttle=1;currentTitle="";}
+    private void resetSettings(){throttle=1;currentTitle="";cargoBodies=null;}
     boolean prepareInstructions(){
         var p=program();int previousEntry=entry;double previousThrottle=throttle;String previousTitle=currentTitle;
         var result=SchedulePrelude.run(p.entries.size(),p.cyclic,entry,32,
@@ -115,7 +117,7 @@ final class ScheduleController {
         if(owner.emergency){hint(player,"emergency");return false;}
         if(DriverControls.body(owner)==null){hint(player,"install_body");return false;}
         if(entry>=p.entries.size()){entry=0;waiting=false;station=null;resetConditions();resetSettings();}
-        owner.leave();owner.enabled=false;running=true;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
+        owner.leave();owner.enabled=false;running=true;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;cargoBodies=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
     }
     void manual(DriverConsoleEntity source){
         running=false;resumePending=false;reloadGate=null;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
@@ -176,6 +178,27 @@ final class ScheduleController {
         if(level.getGameTime()%20==0)owner.setChanged();return false;
     }
     private boolean conditionComplete(ServerLevel level,ScheduleWaitCondition condition,CompoundTag context){
+        if(condition.getClass()==ItemThresholdCondition.class||condition.getClass()==FluidThresholdCondition.class||condition.getClass()==IdleCargoCondition.class){
+            var snapshot=CargoStorage.snapshot(level,DriverControls.body(owner));
+            if(!snapshot.complete()||cargoBodies!=null&&!cargoBodies.equals(snapshot.bodies())){state(UNLOADED);context.remove("CargoWaitStarted");return false;}
+            if(cargoBodies==null){cargoBodies=snapshot.bodies();owner.setChanged();}
+            if(condition.getClass()==IdleCargoCondition.class){
+                if(!snapshot.monitored()){state(CARGO_CONNECTOR);context.remove("CargoWaitStarted");return false;}
+                if(!context.contains("CargoWaitStarted"))context.putLong("CargoWaitStarted",level.getGameTime());
+                return CargoStorage.idle(level,snapshot,context.getLong("CargoWaitStarted"),((IdleCargoCondition)condition).totalWaitTicks());
+            }
+            if(context.contains("CargoNextCheck")&&level.getGameTime()<context.getLong("CargoNextCheck"))return false;
+            context.putLong("CargoNextCheck",level.getGameTime()+20);
+            var threshold=(CargoThresholdCondition)condition;
+            var filter=com.simibubi.create.content.logistics.filter.FilterItemStack.of(condition.getItem(0));
+            boolean item=condition.getClass()==ItemThresholdCondition.class;
+            long amount=item?snapshot.items(level,filter,threshold.getMeasure()==1):snapshot.fluids(level,filter);
+            long target=(long)threshold.getThreshold()*(item?1:1000);
+            if(!context.contains("CargoAmount")||context.getLong("CargoAmount")!=amount)
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CargoWait] console={} entry={} type={} amount={} operator={} target={} bodies={} storageRoots={}",owner.getBlockPos(),entry,condition.getId(),amount,threshold.getOperator(),target,snapshot.bodies().size(),snapshot.locations().size());
+            context.putLong("CargoAmount",amount);
+            return CargoClock.compare(amount,target,threshold.getOperator().name());
+        }
         if(condition.getClass()==StationPoweredCondition.class){
             if(station==null)return false;
             for(var graph:com.simibubi.create.Create.RAILWAYS.sided(level).trackNetworks.values()){
@@ -209,6 +232,7 @@ final class ScheduleController {
         data.putInt("Version",1);data.putBoolean("Running",running||resumePending);data.putInt("Status",status);
         data.putDouble("Throttle",throttle);data.putString("Title",currentTitle);
         var savedMembers=new ListTag();if(members!=null)for(var id:members)savedMembers.add(StringTag.valueOf(id.toString()));data.put("Members",savedMembers);
+        var cargo=new ListTag();if(cargoBodies!=null)for(var id:cargoBodies)cargo.add(StringTag.valueOf(id.toString()));data.put("CargoBodies",cargo);
         if(station!=null)data.putUUID("Station",station);
         var list=new ListTag();for(int i=0;i<progress.size();i++){var branch=new CompoundTag();branch.putInt("Progress",progress.get(i));branch.put("Context",contexts.get(i).copy());list.add(branch);}data.put("Conditions",list);
         tag.put("PhysicalSchedule",data);
@@ -217,7 +241,8 @@ final class ScheduleController {
         var data=tag.getCompound("PhysicalSchedule");item=ItemStack.parseOptional(registries,data.getCompound("Item"));program=null;
         throttle=data.contains("Throttle")?SchedulePrelude.throttle(data.getDouble("Throttle")):1;currentTitle=data.getString("Title");
         entry=Math.max(0,data.getInt("Entry"));waiting=data.getBoolean("Waiting");station=data.hasUUID("Station")?data.getUUID("Station"):null;
-        resetConditions();var list=data.getList("Conditions",Tag.TAG_COMPOUND);for(int i=0;i<list.size();i++){var b=list.getCompound(i);progress.add(Math.max(0,b.getInt("Progress")));contexts.add(b.getCompound("Context").copy());}
+        resetConditions();var list=data.getList("Conditions",Tag.TAG_COMPOUND);for(int i=0;i<list.size();i++){var b=list.getCompound(i);progress.add(Math.max(0,b.getInt("Progress")));var context=b.getCompound("Context").copy();context.remove("CargoNextCheck");context.remove("CargoWaitStarted");contexts.add(context);}
+        var cargo=new HashSet<UUID>();var cargoList=data.getList("CargoBodies",Tag.TAG_STRING);for(int i=0;i<cargoList.size();i++)try{cargo.add(UUID.fromString(cargoList.getString(i)));}catch(IllegalArgumentException ignored){}cargoBodies=cargo.isEmpty()?null:Set.copyOf(cargo);
         var savedMembers=data.getList("Members",Tag.TAG_STRING);var restoredMembers=new HashSet<UUID>();
         for(int i=0;i<savedMembers.size();i++)try{restoredMembers.add(UUID.fromString(savedMembers.getString(i)));}catch(IllegalArgumentException ignored){}
         members=restoredMembers.isEmpty()?null:Set.copyOf(restoredMembers);

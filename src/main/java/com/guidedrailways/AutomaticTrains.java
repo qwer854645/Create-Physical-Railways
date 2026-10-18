@@ -62,6 +62,10 @@ final class AutomaticTrains {
             else if(!controller.members.equals(members)){controller.pause(ScheduleController.CHANGED);hold(group,controller,false);continue;}
             if(group.stream().anyMatch(u->u.detached)){controller.pause(ScheduleController.TRACK_MISSING);hold(group,controller,false);continue;}
             if(!controller.prepareInstructions()){hold(group,controller,false);continue;}
+            var cargo=CargoStorage.consist(level,group.getFirst().carrier);
+            if(!cargo.complete()){controller.state(ScheduleController.UNLOADED);hold(group,controller,false);continue;}
+            if(controller.cargoBodies==null){controller.cargoBodies=Set.copyOf(cargo.bodies().keySet());controller.owner.setChanged();}
+            else if(!controller.cargoBodies.equals(cargo.bodies().keySet())){controller.pause(ScheduleController.CHANGED);hold(group,controller,false);continue;}
             if(controller.releaseBrakes){for(var u:group)brake(u,false);controller.releaseBrakes=false;}
             double cap=SchedulePrelude.ceiling(available(group,master),controller.throttle);if(cap<=0){controller.state(ScheduleController.NO_POWER);hold(group,controller,false);continue;}
             try{drive(level,group,links,controller,cap);}catch(RuntimeException error){
@@ -172,6 +176,7 @@ final class AutomaticTrains {
             return;
         }
         c.stableTicks=0;
+        if(CargoStorage.blockedByDock(level,group.getFirst().carrier)){c.state(ScheduleController.DOCK_WAIT);hold(group,c,false);return;}
         if(remaining<-AutomaticDriveModel.STOP_TOLERANCE){c.pause(ScheduleController.OVERSHOOT);hold(group,c,false);return;}
         double speed=SubLevelPhysicsSystem.get(level).getPipeline().getLinearVelocity(p.head.bogie,new Vector3d()).dot(sample.tangent())*p.signs.get(p.head.bogie.getUniqueId());
         double braking=TrainConfig.BRAKING.get()*brakeFraction(group,links);

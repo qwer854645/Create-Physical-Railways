@@ -45,6 +45,7 @@ public final class VehiclePhysics {
         void close(){clearGuides();if(pivot!=null&&pivot.isValid())pivot.remove();}
     }
     private VehiclePhysics(){}
+    static Collection<Unit> cargoUnits(ServerLevel level){return List.copyOf(ACTIVE.getOrDefault(level,Map.of()).values());}
     static Vector3d center(ServerSubLevel body){var p=body.getPlot().getCenterBlock();return new Vector3d(p.getX()+.5,p.getY()+.5,p.getZ()+.5);}
     static Vector3d world(ServerSubLevel body,Vector3dc local){var pose=SubLevelPhysicsSystem.get(body.getLevel()).getPipeline().readPose(body,new Pose3d());return new Vector3d(local).sub(body.logicalPose().rotationPoint()).rotate(pose.orientation()).add(pose.position());}
     static double coupledMass(ServerSubLevel carrier){

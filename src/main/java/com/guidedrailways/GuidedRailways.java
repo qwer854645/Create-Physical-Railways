@@ -34,7 +34,7 @@ public final class GuidedRailways {
             }
         });
         NeoForge.EVENT_BUS.addListener((LevelEvent.Unload e)->{
-            if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);DriverControls.unload(level);}
+            if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);DriverControls.unload(level);CargoStorage.unload(level);}
         });
         NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock e)->{
             if(!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;

@@ -111,6 +111,16 @@ public final class CouplerConnections {
         var level=carrier.getLevel();var s=STATES.get(level);if(s==null)return false;
         for(var e:s.endpoints.values())if(loaded(level,e)&&body(level,e)==carrier&&connected(level,e))return true;return false;
     }
+    static boolean cargoComplete(ServerLevel level,Set<UUID> bodies){
+        var s=STATES.get(level);if(s==null)return true;
+        for(var e:s.endpoints.values())if(loaded(level,e)){
+            var b=body(level,e);if(b==null||!bodies.contains(b.getUniqueId()))continue;
+            var link=CouplerSavedData.get(level).links.forEndpoint(e.endpointId);if(link==null)continue;
+            var live=s.live.get(link.id());if(live==null||!live.joint.isValid()||!loaded(level,live.visualA)||!loaded(level,live.visualB)
+                ||live.a.isRemoved()||live.b.isRemoved()||!bodies.contains(live.a.getUniqueId())||!bodies.contains(live.b.getUniqueId()))return false;
+        }
+        return true;
+    }
     static void step(SubLevelPhysicsSystem physics){
         var level=physics.getLevel();var s=STATES.get(level);if(s==null)return;
         s.endpoints.entrySet().removeIf(e->!loaded(level,e.getValue()));

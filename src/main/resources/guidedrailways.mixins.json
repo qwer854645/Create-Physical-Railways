@@ -3,6 +3,22 @@
   "minVersion": "0.8",
   "package": "com.guidedrailways.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["StationBlockMixin", "StationBlockEntityMixin", "SignalEdgeGroupMixin", "TrackObserverMixin"],
-  "injectors": {"defaultRequire": 1}
+  "mixins": [
+    "StationBlockMixin",
+    "StationBlockEntityMixin",
+    "SignalEdgeGroupMixin",
+    "TrackObserverMixin",
+    "CargoItemHandlerMixin",
+    "CargoFluidTankMixin",
+    "DockCargoTankMixin",
+    "DockCargoItemMixin",
+    "DockCargoBindingMixin",
+    "HoseCargoBindingMixin",
+    "LogisticsSnapshotMixin",
+    "LogisticsDockTransferMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "plugin": "com.guidedrailways.mixin.CargoCompatPlugin"
 }

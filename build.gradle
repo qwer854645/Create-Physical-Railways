@@ -76,6 +76,11 @@ neoForge {
 }
 
 repositories {
+    // Optional local mirror for development machines whose Gradle TLS requests reset.
+    // It contains only unmodified official NeoForge artifacts and is never packaged.
+    if (file('libs/compat-maven').isDirectory()) {
+        maven { url = uri('libs/compat-maven'); content { includeModule 'net.neoforged', 'neoforge' } }
+    }
     mavenCentral()
     maven { url = 'https://maven.createmod.net' }
     maven { url = 'https://maven.ithundxr.dev/snapshots' }
@@ -336,3 +341,10 @@ tasks.register('checkSchedulePrelude', JavaExec) {
     mainClass = 'com.guidedrailways.SchedulePreludeCheck'
 }
 tasks.named('check') { dependsOn 'checkSchedulePrelude' }
+
+tasks.register('checkCargoClock', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.CargoClockCheck'
+}
+tasks.named('check') { dependsOn 'checkCargoClock' }
