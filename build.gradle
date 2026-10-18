@@ -322,3 +322,10 @@ tasks.register('checkScheduleReload', JavaExec) {
     mainClass = 'com.guidedrailways.ScheduleReloadCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleReload' }
+
+tasks.register('checkObserverSpan', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ObserverSpanCheck'
+}
+tasks.named('check') { dependsOn 'checkObserverSpan' }

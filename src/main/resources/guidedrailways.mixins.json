@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "com.guidedrailways.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["StationBlockMixin", "StationBlockEntityMixin", "SignalEdgeGroupMixin"],
+  "mixins": ["StationBlockMixin", "StationBlockEntityMixin", "SignalEdgeGroupMixin", "TrackObserverMixin"],
   "injectors": {"defaultRequire": 1}
 }

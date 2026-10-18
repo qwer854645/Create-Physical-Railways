@@ -12,6 +12,8 @@ import java.util.*;
 public final class PhysicalSignals {
     private record TraceKey(UUID graph,int a,int b,int c,int d){}
     private record Bridge(List<ScheduleRoute.Edge> edges){}
+    private record Axle(UUID bogie,int end){}
+    private record Previous(TrackNetwork.Sample sample,long tick){}
     private static final class State {
         final SignalOccupancy ledger=new SignalOccupancy();
         final Map<UUID,UUID> owners=new HashMap<>();
@@ -19,6 +21,7 @@ public final class PhysicalSignals {
         final Map<UUID,Set<UUID>> lastKnown=new HashMap<>();
         final Map<UUID,AutomaticNavigation> networks=new HashMap<>();
         final Map<UUID,Stop> stops=new HashMap<>();
+        final Map<Axle,Previous> previous=new HashMap<>();
     }
     private static final Map<ServerLevel,State> STATES=new WeakHashMap<>();
     private record Boundary(SignalBoundary signal,TrackNode to,TrackEdge edge,double distance,boolean chain){}
@@ -47,6 +50,7 @@ public final class PhysicalSignals {
         }
         var occupied=new HashMap<UUID,Set<UUID>>();var running=new HashSet<UUID>();var liveBodies=new HashSet<UUID>();
         var anchors=new HashMap<UUID,List<TrackNetwork.Sample>>();
+        var liveAxles=new HashSet<Axle>();
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
         var consoles=new HashSet<UUID>();
         for(var u:units){
@@ -58,7 +62,16 @@ public final class PhysicalSignals {
             var heading=new Vector3d(0,0,1).rotate(pipe.readPose(u.bogie,new Pose3d()).orientation());
             if(!u.detached)for(int i=0;i<2;i++){
                 var old=u.samples[i];var sample=TrackNetwork.nearest(level,VehiclePhysics.world(u.bogie,u.axle(i)),heading,old==null?null:old.path(),1);
-                if(sample!=null){samples.add(sample);mark(sample.path(),sample.t()*sample.path().edge().getLength(),sample.t()*sample.path().edge().getLength(),groups);}
+                if(sample!=null){
+                    samples.add(sample);mark(sample.path(),sample.t()*sample.path().edge().getLength(),sample.t()*sample.path().edge().getLength(),groups);
+                    var key=new Axle(u.bogie.getUniqueId(),i);liveAxles.add(key);
+                    var previous=s.previous.put(key,new Previous(sample,level.getGameTime()));
+                    // Sweep between consecutive ticks so a fast axle cannot skip an observer.
+                    // Do not report a passage across unloaded time or a wrench/staff relocation.
+                    double limit=Math.max(2,pipe.getLinearVelocity(u.bogie,new Vector3d()).length()*.1+1);
+                    if(previous!=null&&previous.tick+1==level.getGameTime()&&previous.sample.position().distanceSquared(sample.position())<=limit*limit)
+                        bridge(s,level,previous.sample,sample,groups);
+                }
             }
             if(samples.isEmpty())groups.addAll(s.lastKnown.getOrDefault(body,Set.of()));
         }
@@ -96,12 +109,17 @@ public final class PhysicalSignals {
             reach(s,level,closest,axis,hi+.15,occupied.get(owner));reach(s,level,closest,axis.negate(),-lo+.15,occupied.get(owner));
         }
         s.lastKnown.keySet().retainAll(liveBodies);
+        s.previous.keySet().retainAll(liveAxles);
         s.stops.keySet().retainAll(consoles);
         if(s.traces.size()>2048)s.traces.clear();
         s.ledger.refresh(occupied,running,level.getGameTime());
     }
     private static void mark(TrackNetwork.Path path,double low,double high,Set<UUID> groups){
+        mark(path,low,high,groups,true);
+    }
+    private static void mark(TrackNetwork.Path path,double low,double high,Set<UUID> groups,boolean observers){
         double length=path.edge().getLength();low=Math.clamp(low,0,length);high=Math.clamp(high,low,length);
+        if(observers)PhysicalObservers.cover(path,low,high);
         var cuts=new ArrayList<Double>();cuts.add(low);cuts.add(high);
         for(var point:path.edge().getEdgeData().getPoints())if(point instanceof SignalBoundary){double d=point.getLocationOn(path.edge());if(d>=low&&d<=high){cuts.add(Math.max(low,d-1e-5));cuts.add(Math.min(high,d+1e-5));}}
         cuts.sort(Double::compare);
@@ -157,7 +175,10 @@ public final class PhysicalSignals {
         while(!queue.isEmpty()&&visits++<256){
             var v=queue.remove();var path=n.paths.get(v.edge);if(path==null)continue;
             double hi=Math.min(n.length(v.edge),v.offset+v.distance),lo=v.offset;
-            mark(path,path.a()==v.edge.from()?lo:n.length(v.edge)-hi,path.a()==v.edge.from()?hi:n.length(v.edge)-lo,groups);
+            // Signal occupancy conservatively covers all possible exits beneath an overhang.
+            // An observer must not fire on an unused branch: overhang detection stops at the
+            // current edge; wheel and carriage spans cover the actual continuation later.
+            mark(path,path.a()==v.edge.from()?lo:n.length(v.edge)-hi,path.a()==v.edge.from()?hi:n.length(v.edge)-lo,groups,visits==1);
             double rest=v.distance-(hi-lo);if(rest>1e-5)for(var exit:n.exits(v.edge))queue.add(new Reach(exit,0,rest));
         }
     }
