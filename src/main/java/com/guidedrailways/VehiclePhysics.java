@@ -89,11 +89,14 @@ public final class VehiclePhysics {
         var upper=new Vector3d(u.mount.getBlockPos().getX()+.5,u.mount.getBlockPos().getY()+PLATE_BOTTOM,u.mount.getBlockPos().getZ()+.5);
         var lower=new Vector3d(u.localCenter).add(0,.375,0);
         var a=pipe.readPose(u.carrier,new Pose3d());var b=pipe.readPose(u.bogie,new Pose3d());
-        var relative=new Quaterniond(b.orientation()).conjugate().mul(a.orientation());
+        var relative=new Quaterniond(b.orientation()).conjugate().mul(a.orientation()).mul(u.mount.pivotReference);
         var rate=pipe.getAngularVelocity(u.carrier,new Vector3d()).sub(pipe.getAngularVelocity(u.bogie,new Vector3d())).rotate(new Quaterniond(b.orientation()).conjugate());
         var up=new Vector3d(0,1,0).rotate(relative);
         double tilt=Math.toDegrees(Math.acos(Math.clamp(up.y,-1,1)));
-        return String.format(java.util.Locale.ROOT,"anchorError=%.5f,tiltDeg=%.3f,yawRateDeg=%.3f,pitchRateDeg=%.3f,rollRateDeg=%.3f,mode=%s",world(u.carrier,upper).distance(world(u.bogie,lower)),tilt,Math.toDegrees(rate.y),Math.toDegrees(rate.x),Math.toDegrees(rate.z),u.supports==1?"stable":"articulated");
+        var neutral=new Quaterniond(a.orientation()).mul(u.mount.pivotReference);
+        var yawForward=new Vector3d(0,0,1).rotate(b.orientation()).rotate(neutral.conjugate());
+        double yawError=Math.toDegrees(Math.atan2(yawForward.x,yawForward.z));
+        return String.format(java.util.Locale.ROOT,"anchorError=%.5f,tiltDeg=%.3f,yawErrorDeg=%.3f,yawRateDeg=%.3f,pitchRateDeg=%.3f,rollRateDeg=%.3f,mode=%s",world(u.carrier,upper).distance(world(u.bogie,lower)),tilt,yawError,Math.toDegrees(rate.y),Math.toDegrees(rate.x),Math.toDegrees(rate.z),u.supports==1?"stable":"articulated");
     }
     private static String anchorSummary(Unit u){
         var text=new StringBuilder();
@@ -112,11 +115,16 @@ public final class VehiclePhysics {
         var lower=new Vector3d(u.localCenter).add(0,.375,0);
         var locks=EnumSet.of(ConstraintJointAxis.LINEAR_X,ConstraintJointAxis.LINEAR_Y,ConstraintJointAxis.LINEAR_Z,ConstraintJointAxis.ANGULAR_Z);
         if(u.supports==1)locks.add(ConstraintJointAxis.ANGULAR_X);
-        u.pivot=pipe.addConstraint(u.carrier,u.bogie,new GenericConstraintConfiguration(upper,lower,new Quaterniond(),new Quaterniond(),locks));
+        if(!u.mount.pivotReferenceKnown){
+            var carrier=pipe.readPose(u.carrier,new Pose3d());var bogie=pipe.readPose(u.bogie,new Pose3d());
+            u.mount.pivotReference.set(BogieYawModel.migrate(carrier.orientation(),bogie.orientation()));u.mount.pivotReferenceKnown=true;u.mount.setChanged();
+        }
+        u.pivot=pipe.addConstraint(u.carrier,u.bogie,new GenericConstraintConfiguration(upper,lower,u.mount.pivotReference,new Quaterniond(),locks));
         u.pivot.setContactsEnabled(false);
         // A stable bearing replaces the prototype's spring-supported empty plate.
-        // Zero stiffness means no yaw-centering torque: only relative rotation is damped.
-        u.pivot.setMotor(ConstraintJointAxis.ANGULAR_Y,0,0,6,true,2000);
+        // Weak yaw centering, with damping and a small torque cap; yaw remains unlocked.
+        var spring=BogieYawModel.spring(u.supports);
+        u.pivot.setMotor(ConstraintJointAxis.ANGULAR_Y,0,spring.stiffness(),spring.damping(),true,spring.maxTorque());
         if(u.supports>1){
             // Bogies at opposite ends of a long car may meet different grades.
             u.pivot.setLimit(ConstraintJointAxis.ANGULAR_X,-.35,.35);

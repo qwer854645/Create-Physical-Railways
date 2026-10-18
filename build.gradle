@@ -287,3 +287,10 @@ tasks.register('checkGearEditor', JavaExec) {
     mainClass = 'com.guidedrailways.GearEditorCheck'
 }
 tasks.named('check') { dependsOn 'checkGearEditor' }
+
+tasks.register('checkBogieYaw', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.BogieYawCheck'
+}
+tasks.named('check') { dependsOn 'checkBogieYaw' }
