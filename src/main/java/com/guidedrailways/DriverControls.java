@@ -59,7 +59,7 @@ public final class DriverControls {
             var facing=e.getBlockState().getValue(DriverConsoleBlock.FACING);
             var heading=new Vector3d(facing.getStepX(),0,facing.getStepZ()).rotate(pipe.readPose(body,new dev.ryanhcode.sable.companion.math.Pose3d()).orientation());
             e.actual=pipe.getLinearVelocity(body,new Vector3d()).dot(heading);
-            for(var u:units)if(u.carrier==body){e.supports++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;if(Math.abs(u.mount.getSpeed())>.001){e.powered++;double cap=Math.abs(u.mount.getSpeed())*TrainConfig.SPEED_PER_RPM.get();e.available=e.powered==1?cap:Math.min(e.available,cap);}}
+            for(var u:units)if(u.carrier==body){e.supports++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;if(Math.abs(u.mount.getSpeed())>.001){e.powered++;double cap=e.targetSpeed(u.mount.getSpeed());e.available=e.powered==1?cap:Math.min(e.available,cap);}}
         }
         AutomaticTrains.tick(level,units,map.values());
         StationPresence.tick(level,units);

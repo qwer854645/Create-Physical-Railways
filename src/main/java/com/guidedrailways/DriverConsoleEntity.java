@@ -13,6 +13,16 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     java.util.UUID consoleId=java.util.UUID.randomUUID();long placementOrder;boolean identitySaved;
     java.util.UUID operator;int steer;long steerAt;
     boolean active,enabled,emergency,observing;int direction=1,notch=-4;
+    private int maxSpeedTenths;
+    int maxSpeedTenths(){return SpeedSetting.valid(maxSpeedTenths)?maxSpeedTenths:SpeedSetting.fromRatio(TrainConfig.SPEED_PER_RPM.get());}
+    double targetSpeed(double rpm){return SpeedSetting.target(rpm,maxSpeedTenths());}
+    boolean setMaxSpeed(Player player,int tenths){
+        if(!(level instanceof ServerLevel)||!SpeedSetting.valid(tenths)||!player.mayBuild()||!level.mayInteract(player,worldPosition)
+            ||!DriverControls.accessible(this,player)||!DriverControls.isPrimary(this)||(active&&!player.getUUID().equals(operator)))return false;
+        maxSpeedTenths=tenths;updateVisual();
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverSpeedSetting] console={} maxTargetAt256={}",worldPosition,tenths/10.0);
+        return true;
+    }
     float lever=-1,previousLever=-1,reverser=1,previousReverser=1;
     double actual,available;int supports,powered,guided,mountBrakes;
     DriverConsoleEntity(BlockPos p,BlockState s){super(Content.DRIVER_ENTITY.get(),p,s);}
@@ -70,9 +80,10 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}
-    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);schedule.save(tag,registries);}
+    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putInt("MaxSpeedTenths",maxSpeedTenths());tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);schedule.save(tag,registries);}
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);identitySaved=tag.hasUUID("ConsoleId");if(identitySaved)consoleId=tag.getUUID("ConsoleId");placementOrder=Math.max(0,tag.getLong("PlacementOrder"));schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
+        int saved=tag.getInt("MaxSpeedTenths");maxSpeedTenths=SpeedSetting.valid(saved)?saved:0;
         if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-4,4);emergency=tag.getBoolean("VisualEmergency");}
         else{active=false;enabled=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
     }

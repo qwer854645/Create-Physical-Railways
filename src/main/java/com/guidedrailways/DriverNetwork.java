@@ -30,12 +30,20 @@ public final class DriverNetwork {
         },b->new MenuState(b.readVarInt(),b.readUtf(256),b.readVarInt()));
         @Override public Type<MenuState> type(){return TYPE;}
     }
+    public record SetSpeed(int menu,int tenths) implements CustomPacketPayload {
+        static final Type<SetSpeed> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID,"driver_set_speed"));
+        static final StreamCodec<RegistryFriendlyByteBuf,SetSpeed> CODEC=StreamCodec.of((b,v)->{b.writeVarInt(v.menu);b.writeVarInt(v.tenths);},b->new SetSpeed(b.readVarInt(),b.readVarInt()));
+        @Override public Type<SetSpeed> type(){return TYPE;}
+    }
     static void register(RegisterPayloadHandlersEvent event){
         var r=event.registrar("1");
         r.playToServer(Command.TYPE,Command.CODEC,(message,context)->{if(context.player() instanceof ServerPlayer player)DriverControls.remote(player,message.pos,message.command);});
         r.playToClient(State.TYPE,State.CODEC,(message,context)->clientHandler.accept(message));
         r.playToClient(MenuState.TYPE,MenuState.CODEC,(message,context)->{
             if(context.player().containerMenu instanceof DriverMenu menu&&menu.containerId==message.menu)menu.details=message;
+        });
+        r.playToServer(SetSpeed.TYPE,SetSpeed.CODEC,(message,context)->{
+            if(context.player() instanceof ServerPlayer player&&player.containerMenu instanceof DriverMenu menu&&menu.containerId==message.menu)menu.setMaxSpeed(player,message.tenths);
         });
     }
     static void sync(DriverConsoleEntity e,boolean active){

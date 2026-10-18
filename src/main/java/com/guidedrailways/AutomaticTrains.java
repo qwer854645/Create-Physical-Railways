@@ -41,7 +41,7 @@ final class AutomaticTrains {
             if(!controller.present()){
                 var orientation=basis(master,group,links,master.direction==0?1:master.direction);
                 if(orientation==null){hold(group,controller,false);continue;}
-                bind(group,master,null,orientation.signs,master.direction==0?0:available(group),master.notch,false,!master.enabled);continue;
+                bind(group,master,null,orientation.signs,master.direction==0?0:available(group,master),master.notch,false,!master.enabled);continue;
             }
             if(master.active&&!master.observing)controller.manual(master);
             if(controller.manualOverride){
@@ -50,7 +50,7 @@ final class AutomaticTrains {
                 stats(source,group);
                 var basis=basis(source,group,links,source.direction==0?1:source.direction);
                 if(basis==null){controller.pause(ScheduleController.CONFLICT);hold(group,controller,false);continue;}
-                bind(group,source,null,basis.signs,source.direction==0?0:available(group),source.notch,false,!source.enabled);continue;
+                bind(group,source,null,basis.signs,source.direction==0?0:available(group,source),source.notch,false,!source.enabled);continue;
             }
             if(!controller.running){hold(group,controller,false);continue;}
             var members=new HashSet<UUID>();for(var u:group)members.add(u.bogie.getUniqueId());
@@ -58,7 +58,7 @@ final class AutomaticTrains {
             else if(!controller.members.equals(members)){controller.pause(ScheduleController.CHANGED);hold(group,controller,false);continue;}
             if(group.stream().anyMatch(u->u.detached)){controller.pause(ScheduleController.TRACK_MISSING);hold(group,controller,false);continue;}
             if(controller.releaseBrakes){for(var u:group)brake(u,false);controller.releaseBrakes=false;}
-            double cap=available(group);if(cap<=0){controller.state(ScheduleController.NO_POWER);hold(group,controller,false);continue;}
+            double cap=available(group,master);if(cap<=0){controller.state(ScheduleController.NO_POWER);hold(group,controller,false);continue;}
             try{drive(level,group,links,controller,cap);}catch(RuntimeException error){
                 controller.pause(ScheduleController.UNSUPPORTED);hold(group,controller,false);
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[AutomaticTrain] paused after invalid schedule/route console={}",controller.owner.getBlockPos(),error);
@@ -69,11 +69,11 @@ final class AutomaticTrains {
         for(var u:previous)if(u.automatic==null&&!u.bogie.isRemoved()&&!u.mount.isRemoved())brake(u,true);
     }
     private static void stats(DriverConsoleEntity e,List<VehiclePhysics.Unit> group){
-        e.available=available(group);e.supports=group.size();e.powered=0;e.guided=0;e.mountBrakes=0;
+        e.available=available(group,e);e.supports=group.size();e.powered=0;e.guided=0;e.mountBrakes=0;
         for(var u:group){if(Math.abs(u.mount.getSpeed())>.001)e.powered++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;}
     }
     private static void brake(VehiclePhysics.Unit u,boolean value){if(u.mount.braking!=value){u.mount.braking=value;u.mount.setChanged();u.mount.sendData();}}
-    private static double available(List<VehiclePhysics.Unit> group){double cap=Double.POSITIVE_INFINITY;for(var u:group)if(Math.abs(u.mount.getSpeed())>.001)cap=Math.min(cap,Math.abs(u.mount.getSpeed())*TrainConfig.SPEED_PER_RPM.get());return Double.isFinite(cap)?cap:0;}
+    private static double available(List<VehiclePhysics.Unit> group,DriverConsoleEntity console){double cap=Double.POSITIVE_INFINITY;for(var u:group)if(Math.abs(u.mount.getSpeed())>.001)cap=Math.min(cap,console.targetSpeed(u.mount.getSpeed()));return Double.isFinite(cap)?cap:0;}
     private static double brakeFraction(List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links){
         var supported=new HashMap<UUID,ServerSubLevel>();double wheels=0;
         for(var u:group){supported.put(u.carrier.getUniqueId(),u.carrier);wheels+=u.bogie.getMassTracker().getMass();}
