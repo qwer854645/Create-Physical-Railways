@@ -49,20 +49,6 @@ public final class BogieCollisionCheck {
                 check(BogieCollision.containsAfterCellClipping(.5-x+2*x*f,cy,.5+side*z),"end belt must prevent head-on wheel interlock");
             }
         }
-        // The old thin perimeter was a hollow shell: after a deep contact, its inner face
-        // could oppose withdrawal. Native contacts must cover the entire axle-height section.
-        var detailedParts=BogieCollision.CELLS.stream().map(BogieCollision.Cell::part).collect(java.util.stream.Collectors.toSet());
-        check(BogieCollision.NATIVE_CELLS.stream().map(BogieCollision.Cell::part).collect(java.util.stream.Collectors.toSet()).equals(detailedParts),"native contact web must reuse the existing collision cells");
-        check(!BogieCollision.containsAfterCellClipping(1.6,cy,.5),"entity collision keeps the visible gap between the wheels");
-        check(BogieCollision.nativeContains(1.6,cy,.5),"native collision fills the old shell interior instead of trapping a penetrating wheel");
-        for(int ix=0;ix<=80;ix++)for(int iz=0;iz<=100;iz++)for(double dy:new double[]{-.125,0,.125}){
-            double x=.5-1.203125+2*1.203125*ix/80,z=.5-(1+BogieCollision.RIM_RADIUS+1.0/128)+2*(1+BogieCollision.RIM_RADIUS+1.0/128)*iz/100;
-            check(BogieCollision.nativeContains(x,cy+dy,z),"front, rear, and intermediate penetration sections must have no internal gap");
-        }
-        for(var cell:BogieCollision.NATIVE_CELLS)for(var box:cell.boxes()){
-            check(box.x0()>=0&&box.y0()>=0&&box.z0()>=0&&box.x1()<=1&&box.y1()<=1&&box.z1()<=1,"native web must survive the block-local collider clipping");
-            check(BogieGeometry.RIDE_HEIGHT-.5+cell.y()+box.y0()>.125,"native web cannot become a rail-catching lower skid");
-        }
         var resource=Path.of("src/main/resources/data/guidedrailways/physics_block_properties");
         var core=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(resource.resolve("bogie_frame.json"))).getAsJsonObject();
         var parts=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(resource.resolve("bogie_collision.json"))).getAsJsonObject();

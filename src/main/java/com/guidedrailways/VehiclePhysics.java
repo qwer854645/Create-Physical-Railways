@@ -137,6 +137,7 @@ public final class VehiclePhysics {
     }
     private static void stepVehicle(SubLevelPhysicsSystem physics,double dt){
         if(!(dt>0&&Double.isFinite(dt)))return;var level=physics.getLevel();var pipe=physics.getPipeline();
+        BogiePairContacts.step(physics,ACTIVE.getOrDefault(level,Map.of()).values(),dt);
         for(var plan:ConsistRoutes.prepare(level,ACTIVE.getOrDefault(level,Map.of()).values())){
             var u=plan.unit();
             if(u.carrier.isRemoved()||u.bogie.isRemoved()||u.mount.isRemoved()||u.lastSeen+2<level.getGameTime())continue;
@@ -430,5 +431,5 @@ public final class VehiclePhysics {
             SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(net.minecraft.network.chat.Component.translatable(state.is(Content.MOUNT.get())?"block.guidedrailways.bogie_mount":"block.guidedrailways.bogie_frame").getString());return body;
         }catch(RuntimeException error){container.removeSubLevel(body,SubLevelRemovalReason.REMOVED);throw error;}
     }
-    static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);ConsistRoutes.unload(level);}
+    static void unload(ServerLevel level){BogiePairContacts.unload(level);var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);ConsistRoutes.unload(level);}
 }
