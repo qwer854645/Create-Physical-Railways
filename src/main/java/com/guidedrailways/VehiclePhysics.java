@@ -79,7 +79,7 @@ public final class VehiclePhysics {
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
                     var pipeline=system.getPipeline();
                     double verticalSpeed=pipeline.getLinearVelocity(u.bogie,new Vector3d()).y,angularSpeed=pipeline.getAngularVelocity(u.bogie,new Vector3d()).length();
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get():driverRpm(u,new Vector3d(0,0,1).rotate(system.getPipeline().readPose(u.bogie,new Pose3d()).orientation())),u.mount.getSpeed(),u.mass,u.mount.braking||u.driver!=null&&(!u.driver.active||u.driver.brake>0||u.driver.powered==0),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.SPEED_PER_RPM.get():driverRpm(u,new Vector3d(0,0,1).rotate(system.getPipeline().readPose(u.bogie,new Pose3d()).orientation())),u.mount.getSpeed(),u.mass,u.mount.braking||u.driver!=null&&(!u.driver.active||u.driver.emergency||u.driver.notch<0||u.driver.powered==0),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
                 }
             }
         }
@@ -160,9 +160,9 @@ public final class VehiclePhysics {
                 if(u.driver!=null){
                     var driver=u.driver;
                     boolean safe=driver.active&&!driver.isRemoved()&&DriverControls.body(driver)==u.carrier;
-                    int brake=!safe?Math.max(1,driver.brake):Math.max(driver.brake,u.mount.braking||driver.powered==0?1:0);
-                    double target=DriverModel.target(driver.direction,Math.min(driver.setting,driver.available),u.mount.getSpeed(),TrainConfig.SPEED_PER_RPM.get())*driverSign(u,sample.tangent());
-                    force=DriverModel.force(speed,target,u.mount.getSpeed(),u.mass,brake,driver.direction==0,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);
+                    boolean hold=!safe||u.mount.braking||driver.powered==0;
+                    double ceiling=driver.direction*driver.available*driverSign(u,sample.tangent());
+                    force=DriverModel.force(speed,ceiling,u.mount.getSpeed(),u.mass,driver.notch,driver.emergency,hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);
                 }else{
                     force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.SPEED_PER_RPM.get(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get());
                     if(!u.mount.braking&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
@@ -180,7 +180,7 @@ public final class VehiclePhysics {
         return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(q).dot(heading)<0?-1:1;
     }
     private static double driverRpm(Unit u,Vector3dc heading){
-        return u.driver==null?u.mount.getSpeed():u.driver.active&&u.driver.brake==0?DriverModel.target(u.driver.direction,Math.min(u.driver.setting,u.driver.available),u.mount.getSpeed(),TrainConfig.SPEED_PER_RPM.get())*driverSign(u,heading):0;
+        return u.driver==null?u.mount.getSpeed():u.driver.active&&!u.driver.emergency&&u.driver.notch>0?u.driver.direction*u.driver.available*driverSign(u,heading):0;
     }
     static void consoleRemoved(DriverConsoleEntity console){
         for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console){u.mount.braking=true;u.mount.setChanged();u.mount.sendData();}

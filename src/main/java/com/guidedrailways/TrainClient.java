@@ -8,7 +8,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.nbt.CompoundTag;
 import com.simibubi.create.content.trains.bogey.StandardBogeyRenderer;
 public final class TrainClient {
-    static void register(IEventBus bus){bus.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent e)->e.register(Content.DRIVER_MENU.get(),DriverScreen::new));bus.addListener((EntityRenderersEvent.RegisterRenderers e)->{e.registerBlockEntityRenderer(Content.BOGIE_ENTITY.get(),Renderer::new);e.registerBlockEntityRenderer(Content.COUPLER_ENTITY.get(),CouplerRenderer::new);});}
+    static void register(IEventBus bus){bus.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent e)->e.register(Content.DRIVER_MENU.get(),DriverScreen::new));bus.addListener((EntityRenderersEvent.RegisterRenderers e)->{e.registerBlockEntityRenderer(Content.BOGIE_ENTITY.get(),Renderer::new);e.registerBlockEntityRenderer(Content.COUPLER_ENTITY.get(),CouplerRenderer::new);e.registerBlockEntityRenderer(Content.DRIVER_ENTITY.get(),DriverConsoleRenderer::new);});}
     private static final class Renderer implements BlockEntityRenderer<BogieEntity> {
         private final StandardBogeyRenderer.Small renderer=new StandardBogeyRenderer.Small();
         private final CompoundTag data=new CompoundTag();

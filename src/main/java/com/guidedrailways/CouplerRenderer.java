@@ -51,7 +51,7 @@ public final class CouplerRenderer implements BlockEntityRenderer<CouplerEntity>
         }
         pose.popPose();
     }
-    private static void box(PoseStack.Pose p,VertexConsumer v,TextureAtlasSprite s,double x,double y,double z,double X,double Y,double Z,int light,int overlay){
+    static void box(PoseStack.Pose p,VertexConsumer v,TextureAtlasSprite s,double x,double y,double z,double X,double Y,double Z,int light,int overlay){
         face(p,v,s,new double[][]{{x,y,z},{x,Y,z},{X,Y,z},{X,y,z}},0,0,-1,X-x,Y-y,light,overlay);
         face(p,v,s,new double[][]{{X,y,Z},{X,Y,Z},{x,Y,Z},{x,y,Z}},0,0,1,X-x,Y-y,light,overlay);
         face(p,v,s,new double[][]{{x,y,Z},{x,Y,Z},{x,Y,z},{x,y,z}},-1,0,0,Z-z,Y-y,light,overlay);

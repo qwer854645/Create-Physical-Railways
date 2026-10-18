@@ -14,15 +14,19 @@ public final class DriverControls {
     static ServerSubLevel body(DriverConsoleEntity e){return e.getLevel()!=null&&SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
     static void claim(ServerLevel level,DriverConsoleEntity e){
         register(level,e);var body=body(e);if(body==null)return;
-        for(var other:CONSOLES.get(level).values())if(other!=e&&body(other)==body){other.active=false;other.brake=1;}
+        for(var other:CONSOLES.get(level).values())if(other!=e&&body(other)==body){other.park();}
     }
     static void emergency(ServerLevel level,DriverConsoleEntity source){
-        source.brake=2;var body=body(source);if(body==null)return;
-        for(var e:CONSOLES.getOrDefault(level,Map.of()).values())if(body(e)==body)e.brake=2;
+        source.emergency=true;source.notch=-4;source.updateVisual();var body=body(source);if(body==null)return;
+        for(var e:CONSOLES.getOrDefault(level,Map.of()).values())if(body(e)==body){e.emergency=true;e.notch=-4;e.updateVisual();}
+    }
+    static void resetEmergency(ServerLevel level,DriverConsoleEntity source){
+        var body=body(source);source.emergency=false;source.notch=-4;source.updateVisual();if(body==null)return;
+        for(var e:CONSOLES.getOrDefault(level,Map.of()).values())if(body(e)==body){e.emergency=false;e.notch=-4;e.updateVisual();}
     }
     static void removed(ServerLevel level,DriverConsoleEntity e){
         var map=CONSOLES.get(level);if(map!=null)map.remove(e.getBlockPos(),e);
-        e.active=false;e.brake=2;VehiclePhysics.consoleRemoved(e);
+        e.active=false;e.emergency=true;e.notch=-4;VehiclePhysics.consoleRemoved(e);
     }
     static void refresh(ServerLevel level,Collection<VehiclePhysics.Unit> units){
         var map=CONSOLES.getOrDefault(level,Map.of());
@@ -45,13 +49,18 @@ public final class DriverControls {
             var heading=new Vector3d(facing.getStepX(),0,facing.getStepZ()).rotate(pipe.readPose(body,new dev.ryanhcode.sable.companion.math.Pose3d()).orientation());
             e.actual=pipe.getLinearVelocity(body,new Vector3d()).dot(heading);
             for(var u:units)if(u.carrier==body){e.supports++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;if(Math.abs(u.mount.getSpeed())>.001){e.powered++;double cap=Math.abs(u.mount.getSpeed())*TrainConfig.SPEED_PER_RPM.get();e.available=e.powered==1?cap:Math.min(e.available,cap);}}
-            if(e.active&&level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverState] body={} actual={} requested={} available={} direction={} brake={} powered={} guided={}/{}",body.getUniqueId(),e.actual,e.setting,e.available,e.direction,e.brake,e.powered,e.guided,e.supports);
+            if(e.active&&level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverState] body={} actual={} notch={} available={} direction={} emergency={} powered={} guided={}/{}",body.getUniqueId(),e.actual,e.notch,e.available,e.direction,e.emergency,e.powered,e.guided,e.supports);
         }
+    }
+    static Vector3d position(DriverConsoleEntity e){
+        var p=new Vector3d(e.getBlockPos().getX()+.5,e.getBlockPos().getY()+.5,e.getBlockPos().getZ()+.5);var body=body(e);return body==null?p:VehiclePhysics.world(body,p);
+    }
+    static boolean canChangeDirection(DriverConsoleEntity e){
+        var body=body(e);return body!=null&&DriverModel.canChangeDirection(dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(body.getLevel()).getPipeline().getLinearVelocity(body,new Vector3d()).length(),e.notch);
     }
     static boolean accessible(DriverConsoleEntity e,Player player){
         if(e.isRemoved()||player.level()!=e.getLevel()||e.getLevel().getBlockEntity(e.getBlockPos())!=e)return false;
-        var p=new Vector3d(e.getBlockPos().getX()+.5,e.getBlockPos().getY()+.5,e.getBlockPos().getZ()+.5);var body=body(e);if(body!=null)p=VehiclePhysics.world(body,p);
-        return player.distanceToSqr(p.x,p.y,p.z)<=64;
+        var p=position(e);return player.distanceToSqr(p.x,p.y,p.z)<=64;
     }
     static void unload(ServerLevel level){CONSOLES.remove(level);}
 }

@@ -1,40 +1,44 @@
 package com.guidedrailways;
-/** Closed-loop longitudinal scenarios, not a substitute for client/native-physics tests. */
+/** Closed-loop effort/drag/brake scenarios, without launching a server. */
 public final class DriverModelCheck {
-    static int checks;
-    static void check(boolean condition,String reason){checks++;if(!condition)throw new AssertionError(reason);}
-    static double force(double speed,double target,double rpm,double mass,int brake,boolean neutral,double dt){return DriverModel.force(speed,target,rpm,mass,brake,neutral,6,2.5,4,.6,dt);}
-    static double run(double speed,double target,double rpm,double mass,int brake,boolean neutral,double seconds,double dt){
-        for(int i=0;i<seconds/dt;i++){
-            double f=force(speed,target,rpm,mass,brake,neutral,dt);double next=speed+f/mass*dt;
-            check(Double.isFinite(next),"finite response");
-            check(Math.abs(next-speed)<=8*dt+1e-9,"bounded braking/acceleration");
-            if(brake>0||neutral||Math.abs(rpm)<.001)check(speed*next>=-1e-10,"no reversal from braking or rolling resistance");
+    private static int checks;
+    static void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
+    static double force(double speed,double limit,double rpm,double mass,int notch,boolean emergency,boolean hold,double dt){return DriverModel.force(speed,limit,rpm,mass,notch,emergency,hold,6,2.5,4,.6,dt);}
+    static double run(double speed,double limit,double rpm,double mass,int notch,boolean emergency,boolean hold,double seconds,double dt){
+        for(int i=0;i<Math.round(seconds/dt);i++){
+            double f=force(speed,limit,rpm,mass,notch,emergency,hold,dt),next=speed+f/mass*dt;
+            check(Double.isFinite(next),"finite integration");check(Math.abs(next-speed)<=8*dt+1e-9,"bounded acceleration or braking");
+            if(emergency||hold||notch<=0)check(speed*next>=-1e-10,"braking never reverses travel");
             speed=next;
         }return speed;
     }
     public static void main(String[] args){
-        for(double dt:new double[]{1.0/20,1.0/60,1.0/120})for(double mass:new double[]{80,600,5000})for(int direction:new int[]{-1,1}){
-            double target=DriverModel.target(direction,40,-256,.05);
-            check(Math.abs(target-direction*12.8)<1e-12,"input magnitude caps requested speed independently of input RPM sign");
-            double speed=run(0,target,256,mass,0,false,80,dt);
-            check(Math.abs(speed-target)<.001,"reaches available speed when powered long enough");
-            double lower=run(speed,direction*3,256,mass,0,false,10,dt);
-            check(Math.abs(lower-direction*3)<.001,"reducing setting decelerates without reversing");
-            double coast=run(lower,0,256,mass,0,true,1,dt);
-            check(Math.abs(coast)<Math.abs(lower)&&Math.abs(coast)>1,"neutral coasts despite input RPM");
-            double service=run(speed,0,0,mass,1,false,2,dt),emergency=run(speed,0,0,mass,2,false,2,dt);
-            check(Math.abs(emergency)<Math.abs(service),"emergency stops more rapidly than service brake without stress power");
-            check(Math.abs(run(speed,0,0,mass,1,false,10,dt))<1e-10,"service brake stops completely");
-            check(Math.abs(run(speed,-target,256,mass,0,false,80,dt)+target)<.001,"direction change stops then accelerates in reverse");
-            check(Math.abs(run(speed,0,256,mass,0,false,10,dt))<1e-6,"zero target stops instead of acting like neutral");
-            check(Math.abs(run(speed,target,0,mass,1,false,10,dt))<1e-10,"power loss automatic brake is independent of RPM");
+        for(double dt:new double[]{.05,1d/60,1d/120})for(double mass:new double[]{80,600,5000})for(int direction:new int[]{-1,1}){
+            double limit=direction*12.8;
+            double low=run(0,limit,-256,mass,1,false,false,2,dt),high=run(0,limit,256,mass,4,false,false,2,dt);
+            check(Math.abs(high)>Math.abs(low)*2,"notches change effort/acceleration, independent of RPM sign");
+            double lowFinal=run(low,limit,256,mass,1,false,false,240,dt),highFinal=run(high,limit,256,mass,4,false,false,240,dt);
+            check(Math.abs(lowFinal-limit)<.001&&Math.abs(highFinal-limit)<.001,"all positive notches share the RPM ceiling");
+            check(force(direction*6,limit,256,mass,1,false,false,dt)*direction>0,"reducing to P1 does not brake toward one quarter speed");
+            check(force(direction*15,limit,256,mass,1,false,false,dt)==0,"powered overspeed tapers without secret braking");
+            double coast=run(direction*6,limit,256,mass,0,false,false,1,dt);
+            check(Math.abs(coast)>5&&Math.abs(coast)<6,"centre coasts despite available stress input");
+            double b1=run(direction*6,limit,256,mass,-1,false,false,1,dt),b4=run(direction*6,limit,256,mass,-4,false,false,1,dt),estop=run(direction*6,limit,0,mass,4,true,false,1,dt);
+            check(Math.abs(estop)<Math.abs(b4)&&Math.abs(b4)<Math.abs(b1),"four graded brakes and independent stronger emergency brake");
+            check(Math.abs(run(direction*6,limit,0,mass,4,false,true,10,dt))<1e-10,"power-loss/authority-loss hold stops without RPM");
+            check(force(0,0,256,mass,4,false,false,dt)==0,"neutral reverser cannot produce traction");
+            check(force(0,limit,0,mass,4,false,false,dt)==0,"no phantom power");
+            check(Math.abs(run(direction*6,limit,256,mass,-1,false,false,10,dt))<1e-10,"B1 eventually stops, with no speed inversion");
         }
-        check(DriverModel.target(0,40,256,.05)==0,"neutral has no traction target");
-        check(DriverModel.target(1,40,0,.05)==0,"no phantom power");
-        check(DriverModel.target(1,-100,256,.05)==0,"negative speed setting rejected");
-        check(DriverModel.target(1,Double.NaN,256,.05)==0,"invalid target rejected");
-        check(force(Double.NaN,4,256,80,0,false,.05)==0,"invalid speed rejected");
+        for(int n=-4;n<=4;n++){
+            check(DriverModel.step(n,1)==Math.min(4,n+1),"one positive detent per step");
+            check(DriverModel.step(n,-1)==Math.max(-4,n-1),"one negative detent per step");
+            check(DriverModel.canChangeDirection(0,n)==(n<=0),"reverser requires no traction");
+            check(!DriverModel.canChangeDirection(.151,n),"moving reverser interlock");
+        }
+        check(!DriverModel.canChangeDirection(Double.NaN,0),"invalid speed cannot unlock reverser");
+        check(force(Double.NaN,4,256,80,1,false,false,.05)==0,"invalid state rejected");
+        check(force(1,4,256,80,-99,false,false,.05)==force(1,4,256,80,-4,false,false,.05),"notch range clamped");
         System.out.println("DriverModelCheck: "+checks+" assertions passed");
     }
 }
