@@ -33,6 +33,7 @@ public final class DriverClient {
     private static void clear(){state=DriverNetwork.State.off();ready=pending=grabbing=resetRequested=false;steer=heldTicks=resetTicks=0;dragPixels=0;}
     static void accept(DriverNetwork.State next){
         boolean newSession=next.active()&&(!state.active()||!next.pos().equals(state.pos()));
+        if(next.observing()!=state.observing()){pending=grabbing=false;heldTicks=resetTicks=0;steer=0;}
         state=next;lastPacket=System.nanoTime();
         if(!next.active()){clear();return;}
         if(newSession){
@@ -48,7 +49,7 @@ public final class DriverClient {
     private static boolean rightDown(){var mc=Minecraft.getInstance();return GLFW.glfwGetMouseButton(mc.getWindow().getWindow(),GLFW.GLFW_MOUSE_BUTTON_RIGHT)==GLFW.GLFW_PRESS;}
     private static void movement(MovementInputUpdateEvent event){
         var mc=Minecraft.getInstance();if(!DriverInputPolicy.suppressMovement(state.active(),mc.screen!=null)||event.getEntity()!=mc.player)return;
-        var in=event.getInput();int next=DriverInputPolicy.steer(in.left,in.right);
+        var in=event.getInput();int next=state.observing()?0:DriverInputPolicy.steer(in.left,in.right);
         if(next!=steer){steer=next;send(steer<0?20:steer>0?21:22);}
         in.forwardImpulse=0;in.leftImpulse=0;in.up=in.down=in.left=in.right=false;
         // Jumping and crouching are intentionally left untouched.
@@ -58,7 +59,7 @@ public final class DriverClient {
         if(event.getButton()==GLFW.GLFW_MOUSE_BUTTON_LEFT){
             mc.options.keyAttack.setDown(false);if(event.getAction()==GLFW.GLFW_PRESS)send(8);event.setCanceled(true);return;
         }
-        if(event.getButton()!=GLFW.GLFW_MOUSE_BUTTON_RIGHT)return;
+        if(event.getButton()!=GLFW.GLFW_MOUSE_BUTTON_RIGHT||state.observing())return;
         if(event.getAction()==GLFW.GLFW_RELEASE){
             ready=true;if(pending||grabbing){pending=grabbing=false;heldTicks=resetTicks=0;event.setCanceled(true);}return;
         }
@@ -107,6 +108,11 @@ public final class DriverClient {
         var g=event.getGuiGraphics();int x=12,y=mc.getWindow().getGuiScaledHeight()-92;
         g.fill(x-5,y-6,x+300,y+78,0xbb141c20);
         g.drawString(mc.font,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",state.speed())),x,y,0xff8ae2cd,false);
+        if(state.observing()){
+            g.drawString(mc.font,text("observing"),x,y+15,0xffe6cc8c,false);
+            g.drawString(mc.font,text("takeover_hint"),x,y+35,0xffb9c5cc,false);
+            g.drawString(mc.font,text("observe_keys"),x,y+55,0xffb9c5cc,false);return;
+        }
         int n=state.notch();g.drawString(mc.font,state.emergency()?text("emergency_on"):text(n>0?"traction_notch":n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25),x,y+15,0xffe6cc8c,false);
         g.drawString(mc.font,text(steer<0?"steer_left":steer>0?"steer_right":"steer_default"),x,y+30,0xffd5dbe0,false);
         g.drawString(mc.font,text(grabbing?"dragging_hint":"world_hint"),x,y+45,0xffb9c5cc,false);

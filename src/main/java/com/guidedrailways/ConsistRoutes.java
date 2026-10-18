@@ -76,7 +76,7 @@ final class ConsistRoutes {
             if(previous!=null&&previous.memory.members().equals(axleIds))context=previous;
             else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds));if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
             context.automatic=null;for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null){context.automatic=u.automatic.navigation();break;}
-            context.intent=0;for(var u:group)if(u.driver!=null&&u.driver.active){context.intent=level.getGameTime()-u.driver.steerAt<=30?u.driver.steer:0;break;}
+            context.intent=0;for(var u:group)if(u.driver!=null&&u.driver.active&&!u.driver.observing){context.intent=level.getGameTime()-u.driver.steerAt<=30?u.driver.steer:0;break;}
             for(var id:members)next.put(id,context);
             if(automaticHead!=null&&group.remove(automaticHead))group.addFirst(automaticHead);
             VehiclePhysics.Unit first=null;for(var u:group)if(!u.detached){first=u;break;}

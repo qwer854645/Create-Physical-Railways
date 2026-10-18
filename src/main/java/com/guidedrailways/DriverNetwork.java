@@ -15,13 +15,13 @@ public final class DriverNetwork {
         static final StreamCodec<RegistryFriendlyByteBuf,Command> CODEC=StreamCodec.of((b,v)->{b.writeBlockPos(v.pos);b.writeVarInt(v.command);},b->new Command(b.readBlockPos(),b.readVarInt()));
         @Override public Type<Command> type(){return TYPE;}
     }
-    public record State(boolean active,BlockPos pos,int notch,int direction,boolean emergency,double speed,double available,int powered,int supports) implements CustomPacketPayload {
+    public record State(boolean active,BlockPos pos,int notch,int direction,boolean emergency,double speed,double available,int powered,int supports,boolean observing) implements CustomPacketPayload {
         static final Type<State> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID,"driver_state"));
         static final StreamCodec<RegistryFriendlyByteBuf,State> CODEC=StreamCodec.of((b,v)->{
-            b.writeBoolean(v.active);b.writeBlockPos(v.pos);b.writeVarInt(v.notch);b.writeVarInt(v.direction);b.writeBoolean(v.emergency);b.writeDouble(v.speed);b.writeDouble(v.available);b.writeVarInt(v.powered);b.writeVarInt(v.supports);
-        },b->new State(b.readBoolean(),b.readBlockPos(),b.readVarInt(),b.readVarInt(),b.readBoolean(),b.readDouble(),b.readDouble(),b.readVarInt(),b.readVarInt()));
+            b.writeBoolean(v.active);b.writeBlockPos(v.pos);b.writeVarInt(v.notch);b.writeVarInt(v.direction);b.writeBoolean(v.emergency);b.writeDouble(v.speed);b.writeDouble(v.available);b.writeVarInt(v.powered);b.writeVarInt(v.supports);b.writeBoolean(v.observing);
+        },b->new State(b.readBoolean(),b.readBlockPos(),b.readVarInt(),b.readVarInt(),b.readBoolean(),b.readDouble(),b.readDouble(),b.readVarInt(),b.readVarInt(),b.readBoolean()));
         @Override public Type<State> type(){return TYPE;}
-        static State off(){return new State(false,BlockPos.ZERO,-4,0,false,0,0,0,0);}
+        static State off(){return new State(false,BlockPos.ZERO,-4,0,false,0,0,0,0,false);}
     }
     public record MenuState(int menu,String target,int remainingTenths) implements CustomPacketPayload {
         static final Type<MenuState> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID,"driver_menu_state"));
@@ -41,6 +41,6 @@ public final class DriverNetwork {
     static void sync(DriverConsoleEntity e,boolean active){
         if(e.operator==null||!(e.getLevel() instanceof net.minecraft.server.level.ServerLevel level))return;
         var player=level.getServer().getPlayerList().getPlayer(e.operator);if(player==null)return;
-        PacketDistributor.sendToPlayer(player,new State(active,e.getBlockPos(),e.notch,e.direction,e.emergency,e.actual,e.available,e.powered,e.supports));
+        PacketDistributor.sendToPlayer(player,new State(active,e.getBlockPos(),e.notch,e.direction,e.emergency,e.actual,e.available,e.powered,e.supports,e.observing));
     }
 }

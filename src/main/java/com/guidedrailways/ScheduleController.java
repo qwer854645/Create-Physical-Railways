@@ -41,9 +41,8 @@ final class ScheduleController {
         var stored=held.copyWithCount(1);
         if(present())give(player);
         if(!player.getAbilities().instabuild)held.shrink(1);
-        setSlot(player,stored);return true;
+        store(player,stored);return true;
     }
-    boolean canRemove(Player player){return allowed(player)&&DriverControls.stopped(owner);}
     boolean canInsert(Player player,ItemStack held){
         if(!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
         if(!allowed(player)||!DriverControls.stopped(owner)){hint(player,"stop_first");return false;}
@@ -54,9 +53,7 @@ final class ScheduleController {
         if(unsupported!=null){player.displayClientMessage(Component.translatable("gui.guidedrailways.auto.unsupported_item",unsupported),true);return false;}
         return true;
     }
-    /** Menu owns the item transfer; never shrink a carried stack or return the replaced slot here. */
-    void setSlot(Player player,ItemStack stack){
-        if(stack.isEmpty()){removeItem();return;}
+    private void store(Player player,ItemStack stack){
         item=stack.copyWithCount(1);program=null;var parsed=program();
         entry=Math.clamp(parsed.savedProgress,0,parsed.entries.size()-1);waiting=false;station=null;resetConditions();members=null;manualOverride=false;manualSource=null;
         running=false;plan=null;state(PAUSED);owner.setChanged();
@@ -107,10 +104,6 @@ final class ScheduleController {
         p.savedProgress=Math.clamp(entry,0,p.entries.size()-1);
         item.set(com.simibubi.create.AllDataComponents.TRAIN_SCHEDULE,p.write(owner.getLevel().registryAccess()));
         owner.setChanged();
-    }
-    ItemStack storedItem(){
-        var p=program();if(p!=null&&!p.entries.isEmpty()&&p.savedProgress!=Math.clamp(entry,0,p.entries.size()-1))syncProgress();
-        return item;
     }
     void give(Player player){if(present())player.getInventory().placeItemBackInInventory(removeItem());}
     ItemStack removeItem(){

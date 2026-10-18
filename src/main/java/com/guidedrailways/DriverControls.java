@@ -36,12 +36,12 @@ public final class DriverControls {
     static void resetEmergency(ServerLevel level,DriverConsoleEntity source){source.emergency=false;source.notch=-4;source.updateVisual();}
     static void removed(ServerLevel level,DriverConsoleEntity e){
         var map=CONSOLES.get(level);if(map!=null)map.remove(e.getBlockPos(),e);
-        e.active=false;e.enabled=false;e.steer=0;e.emergency=true;e.notch=-4;DriverNetwork.sync(e,false);e.operator=null;VehiclePhysics.consoleRemoved(e);
+        e.active=false;e.observing=false;e.enabled=false;e.steer=0;e.emergency=true;e.notch=-4;DriverNetwork.sync(e,false);e.operator=null;VehiclePhysics.consoleRemoved(e);
     }
     static void refresh(ServerLevel level,Collection<VehiclePhysics.Unit> units){
         var map=CONSOLES.getOrDefault(level,Map.of());
         if(!map.isEmpty())map.values().removeIf(e->{boolean gone=e.isRemoved()||!level.hasChunkAt(e.getBlockPos())||level.getBlockEntity(e.getBlockPos())!=e;if(gone&&e.active)e.park();return gone;});
-        for(var e:map.values())if(e.active){var operator=e.operator==null?null:level.getServer().getPlayerList().getPlayer(e.operator);if(operator==null||!operator.isAlive()||!accessible(e,operator))e.park();}
+        for(var e:map.values())if(e.active){var operator=e.operator==null?null:level.getServer().getPlayerList().getPlayer(e.operator);if(operator==null||!operator.isAlive()||!accessible(e,operator)){if(e.observing)e.leave();else e.park();}}
         DRIVEN.put(level,List.copyOf(units));
         var chosen=election(level);VIEW.put(level,chosen);
         for(var e:map.values()){
@@ -73,7 +73,7 @@ public final class DriverControls {
         if(!DriverInputPolicy.remoteCommand(command))return;
         var e=CONSOLES.getOrDefault(player.serverLevel(),Map.of()).get(pos);
         if(e==null||!e.active||!player.getUUID().equals(e.operator)||command!=19&&!isPrimary(e))return;
-        if(!accessible(e,player)){e.park();return;}
+        if(!accessible(e,player)){if(e.observing)e.leave();else e.park();return;}
         e.command(player,command);
     }
     static Vector3d position(DriverConsoleEntity e){

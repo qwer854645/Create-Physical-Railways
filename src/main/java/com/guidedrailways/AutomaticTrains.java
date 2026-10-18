@@ -43,7 +43,7 @@ final class AutomaticTrains {
                 if(orientation==null){hold(group,controller,false);continue;}
                 bind(group,master,null,orientation.signs,master.direction==0?0:available(group),master.notch,false,!master.enabled);continue;
             }
-            if(master.active)controller.manual(master);
+            if(master.active&&!master.observing)controller.manual(master);
             if(controller.manualOverride){
                 var source=controller.manualSource;
                 if(source==null||source.isRemoved()||DriverControls.body(source)==null){controller.pause(ScheduleController.PAUSED);hold(group,controller,false);continue;}
