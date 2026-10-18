@@ -180,5 +180,7 @@
   "config.guidedrailways.detailedLogging.tooltip": "Log joint errors and track guidance diagnostics",
   "config.guidedrailways.performanceLogging": "Guidance Timing Logging",
   "config.guidedrailways.performanceLogging.tooltip": "Log guidance code timings, excluding native physics solving and rendering",
-  "gui.guidedrailways.auto.state.16": "Waiting for a clear signal"
+  "gui.guidedrailways.auto.state.16": "Waiting for a clear signal",
+  "gui.guidedrailways.auto.title": "Schedule title: %s",
+  "gui.guidedrailways.auto.speed_limit": "Automatic speed limit: %s%%"
 }

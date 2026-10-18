@@ -6,7 +6,7 @@
 
 **尚未达到“完全兼容机械动力铁路系统”的目标**
 
-现阶段是使用 Create 轨道图、部分时刻表数据及部分铁路设备接口的独立物理列车。接口接入和构建通过不能替代游戏内验收。当前代码版本为 0.1.42；存档恢复、渲染包围盒修复及观察器基础检测已完成代码与自动检查，仍待客户端验收。
+现阶段是使用 Create 轨道图、部分时刻表数据及部分铁路设备接口的独立物理列车。接口接入和构建通过不能替代游戏内验收。当前代码版本为 0.1.43；基础时刻表扩展、存档恢复、渲染包围盒修复及观察器基础检测已完成代码与自动检查，仍待客户端验收。
 
 检查依据为本项目源码、锁定版本 Create jar 内的公开类及接口、现有自动检查和已有用户测试反馈。本次没有启动客户端或自行开启服务器。
 
@@ -30,20 +30,17 @@
 
 `ScheduleController.unsupported` 仅接受：
 
-- 指令：`DestinationInstruction`
-- 条件：`ScheduledDelay`、`TimeOfDayCondition`
+- 指令：`DestinationInstruction`、`ChangeThrottleInstruction`、`ChangeTitleInstruction`
+- 条件：`ScheduledDelay`、`TimeOfDayCondition`、`StationPoweredCondition`、`RedstoneLinkCondition`
 
-因此不能声称兼容任意原版时刻表。
+调整运行速度按比例限制自动驾驶目标速度，显示标题同步到驾驶台设置界面；两者运行状态随存档保持。车站供电条件使用当前目标站，红石连接使用原版全局频率网络；没有伪造原版 Train。上述新增功能待客户端验收，因此不能声称兼容任意原版时刻表。
 
-### 4. 时刻表其余指令和条件：未实现
+### 4. 时刻表其余指令和条件：仍有未实现项
 
 锁定版本 Create 中可见、当前未接入的功能包括：
 
-- 调整运行速度：`ChangeThrottleInstruction`
-- 修改显示标题：`ChangeTitleInstruction`
 - 包裹取件与派送：`FetchPackagesInstruction`、`DeliverPackagesInstruction`
 - 玩家乘车条件：`PlayerPassengerCondition`
-- 红石连接与车站红石条件：`RedstoneLinkCondition`、`StationPoweredCondition`
 - 物品、流体数量与装卸空闲条件：`ItemThresholdCondition`、`FluidThresholdCondition`、`IdleCargoCondition`
 - 车站卸载相关条件：`StationUnloadedCondition`
 

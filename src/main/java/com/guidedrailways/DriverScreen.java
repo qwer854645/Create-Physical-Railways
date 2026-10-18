@@ -100,6 +100,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
             g.drawString(font,CreateGuiTheme.fit(font,text("gears_order").getString(),276),leftPos+12,topPos+199,CreateGuiTheme.DIM,false);return;
         }
         CreateGuiTheme.inset(g,leftPos+12,topPos+29,276,40);
+        if(menu.value(12)!=0)g.drawString(font,CreateGuiTheme.fit(font,scheduleHeading().getString(),184),leftPos+12,topPos+19,CreateGuiTheme.DIM,false);
         CreateGuiTheme.inset(g,leftPos+12,topPos+102,276,57);
         g.drawString(font,text("actual",String.format(Locale.ROOT,"%+.2f",menu.value(4)/100.0)),leftPos+18,topPos+35,CreateGuiTheme.ACCENT,false);
         g.drawString(font,CreateGuiTheme.fit(font,text("power",String.format(Locale.ROOT,"%.2f",menu.value(5)/100.0),menu.value(7),menu.value(6)).getString(),264),leftPos+18,topPos+53,CreateGuiTheme.TEXT,false);
@@ -116,6 +117,9 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         g.drawString(font,CreateGuiTheme.fit(font,text("configured_max",String.format(Locale.ROOT,"%.1f",menu.value(21)/10.0)).getString(),248),leftPos+12,topPos+217,CreateGuiTheme.TEXT,false);
     }
     @Override protected void renderLabels(GuiGraphics g,int x,int y){}
+    private Component scheduleHeading(){return menu.details.title().isEmpty()
+        ?Component.translatable("gui.guidedrailways.auto.speed_limit",menu.details.throttlePercent())
+        :Component.translatable("gui.guidedrailways.auto.title",menu.details.title());}
     @Override public void render(GuiGraphics g,int x,int y,float partial){
         for(var widget:mainWidgets)widget.visible=!gearTab;
         gearTabButton.setMessage(text(gearTab?"back_settings":"gear_settings"));
@@ -130,6 +134,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         takeover.active=menu.value(16)!=0&&menu.value(20)!=0&&(menu.value(11)==0||menu.value(19)!=0);
         autoRemove.active=menu.value(12)!=0&&menu.value(18)!=0&&menu.value(20)!=0;
         super.render(g,x,y,partial);renderTooltip(g,x,y);
+        if(!gearTab&&menu.value(12)!=0&&isHovering(12,19,184,9,x,y))g.renderTooltip(font,
+            menu.details.title().isEmpty()?List.of(scheduleHeading()):List.of(scheduleHeading(),Component.translatable("gui.guidedrailways.auto.speed_limit",menu.details.throttlePercent())),Optional.empty(),x,y);
         Component status=Component.translatable("gui.guidedrailways.auto.state."+menu.value(13));
         if(!gearTab&&font.width(status)>264&&isHovering(18,124,264,10,x,y))g.renderTooltip(font,List.of(status),Optional.empty(),x,y);
         Component target=Component.translatable("gui.guidedrailways.auto.target",menu.details.target());

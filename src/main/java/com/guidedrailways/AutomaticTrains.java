@@ -61,8 +61,9 @@ final class AutomaticTrains {
             if(controller.members==null)controller.members=Set.copyOf(members);
             else if(!controller.members.equals(members)){controller.pause(ScheduleController.CHANGED);hold(group,controller,false);continue;}
             if(group.stream().anyMatch(u->u.detached)){controller.pause(ScheduleController.TRACK_MISSING);hold(group,controller,false);continue;}
+            if(!controller.prepareInstructions()){hold(group,controller,false);continue;}
             if(controller.releaseBrakes){for(var u:group)brake(u,false);controller.releaseBrakes=false;}
-            double cap=available(group,master);if(cap<=0){controller.state(ScheduleController.NO_POWER);hold(group,controller,false);continue;}
+            double cap=SchedulePrelude.ceiling(available(group,master),controller.throttle);if(cap<=0){controller.state(ScheduleController.NO_POWER);hold(group,controller,false);continue;}
             try{drive(level,group,links,controller,cap);}catch(RuntimeException error){
                 controller.pause(ScheduleController.UNSUPPORTED);hold(group,controller,false);
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[AutomaticTrain] paused after invalid schedule/route console={}",controller.owner.getBlockPos(),error);

@@ -1,6 +1,6 @@
 package com.guidedrailways;
 import com.simibubi.create.content.trains.schedule.*;
-import com.simibubi.create.content.trains.schedule.destination.DestinationInstruction;
+import com.simibubi.create.content.trains.schedule.destination.*;
 import com.simibubi.create.content.trains.schedule.condition.*;
 import net.minecraft.nbt.*;
 import net.minecraft.core.HolderLookup;
@@ -19,6 +19,7 @@ final class ScheduleController {
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
     boolean resumePending;private ScheduleReloadGate reloadGate;
     double remaining=Double.NaN;
+    double throttle=1;String currentTitle="";
     final List<Integer> progress=new ArrayList<>();final List<CompoundTag> contexts=new ArrayList<>();
     ScheduleController(DriverConsoleEntity owner){this.owner=owner;}
     boolean present(){return !item.isEmpty();}
@@ -31,11 +32,39 @@ final class ScheduleController {
         if(schedule==null||schedule.entries.isEmpty())return "empty";
         for(var entry:schedule.entries){
             if(entry==null||entry.instruction==null||entry.conditions==null)return "invalid";
-            if(entry.instruction.getClass()!=DestinationInstruction.class)return entry.instruction.getId().toString();
+            var type=entry.instruction.getClass();
+            if(type!=DestinationInstruction.class&&type!=ChangeThrottleInstruction.class&&type!=ChangeTitleInstruction.class)return entry.instruction.getId().toString();
+            if(type!=DestinationInstruction.class)continue;
             for(var branch:entry.conditions)for(var c:branch)
-                if(c.getClass()!=ScheduledDelay.class&&c.getClass()!=TimeOfDayCondition.class)return c.getId().toString();
+                if(!supportedCondition(c))return c.getId().toString();
         }
         return null;
+    }
+    private static boolean supportedCondition(ScheduleWaitCondition c){
+        return c!=null&&(c.getClass()==ScheduledDelay.class||c.getClass()==TimeOfDayCondition.class
+            ||c.getClass()==StationPoweredCondition.class||c.getClass()==RedstoneLinkCondition.class);
+    }
+    private void resetSettings(){throttle=1;currentTitle="";}
+    boolean prepareInstructions(){
+        var p=program();int previousEntry=entry;double previousThrottle=throttle;String previousTitle=currentTitle;
+        var result=SchedulePrelude.run(p.entries.size(),p.cyclic,entry,32,
+            i->p.entries.get(i).instruction.getClass()==DestinationInstruction.class,
+            i->{
+                var instruction=p.entries.get(i).instruction;
+                if(instruction.getClass()==ChangeThrottleInstruction.class)throttle=SchedulePrelude.throttle(((ChangeThrottleInstruction)instruction).getThrottle());
+                else if(instruction.getClass()==ChangeTitleInstruction.class)currentTitle=((ChangeTitleInstruction)instruction).getScheduleTitle();
+                else throw new IllegalStateException("Unsupported non-travel instruction "+instruction.getId());
+            });
+        if(result.executed()>0){
+            entry=result.entry();waiting=false;station=null;plan=null;remaining=Double.NaN;stableTicks=0;nextPlan=0;resetConditions();
+            if(entry!=previousEntry||throttle!=previousThrottle||!currentTitle.equals(previousTitle)){
+                syncProgress();
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[ScheduleSettings] console={} entry={} throttle={} title={}",owner.getBlockPos(),entry,throttle,currentTitle);
+            }
+        }
+        if(result.finished()){running=false;state(FINISHED);return false;}
+        if(instruction()==null){state(PLANNING);return false;}
+        return true;
     }
     boolean install(Player player,ItemStack held){
         if(!canInsert(player,held))return false;
@@ -57,7 +86,7 @@ final class ScheduleController {
     }
     private void store(Player player,ItemStack stack){
         item=stack.copyWithCount(1);program=null;var parsed=program();
-        entry=Math.clamp(parsed.savedProgress,0,parsed.entries.size()-1);waiting=false;station=null;resetConditions();members=null;manualOverride=false;manualSource=null;
+        entry=Math.clamp(parsed.savedProgress,0,parsed.entries.size()-1);waiting=false;station=null;resetConditions();resetSettings();members=null;manualOverride=false;manualSource=null;
         running=false;plan=null;state(PAUSED);owner.setChanged();
         // Store the actual schedule first; installation uses the same validated start path as resume.
         if(action(player,30))hint(player,"installed");
@@ -78,14 +107,14 @@ final class ScheduleController {
             if(id==33&&entry>=total())return false;
             owner.park();
             if(id==33){advance();if(entry<total())pause(PAUSED);hint(player,"skipped");return true;}
-            entry=0;waiting=false;station=null;resetConditions();syncProgress();
+            entry=0;waiting=false;station=null;resetConditions();resetSettings();syncProgress();
             return action(player,30);
         }
         if(id!=30||!present())return false;
         var p=program();String error=unsupported(p);if(error!=null){state(UNSUPPORTED);hint(player,"invalid");return false;}
         if(owner.emergency){hint(player,"emergency");return false;}
         if(DriverControls.body(owner)==null){hint(player,"install_body");return false;}
-        if(entry>=p.entries.size()){entry=0;waiting=false;station=null;resetConditions();}
+        if(entry>=p.entries.size()){entry=0;waiting=false;station=null;resetConditions();resetSettings();}
         owner.leave();owner.enabled=false;running=true;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
     }
     void manual(DriverConsoleEntity source){
@@ -122,7 +151,7 @@ final class ScheduleController {
     }
     void give(Player player){if(present())player.getInventory().placeItemBackInInventory(removeItem());}
     ItemStack removeItem(){
-        syncProgress();var stack=item;owner.park();item=ItemStack.EMPTY;program=null;entry=0;waiting=false;station=null;members=null;releaseBrakes=false;resetConditions();pause(EMPTY);owner.setChanged();return stack;
+        syncProgress();var stack=item;owner.park();item=ItemStack.EMPTY;program=null;entry=0;waiting=false;station=null;members=null;releaseBrakes=false;resetConditions();resetSettings();pause(EMPTY);owner.setChanged();return stack;
     }
     String target(){
         if(!present()||entry>=total())return "";
@@ -137,12 +166,34 @@ final class ScheduleController {
         for(int i=0;i<branches.size();i++){
             var branch=branches.get(i);int index=progress.get(i);if(index>=branch.size())return true;
             var c=branch.get(index);
-            // Verified for pinned Create 6.0.10: these EXACT classes do not dereference Train.
-            // Never pass null to arbitrary third-party conditions.
-            if(c.getClass()!=ScheduledDelay.class&&c.getClass()!=TimeOfDayCondition.class){pause(UNSUPPORTED);return false;}
-            if(c.tickCompletion(level,null,contexts.get(i))){progress.set(i,index+1);contexts.set(i,new CompoundTag());if(index+1>=branch.size())return true;}
+            if(!supportedCondition(c)){pause(UNSUPPORTED);return false;}
+            if(conditionComplete(level,c,contexts.get(i))){
+                progress.set(i,index+1);contexts.set(i,new CompoundTag());owner.setChanged();
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[ScheduleCondition] console={} entry={} branch={} condition={} completed=true",owner.getBlockPos(),entry,i,c.getId());
+                if(index+1>=branch.size())return true;
+            }
         }
         if(level.getGameTime()%20==0)owner.setChanged();return false;
+    }
+    private boolean conditionComplete(ServerLevel level,ScheduleWaitCondition condition,CompoundTag context){
+        if(condition.getClass()==StationPoweredCondition.class){
+            if(station==null)return false;
+            for(var graph:com.simibubi.create.Create.RAILWAYS.sided(level).trackNetworks.values()){
+                var stop=graph.getPoint(com.simibubi.create.content.trains.graph.EdgePointType.STATION,station);if(stop==null)continue;
+                var world=level.getServer().getLevel(stop.getBlockEntityDimension());var pos=stop.getBlockEntityPos();
+                return world!=null&&pos!=null&&world.hasChunkAt(pos)
+                    &&world.getBlockEntity(pos) instanceof com.simibubi.create.content.trains.station.StationBlockEntity&&world.hasNeighborSignal(pos);
+            }
+            return false;
+        }
+        if(condition.getClass()==RedstoneLinkCondition.class){
+            var link=(RedstoneLinkCondition)condition;
+            // Same global frequency semantics as Create, without its persisted version cache:
+            // a version number from a previous server run must not suppress the first check.
+            return com.simibubi.create.Create.REDSTONE_LINK_NETWORK_HANDLER.hasAnyLoadedPower(link.freq)!=link.lowActivation();
+        }
+        // Only the two exact time-condition classes reach this null-Train API call.
+        return condition.tickCompletion(level,null,context);
     }
     void advance(){
         nextPlan=0;entry++;waiting=false;station=null;plan=null;remaining=Double.NaN;stableTicks=0;resetConditions();
@@ -156,6 +207,7 @@ final class ScheduleController {
         if(!present())return;
         var data=new CompoundTag();data.put("Item",item.save(registries));data.putInt("Entry",entry);data.putBoolean("Waiting",waiting);
         data.putInt("Version",1);data.putBoolean("Running",running||resumePending);data.putInt("Status",status);
+        data.putDouble("Throttle",throttle);data.putString("Title",currentTitle);
         var savedMembers=new ListTag();if(members!=null)for(var id:members)savedMembers.add(StringTag.valueOf(id.toString()));data.put("Members",savedMembers);
         if(station!=null)data.putUUID("Station",station);
         var list=new ListTag();for(int i=0;i<progress.size();i++){var branch=new CompoundTag();branch.putInt("Progress",progress.get(i));branch.put("Context",contexts.get(i).copy());list.add(branch);}data.put("Conditions",list);
@@ -163,6 +215,7 @@ final class ScheduleController {
     }
     void load(CompoundTag tag,HolderLookup.Provider registries){
         var data=tag.getCompound("PhysicalSchedule");item=ItemStack.parseOptional(registries,data.getCompound("Item"));program=null;
+        throttle=data.contains("Throttle")?SchedulePrelude.throttle(data.getDouble("Throttle")):1;currentTitle=data.getString("Title");
         entry=Math.max(0,data.getInt("Entry"));waiting=data.getBoolean("Waiting");station=data.hasUUID("Station")?data.getUUID("Station"):null;
         resetConditions();var list=data.getList("Conditions",Tag.TAG_COMPOUND);for(int i=0;i<list.size();i++){var b=list.getCompound(i);progress.add(Math.max(0,b.getInt("Progress")));contexts.add(b.getCompound("Context").copy());}
         var savedMembers=data.getList("Members",Tag.TAG_STRING);var restoredMembers=new HashSet<UUID>();

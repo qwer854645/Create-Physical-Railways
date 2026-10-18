@@ -6,7 +6,7 @@ import net.minecraft.world.item.ItemStack;
 public final class DriverMenu extends AbstractContainerMenu {
     private final DriverConsoleEntity console;private final ContainerData data;
     private final Player viewer;private long nextDetails;private DriverNetwork.MenuState sentDetails;
-    DriverNetwork.MenuState details=new DriverNetwork.MenuState(-1,"",-1);
+    DriverNetwork.MenuState details=new DriverNetwork.MenuState(-1,"",-1,"",100);
     ItemStack schedulePreview=ItemStack.EMPTY;
     private ItemStack sentSchedule;
     DriverMenu(int id,Inventory inventory,DriverConsoleEntity console){
@@ -29,7 +29,8 @@ public final class DriverMenu extends AbstractContainerMenu {
         }
         String target=console.schedule.target();if(target.length()>256)target=target.substring(0,256);
         int distance=Double.isFinite(console.schedule.remaining)?(int)Math.clamp(Math.round(Math.max(0,console.schedule.remaining)*10),0,Integer.MAX_VALUE):-1;
-        var next=new DriverNetwork.MenuState(containerId,target,distance);
+        String title=console.schedule.currentTitle;if(title.length()>256)title=title.substring(0,256);
+        var next=new DriverNetwork.MenuState(containerId,target,distance,title,(int)Math.round(console.schedule.throttle*100));
         if(!next.equals(sentDetails)){sentDetails=next;net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,next);}
     }
     @Override public boolean stillValid(Player player){return console==null||DriverControls.accessible(console,player);}

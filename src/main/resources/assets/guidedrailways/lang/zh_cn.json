@@ -180,5 +180,7 @@
   "config.guidedrailways.detailedLogging.tooltip": "记录关节误差与轨道导向数据",
   "config.guidedrailways.performanceLogging": "导向性能日志",
   "config.guidedrailways.performanceLogging.tooltip": "记录导向代码耗时，不包含原生物理求解或渲染",
-  "gui.guidedrailways.auto.state.16": "等待前方信号放行"
+  "gui.guidedrailways.auto.state.16": "等待前方信号放行",
+  "gui.guidedrailways.auto.title": "行程标题：%s",
+  "gui.guidedrailways.auto.speed_limit": "自动限速：%s%%"
 }
