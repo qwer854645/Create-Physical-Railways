@@ -61,6 +61,7 @@ public final class DriverControls {
             e.actual=pipe.getLinearVelocity(body,new Vector3d()).dot(heading);
             for(var u:units)if(u.carrier==body){e.supports++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;if(Math.abs(u.mount.getSpeed())>.001){e.powered++;double cap=e.targetSpeed(u.mount.getSpeed());e.available=e.powered==1?cap:Math.min(e.available,cap);}}
         }
+        PhysicalSignals.tick(level,units);
         AutomaticTrains.tick(level,units,map.values());
         StationPresence.tick(level,units);
         for(var e:map.values()){
@@ -106,5 +107,5 @@ public final class DriverControls {
         if(e.isRemoved()||player.level()!=e.getLevel()||e.getLevel().getBlockEntity(e.getBlockPos())!=e)return false;
         var p=position(e);return player.distanceToSqr(p.x,p.y,p.z)<=64;
     }
-    static void unload(ServerLevel level){CONSOLES.remove(level);VIEW.remove(level);DRIVEN.remove(level);StationPresence.unload(level);}
+    static void unload(ServerLevel level){CONSOLES.remove(level);VIEW.remove(level);DRIVEN.remove(level);StationPresence.unload(level);PhysicalSignals.unload(level);}
 }

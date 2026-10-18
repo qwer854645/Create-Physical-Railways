@@ -301,3 +301,10 @@ tasks.register('checkLanguage', JavaExec) {
     mainClass = 'com.guidedrailways.LanguageCheck'
 }
 tasks.named('check') { dependsOn 'checkLanguage' }
+
+tasks.register('checkSignals', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.SignalCheck'
+}
+tasks.named('check') { dependsOn 'checkSignals' }

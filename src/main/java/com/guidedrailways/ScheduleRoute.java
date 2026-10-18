@@ -20,16 +20,19 @@ public final class ScheduleRoute {
     private record Visit(Key key,double cost,Visit previous){}
     public static Route find(Network network,Edge start,double offset,List<Goal> goals){return find(network,start,offset,goals,0);}
     public static Route find(Network network,Edge start,double offset,List<Goal> goals,double arrivalTolerance){
+        return find(network,start,offset,goals,arrivalTolerance,Double.POSITIVE_INFINITY);
+    }
+    public static Route find(Network network,Edge start,double offset,List<Goal> goals,double arrivalTolerance,double maximumDistance){
         if(!Double.isFinite(network.length(start))||!Double.isFinite(offset)||offset<0||offset>network.length(start)+1e-6)return null;
         var pending=new PriorityQueue<Visit>(Comparator.comparingDouble(Visit::cost).thenComparingInt(v->v.key.edge.from).thenComparingInt(v->v.key.edge.to));
         var best=new HashMap<Key,Double>();var first=new Visit(new Key(start,true),-offset,null);pending.add(first);best.put(first.key,first.cost);
         double answerCost=Double.POSITIVE_INFINITY;Visit answer=null;Goal target=null;int visited=0;
         while(!pending.isEmpty()&&visited++<32768){
             var v=pending.remove();if(v.cost>best.getOrDefault(v.key,Double.POSITIVE_INFINITY)+1e-9)continue;
-            if(v.cost>answerCost)continue;
+            if(v.cost>answerCost||v.cost>maximumDistance)continue;
             for(var goal:goals)if(goal.edge.equals(v.key.edge)&&goal.offset>=0&&goal.offset<=network.length(goal.edge)+1e-6){
                 double cost=v.cost+goal.offset;
-                if(cost>=-Math.max(0,arrivalTolerance)-1e-6&&cost<answerCost){answer=v;target=goal;answerCost=Math.max(0,cost);}
+                if(cost>=-Math.max(0,arrivalTolerance)-1e-6&&cost<answerCost&&cost<=maximumDistance){answer=v;target=goal;answerCost=Math.max(0,cost);}
             }
             var exits=new ArrayList<>(network.exits(v.key.edge));exits.sort(Comparator.comparingInt(Edge::to));
             for(var edge:exits){

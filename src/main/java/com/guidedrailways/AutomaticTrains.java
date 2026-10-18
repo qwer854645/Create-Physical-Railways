@@ -169,9 +169,15 @@ final class AutomaticTrains {
         c.stableTicks=0;
         if(remaining<-AutomaticDriveModel.STOP_TOLERANCE){c.pause(ScheduleController.OVERSHOOT);hold(group,c,false);return;}
         double speed=SubLevelPhysicsSystem.get(level).getPipeline().getLinearVelocity(p.head.bogie,new Vector3d()).dot(sample.tangent())*p.signs.get(p.head.bogie.getUniqueId());
-        var demand=AutomaticDriveModel.demand(remaining,speed,cap,TrainConfig.BRAKING.get()*brakeFraction(group,links));
-        c.state(ScheduleController.TRAVELLING);bind(group,c.owner,c,p.signs,demand.ceiling(),demand.notch(),false,false);
-        if(level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticDrive] target={} remaining={} speed={} ceiling={} notch={} bogies={}",p.route.goal().name(),remaining,speed,demand.ceiling(),demand.notch(),group.size());
+        double braking=TrainConfig.BRAKING.get()*brakeFraction(group,links);
+        double nose=PhysicalSignals.nose(p.head,sample.position(),new Vector3d(sample.tangent()).mul(p.signs.get(p.head.bogie.getUniqueId())));
+        double horizon=nose+cap*cap/Math.max(.01,braking)+cap*.3+8;
+        double signal=PhysicalSignals.limit(level,c.owner,p,offset,horizon);
+        double signalRoom=signal-nose-.5;
+        boolean waitingSignal=Double.isFinite(signal)&&signalRoom<remaining;
+        var demand=AutomaticDriveModel.demand(waitingSignal?signalRoom:remaining,speed,cap,braking);
+        c.state(waitingSignal?ScheduleController.SIGNAL_WAIT:ScheduleController.TRAVELLING);bind(group,c.owner,c,p.signs,demand.ceiling(),demand.notch(),false,false);
+        if(level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticDrive] target={} remaining={} speed={} ceiling={} notch={} bogies={} signalRoom={} nose={}",p.route.goal().name(),remaining,speed,demand.ceiling(),demand.notch(),group.size(),signalRoom,nose);
     }
     private static boolean sameEdge(TrackNetwork.Sample s,ScheduleRoute.Edge e){return s.path().a()==e.from()&&s.path().b()==e.to()||s.path().b()==e.from()&&s.path().a()==e.to();}
 }

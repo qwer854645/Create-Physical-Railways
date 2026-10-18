@@ -16,6 +16,8 @@ public final class AutomaticScheduleCheck {
         var n=new Network().edge(1,2,10).edge(2,3,20).edge(2,4,5).edge(4,3,5).edge(3,5,10).turn(1,2,3).turn(1,2,4).turn(2,4,3).turn(4,3,5).turn(2,3,5);
         var route=ScheduleRoute.find(n,e(1,2),6,List.of(goal(3,5,3)));
         check(route!=null&&Math.abs(route.distance()-17)<1e-9,"shortest allowed route includes both partial edge distances");
+        check(ScheduleRoute.find(n,e(1,2),6,List.of(goal(3,5,3)),0,16)==null,"short footprint searches cannot wander around a distant loop");
+        check(ScheduleRoute.find(n,e(1,2),6,List.of(goal(3,5,3)),0,17).distance()==17,"bounded footprint tracing includes its exact distance limit");
         check(route.edges().equals(List.of(e(1,2),e(2,4),e(4,3),e(3,5))),"junction is selected by destination, not turn angle");
         check(route.next(1,2,0)==4,"route exposes the required fork exit");
         check(Math.abs(route.remaining(n,1,2)-11)<1e-9,"remaining distance updates without replanning or nearest-station distance");
