@@ -26,6 +26,13 @@ public final class GuidedRailways {
             VehiclePhysics.step(e.getPhysicsSystem(),e.getTimeStep());
             CouplerConnections.step(e.getPhysicsSystem());
         });
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.level.BlockDropsEvent e)->{
+            if(e.getBlockEntity() instanceof DriverConsoleEntity console){
+                var item=console.schedule.removeItem();if(item.isEmpty())return;
+                var pos=DriverControls.position(console);
+                e.getDrops().add(new net.minecraft.world.entity.item.ItemEntity(e.getLevel(),pos.x,pos.y,pos.z,item));
+            }
+        });
         NeoForge.EVENT_BUS.addListener((LevelEvent.Unload e)->{
             if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);DriverControls.unload(level);}
         });

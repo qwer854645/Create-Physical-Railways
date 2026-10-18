@@ -23,6 +23,13 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock impleme
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l,BlockState s,BlockEntityType<T> type){
         return type==Content.DRIVER_ENTITY.get()?(world,pos,state,be)->{if(world instanceof net.minecraft.server.level.ServerLevel server&&be instanceof DriverConsoleEntity console)DriverControls.register(server,console);else if(be instanceof DriverConsoleEntity console)console.clientTick();}:null;
     }
+    @Override protected ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack,BlockState state,Level level,BlockPos pos,Player player,InteractionHand hand,BlockHitResult hit){
+        if(com.simibubi.create.AllItems.SCHEDULE.isIn(stack)){
+            if(!level.isClientSide&&level.getBlockEntity(pos) instanceof DriverConsoleEntity console)console.schedule.install(player,stack);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
+        return super.useItemOn(stack,state,level,pos,player,hand,hit);
+    }
     @Override protected InteractionResult useWithoutItem(BlockState s,Level l,BlockPos p,Player player,BlockHitResult hit){
         if(player instanceof ServerPlayer server&&l.getBlockEntity(p) instanceof DriverConsoleEntity console){
             DriverControls.register(server.serverLevel(),console);
@@ -30,6 +37,16 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock impleme
             else{if(!console.active)console.command(player,0);if(console.active&&player.getUUID().equals(console.operator))DriverNetwork.sync(console,true);else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),true);}
         }
         return InteractionResult.sidedSuccess(l.isClientSide);
+    }
+    @Override public BlockState playerWillDestroy(Level level,BlockPos pos,BlockState state,Player player){
+        if(!level.isClientSide&&level.getBlockEntity(pos) instanceof DriverConsoleEntity console)console.schedule.give(player);
+        return super.playerWillDestroy(level,pos,state,player);
+    }
+    @Override public InteractionResult onSneakWrenched(BlockState state,net.minecraft.world.item.context.UseOnContext context){
+        var player=context.getPlayer();
+        if(player==null||!player.mayBuild()||!context.getLevel().mayInteract(player,context.getClickedPos()))return InteractionResult.FAIL;
+        if(!context.getLevel().isClientSide&&context.getLevel().getBlockEntity(context.getClickedPos()) instanceof DriverConsoleEntity console)console.schedule.give(player);
+        return IWrenchable.super.onSneakWrenched(state,context);
     }
     @Override public InteractionResult onWrenched(BlockState state,net.minecraft.world.item.context.UseOnContext context){
         if(context.getPlayer()==null||!context.getPlayer().mayBuild()||!context.getLevel().mayInteract(context.getPlayer(),context.getClickedPos()))return InteractionResult.FAIL;

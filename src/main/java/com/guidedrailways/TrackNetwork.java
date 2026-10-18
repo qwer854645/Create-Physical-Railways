@@ -62,6 +62,8 @@ public final class TrackNetwork {
         }
         if(start!=0)PerfCounters.index(level,System.nanoTime()-start,true);
     }
+    static boolean live(ServerLevel level,Path path){var index=INDEX.get(level);return index!=null&&index.paths.get(key(path))==path;}
+    static Collection<Path> paths(ServerLevel level){var index=INDEX.get(level);return index==null?List.of():List.copyOf(index.paths.values());}
     private static Sample project(Path path,Vector3dc query,Vector3dc heading,Double hint){
         double seed=0,span;
         if(!path.edge.isTurn()){

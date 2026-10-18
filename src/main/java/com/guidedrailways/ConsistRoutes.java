@@ -11,7 +11,7 @@ final class ConsistRoutes {
     private record Cached(long tick,List<Plan> plans){}
     private static final Map<ServerLevel,Cached> CACHE=new WeakHashMap<>();
     private static final class Context {
-        final RouteMemory memory;final Map<RouteMemory.Axle,Vector3d> anchors=new HashMap<>();TrackNetwork.Sample head;int intent;
+        final RouteMemory memory;final Map<RouteMemory.Axle,Vector3d> anchors=new HashMap<>();TrackNetwork.Sample head;int intent;ScheduleController automatic;
         Context(RouteMemory memory){this.memory=memory;}
     }
     static final class Cursor implements TrackNetwork.RoutePolicy {
@@ -22,7 +22,10 @@ final class ConsistRoutes {
         @Override public BranchSelect.Steer steer(){return context.intent<0?BranchSelect.Steer.LEFT:context.intent>0?BranchSelect.Steer.RIGHT:BranchSelect.Steer.NONE;}
         @Override public void observe(Vector3dc position){var p=context.anchors.get(axle);if(p!=null&&p.distanceSquared(position)>1.44){context.memory.clearRepeat(axle);context.anchors.remove(axle);}}
         @Override public int choose(TrackNetwork.Path path,int node,int from,int[] exits,int proposed,Vector3d position){
-            int selected=context.memory.choose(axle,new RouteMemory.Junction(path.graph(),node),from,exits,proposed);context.anchors.put(axle,new Vector3d(position));return selected;
+            if(leading&&context.automatic!=null&&context.automatic.running&&context.automatic.plan!=null)proposed=context.automatic.plan.choose(path,node,from,proposed);
+            int selected=context.memory.choose(axle,new RouteMemory.Junction(path.graph(),node),from,exits,proposed);context.anchors.put(axle,new Vector3d(position));
+            if(leading&&selected>=0&&selected!=proposed&&context.automatic!=null&&context.automatic.running){context.automatic.plan=null;context.automatic.nextPlan=0;context.automatic.state(ScheduleController.PLANNING);}
+            return selected;
         }
     }
     record Plan(VehiclePhysics.Unit unit,Cursor front,Cursor rear){Cursor axle(int i){return i==0?front:rear;}}
@@ -54,6 +57,8 @@ final class ConsistRoutes {
                 double rank=socket==null?0:new Vector3d(centre).sub(socket).normalize().dot(travel);
                 if(Double.isFinite(rank)&&rank>best){best=rank;head=id;}
             }
+            VehiclePhysics.Unit automaticHead=null;int automaticEnd=0;
+            for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null&&u.automatic.navigation().plan!=null){var plan=u.automatic.navigation().plan;automaticHead=plan.head;automaticEnd=plan.end;head=automaticHead.carrier.getUniqueId();break;}
             var distance=new HashMap<UUID,Integer>();distance.put(head,0);queue.add(head);
             while(!queue.isEmpty()){var id=queue.remove();for(var n:graph.getOrDefault(id,Set.of()))if(!distance.containsKey(n)){distance.put(n,distance.get(id)+1);queue.add(n);}}
             var travels=new HashMap<UUID,Vector3d>();
@@ -70,10 +75,12 @@ final class ConsistRoutes {
             Context context;
             if(previous!=null&&previous.memory.members().equals(axleIds))context=previous;
             else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds));if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
+            context.automatic=null;for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null){context.automatic=u.automatic.navigation();break;}
             context.intent=0;for(var u:group)if(u.driver!=null&&u.driver.active){context.intent=level.getGameTime()-u.driver.steerAt<=30?u.driver.steer:0;break;}
             for(var id:members)next.put(id,context);
+            if(automaticHead!=null&&group.remove(automaticHead))group.addFirst(automaticHead);
             VehiclePhysics.Unit first=null;for(var u:group)if(!u.detached){first=u;break;}
-            int leading=0;if(first!=null){var h=new Vector3d(0,0,1).rotate(pipe.readPose(first.bogie,new Pose3d()).orientation());leading=BranchSelect.reverseTravel(pipe.getLinearVelocity(first.bogie,new Vector3d()).dot(h),VehiclePhysics.driverRpm(first,h),first.reverseTravel)?1:0;context.head=first.samples[leading];}
+            int leading=0;if(first!=null){var h=new Vector3d(0,0,1).rotate(pipe.readPose(first.bogie,new Pose3d()).orientation());leading=BranchSelect.reverseTravel(pipe.getLinearVelocity(first.bogie,new Vector3d()).dot(h),VehiclePhysics.driverRpm(first,h),first.reverseTravel)?1:0;if(automaticHead==first)leading=automaticEnd;context.head=first.samples[leading];}
             for(var u:group)output.add(new Plan(u,new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),0),u==first&&leading==0),new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),1),u==first&&leading==1)));
         }
         STATES.put(level,next);CACHE.put(level,new Cached(level.getGameTime(),output));return output;

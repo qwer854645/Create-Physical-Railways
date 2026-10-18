@@ -257,3 +257,11 @@ tasks.register('checkDriverInput', JavaExec) {
     mainClass = 'com.guidedrailways.DriverInputCheck'
 }
 tasks.named('check') { dependsOn 'checkDriverInput' }
+
+
+tasks.register('checkAutomaticSchedule', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.AutomaticScheduleCheck'
+}
+tasks.named('check') { dependsOn 'checkAutomaticSchedule' }

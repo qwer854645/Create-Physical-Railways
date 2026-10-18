@@ -9,6 +9,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
+    final ScheduleController schedule=new ScheduleController(this);
     java.util.UUID operator;int steer;long steerAt;
     boolean active,enabled,emergency;int direction=1,notch=-4;
     float lever=-1,previousLever=-1,reverser=1,previousReverser=1;
@@ -22,7 +23,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         setChanged();if(level!=null&&!level.isClientSide&&!isRemoved()){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);DriverNetwork.sync(this,active);}
     }
     void leave(){active=false;steer=0;DriverNetwork.sync(this,false);operator=null;updateVisual();}
-    void park(){enabled=false;active=false;steer=0;notch=-4;DriverNetwork.sync(this,false);operator=null;updateVisual();}
+    void park(){if(schedule.present())schedule.pause(ScheduleController.PAUSED);enabled=false;active=false;steer=0;notch=-4;DriverNetwork.sync(this,false);operator=null;updateVisual();}
     void command(Player player,int command){
         if(!(level instanceof ServerLevel server)||!player.mayBuild()||!server.mayInteract(player,worldPosition))return;
         if(active&&operator!=null&&!operator.equals(player.getUUID())&&command!=8){hint(player,"busy");return;}
@@ -60,9 +61,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}
-    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);}
+    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);schedule.save(tag,registries);}
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
-        super.loadAdditional(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
+        super.loadAdditional(tag,registries);schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
         if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-4,4);emergency=tag.getBoolean("VisualEmergency");}
         else{active=false;enabled=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
     }
