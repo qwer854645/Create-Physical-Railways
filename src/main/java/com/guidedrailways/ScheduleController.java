@@ -46,7 +46,10 @@ final class ScheduleController {
         if(present())give(player);
         item=held.copyWithCount(1);if(!player.getAbilities().instabuild)held.shrink(1);program=parsed;
         entry=Math.clamp(parsed.savedProgress,0,parsed.entries.size()-1);waiting=false;station=null;resetConditions();members=null;manualOverride=false;manualSource=null;
-        running=false;plan=null;state(PAUSED);owner.setChanged();hint(player,"installed");return true;
+        running=false;plan=null;state(PAUSED);owner.setChanged();
+        // Store the actual schedule first; installation uses the same validated start path as resume.
+        if(action(player,30))hint(player,"installed");
+        return true;
     }
     private boolean allowed(Player player){
         return owner.getLevel() instanceof ServerLevel level&&player.mayBuild()&&level.mayInteract(player,owner.getBlockPos())

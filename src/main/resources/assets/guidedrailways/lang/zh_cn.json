@@ -56,7 +56,7 @@
   "gui.guidedrailways.auto.stop_first": "请停稳后再更换或取回时刻表",
   "gui.guidedrailways.auto.invalid": "时刻表无效或包含暂不支持的内容",
   "gui.guidedrailways.auto.unsupported_item": "暂不支持这项时刻表内容：%s，时刻表未装入",
-  "gui.guidedrailways.auto.installed": "时刻表已装入，蹲下右键操控台可启用自动运行",
+  "gui.guidedrailways.auto.installed": "时刻表已存入操控台，自动运行已启动",
   "gui.guidedrailways.auto.paused": "自动运行已暂停，正在制动",
   "gui.guidedrailways.auto.emergency": "请先复位紧急制动，再恢复自动运行",
   "gui.guidedrailways.auto.install_body": "请先把操控台安装到物理车体上",

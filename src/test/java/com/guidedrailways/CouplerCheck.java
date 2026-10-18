@@ -51,6 +51,24 @@ public final class CouplerCheck {
             check(new Vector3d(1,0,0).rotate(localA).rotate(rotA).distance(new Vector3d(1,0,0).rotate(localB).rotate(rotB))<1e-10,"independently rotated bodies share a radial axis without locking their orientations");
         }
         check(CouplerGeometry.distanceFrame(new Vector3d(),new Vector3d()).isFinite(),"coincident sockets have finite fallback");
+        double standard=CouplerVisual.pivot(0,1).distance(CouplerVisual.restTip(0,1))*2;
+        check(Math.abs(CouplerGeometry.REST_LENGTH-standard)<1e-12,"standard distance matches two unstretched visual drawbars");
+        check(CouplerGeometry.canCapture(standard,0),"resting standard drawbars engage end stops");
+        check(!CouplerGeometry.canCapture(standard+.2,0),"loose engagement must be drawn in by the capped spring before end stops engage");
+        check(!CouplerGeometry.canCapture(standard-.2,0),"compressed engagement must settle before end stops engage");
+        check(!CouplerGeometry.canCapture(standard,.26),"fast closing drawbars cannot suddenly engage end stops");
+        check(!CouplerGeometry.canCapture(Double.NaN,0),"invalid lengths cannot enable a native limit");
+        // Fixed target must converge from different engagement gaps and mass ratios.
+        for(double initial:new double[]{.5,1,2,3.4})for(double ma:new double[]{20,100,1000})for(double mb:new double[]{20,100,1000}){
+            double distance=initial,velocity=0,reduced=1/(1/ma+1/mb);boolean captured=false;
+            var spring=CouplerGeometry.spring(ma,mb);
+            for(int step=0;step<2400;step++){
+                double force=Math.clamp(-spring.stiffness()*(distance-standard)-spring.damping()*velocity,-spring.maxForce(),spring.maxForce());
+                velocity+=force/reduced/240;distance+=velocity/240;
+                captured|=CouplerGeometry.canCapture(distance,velocity);
+            }
+            check(captured&&Math.abs(distance-standard)<1e-6&&Math.abs(velocity)<1e-6,"different starting gaps converge to one standard length without a position snap");
+        }
         var zero=new Vector3d();
         check(CouplerGeometry.slowEnough(new Vector3d(0,0,1),zero,zero,zero),"slow rolling coupling allowed");
         check(CouplerGeometry.slowEnough(new Vector3d(0,0,2),new Vector3d(0,0,2),zero,zero),"same-speed rolling cars allowed at limit");
@@ -79,7 +97,7 @@ public final class CouplerCheck {
         rejects(()->links.add(new CouplingLinks.Link(UUID.randomUUID(),endpoints.get(0),endpoints.get(0))),"self-pair rejected");
         reload.remove(ids.get(0));check(reload.forEndpoint(endpoints.get(0))==null&&reload.forEndpoint(endpoints.get(1))==null,"disconnect clears both endpoints even without endpoint objects loaded");
         check(reload.all().size()==49&&links.all().size()==50,"unlink affects only the chosen pair");
-        check(Math.abs(CouplerGeometry.HALF_STROKE*2-.2)<1e-12,"nominal draft travel is 0.2 blocks; collision may extend the soft buffer");
+        check(Math.abs(CouplerGeometry.HALF_STROKE*2-.2)<1e-12,"captured drawbars allow 0.2 blocks of radial travel without restricting swivel");
         System.out.println("CouplerCheck: "+checks+" assertions passed");
     }
 }

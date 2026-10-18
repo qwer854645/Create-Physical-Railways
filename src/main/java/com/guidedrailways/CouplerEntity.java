@@ -30,7 +30,7 @@ public final class CouplerEntity extends BlockEntity {
     CouplerEntity(BlockPos pos,BlockState state){super(Content.COUPLER_ENTITY.get(),pos,state);}
     void geometry(Vector3d anchor,Quaterniond frame,double length){restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){
-        super.saveAdditional(tag,registries);tag.putInt("CouplerVersion",3);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
+        super.saveAdditional(tag,registries);tag.putInt("CouplerVersion",4);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
         tag.putDouble("RestLength",restLength);tag.putDouble("Ax",anchor.x);tag.putDouble("Ay",anchor.y);tag.putDouble("Az",anchor.z);
         tag.putDouble("Qx",frame.x);tag.putDouble("Qy",frame.y);tag.putDouble("Qz",frame.z);tag.putDouble("Qw",frame.w);
     }
@@ -38,9 +38,9 @@ public final class CouplerEntity extends BlockEntity {
         super.loadAdditional(tag,registries);livingShape=null;
         endpointId=tag.hasUUID("Endpoint")?tag.getUUID("Endpoint"):UUID.randomUUID();
         anchor.set(tag.getDouble("Ax"),tag.getDouble("Ay"),tag.getDouble("Az"));frame.set(tag.getDouble("Qx"),tag.getDouble("Qy"),tag.getDouble("Qz"),tag.getDouble("Qw"));
-        restLength=tag.getInt("CouplerVersion")>=3&&tag.contains("RestLength")?tag.getDouble("RestLength"):-1;
+        restLength=tag.getInt("CouplerVersion")>=4&&tag.contains("RestLength")?tag.getDouble("RestLength"):-1;
         if(!Double.isFinite(restLength)||restLength<0)restLength=-1;
-        hasGeometry=(tag.getInt("CouplerVersion")==2||tag.getInt("CouplerVersion")==3)&&tag.getBoolean("HasGeometry")&&anchor.isFinite()&&frame.isFinite()&&frame.lengthSquared()>.5;
+        hasGeometry=(tag.getInt("CouplerVersion")>=2&&tag.getInt("CouplerVersion")<=4)&&tag.getBoolean("HasGeometry")&&anchor.isFinite()&&frame.isFinite()&&frame.lengthSquared()>.5;
         if(hasGeometry)frame.normalize();else{anchor.set(.5,.5,.5);frame.identity();}
         visualConnected=tag.getBoolean("VisualConnected");visualPeerId=tag.hasUUID("VisualPeer")?tag.getUUID("VisualPeer"):null;
         visualPeerPos=tag.contains("VisualPeerPos")?BlockPos.of(tag.getLong("VisualPeerPos")):null;

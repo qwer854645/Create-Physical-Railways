@@ -5,8 +5,8 @@ import org.joml.Matrix3d;
 import org.joml.Quaterniond;
 /** Pure initial engagement geometry. There is no scripted pulling force. */
 public final class CouplerGeometry {
-    /** Nominal buffer travel, not a hard solver limit. */
-    public static final double HALF_STROKE=.1,MAX_GAP=2.0,MAX_HEIGHT=1.0;
+    /** Two standard 0.73-block drawbars, with 0.1 block total compression/extension. */
+    public static final double REST_LENGTH=1.46,HALF_STROKE=.1,MAX_GAP=2.0,MAX_HEIGHT=1.0;
     public static final double MAX_RELATIVE_ACCELERATION=24;
     public record Engagement(Vector3d point,Quaterniond frame){}
     public record Spring(double stiffness,double damping,double maxForce){}
@@ -19,7 +19,7 @@ public final class CouplerGeometry {
         var up=new Vector3d(upA).add(upB);
         if(!up.isFinite()||up.lengthSquared()<.1)throw new IllegalArgumentException("请先把车体摆正再连挂");
         up.normalize();if(Math.abs(delta.dot(up))>MAX_HEIGHT)throw new IllegalArgumentException("两端车钩高差超过 1 格");
-        // Manual coupling may bridge a curve or sideways offset; preserve the existing gap.
+        // Manual coupling may bridge a curve or sideways offset; only derive the initial axis.
         var x=new Vector3d(delta);
         if(x.lengthSquared()<1e-8)x.set(fa).sub(fb);
         if(x.lengthSquared()<1e-8)x.set(fa);
@@ -35,6 +35,11 @@ public final class CouplerGeometry {
         return d.lengthSquared()<1e-12?new Quaterniond():new Quaterniond().rotationTo(new Vector3d(1,0,0),d.normalize());
     }
     public static double extension(Vector3dc a,Vector3dc b,double restLength){return a.distance(b)-restLength;}
+    /** Engage end stops only after the capped spring has settled inside the working stroke. */
+    public static boolean canCapture(double length,double radialSpeed){
+        return Double.isFinite(length)&&Double.isFinite(radialSpeed)
+            &&Math.abs(length-REST_LENGTH)<=HALF_STROKE*.8&&Math.abs(radialSpeed)<=.25;
+    }
     public static boolean slowEnough(Vector3dc va,Vector3dc vb,Vector3dc wa,Vector3dc wb){
         return va.isFinite()&&vb.isFinite()&&wa.isFinite()&&wb.isFinite()&&va.lengthSquared()<=4&&vb.lengthSquared()<=4&&va.distanceSquared(vb)<=4&&wa.lengthSquared()<=2.25&&wb.lengthSquared()<=2.25;
     }

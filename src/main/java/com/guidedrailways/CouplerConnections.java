@@ -16,7 +16,7 @@ public final class CouplerConnections {
     private record Pending(UUID endpoint,long expires){}
     private static final class Live {
         final GenericConstraintHandle joint;final ServerSubLevel a,b;final BlockPos pa,pb;final CouplerEntity visualA,visualB;
-        double ma,mb;long nextLog;
+        double ma,mb;long nextLog;boolean captured;
         Live(GenericConstraintHandle joint,ServerSubLevel a,ServerSubLevel b,CouplerEntity ea,CouplerEntity eb){this.joint=joint;this.a=a;this.b=b;this.pa=ea.getBlockPos().immutable();this.pb=eb.getBlockPos().immutable();visualA=ea;visualB=eb;}
         void close(){if(joint.isValid())joint.remove();visualA.visualPeer(null);visualB.visualPeer(null);}
     }
@@ -89,7 +89,7 @@ public final class CouplerConnections {
         if(!CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d())))throw new IllegalArgumentException("两节车速度或相对速度过高，请减速后再连挂");
         var geometry=CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));
         var socketA=socket(a);var socketB=socket(b);
-        double length=VehiclePhysics.world(ba,socketA).distance(VehiclePhysics.world(bb,socketB));
+        double length=CouplerGeometry.REST_LENGTH;
         a.geometry(socketA.sub(blockOrigin(a)),localFrame(ba,geometry.frame()),length);
         b.geometry(socketB.sub(blockOrigin(b)),localFrame(bb,geometry.frame()),length);
         var link=new CouplingLinks.Link(UUID.randomUUID(),a.endpointId,b.endpointId);data.add(link);
@@ -127,10 +127,10 @@ public final class CouplerConnections {
         if(old!=null&&(!old.joint.isValid()||old.a!=ba||old.b!=bb||!old.pa.equals(a.getBlockPos())||!old.pb.equals(b.getBlockPos()))){close(s,link.id());old=null;}
         if(!a.hasGeometry||!b.hasGeometry){disconnect(level,link.a(),"missing_saved_geometry");return;}
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
-        // Migrate legacy common-midpoint anchors without moving either vehicle.
+        // Migrate older anchors/engagement-dependent lengths to standard drawbars.
         if(a.restLength<0||b.restLength<0){
             var pa=socket(a);var pb=socket(b);var wa=VehiclePhysics.world(ba,pa);var wb=VehiclePhysics.world(bb,pb);
-            double length=wa.distance(wb);var frame=CouplerGeometry.distanceFrame(wa,wb);
+            double length=CouplerGeometry.REST_LENGTH;var frame=CouplerGeometry.distanceFrame(wa,wb);
             a.geometry(pa.sub(blockOrigin(a)),localFrame(ba,frame),length);b.geometry(pb.sub(blockOrigin(b)),localFrame(bb,frame),length);
             if(old!=null){close(s,link.id());old=null;}
         }
@@ -143,16 +143,30 @@ public final class CouplerConnections {
             GenericConstraintHandle joint=null;
             try{
                 joint=pipe.addConstraint(ba,bb,new GenericConstraintConfiguration(anchorA,anchorB,frameA,frameB,EnumSet.noneOf(ConstraintJointAxis.class)));
-                // A hard end stop can contradict wheel contact and track guidance on curves.
-                // The capped native spring takes up clearance without a second position lock.
+                // The capped spring first takes up a loose coupling gap without teleporting.
                 joint.setContactsEnabled(true);
                 old=new Live(joint,ba,bb,a,b);tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
-                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} nominalStroke={} savedAnchorError={} mode=soft_swivelling_distance",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} nominalStroke={} savedAnchorError={} mode=standard_length_buffer",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
             }catch(RuntimeException errorCreating){if(joint!=null&&joint.isValid())joint.remove();throw errorCreating;}
         }else{
-            // Only the radial axis is motorised; no hard limits, Y/Z and all rotations stay free.
+            // Only radial distance is constrained; Y/Z and all rotations stay free.
             // Reorient each physics step, never aim back toward the engagement heading.
             old.joint.setFrame1(anchorA,frameA);old.joint.setFrame2(anchorB,frameB);tune(old);
+        }
+        if(!old.captured){
+            var delta=new Vector3d(worldB).sub(worldA);double distance=delta.length();
+            double radialSpeed=Double.POSITIVE_INFINITY;
+            if(distance>1e-8){
+                var poseA=pipe.readPose(ba,new Pose3d());var poseB=pipe.readPose(bb,new Pose3d());
+                var va=pipe.getAngularVelocity(ba,new Vector3d()).cross(new Vector3d(worldA).sub(poseA.position())).add(pipe.getLinearVelocity(ba,new Vector3d()));
+                var vb=pipe.getAngularVelocity(bb,new Vector3d()).cross(new Vector3d(worldB).sub(poseB.position())).add(pipe.getLinearVelocity(bb,new Vector3d()));
+                radialSpeed=vb.sub(va).dot(delta.div(distance));
+            }
+            if(CouplerGeometry.canCapture(distance,radialSpeed)){
+                old.joint.setLimit(ConstraintJointAxis.LINEAR_X,CouplerGeometry.REST_LENGTH-CouplerGeometry.HALF_STROKE,CouplerGeometry.REST_LENGTH+CouplerGeometry.HALF_STROKE);
+                old.captured=true;
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] buffer captured link={} distance={} stroke={}",link.id(),distance,CouplerGeometry.HALF_STROKE*2);
+            }
         }
         a.visualPeer(b);b.visualPeer(a);
         if(level.getGameTime()>=old.nextLog){
