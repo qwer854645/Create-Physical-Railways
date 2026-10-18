@@ -106,16 +106,16 @@ public final class DriverClient {
     private static void hud(RenderGuiEvent.Post event){
         var mc=Minecraft.getInstance();if(!state.active()||mc.screen!=null||mc.options.hideGui)return;
         var g=event.getGuiGraphics();int x=12,y=mc.getWindow().getGuiScaledHeight()-92;
-        g.fill(x-5,y-6,x+300,y+78,0xbb141c20);
-        g.drawString(mc.font,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",state.speed())),x,y,0xff8ae2cd,false);
+        CreateGuiTheme.panel(g,x-5,y-6,310,90);
+        g.drawString(mc.font,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",state.speed())),x,y,CreateGuiTheme.HEADER,false);
         if(state.observing()){
-            g.drawString(mc.font,text(state.emergency()?"emergency_on":"observing"),x,y+15,0xffe6cc8c,false);
-            g.drawString(mc.font,text("takeover_hint"),x,y+35,0xffb9c5cc,false);
-            g.drawString(mc.font,text("observe_keys"),x,y+55,0xffb9c5cc,false);return;
+            g.drawString(mc.font,text(state.emergency()?"emergency_on":"observing"),x,y+15,CreateGuiTheme.ACCENT,false);
+            g.drawString(mc.font,text("takeover_hint"),x,y+35,CreateGuiTheme.TEXT,false);
+            g.drawString(mc.font,text("observe_keys"),x,y+55,CreateGuiTheme.DIM,false);return;
         }
-        int n=state.notch();g.drawString(mc.font,state.emergency()?text("emergency_on"):n>0?text("traction_speed",n,String.format(java.util.Locale.ROOT,"%.1f",state.gearTarget())):text(n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25),x,y+15,0xffe6cc8c,false);
-        g.drawString(mc.font,text(steer<0?"steer_left":steer>0?"steer_right":"steer_default"),x,y+30,0xffd5dbe0,false);
-        g.drawString(mc.font,text(state.emergency()?"reset_hint":grabbing?"dragging_hint":"world_hint"),x,y+45,0xffb9c5cc,false);
-        g.drawString(mc.font,text("world_keys"),x,y+60,0xffb9c5cc,false);
+        int n=state.notch();g.drawString(mc.font,state.emergency()?text("emergency_on"):n>0?text("traction_speed",n,String.format(java.util.Locale.ROOT,"%.1f",state.gearTarget())):text(n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25),x,y+15,CreateGuiTheme.ACCENT,false);
+        g.drawString(mc.font,text(steer<0?"steer_left":steer>0?"steer_right":"steer_default"),x,y+30,CreateGuiTheme.TEXT,false);
+        g.drawString(mc.font,text(state.emergency()?"reset_hint":grabbing?"dragging_hint":"world_hint"),x,y+45,CreateGuiTheme.TEXT,false);
+        g.drawString(mc.font,text("world_keys"),x,y+60,CreateGuiTheme.DIM,false);
     }
 }
