@@ -250,3 +250,10 @@ tasks.register('checkConsistRoutes', JavaExec) {
     mainClass = 'com.guidedrailways.ConsistRouteCheck'
 }
 tasks.named('check') { dependsOn 'checkConsistRoutes' }
+
+tasks.register('checkDriverInput', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.DriverInputCheck'
+}
+tasks.named('check') { dependsOn 'checkDriverInput' }

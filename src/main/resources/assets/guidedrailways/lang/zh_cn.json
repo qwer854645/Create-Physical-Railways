@@ -42,10 +42,11 @@
   "gui.guidedrailways.driver.busy": "这台操控台已有驾驶员，或尚未安装到有效车体",
   "gui.guidedrailways.driver.back_control": "返回原位操纵",
   "gui.guidedrailways.driver.settings_only": "设置与诊断 · 停稳后才能切换方向",
-  "gui.guidedrailways.driver.world_hint": "再次长按右键抓住拉杆 · 左键急停",
+  "gui.guidedrailways.driver.world_hint": "对准操控台长按右键调档 · 左键急停",
   "gui.guidedrailways.driver.dragging_hint": "按住右键，上下移动鼠标调档；松开保持",
   "gui.guidedrailways.driver.world_keys": "A/D 选岔 · W/S 禁用 · Esc 退出并制动",
   "gui.guidedrailways.driver.steer_left": "下一岔口：向左 · 后车沿用头车路线",
   "gui.guidedrailways.driver.steer_right": "下一岔口：向右 · 后车沿用头车路线",
-  "gui.guidedrailways.driver.steer_default": "默认选路：优先转角较小的分支"
+  "gui.guidedrailways.driver.steer_default": "默认选路：优先转角较小的分支",
+  "gui.guidedrailways.driver.close_settings": "关闭设置"
 }

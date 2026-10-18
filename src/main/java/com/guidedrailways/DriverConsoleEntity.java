@@ -19,9 +19,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return new DriverMenu(id,inventory,this);}
     void clientTick(){previousLever=lever;lever+=(notch/4f-lever)*.5f;previousReverser=reverser;reverser+=(direction-reverser)*.5f;}
     void updateVisual(){
-        setChanged();if(level!=null&&!level.isClientSide&&!isRemoved())level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);
+        setChanged();if(level!=null&&!level.isClientSide&&!isRemoved()){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);DriverNetwork.sync(this,active);}
     }
-    void park(){active=false;operator=null;steer=0;notch=-4;updateVisual();}
+    void park(){active=false;steer=0;notch=-4;DriverNetwork.sync(this,false);operator=null;updateVisual();}
     void command(Player player,int command){
         if(!(level instanceof ServerLevel server)||!player.mayBuild()||!server.mayInteract(player,worldPosition))return;
         if(active&&operator!=null&&!operator.equals(player.getUUID())&&command!=8){hint(player,"busy");return;}
@@ -55,9 +55,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         server.playSound(null,pos.x,pos.y,pos.z,net.minecraft.sounds.SoundEvents.LEVER_CLICK,net.minecraft.sounds.SoundSource.BLOCKS,.45f,1+notch*.035f);
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverConsole] pos={} operator={} active={} direction={} notch={} emergency={}",worldPosition,player.getUUID(),active,direction,notch,emergency);
     }
-    void open(ServerPlayer player,boolean settings){
-        player.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inventory,p)->new DriverMenu(id,inventory,this,settings),getDisplayName()));
-    }
+    void open(ServerPlayer player){player.openMenu(this);}
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}

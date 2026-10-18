@@ -26,8 +26,8 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock impleme
     @Override protected InteractionResult useWithoutItem(BlockState s,Level l,BlockPos p,Player player,BlockHitResult hit){
         if(player instanceof ServerPlayer server&&l.getBlockEntity(p) instanceof DriverConsoleEntity console){
             DriverControls.register(server.serverLevel(),console);
-            if(player.isShiftKeyDown())console.open(server,true);
-            else{if(!console.active)console.command(player,0);if(console.active&&player.getUUID().equals(console.operator))console.open(server,false);else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),true);}
+            if(player.isShiftKeyDown())console.open(server);
+            else{if(!console.active)console.command(player,0);if(console.active&&player.getUUID().equals(console.operator))DriverNetwork.sync(console,true);else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),true);}
         }
         return InteractionResult.sidedSuccess(l.isClientSide);
     }

@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Vector3d;
 import java.util.*;
-/** Server-only registry; one authority on a carrier, no remote control packets or extra bodies. */
+/** Server-only registry; one authority on a carrier, validated world input, no extra bodies. */
 public final class DriverControls {
     private static final Map<ServerLevel,Map<BlockPos,DriverConsoleEntity>> CONSOLES=new WeakHashMap<>();
     private DriverControls(){}
@@ -26,11 +26,12 @@ public final class DriverControls {
     }
     static void removed(ServerLevel level,DriverConsoleEntity e){
         var map=CONSOLES.get(level);if(map!=null)map.remove(e.getBlockPos(),e);
-        e.active=false;e.operator=null;e.steer=0;e.emergency=true;e.notch=-4;VehiclePhysics.consoleRemoved(e);
+        e.active=false;e.steer=0;e.emergency=true;e.notch=-4;DriverNetwork.sync(e,false);e.operator=null;VehiclePhysics.consoleRemoved(e);
     }
     static void refresh(ServerLevel level,Collection<VehiclePhysics.Unit> units){
         var map=CONSOLES.getOrDefault(level,Map.of());
-        if(!map.isEmpty())map.values().removeIf(e->e.isRemoved()||!level.hasChunkAt(e.getBlockPos())||level.getBlockEntity(e.getBlockPos())!=e);
+        if(!map.isEmpty())map.values().removeIf(e->{boolean gone=e.isRemoved()||!level.hasChunkAt(e.getBlockPos())||level.getBlockEntity(e.getBlockPos())!=e;if(gone&&e.active)e.park();return gone;});
+        for(var e:map.values())if(e.active){var operator=e.operator==null?null:level.getServer().getPlayerList().getPlayer(e.operator);if(operator==null||!operator.isAlive()||!accessible(e,operator))e.park();}
         var chosen=new HashMap<ServerSubLevel,DriverConsoleEntity>();
         for(var e:map.values()){
             e.actual=0;e.available=0;e.supports=0;e.powered=0;e.guided=0;e.mountBrakes=0;var body=body(e);if(body==null)continue;
@@ -49,8 +50,16 @@ public final class DriverControls {
             var heading=new Vector3d(facing.getStepX(),0,facing.getStepZ()).rotate(pipe.readPose(body,new dev.ryanhcode.sable.companion.math.Pose3d()).orientation());
             e.actual=pipe.getLinearVelocity(body,new Vector3d()).dot(heading);
             for(var u:units)if(u.carrier==body){e.supports++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;if(Math.abs(u.mount.getSpeed())>.001){e.powered++;double cap=Math.abs(u.mount.getSpeed())*TrainConfig.SPEED_PER_RPM.get();e.available=e.powered==1?cap:Math.min(e.available,cap);}}
+            if(e.active&&level.getGameTime()%5==0)DriverNetwork.sync(e,true);
             if(e.active&&level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverState] body={} actual={} notch={} available={} direction={} emergency={} powered={} guided={}/{}",body.getUniqueId(),e.actual,e.notch,e.available,e.direction,e.emergency,e.powered,e.guided,e.supports);
         }
+    }
+    static void remote(net.minecraft.server.level.ServerPlayer player,BlockPos pos,int command){
+        if(!DriverInputPolicy.remoteCommand(command))return;
+        var e=CONSOLES.getOrDefault(player.serverLevel(),Map.of()).get(pos);
+        if(e==null||!e.active||!player.getUUID().equals(e.operator))return;
+        if(!accessible(e,player)){e.park();return;}
+        e.command(player,command);
     }
     static Vector3d position(DriverConsoleEntity e){
         var p=new Vector3d(e.getBlockPos().getX()+.5,e.getBlockPos().getY()+.5,e.getBlockPos().getZ()+.5);var body=body(e);return body==null?p:VehiclePhysics.world(body,p);

@@ -1,0 +1,24 @@
+package com.guidedrailways;
+public final class DriverInputCheck {
+    private static int checks;
+    private static void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
+    public static void main(String[] args){
+        check(!DriverInputPolicy.suppressMovement(false,false),"ordinary play does not lose movement");
+        check(DriverInputPolicy.suppressMovement(true,false),"active in-world driving suppresses horizontal movement");
+        check(!DriverInputPolicy.suppressMovement(true,true),"GUI inputs are not intercepted by the driving movement handler");
+        check(DriverInputPolicy.steer(false,false)==0,"no steering input is default routing");
+        check(DriverInputPolicy.steer(true,true)==0,"opposed steering inputs are default routing");
+        check(DriverInputPolicy.steer(true,false)==-1&&DriverInputPolicy.steer(false,true)==1,"only left/right input maps to route intent");
+        double gain=DriverInputPolicy.heldMouseSensitivity()*.6F+.2F;
+        check(gain==0,"held drag zeroes this frame's mouse turn gain exactly, without a persistent option edit");
+        for(int id:new int[]{-1,0,3,4,5,6,7,23,24,99,Integer.MAX_VALUE})check(!DriverInputPolicy.remoteCommand(id),"world packets cannot claim arbitrary consoles or invoke GUI actions");
+        for(int id:new int[]{1,2,8,9,10,14,18,19,20,21,22})check(DriverInputPolicy.remoteCommand(id),"allowed world command remains available");
+        check(!DriverInputPolicy.suppressLook(true,false,false,false),"takeover alone never captures the mouse");
+        check(!DriverInputPolicy.suppressLook(true,false,false,true),"initial right-click alone never captures looking");
+        check(!DriverInputPolicy.suppressLook(true,true,false,false),"releasing right immediately restores looking");
+        check(!DriverInputPolicy.suppressLook(false,true,false,true),"stale drag after takeover ends cannot capture looking");
+        check(!DriverInputPolicy.suppressLook(true,true,true,true),"GUI mouse is never captured by driving");
+        check(DriverInputPolicy.suppressLook(true,true,false,true),"only an explicit held-right throttle drag consumes looking");
+        System.out.println("DriverInputCheck: "+checks+" assertions passed");
+    }
+}

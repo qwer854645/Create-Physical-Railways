@@ -42,10 +42,11 @@
   "gui.guidedrailways.driver.busy": "These controls are occupied or have no physical body",
   "gui.guidedrailways.driver.back_control": "Return to driving",
   "gui.guidedrailways.driver.settings_only": "Settings and diagnostics | Stop to reverse",
-  "gui.guidedrailways.driver.world_hint": "Hold right again to drag | Left: emergency",
+  "gui.guidedrailways.driver.world_hint": "Aim at controls, hold right to drag | Left: emergency",
   "gui.guidedrailways.driver.dragging_hint": "Hold right and move vertically | Release holds notch",
   "gui.guidedrailways.driver.world_keys": "A/D: branch | W/S disabled | Esc: release & brake",
   "gui.guidedrailways.driver.steer_left": "Next junction: left | Consist follows the leader",
   "gui.guidedrailways.driver.steer_right": "Next junction: right | Consist follows the leader",
-  "gui.guidedrailways.driver.steer_default": "Default: smallest turn angle"
+  "gui.guidedrailways.driver.steer_default": "Default: smallest turn angle",
+  "gui.guidedrailways.driver.close_settings": "Close settings"
 }
