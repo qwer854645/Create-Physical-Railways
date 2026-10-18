@@ -12,9 +12,38 @@ public final class DriverMenu extends AbstractContainerMenu {
             @Override public void set(int i,int value){}
             @Override public int getCount(){return 17;}
         };addDataSlots(data);
+        net.minecraft.world.Container storage=console==null?new net.minecraft.world.SimpleContainer(1):new net.minecraft.world.Container(){
+            @Override public int getContainerSize(){return 1;}
+            @Override public boolean isEmpty(){return !console.schedule.present();}
+            @Override public ItemStack getItem(int slot){return slot==0?console.schedule.item:ItemStack.EMPTY;}
+            @Override public ItemStack removeItem(int slot,int count){
+                if(slot!=0||count<=0)return ItemStack.EMPTY;
+                return console.schedule.removeItem();
+            }
+            @Override public ItemStack removeItemNoUpdate(int slot){return removeItem(slot,1);}
+            @Override public void setItem(int slot,ItemStack stack){if(slot==0)console.schedule.setSlot(inventory.player,stack);}
+            @Override public void setChanged(){console.setChanged();}
+            @Override public boolean stillValid(Player player){return DriverMenu.this.stillValid(player);}
+            @Override public void clearContent(){console.schedule.removeItem();}
+        };
+        addSlot(new Slot(storage,0,268,133){
+            @Override public int getMaxStackSize(){return 1;}
+            @Override public boolean mayPlace(ItemStack stack){return com.simibubi.create.AllItems.SCHEDULE.isIn(stack)&&(console==null||console.schedule.canInsert(inventory.player,stack));}
+            @Override public boolean mayPickup(Player player){return console==null||console.schedule.canRemove(player);}
+        });
+        for(int row=0;row<3;row++)for(int col=0;col<9;col++)addSlot(new Slot(inventory,col+row*9+9,69+col*18,218+row*18));
+        for(int col=0;col<9;col++)addSlot(new Slot(inventory,col,69+col*18,276));
     }
     int value(int index){return data.get(index);}
     @Override public boolean stillValid(Player player){return console==null||DriverControls.accessible(console,player);}
     @Override public boolean clickMenuButton(Player player,int id){if(console==null||!stillValid(player))return false;if(id>=30&&id<=32){boolean result=console.schedule.action(player,id);broadcastChanges();return result;}if(id<3||id>5)return false;console.command(player,id);broadcastChanges();return true;}
-    @Override public ItemStack quickMoveStack(Player player,int index){return ItemStack.EMPTY;}
+    @Override public ItemStack quickMoveStack(Player player,int index){
+        if(index<0||index>=slots.size())return ItemStack.EMPTY;
+        var slot=slots.get(index);if(!slot.hasItem()||!slot.mayPickup(player))return ItemStack.EMPTY;
+        var stack=slot.getItem();var original=stack.copy();
+        if(index==0){if(!moveItemStackTo(stack,1,37,true))return ItemStack.EMPTY;}
+        else if(!slots.getFirst().mayPlace(stack)||!moveItemStackTo(stack,0,1,false))return ItemStack.EMPTY;
+        if(stack.isEmpty())slot.setByPlayer(ItemStack.EMPTY);else slot.setChanged();
+        slot.onTake(player,stack);return original;
+    }
 }

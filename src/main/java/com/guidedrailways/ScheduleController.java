@@ -36,6 +36,14 @@ final class ScheduleController {
         return null;
     }
     boolean install(Player player,ItemStack held){
+        if(!canInsert(player,held))return false;
+        var stored=held.copyWithCount(1);
+        if(present())give(player);
+        if(!player.getAbilities().instabuild)held.shrink(1);
+        setSlot(player,stored);return true;
+    }
+    boolean canRemove(Player player){return allowed(player)&&Math.abs(owner.actual)<=.15;}
+    boolean canInsert(Player player,ItemStack held){
         if(!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
         if(!allowed(player)||Math.abs(owner.actual)>.15){hint(player,"stop_first");return false;}
         Schedule parsed;
@@ -43,13 +51,16 @@ final class ScheduleController {
         catch(RuntimeException error){hint(player,"invalid");return false;}
         String unsupported=unsupported(parsed);
         if(unsupported!=null){player.displayClientMessage(Component.translatable("gui.guidedrailways.auto.unsupported_item",unsupported),true);return false;}
-        if(present())give(player);
-        item=held.copyWithCount(1);if(!player.getAbilities().instabuild)held.shrink(1);program=parsed;
+        return true;
+    }
+    /** Menu owns the item transfer; never shrink a carried stack or return the replaced slot here. */
+    void setSlot(Player player,ItemStack stack){
+        if(stack.isEmpty()){removeItem();return;}
+        item=stack.copyWithCount(1);program=null;var parsed=program();
         entry=Math.clamp(parsed.savedProgress,0,parsed.entries.size()-1);waiting=false;station=null;resetConditions();members=null;manualOverride=false;manualSource=null;
         running=false;plan=null;state(PAUSED);owner.setChanged();
         // Store the actual schedule first; installation uses the same validated start path as resume.
         if(action(player,30))hint(player,"installed");
-        return true;
     }
     private boolean allowed(Player player){
         return owner.getLevel() instanceof ServerLevel level&&player.mayBuild()&&level.mayInteract(player,owner.getBlockPos())
