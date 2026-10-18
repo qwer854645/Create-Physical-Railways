@@ -9,7 +9,7 @@ import java.util.*;
 import com.simibubi.create.foundation.gui.AllIcons;
 /** Settings and gear profiles share one server menu; neither page contains inventory slots. */
 public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
-    private Button forward,neutral,reverse,autoStart,autoPause,autoSkip,autoRestart,takeover,autoRemove,gearTabButton,saveGears;
+    private Button forward,reverse,autoStart,autoPause,autoSkip,autoRestart,takeover,autoRemove,gearTabButton,saveGears;
     private final List<AbstractWidget> mainWidgets=new ArrayList<>();
     private final EditBox[] gears=new EditBox[DriverModel.MAX_NOTCH];
     private final int[] syncedGears=new int[DriverModel.MAX_NOTCH];
@@ -25,9 +25,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     }
     @Override protected void init(){
         super.init();mainWidgets.clear();
-        forward=command(text("forward"),12,76,86,3).selected(()->menu.value(1)==1);
-        neutral=command(text("neutral"),107,76,86,4).selected(()->menu.value(1)==0);
-        reverse=command(text("reverse"),202,76,86,5).selected(()->menu.value(1)==-1);
+        forward=command(text("forward"),12,76,133,3).selected(()->menu.value(1)==1);
+        reverse=command(text("reverse"),155,76,133,5).selected(()->menu.value(1)==-1);
         autoStart=command(Component.translatable("gui.guidedrailways.auto.start"),12,168,86,30);
         autoPause=command(Component.translatable("gui.guidedrailways.auto.pause"),107,168,86,31);
         autoSkip=command(Component.translatable("gui.guidedrailways.auto.skip"),202,168,86,33);
@@ -87,7 +86,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         g.drawString(font,title,leftPos+12,topPos+4,CreateGuiTheme.HEADER,false);
         if(gearTab){
             g.drawString(font,text("lever_instructions"),leftPos+12,topPos+36,CreateGuiTheme.TEXT,false);
-            g.drawString(font,text("selected_gear",selectedGear+1),leftPos+110,topPos+66,CreateGuiTheme.ACCENT,false);
+            g.drawString(font,text("selected_gear",selectedGear+1),leftPos+110,topPos+68,CreateGuiTheme.ACCENT,false);
             CreateGuiTheme.inset(g,leftPos+208,topPos+64,78,20);
             g.drawString(font,text("speed_units"),leftPos+110,topPos+90,CreateGuiTheme.TEXT,false);
             g.drawString(font,"0.1",leftPos+110,topPos+127,CreateGuiTheme.DIM,false);
@@ -105,11 +104,15 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         g.drawString(font,text("actual",String.format(Locale.ROOT,"%+.2f",menu.value(4)/100.0)),leftPos+18,topPos+35,CreateGuiTheme.ACCENT,false);
         g.drawString(font,CreateGuiTheme.fit(font,text("power",String.format(Locale.ROOT,"%.2f",menu.value(5)/100.0),menu.value(7),menu.value(6)).getString(),264),leftPos+18,topPos+53,CreateGuiTheme.TEXT,false);
         String target=menu.details.target();
-        AllIcons.I_SCROLL.render(g,leftPos+17,topPos+106);
+        if(menu.schedulePreview.isEmpty())AllIcons.I_SCROLL.render(g,leftPos+17,topPos+106);
+        else g.renderItem(menu.schedulePreview,leftPos+17,topPos+106);
         g.drawString(font,CreateGuiTheme.fit(font,Component.translatable("gui.guidedrailways.auto.target",target.isEmpty()?"—":target).getString(),246),leftPos+36,topPos+108,CreateGuiTheme.TEXT,false);
-        if(menu.details.remainingTenths()>=0)g.drawString(font,Component.translatable("gui.guidedrailways.auto.remaining",String.format(Locale.ROOT,"%.1f",menu.details.remainingTenths()/10.0)),leftPos+160,topPos+143,CreateGuiTheme.DIM,false);
+        if(menu.details.remainingTenths()>=0){
+            String remaining=CreateGuiTheme.fit(font,Component.translatable("gui.guidedrailways.auto.remaining",String.format(Locale.ROOT,"%.1f",menu.details.remainingTenths()/10.0)).getString(),122);
+            g.drawString(font,remaining,leftPos+282-font.width(remaining),topPos+143,CreateGuiTheme.DIM,false);
+        }
         g.drawString(font,CreateGuiTheme.fit(font,Component.translatable("gui.guidedrailways.auto.state."+menu.value(13)).getString(),264),leftPos+18,topPos+124,CreateGuiTheme.ACCENT,false);
-        if(menu.value(12)!=0)g.drawString(font,Component.translatable("gui.guidedrailways.auto.progress",menu.value(14),menu.value(15)),leftPos+18,topPos+143,CreateGuiTheme.DIM,false);
+        if(menu.value(12)!=0)g.drawString(font,CreateGuiTheme.fit(font,Component.translatable("gui.guidedrailways.auto.progress",menu.value(14),menu.value(15)).getString(),136),leftPos+18,topPos+143,CreateGuiTheme.DIM,false);
         g.drawString(font,CreateGuiTheme.fit(font,text("configured_max",String.format(Locale.ROOT,"%.1f",menu.value(21)/10.0)).getString(),248),leftPos+12,topPos+217,CreateGuiTheme.TEXT,false);
     }
     @Override protected void renderLabels(GuiGraphics g,int x,int y){}
@@ -119,7 +122,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         for(int i=0;i<gears.length;i++){gears[i].visible=gearTab&&i==selectedGear;gears[i].setEditable(menu.value(16)!=0&&menu.value(20)!=0);}
         lever.visible=speedSlider.visible=gearTab;speedSlider.active=menu.value(16)!=0&&menu.value(20)!=0&&enteredGears()!=null;speedSlider.refresh();
         saveGears.visible=gearTab;saveGears.active=menu.value(16)!=0&&menu.value(20)!=0&&enteredGears()!=null;
-        forward.active=neutral.active=reverse.active=menu.value(11)!=0&&menu.value(19)==0;
+        forward.active=reverse.active=menu.value(11)!=0&&menu.value(19)==0;
         boolean schedule=menu.value(12)!=0&&menu.value(16)!=0;
         autoStart.active=schedule&&menu.value(17)==0;autoPause.active=schedule&&menu.value(17)!=0;
         autoSkip.active=schedule&&menu.value(18)!=0&&menu.value(13)!=ScheduleController.FINISHED;
@@ -130,7 +133,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         Component status=Component.translatable("gui.guidedrailways.auto.state."+menu.value(13));
         if(!gearTab&&font.width(status)>264&&isHovering(18,124,264,10,x,y))g.renderTooltip(font,List.of(status),Optional.empty(),x,y);
         Component target=Component.translatable("gui.guidedrailways.auto.target",menu.details.target());
-        if(!gearTab&&font.width(target)>246&&isHovering(36,108,246,10,x,y)&&!menu.details.target().isEmpty())g.renderTooltip(font,List.of(target),Optional.empty(),x,y);
+        if(!gearTab&&!menu.schedulePreview.isEmpty()&&isHovering(17,106,265,16,x,y))g.renderTooltip(font,menu.schedulePreview,x,y);
+        else if(!gearTab&&font.width(target)>246&&isHovering(36,108,246,10,x,y)&&!menu.details.target().isEmpty())g.renderTooltip(font,List.of(target),Optional.empty(),x,y);
         if(!isDragging()&&isHovering(12,gearTab?195:211,248,gearTab?14:18,x,y))g.renderTooltip(font,UserText.lines(text("gears_help")),Optional.empty(),x,y);
     }
     @Override public boolean mouseClicked(double x,double y,int button){

@@ -120,16 +120,21 @@ public final class DriverClient {
         }
         // Size to the current state; wrap on small windows instead of clipping controls.
         int contentWidth=Math.min(260,Math.max(40,mc.getWindow().getGuiScaledWidth()-26));
-        int actualWidth=0;
-        for(var line:lines)actualWidth=Math.max(actualWidth,Math.min(contentWidth,mc.font.width(line)));
+        int actualWidth=Math.min(contentWidth,mc.font.width(lines.getFirst()));
         var rows=new java.util.ArrayList<net.minecraft.util.FormattedCharSequence>();
         var colors=new java.util.ArrayList<Integer>();
-        for(int i=0;i<lines.size();i++){
-            var wrapped=mc.font.split(lines.get(i),contentWidth);
-            for(var row:wrapped){rows.add(row);colors.add(i==0?CreateGuiTheme.HEADER:i==1?CreateGuiTheme.ACCENT:i==lines.size()-1?CreateGuiTheme.DIM:CreateGuiTheme.TEXT);}
+        for(int i=1;i<lines.size();i++){
+            for(var row:mc.font.split(lines.get(i),contentWidth)){
+                rows.add(row);actualWidth=Math.max(actualWidth,mc.font.width(row));
+                colors.add(i==1?CreateGuiTheme.ACCENT:i==lines.size()-1?CreateGuiTheme.DIM:CreateGuiTheme.TEXT);
+            }
         }
-        var g=event.getGuiGraphics();int x=12,height=rows.size()*12+12,y=mc.getWindow().getGuiScaledHeight()-height-8;
-        CreateGuiTheme.panel(g,x-5,y,actualWidth+16,height);
-        for(int i=0;i<rows.size();i++)g.drawString(mc.font,rows.get(i),x+3,y+6+i*12,colors.get(i),false);
+        int padding=10,lineStep=mc.font.lineHeight+3,headerHeight=15,footerHeight=18;
+        int width=actualWidth+padding*2,height=headerHeight+rows.size()*lineStep+footerHeight;
+        int x=7,y=mc.getWindow().getGuiScaledHeight()-height-8;
+        var g=event.getGuiGraphics();
+        CreateGuiTheme.panel(g,x,y,width,height);
+        g.drawString(mc.font,CreateGuiTheme.fit(mc.font,lines.getFirst().getString(),actualWidth),x+padding,y+4,CreateGuiTheme.HEADER,false);
+        for(int i=0;i<rows.size();i++)g.drawString(mc.font,rows.get(i),x+padding,y+headerHeight+3+i*lineStep,colors.get(i),false);
     }
 }

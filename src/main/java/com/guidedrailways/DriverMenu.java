@@ -7,6 +7,8 @@ public final class DriverMenu extends AbstractContainerMenu {
     private final DriverConsoleEntity console;private final ContainerData data;
     private final Player viewer;private long nextDetails;private DriverNetwork.MenuState sentDetails;
     DriverNetwork.MenuState details=new DriverNetwork.MenuState(-1,"",-1);
+    ItemStack schedulePreview=ItemStack.EMPTY;
+    private ItemStack sentSchedule;
     DriverMenu(int id,Inventory inventory,DriverConsoleEntity console){
         super(Content.DRIVER_MENU.get(),id);this.console=console;viewer=inventory.player;
         data=console==null?new SimpleContainerData(30):new ContainerData(){
@@ -21,12 +23,16 @@ public final class DriverMenu extends AbstractContainerMenu {
         super.broadcastChanges();
         if(console==null||!(viewer instanceof net.minecraft.server.level.ServerPlayer player)||!stillValid(player))return;
         long tick=player.serverLevel().getGameTime();if(tick<nextDetails)return;nextDetails=tick+5;
+        if(sentSchedule==null||!ItemStack.matches(sentSchedule,console.schedule.item)){
+            sentSchedule=console.schedule.item.copy();
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new DriverNetwork.SchedulePreview(containerId,sentSchedule.copy()));
+        }
         String target=console.schedule.target();if(target.length()>256)target=target.substring(0,256);
         int distance=Double.isFinite(console.schedule.remaining)?(int)Math.clamp(Math.round(Math.max(0,console.schedule.remaining)*10),0,Integer.MAX_VALUE):-1;
         var next=new DriverNetwork.MenuState(containerId,target,distance);
         if(!next.equals(sentDetails)){sentDetails=next;net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,next);}
     }
     @Override public boolean stillValid(Player player){return console==null||DriverControls.accessible(console,player);}
-    @Override public boolean clickMenuButton(Player player,int id){if(console==null||!stillValid(player))return false;if(id>=30&&id<=34){boolean result=console.schedule.action(player,id);nextDetails=0;broadcastChanges();return result;}if(id!=35&&(id<3||id>5))return false;console.command(player,id);broadcastChanges();return true;}
+    @Override public boolean clickMenuButton(Player player,int id){if(console==null||!stillValid(player))return false;if(id>=30&&id<=34){boolean result=console.schedule.action(player,id);nextDetails=0;broadcastChanges();return result;}if(id!=35&&id!=3&&id!=5)return false;console.command(player,id);broadcastChanges();return true;}
     @Override public ItemStack quickMoveStack(Player player,int index){return ItemStack.EMPTY;}
 }

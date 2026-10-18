@@ -13,7 +13,6 @@
   "gui.guidedrailways.driver.take": "Take Control",
   "gui.guidedrailways.driver.leave": "Leave Controls",
   "gui.guidedrailways.driver.forward": "Forward",
-  "gui.guidedrailways.driver.neutral": "Neutral",
   "gui.guidedrailways.driver.reverse": "Reverse",
   "gui.guidedrailways.driver.emergency": "Emergency Brake",
   "gui.guidedrailways.driver.actual": "Speed: %s blocks/s",

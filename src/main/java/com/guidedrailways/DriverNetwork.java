@@ -35,12 +35,22 @@ public final class DriverNetwork {
         static final StreamCodec<RegistryFriendlyByteBuf,SetGears> CODEC=StreamCodec.of((b,v)->{b.writeVarInt(v.menu);for(int i=0;i<DriverModel.MAX_NOTCH;i++)b.writeVarInt(v.tenths[i]);},b->{int menu=b.readVarInt();int[] gears=new int[DriverModel.MAX_NOTCH];for(int i=0;i<gears.length;i++)gears[i]=b.readVarInt();return new SetGears(menu,gears);});
         @Override public Type<SetGears> type(){return TYPE;}
     }
+    public record SchedulePreview(int menu,net.minecraft.world.item.ItemStack item) implements CustomPacketPayload {
+        static final Type<SchedulePreview> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID,"driver_schedule_preview"));
+        static final StreamCodec<RegistryFriendlyByteBuf,SchedulePreview> CODEC=StreamCodec.of((b,v)->{
+            b.writeVarInt(v.menu);net.minecraft.world.item.ItemStack.OPTIONAL_STREAM_CODEC.encode(b,v.item);
+        },b->new SchedulePreview(b.readVarInt(),net.minecraft.world.item.ItemStack.OPTIONAL_STREAM_CODEC.decode(b)));
+        @Override public Type<SchedulePreview> type(){return TYPE;}
+    }
     static void register(RegisterPayloadHandlersEvent event){
         var r=event.registrar("1");
         r.playToServer(Command.TYPE,Command.CODEC,(message,context)->{if(context.player() instanceof ServerPlayer player)DriverControls.remote(player,message.pos,message.command);});
         r.playToClient(State.TYPE,State.CODEC,(message,context)->clientHandler.accept(message));
         r.playToClient(MenuState.TYPE,MenuState.CODEC,(message,context)->{
             if(context.player().containerMenu instanceof DriverMenu menu&&menu.containerId==message.menu)menu.details=message;
+        });
+        r.playToClient(SchedulePreview.TYPE,SchedulePreview.CODEC,(message,context)->{
+            if(context.player().containerMenu instanceof DriverMenu menu&&menu.containerId==message.menu)menu.schedulePreview=message.item.copy();
         });
         r.playToServer(SetGears.TYPE,SetGears.CODEC,(message,context)->{
             if(context.player() instanceof ServerPlayer player&&player.containerMenu instanceof DriverMenu menu&&menu.containerId==message.menu)menu.setGears(player,message.tenths);

@@ -13,7 +13,6 @@
   "gui.guidedrailways.driver.take": "接管驾驶",
   "gui.guidedrailways.driver.leave": "退出驾驶",
   "gui.guidedrailways.driver.forward": "前进",
-  "gui.guidedrailways.driver.neutral": "中立",
   "gui.guidedrailways.driver.reverse": "后退",
   "gui.guidedrailways.driver.emergency": "紧急制动",
   "gui.guidedrailways.driver.actual": "车速：%s 格/秒",
