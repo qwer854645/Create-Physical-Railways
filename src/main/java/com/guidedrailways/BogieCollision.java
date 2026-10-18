@@ -46,6 +46,14 @@ public final class BogieCollision {
             cylinder(boxes,side<0?-.875:.75,side<0?-.75:.875,axleY,z,RIM_RADIUS);
             cylinder(boxes,side<0?-1.1875:.1875,side<0?-.1875:1.1875,axleY,z,.176777);
         }
+        // A continuous narrow belt covers the re-entrant gaps between wheel flanges.
+        // It stays at axle height: the circular bottom clearance and detailed frame survive.
+        double x=1.1875+1.0/64,z=1+RIM_RADIUS+1.0/128,t=1.0/32;
+        for(double side:new double[]{-1,1}){
+            double x0=side<0?-x:x-t,z0=side<0?-z:z-t;
+            boxes.add(new Box(.5+x0,axleY-.125,.5-z,.5+x0+t,axleY+.125,.5+z));
+            boxes.add(new Box(.5-x,axleY-.125,.5+z0,.5+x,axleY+.125,.5+z0+t));
+        }
         return List.copyOf(boxes);
     }
     /** Horizontal strips circumscribe each circle with less than one pixel radial excess. */

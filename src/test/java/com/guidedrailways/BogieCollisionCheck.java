@@ -27,7 +27,7 @@ public final class BogieCollisionCheck {
         check(BogieGeometry.RIDE_HEIGHT-.5+low>.125,"expanded collision must clear Create's 2/16-high track collision");
         double minZ=BogieCollision.BOXES.stream().mapToDouble(BogieCollision.Box::z0).min().orElseThrow();
         double maxZ=BogieCollision.BOXES.stream().mapToDouble(BogieCollision.Box::z1).max().orElseThrow();
-        check(Math.abs((maxZ-minZ)-2.973994)<1e-6,"front-rear envelope matches rotating wheel rims");
+        check(Math.abs((maxZ-minZ)-2.989619)<1e-6,"anti-interlock belt adds only 1/128 clearance at each end");
         // Reject the old square wheel corners while retaining the full swept rim.
         double cy=BogieGeometry.RENDER_Y+.75;
         for(double side:new double[]{-1,1})for(double end:new double[]{-1,1}){
@@ -40,7 +40,15 @@ public final class BogieCollisionCheck {
             check(!BogieCollision.containsAfterCellClipping(.5+side*1.0,cy-.45,z),"tread must not inherit flange radius");
         }
         check(!BogieCollision.containsAfterCellClipping(.5+.6*.998046875,BogieGeometry.RENDER_Y+.41*.998046875,.5+1.32*.998046875),"empty frame diamond corner must not collide");
-        check(BogieCollision.BOXES.size()<=300,"keep collision primitives bounded without adding bodies");
+        check(BogieCollision.BOXES.size()<=304,"keep collision primitives bounded without adding bodies");
+        // No slots remain along the horizontal contact perimeter, including between axles.
+        for(int i=0;i<=200;i++){
+            double f=i/200.0,x=1.203125,z=1+BogieCollision.RIM_RADIUS+1.0/128;
+            for(double side:new double[]{-1,1}){
+                check(BogieCollision.containsAfterCellClipping(.5+side*x,cy,.5-z+2*z*f),"side belt must cover every flange gap");
+                check(BogieCollision.containsAfterCellClipping(.5-x+2*x*f,cy,.5+side*z),"end belt must prevent head-on wheel interlock");
+            }
+        }
         var resource=Path.of("src/main/resources/data/guidedrailways/physics_block_properties");
         var core=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(resource.resolve("bogie_frame.json"))).getAsJsonObject();
         var parts=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(resource.resolve("bogie_collision.json"))).getAsJsonObject();
@@ -63,6 +71,7 @@ public final class BogieCollisionCheck {
         check(ix>3*(80.0/6)&&iy>5*(80.0/6)&&iz>3*(80.0/6),"distributed point-mass layout increases inertia; native shape inertia is verified at runtime");
         check(Math.abs(BogieCollision.massCenterY()-.49853515625)<1e-9,"explicit mass centre preserves original central collision bounds");
         check(core.getAsJsonObject("properties").get("sable:restitution").getAsDouble()==0&&parts.getAsJsonObject("properties").get("sable:restitution").getAsDouble()==0,"bogie contacts remain non-bouncy");
+        BogieContactPolicyCheck.run();
         System.out.println("BogieCollisionCheck: "+checks+" assertions passed; primitives="+BogieCollision.BOXES.size());
     }
 }
