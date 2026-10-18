@@ -2,6 +2,12 @@
 
 全新实现的轨道导向物理火车原型，优先验证自由造车与驾驶手感
 
+## 语言与界面默认规范
+
+本项目后续的玩家文案、界面与 HUD 默认遵循机械动力风格，统一术语、操作说明、原生材质和控件状态。人工说明见 [PROJECT_STYLE.md](docs/PROJECT_STYLE.md)，机器读取 [project-style.json](docs/project-style.json)，结构约束见 [JSON Schema](docs/project-style.schema.json)。根目录 `AGENTS.md` 与 `.cursor/rules/project-style.mdc` 为持续生效的规则入口
+
+修改文案运行 `gradlew.bat checkLanguage --offline`；代码与 UI 修改按规范完成构建和手动验证。本文历史版本记录仅记录当时行为，现行用语以风格规范和语言资源为准
+
 ## 环境与边界
 
 Minecraft 1.21.1 / NeoForge 21.1.228 / Create 6.0.10-280 / Sable 2.0.3 / Java 21

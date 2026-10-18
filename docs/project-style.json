@@ -1,0 +1,387 @@
+{
+  "$schema": "./project-style.schema.json",
+  "id": "guidedrailways.create-style",
+  "version": "1.0.0",
+  "status": "default",
+  "scope": [
+    "item_names",
+    "tooltips",
+    "interaction_messages",
+    "screens",
+    "hud",
+    "configuration_ui",
+    "accessibility"
+  ],
+  "references": {
+    "createVersion": "6.0.10-280",
+    "languageResources": [
+      "assets/create/lang/zh_cn.json",
+      "assets/create/lang/en_us.json"
+    ],
+    "uiResources": [
+      "create:textures/gui/schedule_2.png",
+      "create:textures/gui/widgets.png"
+    ],
+    "upgradePolicy": "升级 Create 后重新核对用词、纹理坐标与控件 API，不盲用旧资源片段"
+  },
+  "precedence": {
+    "userOverridesDefault": true,
+    "canonicalFile": "docs/project-style.json",
+    "readerGuide": "docs/PROJECT_STYLE.md",
+    "changePolicy": "临时例外遵循用户明确指示；长期变更同步更新规范、说明、规则入口和相关检查"
+  },
+  "terminology": [
+    {
+      "id": "bogey",
+      "zh_cn": "物理转向架",
+      "en_us": "Physical Bogey",
+      "avoid": [
+        "物理导向转向架",
+        "Guided Physics Bogie",
+        "导向转向架"
+      ],
+      "shorthand": {
+        "zh_cn": "转向架",
+        "en_us": "bogey"
+      }
+    },
+    {
+      "id": "mount",
+      "zh_cn": "转向架安装座",
+      "en_us": "Bogey Mount",
+      "avoid": [
+        "自由车体安装座"
+      ],
+      "shorthand": {
+        "zh_cn": "安装座",
+        "en_us": "mount"
+      }
+    },
+    {
+      "id": "controls",
+      "zh_cn": "物理列车驾驶台",
+      "en_us": "Physical Train Controls",
+      "avoid": [
+        "物理列车操控台",
+        "控制台",
+        "操控台"
+      ],
+      "shorthand": {
+        "zh_cn": "驾驶台",
+        "en_us": "controls"
+      }
+    },
+    {
+      "id": "schedule",
+      "zh_cn": "时刻表",
+      "en_us": "Schedule",
+      "avoid": []
+    },
+    {
+      "id": "coupler",
+      "zh_cn": "车钩",
+      "en_us": "Train Coupler",
+      "avoid": [],
+      "shorthand": {
+        "zh_cn": "车钩",
+        "en_us": "coupler"
+      }
+    },
+    {
+      "id": "couple",
+      "zh_cn": "连挂",
+      "en_us": "couple",
+      "avoid": [
+        "链接车钩"
+      ]
+    },
+    {
+      "id": "uncouple",
+      "zh_cn": "解挂",
+      "en_us": "uncouple",
+      "avoid": [
+        "解开车钩"
+      ]
+    },
+    {
+      "id": "right_click",
+      "zh_cn": "右击",
+      "en_us": "R-Click",
+      "avoid": [
+        "点击右键"
+      ]
+    },
+    {
+      "id": "sneak_right_click",
+      "zh_cn": "潜行右击",
+      "en_us": "Sneak-R-Click",
+      "avoid": [
+        "蹲下右键"
+      ]
+    },
+    {
+      "id": "rerail",
+      "zh_cn": "重新上轨",
+      "en_us": "rerail",
+      "avoid": [
+        "重上轨",
+        "重置火车"
+      ]
+    },
+    {
+      "id": "target_speed",
+      "zh_cn": "目标速度",
+      "en_us": "Target speed",
+      "avoid": [
+        "保证速度"
+      ]
+    },
+    {
+      "id": "power_notch",
+      "zh_cn": "牵引 P1～P8",
+      "en_us": "Power P1–P8",
+      "avoid": [
+        "牵引力百分比档位"
+      ]
+    },
+    {
+      "id": "brake_notch",
+      "zh_cn": "制动 B1～B4",
+      "en_us": "Brake B1–B4",
+      "avoid": []
+    }
+  ],
+  "copy": {
+    "locales": [
+      "zh_cn",
+      "en_us"
+    ],
+    "encoding": "UTF-8",
+    "shortTextTerminalPeriods": false,
+    "lineBreak": "LF",
+    "placeholderStyle": "Minecraft translatable format; keep argument types and order equivalent across locales",
+    "keyPrefixes": [
+      "itemGroup.guidedrailways.",
+      "item.guidedrailways.",
+      "block.guidedrailways.",
+      "tooltip.guidedrailways.",
+      "gui.guidedrailways.",
+      "message.guidedrailways.",
+      "config.guidedrailways."
+    ],
+    "rules": [
+      {
+        "id": "copy.accuracy",
+        "level": "must",
+        "automated": false,
+        "text": "先核对实际触发条件与行为，再写说明；区分目标与实际、查看与接管、退出与制动"
+      },
+      {
+        "id": "copy.concise",
+        "level": "must",
+        "automated": false,
+        "text": "名称只描述部件，按钮使用短动作；状态先说当前情况，操作失败说明原因和可行的下一步"
+      },
+      {
+        "id": "copy.detail_on_hover",
+        "level": "must",
+        "automated": false,
+        "text": "常驻文案简短，操作顺序、限制和单位放在分行帮助中；不堆砌内部实现或重复提示"
+      },
+      {
+        "id": "copy.localization",
+        "level": "must",
+        "automated": true,
+        "text": "所有玩家可见文案使用翻译键，中英文键集合与占位符一致；禁止代码直接发送硬编码提示"
+      },
+      {
+        "id": "copy.errors",
+        "level": "must",
+        "automated": true,
+        "text": "交互异常通过 UserText.error 转为可翻译消息；未知技术异常记入日志，玩家收到简短通用提示"
+      },
+      {
+        "id": "copy.punctuation",
+        "level": "must",
+        "automated": true,
+        "text": "短提示不加中文或英文句号；中文标签用全角冒号，英文标签用冒号加空格；百分号使用正确的格式转义"
+      },
+      {
+        "id": "copy.multiline",
+        "level": "must",
+        "automated": true,
+        "text": "JSON 中用换行转义生成实际换行，经 UserText 展开；不得让反斜杠 n 出现在界面上"
+      },
+      {
+        "id": "copy.case",
+        "level": "must",
+        "automated": false,
+        "text": "英文部件名称和按钮用标题式大小写，说明用句式大小写；Bogey 等术语沿用 Create 官方拼法"
+      },
+      {
+        "id": "copy.keys_and_units",
+        "level": "must",
+        "automated": false,
+        "text": "区分右击动作与按住右键；可重绑的操作使用动作名称或实际按键名；速度写格/秒或 blocks/s，输入转速写 RPM"
+      },
+      {
+        "id": "copy.no_stale_claims",
+        "level": "must",
+        "automated": false,
+        "text": "不保留原型名称、过期热键、未实现功能、保证达到目标车速或退出必然制动等不准确说法"
+      }
+    ],
+    "examples": [
+      {
+        "kind": "button",
+        "zh_cn": "取回时刻表",
+        "en_us": "Retrieve Schedule"
+      },
+      {
+        "kind": "state",
+        "zh_cn": "时刻表已暂停",
+        "en_us": "Schedule paused"
+      },
+      {
+        "kind": "rejected_action",
+        "zh_cn": "停车后才能重新上轨",
+        "en_us": "Stop the carriage before rerailing"
+      },
+      {
+        "kind": "tooltip_condition",
+        "zh_cn": "使用扳手右击时：切换制动",
+        "en_us": "R-Click with a Wrench to toggle brakes"
+      },
+      {
+        "kind": "speed",
+        "zh_cn": "目标：%s 格/秒",
+        "en_us": "Target: %s blocks/s"
+      }
+    ]
+  },
+  "ui": {
+    "themeClass": "src/main/java/com/guidedrailways/CreateGuiTheme.java",
+    "buttonClass": "src/main/java/com/guidedrailways/CreateActionButton.java",
+    "textClass": "src/main/java/com/guidedrailways/UserText.java",
+    "palette": {
+      "TEXT": "#FFC6C6C6",
+      "DIM": "#FF9B9B9B",
+      "ACCENT": "#FFE4B763",
+      "HEADER": "@create.AllGuiTextures.FONT_COLOR",
+      "BODY": "#FF575757",
+      "RECESS": "#FF303030"
+    },
+    "assets": {
+      "panel": "AllGuiTextures.SCHEDULE_EDITOR",
+      "buttonStates": [
+        "BUTTON",
+        "BUTTON_HOVER",
+        "BUTTON_DOWN",
+        "BUTTON_GREEN",
+        "BUTTON_DISABLED"
+      ],
+      "confirmIcon": "AllIcons.I_CONFIRM",
+      "scheduleIcon": "AllIcons.I_SCROLL"
+    },
+    "dimensions": {
+      "buttonHeight": 18,
+      "iconSize": 16,
+      "referencePanelWidth": 300,
+      "referencePanelHeight": 240,
+      "speedEditorStep": 0.1
+    },
+    "rules": [
+      {
+        "id": "ui.shared_theme",
+        "level": "must",
+        "automated": false,
+        "text": "新界面、HUD 和自定义控件复用 CreateGuiTheme 与 CreateActionButton；新增视觉材料也集中到主题适配层"
+      },
+      {
+        "id": "ui.native_assets",
+        "level": "must",
+        "automated": false,
+        "text": "优先运行时引用 Create 原版 GUI 纹理与图标；只取干净区域，不带入源图自带的物品槽、字段或按钮"
+      },
+      {
+        "id": "ui.pixel_scale",
+        "level": "must",
+        "automated": false,
+        "text": "保持原生像素尺寸，边框和按钮中段平铺；不拉糊边框，不任意缩放字体或图标"
+      },
+      {
+        "id": "ui.materials",
+        "level": "must",
+        "automated": false,
+        "text": "灰色压边面板配纹理侧边，深灰凹槽承载信息与输入；浅灰正文，金色仅强调当前档位或重要信息"
+      },
+      {
+        "id": "ui.button_states",
+        "level": "must",
+        "automated": false,
+        "text": "按钮统一使用原版常态、蓝灰悬停、按下、绿色选中和禁用材质；选中与可点击状态不能混淆"
+      },
+      {
+        "id": "ui.inputs",
+        "level": "must",
+        "automated": false,
+        "text": "数字输入不显示原版黑框，改用主题凹槽；滑杆、握柄、刻度与选中态也使用相同材质和配色"
+      },
+      {
+        "id": "ui.hierarchy",
+        "level": "must",
+        "automated": false,
+        "text": "按速度与动力、方向、时刻表等任务分区；档位编辑单独成页，保持一致的边距、对齐与操作顺序"
+      },
+      {
+        "id": "ui.fit_and_tooltips",
+        "level": "must",
+        "automated": false,
+        "text": "同时检查中英文和 GUI 缩放；长字段省略并提供完整悬停文本，不覆盖相邻控件或截断数值单位"
+      },
+      {
+        "id": "ui.no_inventory_by_default",
+        "level": "must",
+        "automated": false,
+        "text": "不因设置界面改版重新加入背包、快捷栏或物品槽，除非用户明确要求"
+      },
+      {
+        "id": "ui.interaction_integrity",
+        "level": "must",
+        "automated": false,
+        "text": "外观改版保留点击、焦点、键盘、拖动和只读语义；绘制范围与命中区域一致，编辑参数不等于操作列车"
+      },
+      {
+        "id": "ui.permissions",
+        "level": "must",
+        "automated": false,
+        "text": "只读或无权限控件不可修改；样式不能绕过服务端校验或自动查看与显式接管的区别"
+      },
+      {
+        "id": "ui.no_mixed_theme",
+        "level": "must",
+        "automated": false,
+        "text": "不混用原版 Minecraft 按钮皮肤、旧黄铜外框、青绿高亮、发光渐变或无关的现代网页控件样式"
+      }
+    ]
+  },
+  "verification": {
+    "automatedCommands": [
+      "gradlew.bat checkLanguage --offline",
+      "gradlew.bat build --offline"
+    ],
+    "manualChecks": [
+      "中英文术语与功能描述",
+      "按钮全部状态与只读状态",
+      "长文本、单位、帮助换行与缩放",
+      "键盘、焦点、拖动和命中区域",
+      "编辑参数与实际驾驶状态分离"
+    ],
+    "limits": [
+      "automated 字段表示已有检查覆盖规则的一部分，不代表整条规则已经自动验证",
+      "自动检查只能覆盖结构和部分一致性，不能证明措辞质量或视觉效果",
+      "未打开客户端时明确说明界面尚未经游戏内验证",
+      "Sable 默认物理体名称接口只接受字符串，采用创建时的服务端语言"
+    ]
+  }
+}

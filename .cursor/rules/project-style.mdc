@@ -1,0 +1,15 @@
+---
+description: Default Create-style language and UI conventions for Guided Railways
+alwaysApply: true
+---
+
+# Language and UI defaults
+
+- Before changing player-facing text or UI, read [the specification](../../docs/project-style.json) and [the reader guide](../../docs/PROJECT_STYLE.md).
+- The JSON specification is canonical; its JSON Schema is `docs/project-style.schema.json`.
+- Apply the specification to names, tooltips, interaction messages, screens, HUD, configuration UI, and accessibility text.
+- Reuse the established terminology, translation helpers, Create textures, and shared theme classes.
+- Keep Chinese and English keys and placeholders synchronized; describe actual behavior precisely.
+- Preserve interaction semantics, permissions, and readability when changing appearance.
+- Explicit user instructions override defaults. Update the specification and guide together for lasting style changes.
+- Follow the verification and client-testing workflow in root `AGENTS.md`; automated checks do not prove visual quality.

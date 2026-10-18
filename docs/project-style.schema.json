@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:guidedrailways:project-style:schema:1",
+  "title": "Guided Railways Language and UI Style Specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "id",
+    "version",
+    "status",
+    "scope",
+    "references",
+    "precedence",
+    "terminology",
+    "copy",
+    "ui",
+    "verification"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "./project-style.schema.json"
+    },
+    "id": {
+      "const": "guidedrailways.create-style"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "status": {
+      "const": "default"
+    },
+    "scope": {
+      "$ref": "#/$defs/strings"
+    },
+    "references": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "createVersion",
+        "languageResources",
+        "uiResources",
+        "upgradePolicy"
+      ],
+      "properties": {
+        "createVersion": {
+          "$ref": "#/$defs/text"
+        },
+        "languageResources": {
+          "$ref": "#/$defs/strings"
+        },
+        "uiResources": {
+          "$ref": "#/$defs/strings"
+        },
+        "upgradePolicy": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "precedence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "userOverridesDefault",
+        "canonicalFile",
+        "readerGuide",
+        "changePolicy"
+      ],
+      "properties": {
+        "userOverridesDefault": {
+          "const": true
+        },
+        "canonicalFile": {
+          "const": "docs/project-style.json"
+        },
+        "readerGuide": {
+          "const": "docs/PROJECT_STYLE.md"
+        },
+        "changePolicy": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "terminology": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "zh_cn",
+          "en_us",
+          "avoid"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z_]+$"
+          },
+          "zh_cn": {
+            "$ref": "#/$defs/text"
+          },
+          "en_us": {
+            "$ref": "#/$defs/text"
+          },
+          "avoid": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/text"
+            }
+          },
+          "shorthand": {
+            "$ref": "#/$defs/localized"
+          }
+        }
+      }
+    },
+    "copy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "locales",
+        "encoding",
+        "shortTextTerminalPeriods",
+        "lineBreak",
+        "placeholderStyle",
+        "keyPrefixes",
+        "rules",
+        "examples"
+      ],
+      "properties": {
+        "locales": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "zh_cn"
+            },
+            {
+              "const": "en_us"
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "encoding": {
+          "const": "UTF-8"
+        },
+        "shortTextTerminalPeriods": {
+          "const": false
+        },
+        "lineBreak": {
+          "const": "LF"
+        },
+        "placeholderStyle": {
+          "$ref": "#/$defs/text"
+        },
+        "keyPrefixes": {
+          "$ref": "#/$defs/strings"
+        },
+        "rules": {
+          "$ref": "#/$defs/rules"
+        },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "zh_cn",
+              "en_us"
+            ],
+            "properties": {
+              "kind": {
+                "$ref": "#/$defs/text"
+              },
+              "zh_cn": {
+                "$ref": "#/$defs/text"
+              },
+              "en_us": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "themeClass",
+        "buttonClass",
+        "textClass",
+        "palette",
+        "assets",
+        "dimensions",
+        "rules"
+      ],
+      "properties": {
+        "themeClass": {
+          "$ref": "#/$defs/text"
+        },
+        "buttonClass": {
+          "$ref": "#/$defs/text"
+        },
+        "textClass": {
+          "$ref": "#/$defs/text"
+        },
+        "palette": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "TEXT",
+            "DIM",
+            "ACCENT",
+            "HEADER",
+            "BODY",
+            "RECESS"
+          ],
+          "properties": {
+            "TEXT": {
+              "$ref": "#/$defs/argb"
+            },
+            "DIM": {
+              "$ref": "#/$defs/argb"
+            },
+            "ACCENT": {
+              "$ref": "#/$defs/argb"
+            },
+            "HEADER": {
+              "const": "@create.AllGuiTextures.FONT_COLOR"
+            },
+            "BODY": {
+              "$ref": "#/$defs/argb"
+            },
+            "RECESS": {
+              "$ref": "#/$defs/argb"
+            }
+          }
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "panel",
+            "buttonStates",
+            "confirmIcon",
+            "scheduleIcon"
+          ],
+          "properties": {
+            "panel": {
+              "$ref": "#/$defs/text"
+            },
+            "buttonStates": {
+              "$ref": "#/$defs/strings"
+            },
+            "confirmIcon": {
+              "$ref": "#/$defs/text"
+            },
+            "scheduleIcon": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "buttonHeight",
+            "iconSize",
+            "referencePanelWidth",
+            "referencePanelHeight",
+            "speedEditorStep"
+          ],
+          "properties": {
+            "buttonHeight": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "iconSize": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "referencePanelWidth": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "referencePanelHeight": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "speedEditorStep": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "rules": {
+          "$ref": "#/$defs/rules"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "automatedCommands",
+        "manualChecks",
+        "limits"
+      ],
+      "properties": {
+        "automatedCommands": {
+          "$ref": "#/$defs/strings"
+        },
+        "manualChecks": {
+          "$ref": "#/$defs/strings"
+        },
+        "limits": {
+          "$ref": "#/$defs/strings"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "argb": {
+      "type": "string",
+      "pattern": "^#[0-9A-F]{8}$"
+    },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "zh_cn",
+        "en_us"
+      ],
+      "properties": {
+        "zh_cn": {
+          "$ref": "#/$defs/text"
+        },
+        "en_us": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "level",
+          "automated",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(copy|ui)\\.[a-z_]+$"
+          },
+          "level": {
+            "enum": [
+              "must",
+              "should"
+            ]
+          },
+          "automated": {
+            "type": "boolean"
+          },
+          "text": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      }
+    }
+  }
+}
