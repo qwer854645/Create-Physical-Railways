@@ -15,9 +15,9 @@ public final class DriverModelCheck {
     public static void main(String[] args){
         for(double dt:new double[]{.05,1d/60,1d/120})for(double mass:new double[]{80,600,5000})for(int direction:new int[]{-1,1}){
             double limit=direction*12.8;
-            double low=run(0,limit,-256,mass,1,false,false,2,dt),high=run(0,limit,256,mass,4,false,false,2,dt);
+            double low=run(0,limit,-256,mass,1,false,false,2,dt),high=run(0,limit,256,mass,8,false,false,2,dt);
             check(Math.abs(high)>Math.abs(low)*2,"notches change effort/acceleration, independent of RPM sign");
-            double lowFinal=run(low,limit,256,mass,1,false,false,240,dt),highFinal=run(high,limit,256,mass,4,false,false,240,dt);
+            double lowFinal=run(low,limit,256,mass,1,false,false,480,dt),highFinal=run(high,limit,256,mass,8,false,false,480,dt);
             check(Math.abs(lowFinal-limit)<.001&&Math.abs(highFinal-limit)<.001,"all positive notches share the RPM ceiling");
             check(force(direction*6,limit,256,mass,1,false,false,dt)*direction>0,"reducing to P1 does not brake toward one quarter speed");
             check(force(direction*15,limit,256,mass,1,false,false,dt)==0,"powered overspeed tapers without secret braking");
@@ -30,8 +30,8 @@ public final class DriverModelCheck {
             check(force(0,limit,0,mass,4,false,false,dt)==0,"no phantom power");
             check(Math.abs(run(direction*6,limit,256,mass,-1,false,false,10,dt))<1e-10,"B1 eventually stops, with no speed inversion");
         }
-        for(int n=-4;n<=4;n++){
-            check(DriverModel.step(n,1)==Math.min(4,n+1),"one positive detent per step");
+        for(int n=-4;n<=8;n++){
+            check(DriverModel.step(n,1)==Math.min(8,n+1),"one positive detent per step");
             check(DriverModel.step(n,-1)==Math.max(-4,n-1),"one negative detent per step");
             check(DriverModel.canChangeDirection(0,n)==(n<=0),"reverser requires no traction");
             check(!DriverModel.canChangeDirection(.151,n),"moving reverser interlock");
@@ -39,6 +39,7 @@ public final class DriverModelCheck {
         check(!DriverModel.canChangeDirection(Double.NaN,0),"invalid speed cannot unlock reverser");
         check(force(Double.NaN,4,256,80,1,false,false,.05)==0,"invalid state rejected");
         check(force(1,4,256,80,-99,false,false,.05)==force(1,4,256,80,-4,false,false,.05),"notch range clamped");
+        check(DriverModel.lever(-4)==-1&&DriverModel.lever(0)==0&&DriverModel.lever(8)==1,"asymmetric brake and power ranges retain the full visual travel");
         System.out.println("DriverModelCheck: "+checks+" assertions passed");
     }
 }

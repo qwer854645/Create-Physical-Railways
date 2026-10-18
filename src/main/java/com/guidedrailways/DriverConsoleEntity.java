@@ -13,15 +13,17 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     java.util.UUID consoleId=java.util.UUID.randomUUID();long placementOrder;boolean identitySaved;
     java.util.UUID operator;int steer;long steerAt;
     boolean active,enabled,emergency,observing;int direction=1,notch=-4;
-    private int maxSpeedTenths;
-    int maxSpeedTenths(){return SpeedSetting.valid(maxSpeedTenths)?maxSpeedTenths:SpeedSetting.fromRatio(TrainConfig.SPEED_PER_RPM.get());}
-    double targetSpeed(double rpm){return SpeedSetting.target(rpm,maxSpeedTenths());}
-    boolean setMaxSpeed(Player player,int tenths){
-        if(!(level instanceof ServerLevel)||!SpeedSetting.valid(tenths)||!player.mayBuild()||!level.mayInteract(player,worldPosition)
-            ||!DriverControls.accessible(this,player)||!DriverControls.isPrimary(this)||(active&&!player.getUUID().equals(operator)))return false;
-        maxSpeedTenths=tenths;updateVisual();
-        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverSpeedSetting] console={} maxTargetAt256={}",worldPosition,tenths/10.0);
-        return true;
+    private int[] gearSpeeds;
+    int maxSpeedTenths(){return SpeedSetting.fromRatio(TrainConfig.speedPerRpm());}
+    int[] gearSpeeds(){if(!SpeedSetting.validGears(SpeedSetting.MAX,gearSpeeds))gearSpeeds=SpeedSetting.defaultGears(maxSpeedTenths());return gearSpeeds;}
+    double manualCeiling(int gear,double available){return SpeedSetting.gearCeiling(available,gear,gearSpeeds());}
+    double targetSpeed(double rpm){return Math.abs(rpm)*TrainConfig.speedPerRpm();}
+    private boolean canConfigure(Player player){return level instanceof ServerLevel&&player.mayBuild()&&level.mayInteract(player,worldPosition)
+        &&DriverControls.accessible(this,player)&&DriverControls.isPrimary(this)&&(!active||player.getUUID().equals(operator));}
+    boolean setGearSpeeds(Player player,int[] speeds){
+        if(!canConfigure(player)||!SpeedSetting.validGears(SpeedSetting.MAX,speeds))return false;
+        gearSpeeds=speeds.clone();updateVisual();
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverGearSetting] console={} targetSpeedTenths={}",worldPosition,java.util.Arrays.toString(gearSpeeds));return true;
     }
     float lever=-1,previousLever=-1,reverser=1,previousReverser=1;
     double actual,available;int supports,powered,guided,mountBrakes;
@@ -30,7 +32,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     @Override public Component getDisplayName(){return Component.translatable("block.guidedrailways.driver_console");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return new DriverMenu(id,inventory,this);}
     void placed(ServerLevel server){consoleId=java.util.UUID.randomUUID();placementOrder=ConsoleOrderData.place(server);identitySaved=true;setChanged();DriverControls.register(server,this);}
-    void clientTick(){previousLever=lever;lever+=(notch/4f-lever)*.5f;previousReverser=reverser;reverser+=(direction-reverser)*.5f;}
+    void clientTick(){previousLever=lever;lever+=((float)DriverModel.lever(notch)-lever)*.5f;previousReverser=reverser;reverser+=(direction-reverser)*.5f;}
     void updateVisual(){
         setChanged();if(level!=null&&!level.isClientSide&&!isRemoved()){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);DriverNetwork.sync(this,active);}
     }
@@ -66,7 +68,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             else if(command==2)notch=DriverModel.step(notch,1);
             else if(command==6)notch=0;
             else if(command==7)notch=-4;
-            else if(command>=10&&command<=18)notch=command-14;
+            else if(DriverInputPolicy.notchCommand(command))notch=command-DriverInputPolicy.NOTCH_BASE;
             else return;
             if(notch>=0)VehiclePhysics.releaseMountBrakes(this);
         }
@@ -80,11 +82,11 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}
-    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putInt("MaxSpeedTenths",maxSpeedTenths());tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);schedule.save(tag,registries);}
+    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putIntArray("GearSpeeds",gearSpeeds());tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);schedule.save(tag,registries);}
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);identitySaved=tag.hasUUID("ConsoleId");if(identitySaved)consoleId=tag.getUUID("ConsoleId");placementOrder=Math.max(0,tag.getLong("PlacementOrder"));schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
-        int saved=tag.getInt("MaxSpeedTenths");maxSpeedTenths=SpeedSetting.valid(saved)?saved:0;
-        if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-4,4);emergency=tag.getBoolean("VisualEmergency");}
+        int[] gears=tag.getIntArray("GearSpeeds");gearSpeeds=SpeedSetting.validGears(SpeedSetting.MAX,gears)?gears:null;
+        if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-DriverModel.BRAKE_NOTCHES,DriverModel.MAX_NOTCH);emergency=tag.getBoolean("VisualEmergency");}
         else{active=false;enabled=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
     }
     @Override public void setRemoved(){if(level instanceof ServerLevel server)DriverControls.removed(server,this);super.setRemoved();}

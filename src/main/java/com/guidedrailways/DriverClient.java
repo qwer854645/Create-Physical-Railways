@@ -87,14 +87,14 @@ public final class DriverClient {
         var mc=Minecraft.getInstance();if(!DriverInputPolicy.suppressLook(state.active(),grabbing,mc.screen!=null,rightDown()))return;
         if(!state.emergency()){
             dragPixels-=mc.mouseHandler.getYVelocity()/mc.getWindow().getGuiScale();
-            int delta=(int)(dragPixels/18);if(delta!=0){int next=Math.clamp(requestedNotch+delta,-4,4);dragPixels-=delta*18;if(next!=requestedNotch){requestedNotch=next;send(14+next);}}
+            int delta=(int)(dragPixels/18);if(delta!=0){int next=Math.clamp(requestedNotch+delta,-DriverModel.BRAKE_NOTCHES,DriverModel.MAX_NOTCH);dragPixels-=delta*18;if(next!=requestedNotch){requestedNotch=next;send(DriverInputPolicy.NOTCH_BASE+next);}}
         }
         // Only this held-right drag consumes looking. Release restores the original event values.
         event.setCinematicCameraEnabled(false);event.setMouseSensitivity(DriverInputPolicy.heldMouseSensitivity());
     }
     private static void scroll(InputEvent.MouseScrollingEvent event){
         if(!state.active()||!grabbing||Minecraft.getInstance().screen!=null)return;
-        event.setCanceled(true);if(!state.emergency()&&Math.abs(event.getScrollDeltaY())>.01){requestedNotch=DriverModel.step(requestedNotch,event.getScrollDeltaY()>0?1:-1);send(14+requestedNotch);}
+        event.setCanceled(true);if(!state.emergency()&&Math.abs(event.getScrollDeltaY())>.01){requestedNotch=DriverModel.step(requestedNotch,event.getScrollDeltaY()>0?1:-1);send(DriverInputPolicy.NOTCH_BASE+requestedNotch);}
     }
     private static void key(InputEvent.Key event){
         var mc=Minecraft.getInstance();
@@ -113,7 +113,7 @@ public final class DriverClient {
             g.drawString(mc.font,text("takeover_hint"),x,y+35,0xffb9c5cc,false);
             g.drawString(mc.font,text("observe_keys"),x,y+55,0xffb9c5cc,false);return;
         }
-        int n=state.notch();g.drawString(mc.font,state.emergency()?text("emergency_on"):text(n>0?"traction_notch":n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25),x,y+15,0xffe6cc8c,false);
+        int n=state.notch();g.drawString(mc.font,state.emergency()?text("emergency_on"):n>0?text("traction_speed",n,String.format(java.util.Locale.ROOT,"%.1f",state.gearTarget())):text(n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25),x,y+15,0xffe6cc8c,false);
         g.drawString(mc.font,text(steer<0?"steer_left":steer>0?"steer_right":"steer_default"),x,y+30,0xffd5dbe0,false);
         g.drawString(mc.font,text(grabbing?"dragging_hint":"world_hint"),x,y+45,0xffb9c5cc,false);
         g.drawString(mc.font,text("world_keys"),x,y+60,0xffb9c5cc,false);

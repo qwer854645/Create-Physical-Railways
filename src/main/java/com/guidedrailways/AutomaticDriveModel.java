@@ -11,7 +11,7 @@ public final class AutomaticDriveModel {
         if(distance<1)ceiling=Math.min(ceiling,.65);
         if(distance<=.08)return new Demand(0,-4);
         if(speed>ceiling+.06)return new Demand(ceiling,-Math.clamp((int)Math.ceil((speed-ceiling)*4/Math.max(.1,braking*.3)),1,4));
-        return new Demand(ceiling,speed<ceiling-.04?4:0);
+        return new Demand(ceiling,speed<ceiling-.04?DriverModel.MAX_NOTCH:0);
     }
     public static boolean arrived(double distance,double maximumSpeed){return Math.abs(distance)<=STOP_TOLERANCE&&maximumSpeed<=STOP_SPEED;}
 }
