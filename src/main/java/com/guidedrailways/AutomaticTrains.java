@@ -38,6 +38,10 @@ final class AutomaticTrains {
             var master=group.getFirst().driver;if(master==null)continue;
             var controller=master.schedule;processed.add(controller);stats(master,group);
             if(master.emergency){if(controller.present())controller.pause(ScheduleController.EMERGENCY);hold(group,controller,true);continue;}
+            if(controller.resumePending){
+                var restored=new HashSet<UUID>();for(var u:group)restored.add(u.bogie.getUniqueId());
+                if(!controller.restore(level,restored)){hold(group,controller,false);continue;}
+            }
             if(!controller.present()){
                 var orientation=basis(master,group,links,master.direction==0?1:master.direction);
                 if(orientation==null){hold(group,controller,false);continue;}

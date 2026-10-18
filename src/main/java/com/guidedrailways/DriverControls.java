@@ -35,18 +35,25 @@ public final class DriverControls {
     static void emergency(ServerLevel level,DriverConsoleEntity source){source.emergency=true;source.notch=-4;source.updateVisual();}
     static void resetEmergency(ServerLevel level,DriverConsoleEntity source){source.emergency=false;source.notch=-4;source.updateVisual();}
     static void removed(ServerLevel level,DriverConsoleEntity e){
+        unloaded(level,e);e.emergency=true;e.notch=-4;VehiclePhysics.consoleRemoved(e);
+    }
+    static void unloaded(ServerLevel level,DriverConsoleEntity e){
         var map=CONSOLES.get(level);if(map!=null)map.remove(e.getBlockPos(),e);
-        e.active=false;e.observing=false;e.enabled=false;e.steer=0;e.emergency=true;e.notch=-4;DriverNetwork.sync(e,false);e.operator=null;VehiclePhysics.consoleRemoved(e);
+        closeSession(e);
+    }
+    private static void closeSession(DriverConsoleEntity e){
+        // Plot teardown must not mark blocks dirty or send block data to a removed holder.
+        e.active=false;e.observing=false;e.enabled=false;e.steer=0;DriverNetwork.sync(e,false);e.operator=null;
     }
     static void refresh(ServerLevel level,Collection<VehiclePhysics.Unit> units){
         var map=CONSOLES.getOrDefault(level,Map.of());
-        if(!map.isEmpty())map.values().removeIf(e->{boolean gone=e.isRemoved()||!level.hasChunkAt(e.getBlockPos())||level.getBlockEntity(e.getBlockPos())!=e;if(gone&&e.active)e.park();return gone;});
+        if(!map.isEmpty())map.values().removeIf(e->{boolean gone=e.isRemoved()||!level.hasChunkAt(e.getBlockPos())||level.getBlockEntity(e.getBlockPos())!=e;if(gone)closeSession(e);return gone;});
         for(var e:map.values())if(e.active){var operator=e.operator==null?null:level.getServer().getPlayerList().getPlayer(e.operator);if(operator==null||!operator.isAlive()||!accessible(e,operator)){if(e.observing)e.leave();else e.park();}}
         DRIVEN.put(level,List.copyOf(units));
         var chosen=election(level);VIEW.put(level,chosen);
         for(var e:map.values()){
             e.actual=0;e.available=0;e.supports=0;e.powered=0;e.guided=0;e.mountBrakes=0;var b=body(e);
-            if(b!=null&&chosen.get(b.getUniqueId())!=e&&(e.active||e.enabled||e.schedule.running||e.schedule.manualOverride))e.park();
+            if(b!=null&&chosen.get(b.getUniqueId())!=e&&(e.active||e.enabled||e.schedule.running||e.schedule.resumePending||e.schedule.manualOverride))e.park();
         }
         for(var u:units){
             var next=chosen.get(u.carrier.getUniqueId());

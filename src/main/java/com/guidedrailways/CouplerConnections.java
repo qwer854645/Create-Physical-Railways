@@ -18,7 +18,8 @@ public final class CouplerConnections {
         final GenericConstraintHandle joint;final ServerSubLevel a,b;final BlockPos pa,pb;final CouplerEntity visualA,visualB;
         double ma,mb;long nextLog;boolean captured;
         Live(GenericConstraintHandle joint,ServerSubLevel a,ServerSubLevel b,CouplerEntity ea,CouplerEntity eb){this.joint=joint;this.a=a;this.b=b;this.pa=ea.getBlockPos().immutable();this.pb=eb.getBlockPos().immutable();visualA=ea;visualB=eb;}
-        void close(){if(joint.isValid())joint.remove();visualA.visualPeer(null);visualB.visualPeer(null);}
+        void close(){close(true);}
+        void close(boolean notify){if(joint.isValid())joint.remove();if(notify){visualA.visualPeer(null);visualB.visualPeer(null);}}
     }
     private static final class State {
         final Map<UUID,CouplerEntity> endpoints=new HashMap<>();final Map<UUID,Live> live=new HashMap<>();
@@ -51,7 +52,9 @@ public final class CouplerConnections {
     static void unloaded(ServerLevel level,CouplerEntity e){var s=STATES.get(level);if(s!=null&&s.endpoints.get(e.endpointId)==e)suspend(level,e.endpointId);}
     static void suspend(ServerLevel level,UUID endpoint){
         var s=STATES.get(level);if(s==null)return;s.endpoints.remove(endpoint);
-        var link=CouplerSavedData.get(level).links.forEndpoint(endpoint);if(link!=null)close(s,link.id());
+        // Unloading a plot must not send block updates into a holder being removed.
+        // Keep saved links; endpoint registration will rebuild the joint and visuals.
+        var link=CouplerSavedData.get(level).links.forEndpoint(endpoint);if(link!=null){var old=s.live.remove(link.id());if(old!=null)old.close(false);}
     }
     private static void close(State s,UUID id){var old=s.live.remove(id);if(old!=null)old.close();}
     private static void disconnect(ServerLevel level,UUID endpoint,String reason){
@@ -201,7 +204,7 @@ public final class CouplerConnections {
         TRANSFERS.remove(key);MOVING.put(transfer.source,new Moving(e.endpointId,level.getGameTime()+5));return true;
     }
     static void unload(ServerLevel level){
-        var s=STATES.remove(level);if(s!=null)s.live.values().forEach(Live::close);
+        var s=STATES.remove(level);if(s!=null)s.live.values().forEach(live->live.close(false));
         TRANSFERS.entrySet().removeIf(e->e.getKey().dimension().equals(level.dimension())||e.getValue().source.dimension().equals(level.dimension()));
         MOVING.keySet().removeIf(p->p.dimension().equals(level.dimension()));
     }

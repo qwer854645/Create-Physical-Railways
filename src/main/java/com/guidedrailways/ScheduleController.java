@@ -17,6 +17,7 @@ final class ScheduleController {
     final DriverConsoleEntity owner;ItemStack item=ItemStack.EMPTY;Schedule program;
     boolean running,manualOverride,waiting,releaseBrakes;long nextPlan,nextVisual;boolean visualDirty;int entry,status,stableTicks;UUID station;
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
+    boolean resumePending;private ScheduleReloadGate reloadGate;
     double remaining=Double.NaN;
     final List<Integer> progress=new ArrayList<>();final List<CompoundTag> contexts=new ArrayList<>();
     ScheduleController(DriverConsoleEntity owner){this.owner=owner;}
@@ -85,12 +86,25 @@ final class ScheduleController {
         if(owner.emergency){hint(player,"emergency");return false;}
         if(DriverControls.body(owner)==null){hint(player,"install_body");return false;}
         if(entry>=p.entries.size()){entry=0;waiting=false;station=null;resetConditions();}
-        owner.leave();owner.enabled=false;running=true;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
+        owner.leave();owner.enabled=false;running=true;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
     }
     void manual(DriverConsoleEntity source){
-        running=false;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
+        running=false;resumePending=false;reloadGate=null;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
     }
-    void pause(int reason){running=false;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
+    void pause(int reason){running=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
+    boolean restore(ServerLevel level,Set<UUID> actual){
+        if(!resumePending)return true;
+        var readiness=reloadGate.tick(actual,level.getGameTime());
+        if(readiness==ScheduleReloadGate.Result.WAIT)return false;
+        if(readiness==ScheduleReloadGate.Result.CHANGED){pause(CHANGED);return false;}
+        var parsed=program();
+        if(unsupported(parsed)!=null){pause(UNSUPPORTED);return false;}
+        entry=Math.min(entry,parsed.entries.size());
+        if(entry>=parsed.entries.size()){resumePending=false;reloadGate=null;running=false;state(FINISHED);return false;}
+        resumePending=false;reloadGate=null;running=true;members=Set.copyOf(actual);releaseBrakes=true;nextPlan=0;syncProgress();state(PLANNING);
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[ScheduleRestored] console={} entry={} waiting={} conditions={} bogies={}",owner.getBlockPos(),entry,waiting,progress,actual.size());
+        return true;
+    }
     void visual(int notch,int direction){
         if(owner.notch!=notch||owner.direction!=direction){owner.notch=notch;owner.direction=direction;visualDirty=true;owner.setChanged();}
         if(visualDirty&&owner.getLevel()!=null&&owner.getLevel().getGameTime()>=nextVisual){visualDirty=false;nextVisual=owner.getLevel().getGameTime()+5;owner.updateVisual();}
@@ -141,6 +155,8 @@ final class ScheduleController {
     void save(CompoundTag tag,HolderLookup.Provider registries){
         if(!present())return;
         var data=new CompoundTag();data.put("Item",item.save(registries));data.putInt("Entry",entry);data.putBoolean("Waiting",waiting);
+        data.putInt("Version",1);data.putBoolean("Running",running||resumePending);data.putInt("Status",status);
+        var savedMembers=new ListTag();if(members!=null)for(var id:members)savedMembers.add(StringTag.valueOf(id.toString()));data.put("Members",savedMembers);
         if(station!=null)data.putUUID("Station",station);
         var list=new ListTag();for(int i=0;i<progress.size();i++){var branch=new CompoundTag();branch.putInt("Progress",progress.get(i));branch.put("Context",contexts.get(i).copy());list.add(branch);}data.put("Conditions",list);
         tag.put("PhysicalSchedule",data);
@@ -149,6 +165,11 @@ final class ScheduleController {
         var data=tag.getCompound("PhysicalSchedule");item=ItemStack.parseOptional(registries,data.getCompound("Item"));program=null;
         entry=Math.max(0,data.getInt("Entry"));waiting=data.getBoolean("Waiting");station=data.hasUUID("Station")?data.getUUID("Station"):null;
         resetConditions();var list=data.getList("Conditions",Tag.TAG_COMPOUND);for(int i=0;i<list.size();i++){var b=list.getCompound(i);progress.add(Math.max(0,b.getInt("Progress")));contexts.add(b.getCompound("Context").copy());}
-        running=false;manualOverride=false;manualSource=null;plan=null;members=null;stableTicks=0;status=present()?PAUSED:EMPTY;
+        var savedMembers=data.getList("Members",Tag.TAG_STRING);var restoredMembers=new HashSet<UUID>();
+        for(int i=0;i<savedMembers.size();i++)try{restoredMembers.add(UUID.fromString(savedMembers.getString(i)));}catch(IllegalArgumentException ignored){}
+        members=restoredMembers.isEmpty()?null:Set.copyOf(restoredMembers);
+        resumePending=present()&&data.getBoolean("Running");reloadGate=resumePending?new ScheduleReloadGate(members):null;
+        running=false;manualOverride=false;manualSource=null;plan=null;stableTicks=0;remaining=Double.NaN;nextPlan=nextVisual=0;visualDirty=false;releaseBrakes=false;
+        status=!present()?EMPTY:resumePending?UNLOADED:data.getInt("Status")==FINISHED?FINISHED:PAUSED;
     }
 }

@@ -202,7 +202,8 @@ public final class VehiclePhysics {
         return u.driver==null?u.mount.getSpeed():u.driver.enabled&&!u.driver.emergency&&u.driver.notch>0?u.driver.direction*u.driver.manualCeiling(u.driver.notch,u.driver.available)*driverSign(u,heading):0;
     }
     static void consoleRemoved(DriverConsoleEntity console){
-        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console){u.mount.braking=true;u.mount.setChanged();u.mount.sendData();}
+        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console&&!u.carrier.isRemoved()&&!u.mount.isRemoved()
+                &&console.getLevel().hasChunkAt(u.mount.getBlockPos())&&console.getLevel().getBlockEntity(u.mount.getBlockPos())==u.mount){u.mount.braking=true;u.mount.setChanged();u.mount.sendData();}
     }
     static void releaseMountBrakes(DriverConsoleEntity console){
         for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console||u.automatic!=null&&u.automatic.owner()==console){u.mount.braking=false;u.mount.setChanged();u.mount.sendData();}

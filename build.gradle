@@ -315,3 +315,10 @@ tasks.register('checkBogiePairContact', JavaExec) {
     mainClass = 'com.guidedrailways.BogiePairContactCheck'
 }
 tasks.named('check') { dependsOn 'checkBogiePairContact' }
+
+tasks.register('checkScheduleReload', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ScheduleReloadCheck'
+}
+tasks.named('check') { dependsOn 'checkScheduleReload' }

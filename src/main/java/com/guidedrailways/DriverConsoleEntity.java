@@ -82,12 +82,12 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}
-    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putIntArray("GearSpeeds",gearSpeeds());tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);schedule.save(tag,registries);}
+    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putIntArray("GearSpeeds",gearSpeeds());tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);tag.putBoolean("Emergency",emergency);schedule.save(tag,registries);}
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);identitySaved=tag.hasUUID("ConsoleId");if(identitySaved)consoleId=tag.getUUID("ConsoleId");placementOrder=Math.max(0,tag.getLong("PlacementOrder"));schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
         int[] gears=tag.getIntArray("GearSpeeds");gearSpeeds=SpeedSetting.validGears(SpeedSetting.MAX,gears)?gears:null;
         if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-DriverModel.BRAKE_NOTCHES,DriverModel.MAX_NOTCH);emergency=tag.getBoolean("VisualEmergency");}
-        else{active=false;enabled=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
+        else{active=false;enabled=false;notch=-4;emergency=tag.getBoolean("Emergency");} // Manual takeover is never restored from disk.
     }
-    @Override public void setRemoved(){if(level instanceof ServerLevel server)DriverControls.removed(server,this);super.setRemoved();}
+    @Override public void setRemoved(){if(level instanceof ServerLevel server)DriverControls.unloaded(server,this);super.setRemoved();}
 }
