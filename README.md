@@ -1,4 +1,4 @@
-# Create: Guided Railways 0.1.44
+# Create: Guided Railways 0.1.45
 
 全新实现的轨道导向物理火车原型，优先验证自由造车与驾驶手感
 
@@ -660,3 +660,14 @@ Minecraft 1.21.1 / NeoForge 21.1.229 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
 - NeoForge 从 21.1.228 升至 21.1.229，以满足 Automated Logistics 0.7.0 的最低版本要求，其余核心依赖保持原版本
 
 兼容范围、依赖与测试步骤见 [CARGO_COMPATIBILITY.md](docs/CARGO_COMPATIBILITY.md)。本轮未启动客户端或服务器，实际装卸、Mixin 应用和完整停靠流程仍待客户端验收
+
+
+## 0.1.45 玩家乘客等待条件
+
+- 接入原版 `PlayerPassengerCondition`，支持“恰好”和“至少”的人数规则，包括零乘客条件
+- 实时统计整列连挂车体上实际坐在 Create 座椅中的玩家；同一车体多副转向架不重复统计，无转向架的连挂车厢也包含在内
+- 不统计站立、站台座椅、其他列车、旁观模式及非玩家乘客，不修改 Create / Sable 的乘坐方式
+- 未加载完整的编组不作为零乘客；原有编组变化保护继续生效，运行中连挂或解挂会暂停，确认后继续时重新读取当前编组
+- 保存已完成等待步骤，但未完成的乘客条件始终重新读取实际人数；日志使用 `[PassengerWait]` 记录人数变化
+
+测试清单见 [PASSENGER_COMPATIBILITY.md](docs/PASSENGER_COMPATIBILITY.md)。纯逻辑检查和离线构建不代表实际座椅、上车与重载流程已通过客户端验收；本轮未打开客户端

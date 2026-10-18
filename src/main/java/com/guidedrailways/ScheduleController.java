@@ -44,7 +44,8 @@ final class ScheduleController {
     private static boolean supportedCondition(ScheduleWaitCondition c){
         return c!=null&&(c.getClass()==ScheduledDelay.class||c.getClass()==TimeOfDayCondition.class
             ||c.getClass()==StationPoweredCondition.class||c.getClass()==RedstoneLinkCondition.class
-            ||c.getClass()==ItemThresholdCondition.class||c.getClass()==FluidThresholdCondition.class||c.getClass()==IdleCargoCondition.class);
+            ||c.getClass()==ItemThresholdCondition.class||c.getClass()==FluidThresholdCondition.class||c.getClass()==IdleCargoCondition.class
+            ||c.getClass()==PlayerPassengerCondition.class);
     }
     private void resetSettings(){throttle=1;currentTitle="";cargoBodies=null;}
     boolean prepareInstructions(){
@@ -178,6 +179,17 @@ final class ScheduleController {
         if(level.getGameTime()%20==0)owner.setChanged();return false;
     }
     private boolean conditionComplete(ServerLevel level,ScheduleWaitCondition condition,CompoundTag context){
+        if(condition.getClass()==PlayerPassengerCondition.class){
+            var passengers=TrainPassengers.snapshot(level,DriverControls.body(owner));
+            if(!passengers.complete()||cargoBodies!=null&&!cargoBodies.equals(passengers.bodies())){state(UNLOADED);return false;}
+            if(cargoBodies==null){cargoBodies=passengers.bodies();owner.setChanged();}
+            var count=(PlayerPassengerCondition)condition;
+            if(!context.contains("PrevPlayerCount")||context.getInt("PrevPlayerCount")!=passengers.count()){
+                context.putInt("PrevPlayerCount",passengers.count());owner.setChanged();
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[PassengerWait] console={} entry={} seated={} target={} atLeast={} bodies={}",owner.getBlockPos(),entry,passengers.count(),count.getTarget(),count.canOvershoot(),passengers.bodies().size());
+            }
+            return passengers.satisfies(count.getTarget(),count.canOvershoot());
+        }
         if(condition.getClass()==ItemThresholdCondition.class||condition.getClass()==FluidThresholdCondition.class||condition.getClass()==IdleCargoCondition.class){
             var snapshot=CargoStorage.snapshot(level,DriverControls.body(owner));
             if(!snapshot.complete()||cargoBodies!=null&&!cargoBodies.equals(snapshot.bodies())){state(UNLOADED);context.remove("CargoWaitStarted");return false;}

@@ -6,7 +6,7 @@
 
 **尚未达到“完全兼容机械动力铁路系统”的目标**
 
-现阶段是使用 Create 轨道图、部分时刻表数据及部分铁路设备接口的独立物理列车。接口接入和构建通过不能替代游戏内验收。当前代码版本为 0.1.44；基础时刻表扩展、存档恢复、渲染包围盒修复及观察器基础检测已完成代码与自动检查，仍待客户端验收。
+现阶段是使用 Create 轨道图、部分时刻表数据及部分铁路设备接口的独立物理列车。接口接入和构建通过不能替代游戏内验收。当前代码版本为 0.1.45；基础时刻表扩展、存档恢复、渲染包围盒修复及观察器基础检测已完成代码与自动检查，仍待客户端验收。
 
 检查依据为本项目源码、锁定版本 Create jar 内的公开类及接口、现有自动检查和已有用户测试反馈。本次没有启动客户端或自行开启服务器。
 
@@ -31,7 +31,7 @@
 `ScheduleController.unsupported` 仅接受：
 
 - 指令：`DestinationInstruction`、`ChangeThrottleInstruction`、`ChangeTitleInstruction`
-- 条件：`ScheduledDelay`、`TimeOfDayCondition`、`StationPoweredCondition`、`RedstoneLinkCondition`、`ItemThresholdCondition`、`FluidThresholdCondition`、`IdleCargoCondition`
+- 条件：`ScheduledDelay`、`TimeOfDayCondition`、`StationPoweredCondition`、`RedstoneLinkCondition`、`ItemThresholdCondition`、`FluidThresholdCondition`、`IdleCargoCondition`、`PlayerPassengerCondition`
 
 调整运行速度按比例限制自动驾驶目标速度，显示标题同步到驾驶台设置界面；两者运行状态随存档保持。车站供电条件使用当前目标站，红石连接使用原版全局频率网络；没有伪造原版 Train。上述新增功能待客户端验收，因此不能声称兼容任意原版时刻表。
 
@@ -40,7 +40,6 @@
 锁定版本 Create 中可见、当前未接入的功能包括：
 
 - 包裹取件与派送：`FetchPackagesInstruction`、`DeliverPackagesInstruction`
-- 玩家乘车条件：`PlayerPassengerCondition`
 - 车站卸载相关条件：`StationUnloadedCondition`
 
 验收要求：逐项明确输入、效果、暂停/恢复、分支 AND/OR 语义及存档行为。不能把需要原版 Train 的条件直接传入空 Train 调用；现有代码已经刻意禁止这种做法。
@@ -77,7 +76,7 @@
 
 ### 9. 货物、流体、包裹与旅客：未完成铁路层面的兼容
 
-0.1.44 已接入整列物品/流体数量条件与限定输送路径的装卸空闲记录，可选适配 Hose Connectors、Simulated 对接连接器和 Automated Logistics 的货运统计。支持范围与待测场景见 `CARGO_COMPATIBILITY.md`，尚未经客户端验收；这不代表 Create 原版可移式接口已兼容 Sable。旅客、包裹任务及任意第三方容器的完整适配仍未完成。
+0.1.44 已接入整列物品/流体数量条件与限定输送路径的装卸空闲记录，可选适配 Hose Connectors、Simulated 对接连接器和 Automated Logistics 的货运统计。支持范围与待测场景见 `CARGO_COMPATIBILITY.md`，尚未经客户端验收；这不代表 Create 原版可移式接口已兼容 Sable。0.1.45 进一步接入整列 Create 座椅的玩家乘客等待条件，范围及测试清单见 `PASSENGER_COMPATIBILITY.md`，仍待客户端验收。包裹任务、跨维度旅客迁移及任意第三方容器的完整适配仍未完成。
 
 验收要求：整列货物统计、跨车厢装卸、数量与空闲条件、包裹任务、上下车及卸载/重载后的内容保持一致。
 
