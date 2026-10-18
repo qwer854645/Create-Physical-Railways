@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.state.*;
 import net.minecraft.world.phys.shapes.*;
 import java.util.*;
-public final class CouplerBlock extends HorizontalDirectionalBlock implements IWrenchable,IBE<CouplerEntity>,BlockSubLevelAssemblyListener {
+public final class CouplerBlock extends HorizontalDirectionalBlock implements IWrenchable,IBE<CouplerEntity>,BlockSubLevelAssemblyListener,dev.ryanhcode.sable.api.block.BlockSubLevelCollisionShape {
     public static final MapCodec<CouplerBlock> CODEC=simpleCodec(CouplerBlock::new);
     private static final Map<Direction,VoxelShape> SHAPES=shapes();
     CouplerBlock(Properties p){super(p);registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH));}
@@ -22,6 +22,13 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> b){b.add(FACING);}
     @Override public BlockState getStateForPlacement(BlockPlaceContext c){var face=c.getClickedFace();return defaultBlockState().setValue(FACING,face.getAxis().isHorizontal()?face:c.getHorizontalDirection().getOpposite());}
     @Override protected VoxelShape getShape(BlockState s,BlockGetter level,BlockPos pos,CollisionContext context){return SHAPES.get(s.getValue(FACING));}
+    @Override public VoxelShape getSubLevelCollisionShape(BlockGetter level,BlockState state){return SHAPES.get(state.getValue(FACING));}
+    @Override protected VoxelShape getCollisionShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){
+        var fixed=SHAPES.get(state.getValue(FACING));
+        if(context instanceof EntityCollisionContext entity&&entity.getEntity() instanceof net.minecraft.world.entity.LivingEntity&&level.getBlockEntity(pos) instanceof CouplerEntity coupler)
+            return Shapes.or(fixed,CouplerLivingShape.get(coupler));
+        return fixed;
+    }
     private static Map<Direction,VoxelShape> shapes(){
         var base=Shapes.or(box(3,4,12,13,12,16),box(4,5,8,12,11,14));
         var map=new EnumMap<Direction,VoxelShape>(Direction.class);map.put(Direction.NORTH,base);

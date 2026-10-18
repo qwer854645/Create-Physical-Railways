@@ -7,6 +7,7 @@ import org.joml.Vector3d;
 import org.joml.Quaterniond;
 import java.util.UUID;
 public final class CouplerEntity extends BlockEntity {
+    net.minecraft.world.phys.shapes.VoxelShape livingShape;long livingShapeTick=Long.MIN_VALUE;
     UUID endpointId=UUID.randomUUID();
     Vector3d anchor=new Vector3d(.5,.5,.5);
     Quaterniond frame=new Quaterniond();
@@ -17,7 +18,7 @@ public final class CouplerEntity extends BlockEntity {
         UUID id=peer==null?null:peer.endpointId;BlockPos pos=peer==null?null:peer.getBlockPos().immutable();
         boolean connected=peer!=null;
         if(visualConnected==connected&&java.util.Objects.equals(visualPeerId,id)&&java.util.Objects.equals(visualPeerPos,pos))return;
-        visualConnected=connected;visualPeerId=id;visualPeerPos=pos;syncVisual();
+        livingShape=null;visualConnected=connected;visualPeerId=id;visualPeerPos=pos;syncVisual();
     }
     private void syncVisual(){if(level!=null&&!level.isClientSide&&!isRemoved())level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);}
     void clientTick(){previousLockProgress=lockProgress;lockProgress=Math.clamp(lockProgress+(visualConnected?.25f:-.25f),0,1);}
@@ -34,7 +35,7 @@ public final class CouplerEntity extends BlockEntity {
         tag.putDouble("Qx",frame.x);tag.putDouble("Qy",frame.y);tag.putDouble("Qz",frame.z);tag.putDouble("Qw",frame.w);
     }
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
-        super.loadAdditional(tag,registries);
+        super.loadAdditional(tag,registries);livingShape=null;
         endpointId=tag.hasUUID("Endpoint")?tag.getUUID("Endpoint"):UUID.randomUUID();
         anchor.set(tag.getDouble("Ax"),tag.getDouble("Ay"),tag.getDouble("Az"));frame.set(tag.getDouble("Qx"),tag.getDouble("Qy"),tag.getDouble("Qz"),tag.getDouble("Qw"));
         restLength=tag.getInt("CouplerVersion")>=3&&tag.contains("RestLength")?tag.getDouble("RestLength"):-1;

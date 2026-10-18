@@ -74,5 +74,8 @@
   "gui.guidedrailways.auto.state.11": "Consist changed; check before resuming",
   "gui.guidedrailways.auto.state.12": "Stop overrun; reposition manually to resume",
   "gui.guidedrailways.auto.state.13": "Waiting for route chunks to load",
-  "gui.guidedrailways.auto.state.14": "Emergency brake; schedule paused"
+  "gui.guidedrailways.auto.state.14": "Emergency brake; schedule paused",
+  "gui.guidedrailways.driver.secondary": "The first placed console controls this train; this console is on standby",
+  "gui.guidedrailways.auto.state.15": "Standby console; view or retrieve its schedule",
+  "gui.guidedrailways.auto.physical_station": "A physical train is here; manage it at its driving console instead of assembling a Create train"
 }

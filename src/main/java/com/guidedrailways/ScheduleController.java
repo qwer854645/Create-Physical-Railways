@@ -36,6 +36,7 @@ final class ScheduleController {
         return null;
     }
     boolean install(Player player,ItemStack held){
+        if(!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
         if(!allowed(player)||Math.abs(owner.actual)>.15){hint(player,"stop_first");return false;}
         Schedule parsed;
         try{parsed=ScheduleItem.getSchedule(owner.getLevel().registryAccess(),held);}
@@ -53,6 +54,7 @@ final class ScheduleController {
     }
     boolean action(Player player,int id){
         if(!allowed(player))return false;
+        if(id!=32&&!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
         if(id==31){pause(PAUSED);owner.park();hint(player,"paused");return true;}
         if(id==32){if(Math.abs(owner.actual)>.15){hint(player,"stop_first");return false;}pause(EMPTY);give(player);program=null;entry=0;waiting=false;station=null;resetConditions();owner.setChanged();return true;}
         if(id!=30||!present())return false;

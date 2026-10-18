@@ -7,10 +7,10 @@ public final class DriverMenu extends AbstractContainerMenu {
     private final DriverConsoleEntity console;private final ContainerData data;
     DriverMenu(int id,Inventory inventory,DriverConsoleEntity console){
         super(Content.DRIVER_MENU.get(),id);this.console=console;
-        data=console==null?new SimpleContainerData(16):new ContainerData(){
-            @Override public int get(int i){return switch(i){case 0->console.active?1:0;case 1->console.direction;case 2->console.notch;case 3->console.emergency?1:0;case 4->(int)Math.clamp(console.actual*100,-32000,32000);case 5->(int)Math.clamp(console.available*100,0,32000);case 6->console.supports;case 7->console.powered;case 8->console.guided;case 9->console.mountBrakes;case 10->1;case 11->inventory.player.getUUID().equals(console.operator)?1:0;case 12->console.schedule.present()?1:0;case 13->console.schedule.status;case 14->Math.min(console.schedule.total(),console.schedule.entry+1);case 15->console.schedule.total();default->0;};}
+        data=console==null?new SimpleContainerData(17):new ContainerData(){
+            @Override public int get(int i){return switch(i){case 0->console.active?1:0;case 1->console.direction;case 2->console.notch;case 3->console.emergency?1:0;case 4->(int)Math.clamp(console.actual*100,-32000,32000);case 5->(int)Math.clamp(console.available*100,0,32000);case 6->console.supports;case 7->console.powered;case 8->console.guided;case 9->console.mountBrakes;case 10->1;case 11->inventory.player.getUUID().equals(console.operator)&&DriverControls.primaryView(console)?1:0;case 12->console.schedule.present()?1:0;case 13->DriverControls.primaryView(console)?console.schedule.status:15;case 14->Math.min(console.schedule.total(),console.schedule.entry+1);case 15->console.schedule.total();case 16->DriverControls.primaryView(console)?1:0;default->0;};}
             @Override public void set(int i,int value){}
-            @Override public int getCount(){return 16;}
+            @Override public int getCount(){return 17;}
         };addDataSlots(data);
     }
     int value(int index){return data.get(index);}

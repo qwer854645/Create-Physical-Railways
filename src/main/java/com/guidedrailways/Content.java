@@ -23,7 +23,7 @@ public final class Content {
     public static final DeferredBlock<MountBlock> MOUNT=BLOCKS.register("bogie_mount",()->new MountBlock(metal()));
     public static final DeferredBlock<CollisionPartBlock> COLLISION=BLOCKS.register("bogie_collision",()->new CollisionPartBlock(metal()));
     public static final DeferredBlock<BogieBlock> BOGIE=BLOCKS.register("bogie_frame",()->new BogieBlock(metal()));
-    public static final DeferredBlock<CouplerBlock> COUPLER=BLOCKS.register("coupler",()->new CouplerBlock(metal()));
+    public static final DeferredBlock<CouplerBlock> COUPLER=BLOCKS.register("coupler",()->new CouplerBlock(metal().dynamicShape()));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<MountEntity>> MOUNT_ENTITY=ENTITIES.register("bogie_mount",()->BlockEntityType.Builder.of(MountEntity::new,MOUNT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<BogieEntity>> BOGIE_ENTITY=ENTITIES.register("bogie_frame",()->BlockEntityType.Builder.of(BogieEntity::new,BOGIE.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CouplerEntity>> COUPLER_ENTITY=ENTITIES.register("coupler",()->BlockEntityType.Builder.of(CouplerEntity::new,COUPLER.get()).build(null));

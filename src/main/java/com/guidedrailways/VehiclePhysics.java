@@ -192,7 +192,7 @@ public final class VehiclePhysics {
         for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console){u.mount.braking=true;u.mount.setChanged();u.mount.sendData();}
     }
     static void releaseMountBrakes(DriverConsoleEntity console){
-        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(DriverControls.body(console)==u.carrier||u.automatic!=null&&u.automatic.owner()==console){u.mount.braking=false;u.mount.setChanged();u.mount.sendData();}
+        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console||u.automatic!=null&&u.automatic.owner()==console){u.mount.braking=false;u.mount.setChanged();u.mount.sendData();}
     }
     private static void release(Unit u,String reason){
         // Keep current velocity and the carrier bearing; remove only world-to-track constraints.

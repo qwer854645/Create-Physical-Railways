@@ -27,6 +27,6 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         if(menu.value(12)!=0)g.drawString(font,Component.translatable("gui.guidedrailways.auto.progress",menu.value(14),menu.value(15)),leftPos+12,topPos+138,0xffb9c5cc,false);
     }
     @Override protected void renderLabels(GuiGraphics g,int x,int y){}
-    @Override public void render(GuiGraphics g,int x,int y,float partial){forward.active=neutral.active=reverse.active=menu.value(11)!=0;autoStart.active=autoPause.active=autoRemove.active=menu.value(12)!=0;super.render(g,x,y,partial);renderTooltip(g,x,y);}
+    @Override public void render(GuiGraphics g,int x,int y,float partial){forward.active=neutral.active=reverse.active=menu.value(11)!=0;autoStart.active=autoPause.active=menu.value(12)!=0&&menu.value(16)!=0;autoRemove.active=menu.value(12)!=0;super.render(g,x,y,partial);renderTooltip(g,x,y);}
     @Override public boolean keyPressed(int key,int scan,int mods){if(key==GLFW.GLFW_KEY_ESCAPE){DriverClient.exit();onClose();return true;}return super.keyPressed(key,scan,mods);}
 }

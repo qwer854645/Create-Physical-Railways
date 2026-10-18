@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
     final ScheduleController schedule=new ScheduleController(this);
+    java.util.UUID consoleId=java.util.UUID.randomUUID();long placementOrder;boolean identitySaved;
     java.util.UUID operator;int steer;long steerAt;
     boolean active,enabled,emergency;int direction=1,notch=-4;
     float lever=-1,previousLever=-1,reverser=1,previousReverser=1;
@@ -18,6 +19,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     @Override public void onLoad(){super.onLoad();if(level instanceof ServerLevel server)DriverControls.register(server,this);}
     @Override public Component getDisplayName(){return Component.translatable("block.guidedrailways.driver_console");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return new DriverMenu(id,inventory,this);}
+    void placed(ServerLevel server){consoleId=java.util.UUID.randomUUID();placementOrder=ConsoleOrderData.place(server);identitySaved=true;setChanged();DriverControls.register(server,this);}
     void clientTick(){previousLever=lever;lever+=(notch/4f-lever)*.5f;previousReverser=reverser;reverser+=(direction-reverser)*.5f;}
     void updateVisual(){
         setChanged();if(level!=null&&!level.isClientSide&&!isRemoved()){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);DriverNetwork.sync(this,active);}
@@ -26,6 +28,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     void park(){if(schedule.present())schedule.pause(ScheduleController.PAUSED);enabled=false;active=false;steer=0;notch=-4;DriverNetwork.sync(this,false);operator=null;updateVisual();}
     void command(Player player,int command){
         if(!(level instanceof ServerLevel server)||!player.mayBuild()||!server.mayInteract(player,worldPosition))return;
+        if(command!=19&&!DriverControls.isPrimary(this)){DriverControls.secondaryHint(player);return;}
         if(active&&operator!=null&&!operator.equals(player.getUUID())&&command!=8){hint(player,"busy");return;}
         if(command==19){if(operator!=null&&operator.equals(player.getUUID()))leave();return;}
         if(command>=20&&command<=22){if(active&&player.getUUID().equals(operator)){steer=command==20?-1:command==21?1:0;steerAt=server.getGameTime();}return;}
@@ -61,9 +64,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}
-    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);schedule.save(tag,registries);}
+    @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);schedule.save(tag,registries);}
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
-        super.loadAdditional(tag,registries);schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
+        super.loadAdditional(tag,registries);identitySaved=tag.hasUUID("ConsoleId");if(identitySaved)consoleId=tag.getUUID("ConsoleId");placementOrder=Math.max(0,tag.getLong("PlacementOrder"));schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
         if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-4,4);emergency=tag.getBoolean("VisualEmergency");}
         else{active=false;enabled=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
     }

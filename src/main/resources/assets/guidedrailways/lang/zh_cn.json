@@ -74,5 +74,8 @@
   "gui.guidedrailways.auto.state.11": "编组已改变，请检查后继续自动运行",
   "gui.guidedrailways.auto.state.12": "超过停车位置，请手动调整后继续",
   "gui.guidedrailways.auto.state.13": "路线经过未加载区块，等待区块加载",
-  "gui.guidedrailways.auto.state.14": "紧急制动，自动运行已暂停"
+  "gui.guidedrailways.auto.state.14": "紧急制动，自动运行已暂停",
+  "gui.guidedrailways.driver.secondary": "本列车由最先放置的控制台统一控制，这台为备用控制台",
+  "gui.guidedrailways.auto.state.15": "备用控制台，仅可查看与取回已有时刻表",
+  "gui.guidedrailways.auto.physical_station": "物理列车已到站，请在列车操控台管理，不能在这里按原版方式组装"
 }

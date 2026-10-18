@@ -18,6 +18,9 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock impleme
     @Override protected MapCodec<? extends HorizontalDirectionalBlock> codec(){return CODEC;}
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> b){b.add(FACING);}
     @Override public BlockState getStateForPlacement(BlockPlaceContext c){return defaultBlockState().setValue(FACING,c.getHorizontalDirection());}
+    @Override public void setPlacedBy(Level level,BlockPos pos,BlockState state,net.minecraft.world.entity.LivingEntity entity,net.minecraft.world.item.ItemStack stack){
+        super.setPlacedBy(level,pos,state,entity,stack);if(level instanceof net.minecraft.server.level.ServerLevel server&&level.getBlockEntity(pos) instanceof DriverConsoleEntity console)console.placed(server);
+    }
     @Override protected VoxelShape getShape(BlockState s,BlockGetter l,BlockPos p,CollisionContext c){return box(1,0,1,15,14,15);}
     @Override public BlockEntity newBlockEntity(BlockPos p,BlockState s){return new DriverConsoleEntity(p,s);}
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l,BlockState s,BlockEntityType<T> type){
@@ -34,7 +37,8 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock impleme
         if(player instanceof ServerPlayer server&&l.getBlockEntity(p) instanceof DriverConsoleEntity console){
             DriverControls.register(server.serverLevel(),console);
             if(player.isShiftKeyDown())console.open(server);
-            else{if(!console.active)console.command(player,0);if(console.active&&player.getUUID().equals(console.operator))DriverNetwork.sync(console,true);else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),true);}
+            else if(!DriverControls.isPrimary(console))DriverControls.secondaryHint(player);
+            else{if(!console.active)console.command(player,0);if(console.active&&player.getUUID().equals(console.operator))DriverNetwork.sync(console,true);else if(console.active)player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),true);}
         }
         return InteractionResult.sidedSuccess(l.isClientSide);
     }

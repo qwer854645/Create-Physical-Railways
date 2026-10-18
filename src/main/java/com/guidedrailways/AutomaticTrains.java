@@ -18,7 +18,7 @@ final class AutomaticTrains {
             int result=route.next(from,node,leg);return result<0?fallback:result;
         }
     }
-    private record Basis(Map<UUID,Integer> signs,VehiclePhysics.Unit head,int end){}
+    record Basis(Map<UUID,Integer> signs,VehiclePhysics.Unit head,int end){}
     private static Vector3d heading(VehiclePhysics.Unit u){return new Vector3d(0,0,1).rotate(SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline().readPose(u.bogie,new Pose3d()).orientation());}
     private static Vector3d consoleHeading(DriverConsoleEntity e){var f=e.getBlockState().getValue(DriverConsoleBlock.FACING);var body=DriverControls.body(e);return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(SubLevelPhysicsSystem.get(body.getLevel()).getPipeline().readPose(body,new Pose3d()).orientation());}
     static void tick(ServerLevel level,Collection<VehiclePhysics.Unit> input,Collection<DriverConsoleEntity> consoles){
@@ -35,16 +35,15 @@ final class AutomaticTrains {
             var group=new ArrayList<VehiclePhysics.Unit>();for(var u:units)if(ids.contains(u.carrier.getUniqueId()))group.add(u);
             var stations=new ArrayList<DriverConsoleEntity>();for(var e:consoles){var b=DriverControls.body(e);if(b!=null&&ids.contains(b.getUniqueId()))stations.add(e);}
             stations.sort(Comparator.comparingLong(e->e.getBlockPos().asLong()));
-            var schedules=stations.stream().filter(e->e.schedule.present()).toList();if(schedules.isEmpty())continue;
-            var selected=schedules.stream().filter(e->e.schedule.running||e.schedule.manualOverride).toList();
-            var controller=(selected.isEmpty()?schedules.getFirst():selected.getFirst()).schedule;processed.add(controller);
-            if(selected.size()>1){for(var e:selected)e.schedule.pause(ScheduleController.CONFLICT);hold(group,controller,false);continue;}
-            var manual=stations.stream().filter(e->e.active).toList();
-            if(manual.size()>1){controller.pause(ScheduleController.CONFLICT);hold(group,controller,false);continue;}
-            if(!manual.isEmpty())controller.manual(manual.getFirst());
-            boolean emergency=stations.stream().anyMatch(e->e.emergency);
-            if(emergency){controller.pause(ScheduleController.EMERGENCY);hold(group,controller,true);continue;}
-            stats(controller.owner,group);
+            var master=group.getFirst().driver;if(master==null)continue;
+            var controller=master.schedule;processed.add(controller);stats(master,group);
+            if(master.emergency){if(controller.present())controller.pause(ScheduleController.EMERGENCY);hold(group,controller,true);continue;}
+            if(!controller.present()){
+                var orientation=basis(master,group,links,master.direction==0?1:master.direction);
+                if(orientation==null){hold(group,controller,false);continue;}
+                bind(group,master,null,orientation.signs,master.direction==0?0:available(group),master.notch,false,!master.enabled);continue;
+            }
+            if(master.active)controller.manual(master);
             if(controller.manualOverride){
                 var source=controller.manualSource;
                 if(source==null||source.isRemoved()||DriverControls.body(source)==null){controller.pause(ScheduleController.PAUSED);hold(group,controller,false);continue;}
@@ -87,7 +86,7 @@ final class AutomaticTrains {
     private static double maximumSpeed(List<VehiclePhysics.Unit> group){double speed=0;for(var u:group)speed=Math.max(speed,SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline().getLinearVelocity(u.bogie,new Vector3d()).length());return speed;}
     private static void hold(List<VehiclePhysics.Unit> group,ScheduleController c,boolean emergency){c.visual(-4,c.owner.direction);for(var u:group)u.automatic=new Control(c.owner,null,1,0,-4,emergency,true);}
     private static void bind(List<VehiclePhysics.Unit> group,DriverConsoleEntity owner,ScheduleController navigation,Map<UUID,Integer> signs,double cap,int notch,boolean emergency,boolean hold){if(navigation!=null)navigation.visual(notch,navigation.plan.direction);for(var u:group)u.automatic=new Control(owner,navigation,signs.getOrDefault(u.bogie.getUniqueId(),1),cap,notch,emergency,hold);}
-    private static Basis basis(DriverConsoleEntity console,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,int direction){
+    static Basis basis(DriverConsoleEntity console,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,int direction){
         var root=DriverControls.body(console);if(root==null)return null;
         var axes=new HashMap<UUID,Vector3d>();var centers=new HashMap<UUID,Vector3d>();var counts=new HashMap<UUID,Integer>();
         for(var u:group){var id=u.carrier.getUniqueId();axes.putIfAbsent(id,heading(u));centers.computeIfAbsent(id,k->new Vector3d()).add(VehiclePhysics.world(u.bogie,u.localCenter));counts.merge(id,1,Integer::sum);}
