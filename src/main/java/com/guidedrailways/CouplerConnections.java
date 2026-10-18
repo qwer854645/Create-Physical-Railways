@@ -94,6 +94,13 @@ public final class CouplerConnections {
         catch(RuntimeException error){disconnect(level,a.endpointId,"creation_failed");throw error;}
     }
     static boolean connected(ServerLevel level,CouplerEntity e){return CouplerSavedData.get(level).links.forEndpoint(e.endpointId)!=null;}
+    record BodyLink(ServerSubLevel a,ServerSubLevel b,Vector3d anchorA,Vector3d anchorB){}
+    static List<BodyLink> bodyLinks(ServerLevel level){
+        var s=STATES.get(level);if(s==null)return List.of();var result=new ArrayList<BodyLink>();
+        for(var live:s.live.values())if(live.joint.isValid()&&!live.a.isRemoved()&&!live.b.isRemoved()&&loaded(level,live.visualA)&&loaded(level,live.visualB))
+            result.add(new BodyLink(live.a,live.b,blockOrigin(live.visualA).add(live.visualA.anchor),blockOrigin(live.visualB).add(live.visualB.anchor)));
+        return result;
+    }
     static boolean blocksRelocation(ServerSubLevel carrier){
         var level=carrier.getLevel();var s=STATES.get(level);if(s==null)return false;
         for(var e:s.endpoints.values())if(loaded(level,e)&&body(level,e)==carrier&&connected(level,e))return true;return false;

@@ -31,6 +31,18 @@ public final class BranchSelect {
         return Steer.NONE;
     }
 
+    /** Default is the smallest geometric turn; explicit intent selects the left/right-most exit. */
+    public static int choose(Vector3dc incoming,Vector3dc up,Vector3dc[] exits,Steer intent){
+        if(exits==null||exits.length==0)return -1;
+        var forward=new Vector3d(incoming).normalize();var right=new Vector3d(forward).cross(up).normalize();
+        int best=0;double score=-Double.MAX_VALUE,alignment=-Double.MAX_VALUE;
+        for(int i=0;i<exits.length;i++){
+            var exit=new Vector3d(exits[i]).normalize();double dot=forward.dot(exit);
+            double rank=intent==Steer.NONE?dot:intent.targetDot*right.dot(exit);
+            if(rank>score+1e-9||Math.abs(rank-score)<=1e-9&&dot>alignment+1e-9){best=i;score=rank;alignment=dot;}
+        }
+        return best;
+    }
     /**
      * @param exitDirection current edge direction at the leaving end ({@code getDirection(false)})
      * @param entryDirections candidate edge start directions ({@code getDirection(true)})

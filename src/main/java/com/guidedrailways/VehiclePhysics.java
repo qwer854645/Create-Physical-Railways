@@ -129,7 +129,8 @@ public final class VehiclePhysics {
     }
     private static void stepVehicle(SubLevelPhysicsSystem physics,double dt){
         if(!(dt>0&&Double.isFinite(dt)))return;var level=physics.getLevel();var pipe=physics.getPipeline();
-        for(var u:ACTIVE.getOrDefault(level,Map.of()).values()){
+        for(var plan:ConsistRoutes.prepare(level,ACTIVE.getOrDefault(level,Map.of()).values())){
+            var u=plan.unit();
             if(u.carrier.isRemoved()||u.bogie.isRemoved()||u.mount.isRemoved()||u.lastSeen+2<level.getGameTime())continue;
             var pose=pipe.readPose(u.bogie,new Pose3d());var heading=new Vector3d(0,0,1).rotate(pose.orientation());
             if(u.detached){u.speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading);continue;}
@@ -138,10 +139,11 @@ public final class VehiclePhysics {
             boolean reverse=u.reverseTravel;
             int lead=reverse?1:0,trail=1-lead;
             var atLead=world(u.bogie,u.axle(lead));
-            u.samples[lead]=TrackNetwork.follow(level,atLead,heading,u.samples[lead],null,.8,reverse);
+            u.samples[lead]=TrackNetwork.follow(level,atLead,heading,u.samples[lead],null,.8,reverse,plan.axle(lead));
+            plan.axle(lead).followed(u.samples[lead]);
             if(u.samples[lead]==null){release(u,"track_missing_or_out_of_range");continue;}
             var atTrail=world(u.bogie,u.axle(trail));
-            u.samples[trail]=TrackNetwork.follow(level,atTrail,heading,u.samples[trail],u.samples[lead],.8,reverse);
+            u.samples[trail]=TrackNetwork.follow(level,atTrail,heading,u.samples[trail],u.samples[lead],.8,reverse,plan.axle(trail));
             if(u.samples[trail]==null){release(u,"track_missing_or_out_of_range");continue;}
             if(TrainConfig.DERAILMENT.get()&&level.getGameTime()>=u.derailGraceUntil&&checkDerailment(u,physics,dt))continue;
             u.speed=0;
@@ -179,7 +181,7 @@ public final class VehiclePhysics {
         var q=SubLevelPhysicsSystem.get(u.carrier.getLevel()).getPipeline().readPose(u.carrier,new Pose3d()).orientation();
         return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(q).dot(heading)<0?-1:1;
     }
-    private static double driverRpm(Unit u,Vector3dc heading){
+    static double driverRpm(Unit u,Vector3dc heading){
         return u.driver==null?u.mount.getSpeed():u.driver.active&&!u.driver.emergency&&u.driver.notch>0?u.driver.direction*u.driver.available*driverSign(u,heading):0;
     }
     static void consoleRemoved(DriverConsoleEntity console){
@@ -412,5 +414,5 @@ public final class VehiclePhysics {
             SubLevelPhysicsSystem.get(level).getPipeline().teleport(body,new Vector3d(com).sub(ref).rotate(rotation).add(origin),rotation);body.updateLastPose();body.updateBoundingBox();body.setName(state.is(Content.MOUNT.get())?"自由车体安装座":"轨道导向转向架");return body;
         }catch(RuntimeException error){container.removeSubLevel(body,SubLevelRemovalReason.REMOVED);throw error;}
     }
-    static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);}
+    static void unload(ServerLevel level){var units=ACTIVE.remove(level);if(units!=null){units.values().forEach(Unit::close);RELOCATING.values().removeIf(r->units.containsKey(r.bogie));}INPUTS.remove(level);MountBlock.clear(level);PerfCounters.unload(level);ConsistRoutes.unload(level);}
 }

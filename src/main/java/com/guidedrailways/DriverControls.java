@@ -12,9 +12,9 @@ public final class DriverControls {
     private DriverControls(){}
     static void register(ServerLevel level,DriverConsoleEntity e){CONSOLES.computeIfAbsent(level,l->new HashMap<>()).put(e.getBlockPos().immutable(),e);}
     static ServerSubLevel body(DriverConsoleEntity e){return e.getLevel()!=null&&SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
-    static void claim(ServerLevel level,DriverConsoleEntity e){
+    static void claim(ServerLevel level,DriverConsoleEntity e,Player player){
         register(level,e);var body=body(e);if(body==null)return;
-        for(var other:CONSOLES.get(level).values())if(other!=e&&body(other)==body){other.park();}
+        for(var other:CONSOLES.get(level).values())if(other!=e&&(body(other)==body||player.getUUID().equals(other.operator))){other.park();}
     }
     static void emergency(ServerLevel level,DriverConsoleEntity source){
         source.emergency=true;source.notch=-4;source.updateVisual();var body=body(source);if(body==null)return;
@@ -26,7 +26,7 @@ public final class DriverControls {
     }
     static void removed(ServerLevel level,DriverConsoleEntity e){
         var map=CONSOLES.get(level);if(map!=null)map.remove(e.getBlockPos(),e);
-        e.active=false;e.emergency=true;e.notch=-4;VehiclePhysics.consoleRemoved(e);
+        e.active=false;e.operator=null;e.steer=0;e.emergency=true;e.notch=-4;VehiclePhysics.consoleRemoved(e);
     }
     static void refresh(ServerLevel level,Collection<VehiclePhysics.Unit> units){
         var map=CONSOLES.getOrDefault(level,Map.of());

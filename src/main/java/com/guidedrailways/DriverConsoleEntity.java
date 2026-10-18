@@ -9,6 +9,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
+    java.util.UUID operator;int steer;long steerAt;
     boolean active,emergency;int direction=1,notch=-4;
     float lever=-1,previousLever=-1,reverser=1,previousReverser=1;
     double actual,available;int supports,powered,guided,mountBrakes;
@@ -20,13 +21,16 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     void updateVisual(){
         setChanged();if(level!=null&&!level.isClientSide&&!isRemoved())level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);
     }
-    void park(){active=false;notch=-4;updateVisual();}
+    void park(){active=false;operator=null;steer=0;notch=-4;updateVisual();}
     void command(Player player,int command){
         if(!(level instanceof ServerLevel server)||!player.mayBuild()||!server.mayInteract(player,worldPosition))return;
+        if(active&&operator!=null&&!operator.equals(player.getUUID())&&command!=8){hint(player,"busy");return;}
+        if(command==19){if(operator!=null&&operator.equals(player.getUUID()))park();return;}
+        if(command>=20&&command<=22){if(active&&player.getUUID().equals(operator)){steer=command==20?-1:command==21?1:0;steerAt=server.getGameTime();}return;}
         int oldNotch=notch,oldDirection=direction;boolean oldActive=active,oldEmergency=emergency;
         if(command==0){
             if(!active&&DriverControls.body(this)==null){hint(player,"install");return;}
-            if(active)park();else{DriverControls.claim(server,this);active=true;notch=-4;}
+            if(active)park();else{DriverControls.claim(server,this,player);active=true;operator=player.getUUID();notch=-4;}
         }else if(command==8){DriverControls.emergency(server,this);}
         else{
             if(!active)return;
@@ -50,6 +54,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         var pos=DriverControls.position(this);
         server.playSound(null,pos.x,pos.y,pos.z,net.minecraft.sounds.SoundEvents.LEVER_CLICK,net.minecraft.sounds.SoundSource.BLOCKS,.45f,1+notch*.035f);
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverConsole] pos={} operator={} active={} direction={} notch={} emergency={}",worldPosition,player.getUUID(),active,direction,notch,emergency);
+    }
+    void open(ServerPlayer player,boolean settings){
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inventory,p)->new DriverMenu(id,inventory,this,settings),getDisplayName()));
     }
     private void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.driver."+key),true);}
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket(){return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);}

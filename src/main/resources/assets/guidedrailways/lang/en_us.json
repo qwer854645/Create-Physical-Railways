@@ -25,7 +25,7 @@
   "gui.guidedrailways.driver.scope": "Controls this body | Stress powered",
   "gui.guidedrailways.driver.mount_brake": "Mount brake: use Release brake to clear",
   "block.guidedrailways.driver_console": "Physical Train Controls",
-  "tooltip.guidedrailways.driver_console": "Place on a physical carriage; W/S or wheel to notch, centre to coast, pull to brake; stop to reverse; stress powered",
+  "tooltip.guidedrailways.driver_console": "Right-click to engage, then hold right to drag; left: emergency; sneak-right: settings; A/D: branch; Esc: release",
   "gui.guidedrailways.driver.install": "Place the controls on a physical carriage",
   "gui.guidedrailways.driver.push": "Push notch W",
   "gui.guidedrailways.driver.pull": "Pull notch S",
@@ -38,5 +38,14 @@
   "gui.guidedrailways.driver.lever_active": "Manual effort | Centre coasts, pull brakes",
   "gui.guidedrailways.driver.reset_stop": "Stop and remove traction before resetting",
   "gui.guidedrailways.driver.reset_first": "Stop and reset the emergency brake first",
-  "gui.guidedrailways.driver.reverser_stop": "Stop and remove traction before changing direction"
+  "gui.guidedrailways.driver.reverser_stop": "Stop and remove traction before changing direction",
+  "gui.guidedrailways.driver.busy": "These controls are occupied or have no physical body",
+  "gui.guidedrailways.driver.back_control": "Return to driving",
+  "gui.guidedrailways.driver.settings_only": "Settings and diagnostics | Stop to reverse",
+  "gui.guidedrailways.driver.world_hint": "Hold right again to drag | Left: emergency",
+  "gui.guidedrailways.driver.dragging_hint": "Hold right and move vertically | Release holds notch",
+  "gui.guidedrailways.driver.world_keys": "A/D: branch | W/S disabled | Esc: release & brake",
+  "gui.guidedrailways.driver.steer_left": "Next junction: left | Consist follows the leader",
+  "gui.guidedrailways.driver.steer_right": "Next junction: right | Consist follows the leader",
+  "gui.guidedrailways.driver.steer_default": "Default: smallest turn angle"
 }

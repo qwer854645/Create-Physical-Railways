@@ -26,6 +26,12 @@ public final class TrackNetwork {
         }
         Quaterniond orientation(){var x=new Vector3d(tangent);var y=new Vector3d(up);var z=new Vector3d(x).cross(y).normalize();y.set(z).cross(x).normalize();return new Quaterniond().setFromNormalized(new Matrix3d(x,y,z));}
     }
+    interface RoutePolicy {
+        int choose(Path incoming,int node,int from,int[] exits,int proposed,Vector3d position);
+        void observe(Vector3dc position);
+        BranchSelect.Steer steer();
+        Sample leader();
+    }
     private record PathKey(UUID graph,int a,int b){}
     private static final class Index {
         long next; final Map<Long,Set<Path>> cells=new HashMap<>();final Map<PathKey,Path> paths=new HashMap<>();
@@ -80,14 +86,18 @@ public final class TrackNetwork {
         return follow(level,point,heading,previous,null,radius);
     }
     /**
-     * Stay on the current edge while mid-span; at a node, pick the next edge like Create
-     * ({@code steer} from heading, or {@code follow} a leader sample for the trailing axle).
+     * Stay on the current edge while mid-span; at nodes choose by geometric turn angle
+     * and explicit intent, with consist passage history taking priority over local guesses.
      */
     public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius){
         return follow(level,point,heading,previous,leader,radius,false);
     }
     /** Heading fixes body/traction orientation; reverse changes traversal only. */
     public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse){
+        return follow(level,point,heading,previous,leader,radius,reverse,null);
+    }
+    static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse,RoutePolicy policy){
+        if(policy!=null)policy.observe(point);
         PerfCounters.query(level);
         var idx=INDEX.get(level);if(previous!=null&&idx!=null){
             var live=idx.paths.get(key(previous.path));
@@ -95,14 +105,17 @@ public final class TrackNetwork {
                 var sample=project(live,point,heading,previous.t);
                 if(sample!=null&&sample.t>.0001&&sample.t<.9999&&sample.position.distanceSquared(point)<.09
                         &&sample.tangent.dot(heading)>.75&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return sample;
-                var branched=advance(level,idx,live,point,heading,previous,leader,radius,reverse);
+                var branched=advance(level,idx,live,point,heading,previous,leader,radius,reverse,policy);
                 if(branched!=null)return branched;
+                // A locked passage must never be bypassed by nearest-edge recovery.
+                if(policy!=null)return sample!=null&&sample.position.distanceSquared(point)<=radius*radius&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z))?sample:null;
             }
+            if(policy!=null)return null;
         }
         return nearest(level,point,heading,previous==null?null:previous.path,radius);
     }
     /** Create-style node transition: enumerate outgoing edges, then steer / follow. */
-    private static Sample advance(ServerLevel level,Index idx,Path live,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse){
+    private static Sample advance(ServerLevel level,Index idx,Path live,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse,RoutePolicy policy){
         var increasing=PathGeometry.tangent(live::at,previous.t);
         boolean alongIncreasing=BranchSelect.exitsIncreasing(increasing,heading,reverse);
         double endT=alongIncreasing?1:0;
@@ -122,7 +135,19 @@ public final class TrackNetwork {
         }
         if(options.isEmpty())return null;
         options.sort(Comparator.comparingInt(c->c.node.getNetId()));
-        Branch chosen=options.size()==1?options.get(0):leader!=null?followLeader(options,leader):steerBranch(options,current,previous.up,reverse?new Vector3d(heading).negate():heading);
+        var incoming=PathGeometry.tangent(live::at,endT).mul(alongIncreasing?1:-1);
+        var directions=new Vector3dc[options.size()];
+        for(int i=0;i<options.size();i++){var p=options.get(i).path;directions[i]=PathGeometry.tangent(p::at,p.a==exitId?0:1).mul(p.a==exitId?1:-1);}
+        int pick=BranchSelect.choose(incoming,previous.up,directions,policy==null?BranchSelect.Steer.NONE:policy.steer());
+        Branch chosen=options.get(pick);
+        if(policy!=null&&live.network.getConnectionsFrom(exit).size()>2){
+            var target=policy.leader();
+            if(target!=null&&!key(target.path).equals(key(live))){var followed=followLeader(options,target);if(followed!=null)chosen=followed;}
+            int[] ids=options.stream().mapToInt(c->c.node.getNetId()).toArray();
+            int selected=policy.choose(live,exitId,enterId,ids,chosen.node.getNetId(),live.at(endT));
+            chosen=null;for(var c:options)if(c.node.getNetId()==selected){chosen=c;break;}
+            if(chosen==null)return null;
+        }else if(policy==null&&leader!=null){var followed=followLeader(options,leader);if(followed!=null)chosen=followed;}
         double hint=chosen.path.a==exit.getNetId()?0:1;
         var sample=project(chosen.path,point,heading,hint);
         if(sample==null||sample.position.distanceSquared(point)>radius*radius)return null;
@@ -148,7 +173,7 @@ public final class TrackNetwork {
             var q=new ArrayDeque<Step>();q.add(new Step(c.node,c.edge));frontiers.add(q);
             var seen=new HashSet<TrackEdge>();seen.add(c.edge);visited.add(seen);
         }
-        for(int depth=0;depth<20;depth++)for(int j=0;j<options.size();j++){
+        for(int depth=0;depth<256;depth++)for(int j=0;j<options.size();j++){
             var frontier=frontiers.get(j);if(frontier.isEmpty())continue;
             var step=frontier.removeFirst();
             if(step.node.getNetId()==la||step.node.getNetId()==lb)return options.get(j);
@@ -157,7 +182,7 @@ public final class TrackNetwork {
                 frontier.add(new Step(next.getKey(),next.getValue()));
             }
         }
-        return options.get(0);
+        return null;
     }
     private static Vector3d vec(Vec3 v){return new Vector3d(v.x,v.y,v.z);}
     public static Sample nearest(ServerLevel level,Vector3dc point,Vector3dc heading,Path previous,double radius){

@@ -5,71 +5,78 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import org.lwjgl.glfw.GLFW;
-/** Discrete keys, wheel and draggable detents all use the same validated menu commands. */
+/** Full GUI is settings only; driving stays in the world with a small HUD and held-right drag. */
 public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
-    private Button take,push,pull,centre,service,forward,neutral,reverse,emergency;
-    private boolean pushHeld,pullHeld,dragging;
-    private int lastDragged=99;
-    DriverScreen(DriverMenu menu,Inventory inventory,Component title){super(menu,inventory,title);imageWidth=340;imageHeight=254;}
+    private Button forward,neutral,reverse,back;
+    private boolean leftHeld,rightHeld,grabbing,ready,resetRequested;
+    private double dragPixels;private int requestedNotch,ticks,resetTicks;
+    DriverScreen(DriverMenu menu,Inventory inventory,Component title){super(menu,inventory,title);imageWidth=300;imageHeight=155;}
     private static Component text(String key,Object... args){return Component.translatable("gui.guidedrailways.driver."+key,args);}
-    private void send(int command){if(minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,command);}
-    private Button button(String key,int x,int y,int width,int command){return addRenderableWidget(Button.builder(text(key),b->send(command)).bounds(leftPos+x,topPos+y,width,20).build());}
+    private void send(int id){if(minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,id);}
+    private boolean settings(){return menu.value(10)!=0;}
+    private Button button(String key,int x,int width,int id){return addRenderableWidget(Button.builder(text(key),b->send(id)).bounds(leftPos+x,topPos+96,width,20).build());}
     @Override protected void init(){
-        super.init();
-        take=button("take",104,88,224,0);
-        push=button("push",104,115,108,2);pull=button("pull",220,115,108,1);
-        centre=button("centre",104,142,108,6);service=button("full_service",220,142,108,7);
-        forward=button("forward",104,169,70,3);neutral=button("neutral",181,169,70,4);reverse=button("reverse",258,169,70,5);
-        emergency=addRenderableWidget(Button.builder(text("emergency"),b->send(menu.value(3)!=0?9:8)).bounds(leftPos+104,topPos+196,224,20).build());
-        pushHeld=pullHeld=dragging=false;lastDragged=99;
+        super.init();forward=button("forward",12,86,3);neutral=button("neutral",107,86,4);reverse=button("reverse",202,86,5);
+        back=addRenderableWidget(Button.builder(text("back_control"),b->send(24)).bounds(leftPos+12,topPos+125,276,20).build());
+        grabbing=ready=leftHeld=rightHeld=resetRequested=false;resetTicks=0;
     }
-    private void line(GuiGraphics g,int y,Component value,int color){g.drawString(font,value,leftPos+12,topPos+y,color,false);}
-    private Component notchName(){int n=menu.value(2);return text(n>0?"traction_notch":n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25);}
-    @Override protected void renderBg(GuiGraphics g,float partial,int mouseX,int mouseY){
-        g.fill(leftPos-2,topPos-2,leftPos+imageWidth+2,topPos+imageHeight+2,0xffa48a50);
-        g.fill(leftPos,topPos,leftPos+imageWidth,topPos+imageHeight,0xff252d32);
-        g.fill(leftPos+7,topPos+26,leftPos+333,topPos+80,0xff141c20);
-        line(g,10,title,0xffe6cc8c);
-        line(g,32,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",menu.value(4)/100.0)),0xff8ae2cd);
-        line(g,48,text("power",String.format(java.util.Locale.ROOT,"%.2f",menu.value(5)/100.0),menu.value(7),menu.value(6)),0xffb9c5cc);
-        String state=menu.value(6)==0?"no_bogies":menu.value(3)!=0?"emergency_on":menu.value(8)<menu.value(6)?"derailed":menu.value(0)==0?"parked":menu.value(9)>0?"mount_brake":menu.value(7)==0?"no_power":"lever_active";
-        line(g,64,text(state),0xffe3c57d);
-        g.fill(leftPos+12,topPos+87,leftPos+93,topPos+220,0xff141c20);
-        g.fill(leftPos+48,topPos+95,leftPos+52,topPos+209,0xff887552);
-        for(int n=-4;n<=4;n++){
-            int y=topPos+151-n*14;int color=n>0?0xff77b6a0:n<0?0xffd58c72:0xffe6cc8c;
-            g.fill(leftPos+31,y,leftPos+70,y+1,color);
-            g.drawString(font,n==0?"0":Integer.toString(Math.abs(n)),leftPos+18,y-3,color,false);
+    @Override protected void containerTick(){
+        super.containerTick();ticks++;
+        if(GLFW.glfwGetMouseButton(minecraft.getWindow().getWindow(),GLFW.GLFW_MOUSE_BUTTON_RIGHT)==GLFW.GLFW_RELEASE){ready=true;grabbing=false;resetTicks=0;resetRequested=false;}
+        if(!settings()&&menu.value(11)!=0){
+            if(ticks%10==0)sendSteer();
+            if(grabbing&&menu.value(3)!=0&&!resetRequested&&++resetTicks>=20){send(9);resetRequested=true;}
         }
-        int handle=topPos+151-menu.value(2)*14;
-        g.fill(leftPos+33,handle-5,leftPos+82,handle+6,0xffb7a16e);g.fill(leftPos+36,handle-3,leftPos+79,handle+3,0xffe3d19b);
-        line(g,226,notchName(),0xff8ae2cd);line(g,240,text("lever_hint"),0xff9baeb7);
+    }
+    private void sendSteer(){send(!settings()&&leftHeld!=rightHeld?(leftHeld?20:21):22);}
+    @Override public void renderBackground(GuiGraphics g,int x,int y,float partial){if(settings())g.fill(0,0,width,height,0x88000000);}
+    @Override protected void renderBg(GuiGraphics g,float partial,int mouseX,int mouseY){
+        if(settings()){
+            g.fill(leftPos-2,topPos-2,leftPos+302,topPos+157,0xffa48a50);g.fill(leftPos,topPos,leftPos+300,topPos+155,0xff252d32);
+            g.drawString(font,title,leftPos+12,topPos+12,0xffe6cc8c,false);
+            g.drawString(font,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",menu.value(4)/100.0)),leftPos+12,topPos+35,0xff8ae2cd,false);
+            g.drawString(font,text("power",String.format(java.util.Locale.ROOT,"%.2f",menu.value(5)/100.0),menu.value(7),menu.value(6)),leftPos+12,topPos+53,0xffb9c5cc,false);
+            g.drawString(font,text("settings_only"),leftPos+12,topPos+76,0xffb9c5cc,false);return;
+        }
+        int x=12,y=height-91;g.fill(x-5,y-6,x+300,y+78,0xcc141c20);
+        g.drawString(font,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",menu.value(4)/100.0)),x,y,0xff8ae2cd,false);
+        int n=menu.value(2);var label=menu.value(3)!=0?text("emergency_on"):text(n>0?"traction_notch":n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25);
+        g.drawString(font,label,x,y+15,0xffe6cc8c,false);
+        g.drawString(font,text(leftHeld!=rightHeld?(leftHeld?"steer_left":"steer_right"):"steer_default"),x,y+30,0xffd5dbe0,false);
+        g.drawString(font,text(grabbing?"dragging_hint":"world_hint"),x,y+45,0xffb9c5cc,false);
+        g.drawString(font,text("world_keys"),x,y+60,0xffb9c5cc,false);
     }
     @Override protected void renderLabels(GuiGraphics g,int x,int y){}
-    private void updateButtons(){
-        boolean active=menu.value(0)!=0,locked=menu.value(3)!=0;
-        take.setMessage(text(active?"leave":"take"));
-        push.active=pull.active=centre.active=service.active=active&&!locked;
-        forward.active=neutral.active=reverse.active=active&&!locked;
-        forward.setMessage(menu.value(1)==1?Component.literal("• ").append(text("forward")):text("forward"));
-        neutral.setMessage(menu.value(1)==0?Component.literal("• ").append(text("neutral")):text("neutral"));
-        reverse.setMessage(menu.value(1)==-1?Component.literal("• ").append(text("reverse")):text("reverse"));
-        emergency.setMessage(text(locked?"reset_emergency":"emergency"));emergency.active=!locked||active;
+    @Override public void render(GuiGraphics g,int x,int y,float partial){
+        boolean show=settings();forward.visible=neutral.visible=reverse.visible=back.visible=show;
+        forward.active=neutral.active=reverse.active=menu.value(11)!=0;back.active=menu.value(11)!=0;
+        super.render(g,x,y,partial);
     }
-    @Override public void render(GuiGraphics g,int mouseX,int mouseY,float partial){updateButtons();super.render(g,mouseX,mouseY,partial);renderTooltip(g,mouseX,mouseY);}
-    @Override public boolean keyPressed(int key,int scan,int modifiers){
-        if(key==GLFW.GLFW_KEY_W){if(!pushHeld&&menu.value(0)!=0&&menu.value(3)==0)send(2);pushHeld=true;return true;}
-        if(key==GLFW.GLFW_KEY_S){if(!pullHeld&&menu.value(0)!=0&&menu.value(3)==0)send(1);pullHeld=true;return true;}
-        return super.keyPressed(key,scan,modifiers);
+    @Override public boolean keyPressed(int key,int scan,int mods){
+        if(key==GLFW.GLFW_KEY_ESCAPE){send(19);onClose();return true;}
+        if(!settings()){
+            if(key==GLFW.GLFW_KEY_A){leftHeld=true;sendSteer();return true;}
+            if(key==GLFW.GLFW_KEY_D){rightHeld=true;sendSteer();return true;}
+            // W/S no longer adjust the throttle; the modal also prevents player movement.
+            if(key==GLFW.GLFW_KEY_W||key==GLFW.GLFW_KEY_S)return true;
+            if(key==GLFW.GLFW_KEY_E)return true;
+        }
+        return super.keyPressed(key,scan,mods);
     }
-    @Override public boolean keyReleased(int key,int scan,int modifiers){if(key==GLFW.GLFW_KEY_W){pushHeld=false;return true;}if(key==GLFW.GLFW_KEY_S){pullHeld=false;return true;}return super.keyReleased(key,scan,modifiers);}
-    @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical){
-        if(menu.value(0)!=0&&menu.value(3)==0&&Math.abs(vertical)>.01){send(vertical>0?2:1);return true;}return super.mouseScrolled(x,y,horizontal,vertical);
-    }
-    private void drag(double y){int notch=Math.clamp((int)Math.round((topPos+151-y)/14),-4,4);if(notch!=lastDragged){send(14+notch);lastDragged=notch;}}
+    @Override public boolean keyReleased(int key,int scan,int mods){if(key==GLFW.GLFW_KEY_A){leftHeld=false;sendSteer();return true;}if(key==GLFW.GLFW_KEY_D){rightHeld=false;sendSteer();return true;}return super.keyReleased(key,scan,mods);}
     @Override public boolean mouseClicked(double x,double y,int button){
-        if(button==0&&x>=leftPos+12&&x<=leftPos+93&&y>=topPos+87&&y<=topPos+220&&menu.value(0)!=0&&menu.value(3)==0){dragging=true;drag(y);return true;}return super.mouseClicked(x,y,button);
+        if(settings())return super.mouseClicked(x,y,button);
+        if(button==0){send(8);return true;}
+        if(button==1&&hasShiftDown()){grabbing=false;leftHeld=rightHeld=false;send(22);send(23);return true;}
+        if(button==1&&ready&&menu.value(11)!=0){grabbing=true;dragPixels=0;requestedNotch=menu.value(2);resetTicks=0;resetRequested=false;return true;}
+        return true;
     }
-    @Override public boolean mouseDragged(double x,double y,int button,double dx,double dy){if(dragging&&button==0){drag(y);return true;}return super.mouseDragged(x,y,button,dx,dy);}
-    @Override public boolean mouseReleased(double x,double y,int button){if(button==0&&dragging){dragging=false;lastDragged=99;return true;}return super.mouseReleased(x,y,button);}
+    @Override public boolean mouseDragged(double x,double y,int button,double dx,double dy){
+        if(!settings()&&button==1&&grabbing){
+            if(menu.value(3)!=0)return true;dragPixels-=dy;
+            while(Math.abs(dragPixels)>=18){int step=dragPixels>0?1:-1;requestedNotch=DriverModel.step(requestedNotch,step);send(14+requestedNotch);dragPixels-=step*18;}return true;
+        }return settings()&&super.mouseDragged(x,y,button,dx,dy);
+    }
+    @Override public boolean mouseReleased(double x,double y,int button){if(!settings()&&button==1){grabbing=false;ready=true;resetTicks=0;return true;}return settings()&&super.mouseReleased(x,y,button);}
+    @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical){if(!settings()&&grabbing&&menu.value(3)==0&&Math.abs(vertical)>.01){send(vertical>0?2:1);return true;}return settings()&&super.mouseScrolled(x,y,horizontal,vertical);}
 }

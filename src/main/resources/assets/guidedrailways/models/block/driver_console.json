@@ -1,12 +1,13 @@
 {
   "textures": {
-    "body": "create:block/railway_casing_side",
+    "body": "create:block/dark_metal_block",
     "dark": "create:block/dark_metal_block",
     "iron": "create:block/industrial_iron_block",
     "brass": "create:block/brass_block",
-    "panel": "create:block/controls",
+    "panel": "create:block/industrial_iron_block",
     "gauge": "create:block/gauge",
-    "particle": "create:block/industrial_iron_block"
+    "particle": "create:block/industrial_iron_block",
+    "red": "minecraft:block/red_concrete"
   },
   "elements": [
     {
@@ -196,10 +197,10 @@
         "up": {
           "texture": "#panel",
           "uv": [
-            0,
-            0,
-            16,
-            16
+            4,
+            4,
+            12,
+            12
           ]
         },
         "down": {
@@ -378,14 +379,14 @@
     },
     {
       "from": [
-        2,
+        3,
         11,
         10
       ],
       "to": [
-        5,
+        7,
         12,
-        13
+        14
       ],
       "rotation": {
         "origin": [
@@ -402,8 +403,8 @@
           "uv": [
             0,
             0,
-            3,
-            1
+            4,
+            4
           ]
         },
         "south": {
@@ -411,8 +412,8 @@
           "uv": [
             0,
             0,
-            3,
-            1
+            4,
+            4
           ]
         },
         "east": {
@@ -420,8 +421,8 @@
           "uv": [
             0,
             0,
-            3,
-            1
+            4,
+            4
           ]
         },
         "west": {
@@ -429,8 +430,8 @@
           "uv": [
             0,
             0,
-            3,
-            1
+            4,
+            4
           ]
         },
         "up": {
@@ -438,8 +439,8 @@
           "uv": [
             0,
             0,
-            3,
-            1
+            4,
+            4
           ]
         },
         "down": {
@@ -447,8 +448,85 @@
           "uv": [
             0,
             0,
-            3,
-            1
+            4,
+            4
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        3.5,
+        12,
+        10.5
+      ],
+      "to": [
+        6.5,
+        13,
+        13.5
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          10,
+          8
+        ],
+        "axis": "x",
+        "angle": 22.5
+      },
+      "faces": {
+        "north": {
+          "texture": "#red",
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ]
+        },
+        "south": {
+          "texture": "#red",
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ]
+        },
+        "east": {
+          "texture": "#red",
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ]
+        },
+        "west": {
+          "texture": "#red",
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ]
+        },
+        "up": {
+          "texture": "#red",
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ]
+        },
+        "down": {
+          "texture": "#red",
+          "uv": [
+            0,
+            0,
+            4,
+            4
           ]
         }
       }

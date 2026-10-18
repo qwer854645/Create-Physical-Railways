@@ -24,7 +24,11 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock impleme
         return type==Content.DRIVER_ENTITY.get()?(world,pos,state,be)->{if(world instanceof net.minecraft.server.level.ServerLevel server&&be instanceof DriverConsoleEntity console)DriverControls.register(server,console);else if(be instanceof DriverConsoleEntity console)console.clientTick();}:null;
     }
     @Override protected InteractionResult useWithoutItem(BlockState s,Level l,BlockPos p,Player player,BlockHitResult hit){
-        if(player instanceof ServerPlayer server&&l.getBlockEntity(p) instanceof DriverConsoleEntity console){DriverControls.register(server.serverLevel(),console);server.openMenu(console);}
+        if(player instanceof ServerPlayer server&&l.getBlockEntity(p) instanceof DriverConsoleEntity console){
+            DriverControls.register(server.serverLevel(),console);
+            if(player.isShiftKeyDown())console.open(server,true);
+            else{if(!console.active)console.command(player,0);if(console.active&&player.getUUID().equals(console.operator))console.open(server,false);else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),true);}
+        }
         return InteractionResult.sidedSuccess(l.isClientSide);
     }
     @Override public InteractionResult onWrenched(BlockState state,net.minecraft.world.item.context.UseOnContext context){
