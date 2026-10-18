@@ -17,6 +17,7 @@ final class ScheduleController {
     final DriverConsoleEntity owner;ItemStack item=ItemStack.EMPTY;Schedule program;
     boolean running,manualOverride,waiting,releaseBrakes;long nextPlan,nextVisual;boolean visualDirty;int entry,status,stableTicks;UUID station;
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
+    double remaining=Double.NaN;
     final List<Integer> progress=new ArrayList<>();final List<CompoundTag> contexts=new ArrayList<>();
     ScheduleController(DriverConsoleEntity owner){this.owner=owner;}
     boolean present(){return !item.isEmpty();}
@@ -42,10 +43,10 @@ final class ScheduleController {
         if(!player.getAbilities().instabuild)held.shrink(1);
         setSlot(player,stored);return true;
     }
-    boolean canRemove(Player player){return allowed(player)&&Math.abs(owner.actual)<=.15;}
+    boolean canRemove(Player player){return allowed(player)&&DriverControls.stopped(owner);}
     boolean canInsert(Player player,ItemStack held){
         if(!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
-        if(!allowed(player)||Math.abs(owner.actual)>.15){hint(player,"stop_first");return false;}
+        if(!allowed(player)||!DriverControls.stopped(owner)){hint(player,"stop_first");return false;}
         Schedule parsed;
         try{parsed=ScheduleItem.getSchedule(owner.getLevel().registryAccess(),held);}
         catch(RuntimeException error){hint(player,"invalid");return false;}
@@ -70,18 +71,28 @@ final class ScheduleController {
         if(!allowed(player))return false;
         if(id!=32&&!DriverControls.isPrimary(owner)){DriverControls.secondaryHint(player);return false;}
         if(id==31){pause(PAUSED);owner.park();hint(player,"paused");return true;}
-        if(id==32){if(Math.abs(owner.actual)>.15){hint(player,"stop_first");return false;}pause(EMPTY);give(player);program=null;entry=0;waiting=false;station=null;resetConditions();owner.setChanged();return true;}
+        if(id==32){if(!DriverControls.stopped(owner)){hint(player,"stop_first");return false;}give(player);return true;}
+        if((id==33||id==34)&&present()){
+            if(!DriverControls.stopped(owner)){hint(player,"stop_first");return false;}
+            if(unsupported(program())!=null){hint(player,"invalid");return false;}
+            if(id==34&&owner.emergency){hint(player,"emergency");return false;}
+            if(id==33&&entry>=total())return false;
+            owner.park();
+            if(id==33){advance();if(entry<total())pause(PAUSED);hint(player,"skipped");return true;}
+            entry=0;waiting=false;station=null;resetConditions();syncProgress();
+            return action(player,30);
+        }
         if(id!=30||!present())return false;
         var p=program();String error=unsupported(p);if(error!=null){state(UNSUPPORTED);hint(player,"invalid");return false;}
         if(owner.emergency){hint(player,"emergency");return false;}
         if(DriverControls.body(owner)==null){hint(player,"install_body");return false;}
         if(entry>=p.entries.size()){entry=0;waiting=false;station=null;resetConditions();}
-        owner.leave();owner.enabled=false;running=true;manualOverride=false;manualSource=null;plan=null;members=null;stableTicks=0;nextPlan=0;releaseBrakes=true;state(PLANNING);return true;
+        owner.leave();owner.enabled=false;running=true;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
     }
     void manual(DriverConsoleEntity source){
-        running=false;manualOverride=true;manualSource=source;plan=null;stableTicks=0;state(PAUSED);
+        running=false;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
     }
-    void pause(int reason){running=false;manualOverride=false;manualSource=null;plan=null;stableTicks=0;state(reason);}
+    void pause(int reason){running=false;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
     void visual(int notch,int direction){
         if(owner.notch!=notch||owner.direction!=direction){owner.notch=notch;owner.direction=direction;visualDirty=true;owner.setChanged();}
         if(visualDirty&&owner.getLevel()!=null&&owner.getLevel().getGameTime()>=nextVisual){visualDirty=false;nextVisual=owner.getLevel().getGameTime()+5;owner.updateVisual();}
@@ -90,8 +101,26 @@ final class ScheduleController {
         if(status==next)return;status=next;owner.setChanged();
         if(owner.getLevel() instanceof ServerLevel level)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticTrain] console={} state={} entry={} target={}",owner.getBlockPos(),next,entry+1,station);
     }
-    void give(Player player){if(!item.isEmpty()){var stack=item;item=ItemStack.EMPTY;player.getInventory().placeItemBackInInventory(stack);owner.setChanged();}}
-    ItemStack removeItem(){var stack=item;item=ItemStack.EMPTY;program=null;pause(EMPTY);owner.setChanged();return stack;}
+    private void syncProgress(){
+        if(!present())return;
+        var p=program();if(p==null||p.entries.isEmpty()||owner.getLevel()==null)return;
+        p.savedProgress=Math.clamp(entry,0,p.entries.size()-1);
+        item.set(com.simibubi.create.AllDataComponents.TRAIN_SCHEDULE,p.write(owner.getLevel().registryAccess()));
+        owner.setChanged();
+    }
+    ItemStack storedItem(){
+        var p=program();if(p!=null&&!p.entries.isEmpty()&&p.savedProgress!=Math.clamp(entry,0,p.entries.size()-1))syncProgress();
+        return item;
+    }
+    void give(Player player){if(present())player.getInventory().placeItemBackInInventory(removeItem());}
+    ItemStack removeItem(){
+        syncProgress();var stack=item;owner.park();item=ItemStack.EMPTY;program=null;entry=0;waiting=false;station=null;members=null;releaseBrakes=false;resetConditions();pause(EMPTY);owner.setChanged();return stack;
+    }
+    String target(){
+        if(!present()||entry>=total())return "";
+        if(plan!=null)return plan.route.goal().name();
+        var instruction=instruction();return instruction==null?"":instruction.getFilter();
+    }
     DestinationInstruction instruction(){var p=program();return p!=null&&entry>=0&&entry<p.entries.size()&&p.entries.get(entry).instruction instanceof DestinationInstruction d?d:null;}
     void resetConditions(){progress.clear();contexts.clear();}
     boolean tickConditions(ServerLevel level){
@@ -108,11 +137,11 @@ final class ScheduleController {
         if(level.getGameTime()%20==0)owner.setChanged();return false;
     }
     void advance(){
-        nextPlan=0;entry++;waiting=false;station=null;plan=null;stableTicks=0;resetConditions();
+        nextPlan=0;entry++;waiting=false;station=null;plan=null;remaining=Double.NaN;stableTicks=0;resetConditions();
         if(entry>=program().entries.size()){
-            if(program().cyclic)entry=0;else{running=false;state(FINISHED);return;}
+            if(program().cyclic)entry=0;else{running=false;syncProgress();state(FINISHED);return;}
         }
-        state(PLANNING);owner.setChanged();
+        syncProgress();state(PLANNING);owner.setChanged();
     }
     private static void hint(Player player,String key){player.displayClientMessage(Component.translatable("gui.guidedrailways.auto."+key),true);}
     void save(CompoundTag tag,HolderLookup.Provider registries){

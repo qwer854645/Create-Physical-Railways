@@ -142,7 +142,7 @@ final class AutomaticTrains {
         return best;
     }
     private static void drive(ServerLevel level,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,ScheduleController c,double cap){
-        if(c.plan!=null&&!c.plan.network.live(c.plan.route)){c.plan=null;c.waiting=false;c.station=null;c.resetConditions();c.nextPlan=0;}
+        if(c.plan!=null&&!c.plan.network.live(c.plan.route)){c.plan=null;c.remaining=Double.NaN;c.waiting=false;c.station=null;c.resetConditions();c.nextPlan=0;}
         if(c.plan==null){
             if(level.getGameTime()<c.nextPlan){hold(group,c,false);return;}c.nextPlan=level.getGameTime()+10;
             c.plan=plan(level,group,links,c);
@@ -156,6 +156,7 @@ final class AutomaticTrains {
         if(found<0&&p.leg>0&&sameEdge(sample,p.route.edges().get(p.leg-1)))found=p.leg-1;
         if(found<0){c.pause(ScheduleController.NO_ROUTE);hold(group,c,false);return;}p.leg=found;
         var edge=p.route.edges().get(p.leg);double offset=p.network.offset(sample,edge);double remaining=p.route.remaining(p.network,p.leg,offset);
+        c.remaining=remaining;
         if(level.getGameTime()>=p.nextLoaded){p.loaded=p.network.loaded(p.route,p.leg,offset);p.nextLoaded=level.getGameTime()+10;}
         if(!p.loaded){c.state(ScheduleController.UNLOADED);hold(group,c,false);return;}
         double maxSpeed=maximumSpeed(group);boolean arrived=AutomaticDriveModel.arrived(remaining,maxSpeed);

@@ -85,6 +85,23 @@ public final class DriverControls {
         for(var u:DRIVEN.getOrDefault(body.getLevel(),List.of()))if(u.driver==e&&!u.bogie.isRemoved())speed=Math.max(speed,pipe.getLinearVelocity(u.bogie,new Vector3d()).length());
         return DriverModel.canChangeDirection(speed,e.notch);
     }
+    static boolean stopped(DriverConsoleEntity e){
+        var body=body(e);if(body==null)return true;
+        var pipe=dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(body.getLevel()).getPipeline();
+        var members=new HashMap<UUID,ServerSubLevel>();members.put(body.getUniqueId(),body);
+        var links=CouplerConnections.bodyLinks(body.getLevel());boolean changed;
+        do{changed=false;for(var link:links)if(members.containsKey(link.a().getUniqueId())||members.containsKey(link.b().getUniqueId())){
+            changed|=members.putIfAbsent(link.a().getUniqueId(),link.a())==null;
+            changed|=members.putIfAbsent(link.b().getUniqueId(),link.b())==null;
+        }}while(changed);
+        for(var u:DRIVEN.getOrDefault(body.getLevel(),List.of()))if(members.containsKey(u.carrier.getUniqueId())&&!u.bogie.isRemoved())members.put(u.bogie.getUniqueId(),u.bogie);
+        for(var member:members.values()){
+            double speed=pipe.getLinearVelocity(member,new Vector3d()).length();
+            double angular=pipe.getAngularVelocity(member,new Vector3d()).length();
+            if(!Double.isFinite(speed)||!Double.isFinite(angular)||speed>.15||angular>.15)return false;
+        }
+        return true;
+    }
     static boolean accessible(DriverConsoleEntity e,Player player){
         if(e.isRemoved()||player.level()!=e.getLevel()||e.getLevel().getBlockEntity(e.getBlockPos())!=e)return false;
         var p=position(e);return player.distanceToSqr(p.x,p.y,p.z)<=64;

@@ -23,10 +23,20 @@ public final class DriverNetwork {
         @Override public Type<State> type(){return TYPE;}
         static State off(){return new State(false,BlockPos.ZERO,-4,0,false,0,0,0,0);}
     }
+    public record MenuState(int menu,String target,int remainingTenths) implements CustomPacketPayload {
+        static final Type<MenuState> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID,"driver_menu_state"));
+        static final StreamCodec<RegistryFriendlyByteBuf,MenuState> CODEC=StreamCodec.of((b,v)->{
+            b.writeVarInt(v.menu);b.writeUtf(v.target,256);b.writeVarInt(v.remainingTenths);
+        },b->new MenuState(b.readVarInt(),b.readUtf(256),b.readVarInt()));
+        @Override public Type<MenuState> type(){return TYPE;}
+    }
     static void register(RegisterPayloadHandlersEvent event){
         var r=event.registrar("1");
         r.playToServer(Command.TYPE,Command.CODEC,(message,context)->{if(context.player() instanceof ServerPlayer player)DriverControls.remote(player,message.pos,message.command);});
         r.playToClient(State.TYPE,State.CODEC,(message,context)->clientHandler.accept(message));
+        r.playToClient(MenuState.TYPE,MenuState.CODEC,(message,context)->{
+            if(context.player().containerMenu instanceof DriverMenu menu&&menu.containerId==message.menu)menu.details=message;
+        });
     }
     static void sync(DriverConsoleEntity e,boolean active){
         if(e.operator==null||!(e.getLevel() instanceof net.minecraft.server.level.ServerLevel level))return;
