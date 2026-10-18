@@ -12,6 +12,8 @@ public final class BogieCollision {
     public record Cell(int part,int x,int y,int z,List<Box> boxes){}
     public static final int CENTRE_PART=13;
     public static final List<Cell> CELLS=partition();
+    /** A solid axle-height contact web prevents another vehicle entering the old hollow belt. */
+    public static final List<Cell> NATIVE_CELLS=nativeCells();
     /** Preserve the pre-distribution central block's bounds-based vertical mass centre. */
     public static double massCenterY(){
         var cell=CELLS.stream().filter(c->c.part==CENTRE_PART).findFirst().orElseThrow();
@@ -85,10 +87,19 @@ public final class BogieCollision {
         }
     }
     private static List<Cell> partition(){
+        return partition(BOXES);
+    }
+    private static List<Cell> nativeCells(){
+        var boxes=new ArrayList<>(BOXES);
+        double x=1.1875+1.0/64,z=1+RIM_RADIUS+1.0/128,cy=BogieGeometry.RENDER_Y+BogieGeometry.AXLE_RENDER_Y;
+        boxes.add(new Box(.5-x,cy-.125,.5-z,.5+x,cy+.125,.5+z));
+        return partition(boxes);
+    }
+    private static List<Cell> partition(List<Box> boxes){
         var cells=new ArrayList<Cell>();
         for(int y=-1;y<=0;y++)for(int x=-1;x<=1;x++)for(int z=-1;z<=1;z++){
             var local=new ArrayList<Box>();
-            for(var b:BOXES){
+            for(var b:boxes){
                 double x0=Math.max(x,b.x0)-x,y0=Math.max(y,b.y0)-y,z0=Math.max(z,b.z0)-z;
                 double x1=Math.min(x+1,b.x1)-x,y1=Math.min(y+1,b.y1)-y,z1=Math.min(z+1,b.z1)-z;
                 if(x1-x0>1e-9&&y1-y0>1e-9&&z1-z0>1e-9)local.add(new Box(x0,y0,z0,x1,y1,z1));
@@ -101,4 +112,7 @@ public final class BogieCollision {
         return CELLS.stream().anyMatch(c->c.boxes.stream().anyMatch(b->b.contains(x-c.x,y-c.y,z-c.z)));
     }
     public static boolean contains(double x,double y,double z){return BOXES.stream().anyMatch(b->b.contains(x,y,z));}
+    public static boolean nativeContains(double x,double y,double z){
+        return NATIVE_CELLS.stream().anyMatch(c->c.boxes.stream().anyMatch(b->b.contains(x-c.x,y-c.y,z-c.z)));
+    }
 }
