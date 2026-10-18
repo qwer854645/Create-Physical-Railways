@@ -13,6 +13,9 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     private final EditBox[] gears=new EditBox[DriverModel.MAX_NOTCH];
     private final int[] syncedGears=new int[DriverModel.MAX_NOTCH];
     private boolean gearTab,gearsEdited;
+    private int selectedGear;
+    private GearLeverWidget lever;
+    private GearSpeedSlider speedSlider;
     DriverScreen(DriverMenu menu,Inventory inventory,Component title){super(menu,inventory,title);imageWidth=300;imageHeight=270;}
     private static Component text(String key,Object... args){return Component.translatable("gui.guidedrailways.driver."+key,args);}
     private Button command(Component label,int x,int y,int width,int id){
@@ -30,14 +33,30 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         gearTabButton=addRenderableWidget(Button.builder(text("gear_settings"),b->{gearTab=!gearTab;setFocused(null);}).bounds(leftPos+202,topPos+8,86,20).build());
         for(int i=0;i<gears.length;i++){
             String previous=gears[i]==null?"":gears[i].getValue();
-            int x=i<4?44:192,y=57+(i%4)*36;
-            var box=new EditBox(font,leftPos+x,topPos+y,94,18,text("gear_label",i+1));box.setMaxLength(5);
+            var box=new EditBox(font,leftPos+208,topPos+65,78,18,text("gear_label",i+1));box.setMaxLength(5);
             box.setFilter(value->value.matches("[0-9]{0,3}(\\.[0-9]?)?"));box.setValue(previous);
             box.setResponder(value->gearsEdited=true);gears[i]=addRenderableWidget(box);
         }
         Arrays.fill(syncedGears,-1);
+        lever=addRenderableWidget(new GearLeverWidget(leftPos+12,topPos+53,86,141,()->selectedGear,this::selectGear));
+        speedSlider=addRenderableWidget(new GearSpeedSlider(leftPos+110,topPos+104,178,this::selectedSpeed,this::sliderMaximum,this::dragSpeed));
         saveGears=addRenderableWidget(Button.builder(text("apply_gears"),b->applyGears()).bounds(leftPos+12,topPos+211,276,20).build());
         addRenderableWidget(Button.builder(text("close_settings"),b->onClose()).bounds(leftPos+12,topPos+241,276,20).build());
+    }
+    private void selectGear(int gear){gears[selectedGear].setFocused(false);selectedGear=Math.clamp(gear,0,gears.length-1);}
+    private int selectedSpeed(){
+        try{int value=(int)Math.round(Double.parseDouble(gears[selectedGear].getValue())*10);if(SpeedSetting.valid(value))return value;}catch(NumberFormatException ignored){}
+        return Math.max(SpeedSetting.MIN,menu.value(22+selectedGear));
+    }
+    private int sliderMaximum(){
+        int maximum=Math.max(SpeedSetting.MIN,menu.value(21));
+        for(var box:gears)try{int value=(int)Math.round(Double.parseDouble(box.getValue())*10);if(SpeedSetting.valid(value))maximum=Math.max(maximum,value);}catch(NumberFormatException ignored){}
+        return maximum;
+    }
+    private void dragSpeed(int value){
+        int[] profile=enteredGears();if(profile==null)return;
+        value=GearEditorModel.betweenNeighbours(value,selectedGear,profile);
+        gears[selectedGear].setValue(String.format(Locale.ROOT,"%.1f",value/10.0));
     }
     private int[] enteredGears(){
         int[] values=new int[gears.length];
@@ -62,8 +81,17 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         g.fill(leftPos-2,topPos-2,leftPos+302,topPos+272,0xffa48a50);g.fill(leftPos,topPos,leftPos+300,topPos+270,0xff252d32);
         g.drawString(font,title,leftPos+12,topPos+12,0xffe6cc8c,false);
         if(gearTab){
-            g.drawString(font,text("gears_units"),leftPos+12,topPos+36,0xffb9c5cc,false);
-            for(int i=0;i<gears.length;i++)g.drawString(font,text("gear_label",i+1),leftPos+(i<4?12:160),topPos+62+(i%4)*36,0xffe6cc8c,false);
+            g.drawString(font,text("lever_instructions"),leftPos+12,topPos+36,0xffb9c5cc,false);
+            g.drawString(font,text("selected_gear",selectedGear+1),leftPos+110,topPos+66,0xff8ae2cd,false);
+            g.drawString(font,text("speed_units"),leftPos+110,topPos+83,0xffb9c5cc,false);
+            g.drawString(font,"0.1",leftPos+110,topPos+127,0xff8e9699,false);
+            String max=String.format(Locale.ROOT,"%.1f",sliderMaximum()/10.0);
+            g.drawString(font,max,leftPos+288-font.width(max),topPos+127,0xff8e9699,false);
+            for(int i=0;i<gears.length;i++){
+                int x=108+(i<4?0:92),y=140+(i%4)*14;
+                if(i==selectedGear)g.fill(leftPos+x-2,topPos+y-2,leftPos+x+88,topPos+y+11,0xff3e514e);
+                g.drawString(font,"P"+(i+1)+"  "+gears[i].getValue(),leftPos+x,topPos+y,i==selectedGear?0xff8ae2cd:0xffb9c5cc,false);
+            }
             g.drawString(font,font.plainSubstrByWidth(text("gears_order").getString(),276),leftPos+12,topPos+199,0xffb9c5cc,false);return;
         }
         g.drawString(font,text("actual",String.format(Locale.ROOT,"%+.2f",menu.value(4)/100.0)),leftPos+12,topPos+35,0xff8ae2cd,false);
@@ -79,7 +107,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     @Override public void render(GuiGraphics g,int x,int y,float partial){
         for(var widget:mainWidgets)widget.visible=!gearTab;
         gearTabButton.setMessage(text(gearTab?"back_settings":"gear_settings"));
-        for(var box:gears){box.visible=gearTab;box.setEditable(menu.value(16)!=0&&menu.value(20)!=0);}
+        for(int i=0;i<gears.length;i++){gears[i].visible=gearTab&&i==selectedGear;gears[i].setEditable(menu.value(16)!=0&&menu.value(20)!=0);}
+        lever.visible=speedSlider.visible=gearTab;speedSlider.active=menu.value(16)!=0&&menu.value(20)!=0&&enteredGears()!=null;speedSlider.refresh();
         saveGears.visible=gearTab;saveGears.active=menu.value(16)!=0&&menu.value(20)!=0&&enteredGears()!=null;
         forward.active=neutral.active=reverse.active=menu.value(11)!=0&&menu.value(19)==0;
         boolean schedule=menu.value(12)!=0&&menu.value(16)!=0;
@@ -92,6 +121,12 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         if(!gearTab&&isHovering(12,123,276,10,x,y))g.renderTooltip(font,List.of(Component.translatable("gui.guidedrailways.auto.state."+menu.value(13))),Optional.empty(),x,y);
         if(!gearTab&&isHovering(12,76,276,10,x,y)&&!menu.details.target().isEmpty())g.renderTooltip(font,List.of(Component.translatable("gui.guidedrailways.auto.target",menu.details.target())),Optional.empty(),x,y);
         if(isHovering(12,gearTab?195:211,276,20,x,y))g.renderTooltip(font,List.of(text("gears_help")),Optional.empty(),x,y);
+        if(gearTab&&!isDragging()&&lever.isHoveredOrFocused())g.renderTooltip(font,List.of(text("lever_help")),Optional.empty(),x,y);
+        if(gearTab&&!isDragging()&&speedSlider.isHoveredOrFocused())g.renderTooltip(font,List.of(text("slider_help")),Optional.empty(),x,y);
+    }
+    @Override public boolean mouseClicked(double x,double y,int button){
+        if(gearTab&&button==0)for(int i=0;i<gears.length;i++)if(isHovering(106+(i<4?0:92),138+(i%4)*14,90,13,x,y)){selectGear(i);setFocused(lever);return true;}
+        return super.mouseClicked(x,y,button);
     }
     @Override public boolean keyPressed(int key,int scan,int mods){
         if(key==GLFW.GLFW_KEY_ESCAPE){if(gearTab){gearTab=false;setFocused(null);}else{DriverClient.exit();onClose();}return true;}
