@@ -14,7 +14,7 @@ public final class DriverControls {
     static ServerSubLevel body(DriverConsoleEntity e){return e.getLevel()!=null&&SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
     static void claim(ServerLevel level,DriverConsoleEntity e,Player player){
         register(level,e);var body=body(e);if(body==null)return;
-        for(var other:CONSOLES.get(level).values())if(other!=e&&(body(other)==body||player.getUUID().equals(other.operator))){other.park();}
+        for(var other:CONSOLES.get(level).values())if(other!=e&&(body(other)==body||player.getUUID().equals(other.operator))){if(body(other)==body)other.park();else other.leave();}
     }
     static void emergency(ServerLevel level,DriverConsoleEntity source){
         source.emergency=true;source.notch=-4;source.updateVisual();var body=body(source);if(body==null)return;
@@ -26,8 +26,9 @@ public final class DriverControls {
     }
     static void removed(ServerLevel level,DriverConsoleEntity e){
         var map=CONSOLES.get(level);if(map!=null)map.remove(e.getBlockPos(),e);
-        e.active=false;e.steer=0;e.emergency=true;e.notch=-4;DriverNetwork.sync(e,false);e.operator=null;VehiclePhysics.consoleRemoved(e);
+        e.active=false;e.enabled=false;e.steer=0;e.emergency=true;e.notch=-4;DriverNetwork.sync(e,false);e.operator=null;VehiclePhysics.consoleRemoved(e);
     }
+    private static int priority(DriverConsoleEntity e){return (e.active?2:0)+(e.enabled?1:0);}
     static void refresh(ServerLevel level,Collection<VehiclePhysics.Unit> units){
         var map=CONSOLES.getOrDefault(level,Map.of());
         if(!map.isEmpty())map.values().removeIf(e->{boolean gone=e.isRemoved()||!level.hasChunkAt(e.getBlockPos())||level.getBlockEntity(e.getBlockPos())!=e;if(gone&&e.active)e.park();return gone;});
@@ -36,7 +37,7 @@ public final class DriverControls {
         for(var e:map.values()){
             e.actual=0;e.available=0;e.supports=0;e.powered=0;e.guided=0;e.mountBrakes=0;var body=body(e);if(body==null)continue;
             var old=chosen.get(body);
-            if(old==null||e.active&&!old.active||e.active==old.active&&e.getBlockPos().asLong()<old.getBlockPos().asLong())chosen.put(body,e);
+            if(old==null||priority(e)>priority(old)||priority(e)==priority(old)&&e.getBlockPos().asLong()<old.getBlockPos().asLong())chosen.put(body,e);
         }
         for(var u:units){
             var next=chosen.get(u.carrier);
@@ -51,7 +52,7 @@ public final class DriverControls {
             e.actual=pipe.getLinearVelocity(body,new Vector3d()).dot(heading);
             for(var u:units)if(u.carrier==body){e.supports++;if(!u.detached)e.guided++;if(u.mount.braking)e.mountBrakes++;if(Math.abs(u.mount.getSpeed())>.001){e.powered++;double cap=Math.abs(u.mount.getSpeed())*TrainConfig.SPEED_PER_RPM.get();e.available=e.powered==1?cap:Math.min(e.available,cap);}}
             if(e.active&&level.getGameTime()%5==0)DriverNetwork.sync(e,true);
-            if(e.active&&level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverState] body={} actual={} notch={} available={} direction={} emergency={} powered={} guided={}/{}",body.getUniqueId(),e.actual,e.notch,e.available,e.direction,e.emergency,e.powered,e.guided,e.supports);
+            if((e.active||e.enabled)&&level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[DriverState] body={} actual={} notch={} available={} direction={} operatorActive={} driveEnabled={} emergency={} powered={} guided={}/{}",body.getUniqueId(),e.actual,e.notch,e.available,e.direction,e.active,e.enabled,e.emergency,e.powered,e.guided,e.supports);
         }
     }
     static void remote(net.minecraft.server.level.ServerPlayer player,BlockPos pos,int command){

@@ -37,6 +37,20 @@ public final class CouplerCheck {
         rejects(()->CouplerGeometry.engage(a,forward,up,b,backward,new Vector3d(0,-1,0)),"opposed carriage up directions must be rejected");
         check(CouplerGeometry.engage(a,forward,up,new Vector3d(0,1,.5),backward,up).point().isFinite(),"one-block height tolerance is inclusive");
         check(CouplerGeometry.engage(a,forward,up,a,forward,up).frame().isFinite(),"coincident same-facing heads have a valid fallback frame");
+        // A swivel changes the drawbar direction without creating a spring extension.
+        for(int yaw=-180;yaw<=180;yaw+=5)for(int pitch=-60;pitch<=60;pitch+=15){
+            var rotation=new Quaterniond().rotateYXZ(Math.toRadians(yaw),Math.toRadians(pitch),.2);
+            var rootA=new Vector3d(42,10,-7);var delta=new Vector3d(2,0,0).rotate(rotation);var rootB=new Vector3d(rootA).add(delta);
+            var frame=CouplerGeometry.distanceFrame(rootA,rootB);
+            check(new Vector3d(1,0,0).rotate(frame).distance(new Vector3d(delta).normalize())<1e-10,"radial axis follows current separation at every swivel angle");
+            check(Math.abs(CouplerGeometry.extension(rootA,rootB,2))<1e-10,"pure swivel does not demand extension or restoring torque");
+            var stretched=new Vector3d(rootA).add(new Vector3d(delta).normalize().mul(2.08));
+            check(Math.abs(CouplerGeometry.extension(rootA,stretched,2)-.08)<1e-10,"buffer extension is independent of engagement angle");
+            var rotA=new Quaterniond().rotateY(.2);var rotB=new Quaterniond().rotateYXZ(-1.4,.12,.04);
+            var localA=new Quaterniond(rotA).conjugate().mul(frame);var localB=new Quaterniond(rotB).conjugate().mul(frame);
+            check(new Vector3d(1,0,0).rotate(localA).rotate(rotA).distance(new Vector3d(1,0,0).rotate(localB).rotate(rotB))<1e-10,"independently rotated bodies share a radial axis without locking their orientations");
+        }
+        check(CouplerGeometry.distanceFrame(new Vector3d(),new Vector3d()).isFinite(),"coincident sockets have finite fallback");
         var zero=new Vector3d();
         check(CouplerGeometry.slowEnough(new Vector3d(0,0,1),zero,zero,zero),"slow rolling coupling allowed");
         check(CouplerGeometry.slowEnough(new Vector3d(0,0,2),new Vector3d(0,0,2),zero,zero),"same-speed rolling cars allowed at limit");

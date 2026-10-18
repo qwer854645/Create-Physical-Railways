@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
     java.util.UUID operator;int steer;long steerAt;
-    boolean active,emergency;int direction=1,notch=-4;
+    boolean active,enabled,emergency;int direction=1,notch=-4;
     float lever=-1,previousLever=-1,reverser=1,previousReverser=1;
     double actual,available;int supports,powered,guided,mountBrakes;
     DriverConsoleEntity(BlockPos p,BlockState s){super(Content.DRIVER_ENTITY.get(),p,s);}
@@ -21,16 +21,17 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     void updateVisual(){
         setChanged();if(level!=null&&!level.isClientSide&&!isRemoved()){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);DriverNetwork.sync(this,active);}
     }
-    void park(){active=false;steer=0;notch=-4;DriverNetwork.sync(this,false);operator=null;updateVisual();}
+    void leave(){active=false;steer=0;DriverNetwork.sync(this,false);operator=null;updateVisual();}
+    void park(){enabled=false;active=false;steer=0;notch=-4;DriverNetwork.sync(this,false);operator=null;updateVisual();}
     void command(Player player,int command){
         if(!(level instanceof ServerLevel server)||!player.mayBuild()||!server.mayInteract(player,worldPosition))return;
         if(active&&operator!=null&&!operator.equals(player.getUUID())&&command!=8){hint(player,"busy");return;}
-        if(command==19){if(operator!=null&&operator.equals(player.getUUID()))park();return;}
+        if(command==19){if(operator!=null&&operator.equals(player.getUUID()))leave();return;}
         if(command>=20&&command<=22){if(active&&player.getUUID().equals(operator)){steer=command==20?-1:command==21?1:0;steerAt=server.getGameTime();}return;}
         int oldNotch=notch,oldDirection=direction;boolean oldActive=active,oldEmergency=emergency;
         if(command==0){
             if(!active&&DriverControls.body(this)==null){hint(player,"install");return;}
-            if(active)park();else{DriverControls.claim(server,this,player);active=true;operator=player.getUUID();notch=-4;}
+            if(active)leave();else{DriverControls.claim(server,this,player);active=true;enabled=true;operator=player.getUUID();}
         }else if(command==8){DriverControls.emergency(server,this);}
         else{
             if(!active)return;
@@ -63,7 +64,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
         if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-4,4);emergency=tag.getBoolean("VisualEmergency");}
-        else{active=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
+        else{active=false;enabled=false;notch=-4;emergency=false;} // Never resume traction when loading/assembling.
     }
     @Override public void setRemoved(){if(level instanceof ServerLevel server)DriverControls.removed(server,this);super.setRemoved();}
 }

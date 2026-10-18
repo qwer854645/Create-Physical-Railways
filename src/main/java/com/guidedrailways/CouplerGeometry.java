@@ -26,6 +26,13 @@ public final class CouplerGeometry {
         var z=new Vector3d(x).cross(up);if(z.lengthSquared()<.1)throw new IllegalArgumentException("车钩姿态无效");z.normalize();var y=new Vector3d(z).cross(x).normalize();
         return new Engagement(new Vector3d(a).add(b).mul(.5),new Quaterniond().setFromNormalized(new Matrix3d(x,y,z)));
     }
+    /** World X follows the current drawbar, with no stored yaw/pitch/roll reference. */
+    public static Quaterniond distanceFrame(Vector3dc a,Vector3dc b){
+        var d=new Vector3d(b).sub(a);
+        if(!d.isFinite())throw new IllegalArgumentException("invalid drawbar endpoints");
+        return d.lengthSquared()<1e-12?new Quaterniond():new Quaterniond().rotationTo(new Vector3d(1,0,0),d.normalize());
+    }
+    public static double extension(Vector3dc a,Vector3dc b,double restLength){return a.distance(b)-restLength;}
     public static boolean slowEnough(Vector3dc va,Vector3dc vb,Vector3dc wa,Vector3dc wb){
         return va.isFinite()&&vb.isFinite()&&wa.isFinite()&&wb.isFinite()&&va.lengthSquared()<=4&&vb.lengthSquared()<=4&&va.distanceSquared(vb)<=4&&wa.lengthSquared()<=2.25&&wb.lengthSquared()<=2.25;
     }

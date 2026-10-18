@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import java.util.*;
-/** One native limited prismatic/ball joint per pair, no scripted impulse or extra rigid body. */
+/** One native radial spring/limit per pair; both mounting sockets swivel freely. */
 public final class CouplerConnections {
     private record Pending(UUID endpoint,long expires){}
     private static final class Live {
@@ -24,7 +24,7 @@ public final class CouplerConnections {
         final Map<UUID,CouplerEntity> endpoints=new HashMap<>();final Map<UUID,Live> live=new HashMap<>();
         final Map<UUID,Pending> pending=new HashMap<>();final Set<UUID> warned=new HashSet<>();
     }
-    private record Transfer(UUID endpoint,Vector3d anchor,Quaterniond frame,boolean geometry,GlobalPos source,long expires){}
+    private record Transfer(UUID endpoint,Vector3d anchor,Quaterniond frame,boolean geometry,double length,GlobalPos source,long expires){}
     private static final Map<ServerLevel,State> STATES=new WeakHashMap<>();
     private static final Map<GlobalPos,Transfer> TRANSFERS=new HashMap<>();
     private record Moving(UUID endpoint,long expires){}
@@ -34,6 +34,7 @@ public final class CouplerConnections {
     private static boolean loaded(ServerLevel level,CouplerEntity e){return e!=null&&!e.isRemoved()&&level.hasChunkAt(e.getBlockPos())&&level.getBlockEntity(e.getBlockPos())==e;}
     private static ServerSubLevel body(ServerLevel level,CouplerEntity e){return SableCompanion.INSTANCE.getContaining(level,e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
     private static Vector3d blockOrigin(CouplerEntity e){var p=e.getBlockPos();return new Vector3d(p.getX(),p.getY(),p.getZ());}
+    private static Vector3d socket(CouplerEntity e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return blockOrigin(e).add(CouplerVisual.pivot(f.getStepX(),f.getStepZ()));}
     private static Vector3d head(CouplerEntity e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return blockOrigin(e).add(.5+f.getStepX()*.48,.5,.5+f.getStepZ()*.48);}
     private static Vector3d facing(ServerSubLevel b,CouplerEntity e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d()).orientation());}
     private static Vector3d up(ServerSubLevel b){return new Vector3d(0,1,0).rotate(SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d()).orientation());}
@@ -87,8 +88,10 @@ public final class CouplerConnections {
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
         if(!CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d())))throw new IllegalArgumentException("两节车速度或相对速度过高，请减速后再连挂");
         var geometry=CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));
-        a.geometry(local(ba,geometry.point()).sub(blockOrigin(a)),localFrame(ba,geometry.frame()));
-        b.geometry(local(bb,geometry.point()).sub(blockOrigin(b)),localFrame(bb,geometry.frame()));
+        var socketA=socket(a);var socketB=socket(b);
+        double length=VehiclePhysics.world(ba,socketA).distance(VehiclePhysics.world(bb,socketB));
+        a.geometry(socketA.sub(blockOrigin(a)),localFrame(ba,geometry.frame()),length);
+        b.geometry(socketB.sub(blockOrigin(b)),localFrame(bb,geometry.frame()),length);
         var link=new CouplingLinks.Link(UUID.randomUUID(),a.endpointId,b.endpointId);data.add(link);
         try{reconcile(level,link);if(!state(level).live.containsKey(link.id()))throw new IllegalStateException("车钩关节未能建立，请重新选择");}
         catch(RuntimeException error){disconnect(level,a.endpointId,"creation_failed");throw error;}
@@ -124,34 +127,47 @@ public final class CouplerConnections {
         if(old!=null&&(!old.joint.isValid()||old.a!=ba||old.b!=bb||!old.pa.equals(a.getBlockPos())||!old.pb.equals(b.getBlockPos()))){close(s,link.id());old=null;}
         if(!a.hasGeometry||!b.hasGeometry){disconnect(level,link.a(),"missing_saved_geometry");return;}
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
+        // Migrate legacy common-midpoint anchors without moving either vehicle.
+        if(a.restLength<0||b.restLength<0){
+            var pa=socket(a);var pb=socket(b);var wa=VehiclePhysics.world(ba,pa);var wb=VehiclePhysics.world(bb,pb);
+            double length=wa.distance(wb);var frame=CouplerGeometry.distanceFrame(wa,wb);
+            a.geometry(pa.sub(blockOrigin(a)),localFrame(ba,frame),length);b.geometry(pb.sub(blockOrigin(b)),localFrame(bb,frame),length);
+            if(old!=null){close(s,link.id());old=null;}
+        }
+        var anchorA=blockOrigin(a).add(a.anchor);var anchorB=blockOrigin(b).add(b.anchor);
+        var worldA=VehiclePhysics.world(ba,anchorA);var worldB=VehiclePhysics.world(bb,anchorB);
+        var frame=CouplerGeometry.distanceFrame(worldA,worldB);var frameA=localFrame(ba,frame);var frameB=localFrame(bb,frame);
         if(old==null){
-            var anchorA=blockOrigin(a).add(a.anchor);var anchorB=blockOrigin(b).add(b.anchor);
-            double error=VehiclePhysics.world(ba,anchorA).distance(VehiclePhysics.world(bb,anchorB));
+            double error=Math.abs(CouplerGeometry.extension(worldA,worldB,a.restLength));
             if(error>.35){if(s.warned.add(link.id()))org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[Coupler] rebind deferred link={} savedAnchorError={} (uncouple to reconnect)",link.id(),error);return;}
             GenericConstraintHandle joint=null;
             try{
-                joint=pipe.addConstraint(ba,bb,new GenericConstraintConfiguration(anchorA,anchorB,a.frame,b.frame,EnumSet.of(ConstraintJointAxis.LINEAR_Y,ConstraintJointAxis.LINEAR_Z)));
-                joint.setLimit(ConstraintJointAxis.LINEAR_X,-CouplerGeometry.HALF_STROKE,CouplerGeometry.HALF_STROKE);
+                joint=pipe.addConstraint(ba,bb,new GenericConstraintConfiguration(anchorA,anchorB,frameA,frameB,EnumSet.noneOf(ConstraintJointAxis.class)));
+                joint.setLimit(ConstraintJointAxis.LINEAR_X,Math.max(0,a.restLength-CouplerGeometry.HALF_STROKE),a.restLength+CouplerGeometry.HALF_STROKE);
                 joint.setContactsEnabled(true);
                 old=new Live(joint,ba,bb,a,b);tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
-                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} stroke={} savedAnchorError={}",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} stroke={} savedAnchorError={} mode=swivelling_distance",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
             }catch(RuntimeException errorCreating){if(joint!=null&&joint.isValid())joint.remove();throw errorCreating;}
-        }else tune(old);
+        }else{
+            // Only the radial axis is limited/motorised; Y/Z and all rotations stay free.
+            // Reorient each physics step, never aim back toward the engagement heading.
+            old.joint.setFrame1(anchorA,frameA);old.joint.setFrame2(anchorB,frameB);tune(old);
+        }
         a.visualPeer(b);b.visualPeer(a);
         if(level.getGameTime()>=old.nextLog){
             old.nextLog=level.getGameTime()+20;
             var wa=VehiclePhysics.world(ba,blockOrigin(a).add(a.anchor));var wb=VehiclePhysics.world(bb,blockOrigin(b).add(b.anchor));
             if(level.players().stream().anyMatch(p->p.distanceToSqr(wa.x,wa.y,wa.z)<4096)){
-                var frameWorld=new Quaterniond(pipe.readPose(ba,new Pose3d()).orientation()).mul(a.frame);
+                var frameWorld=new Quaterniond(frame);
                 var delta=new Vector3d(wb).sub(wa).rotate(frameWorld.conjugate());
-                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerState] link={} bufferX={} transverseError={} supportedMassA={} supportedMassB={} joint={}",link.id(),delta.x,Math.hypot(delta.y,delta.z),old.ma,old.mb,old.joint.isValid());
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerState] link={} bufferX={} transverseError={} supportedMassA={} supportedMassB={} joint={} socketDistance={} restLength={} swivelDeg={}",link.id(),delta.x-a.restLength,Math.hypot(delta.y,delta.z),old.ma,old.mb,old.joint.isValid(),wa.distance(wb),a.restLength,Math.toDegrees(Math.acos(Math.clamp(-facing(ba,a).dot(facing(bb,b)),-1,1))));
             }
         }
     }
     private static void tune(Live live){
         double ma=VehiclePhysics.coupledMass(live.a),mb=VehiclePhysics.coupledMass(live.b);
         if(Math.abs(live.ma-ma)<.01&&Math.abs(live.mb-mb)<.01)return;
-        var spring=CouplerGeometry.spring(ma,mb);live.joint.setMotor(ConstraintJointAxis.LINEAR_X,0,spring.stiffness(),spring.damping(),true,spring.maxForce());live.ma=ma;live.mb=mb;
+        var spring=CouplerGeometry.spring(ma,mb);live.joint.setMotor(ConstraintJointAxis.LINEAR_X,live.visualA.restLength,spring.stiffness(),spring.damping(),true,spring.maxForce());live.ma=ma;live.mb=mb;
     }
     static void beforeMove(ServerLevel from,ServerLevel to,BlockPos oldPos,BlockPos newPos){
         if(!(from.getBlockEntity(oldPos) instanceof CouplerEntity e))return;
@@ -159,13 +175,13 @@ public final class CouplerConnections {
         var b=body(from,e);Vector3d worldAnchor=null;Quaterniond worldFrame=null;
         if(b!=null&&e.hasGeometry){worldAnchor=VehiclePhysics.world(b,blockOrigin(e).add(e.anchor));worldFrame=new Quaterniond(SubLevelPhysicsSystem.get(from).getPipeline().readPose(b,new Pose3d()).orientation()).mul(e.frame);}
         var source=GlobalPos.of(from.dimension(),oldPos.immutable());MOVING.put(source,new Moving(e.endpointId,from.getGameTime()+200));
-        TRANSFERS.put(GlobalPos.of(to.dimension(),newPos.immutable()),new Transfer(e.endpointId,worldAnchor,worldFrame,e.hasGeometry&&worldAnchor!=null,source,to.getGameTime()+200));suspend(from,e.endpointId);
+        TRANSFERS.put(GlobalPos.of(to.dimension(),newPos.immutable()),new Transfer(e.endpointId,worldAnchor,worldFrame,e.hasGeometry&&worldAnchor!=null,e.restLength,source,to.getGameTime()+200));suspend(from,e.endpointId);
     }
     static void afterMove(ServerLevel to,BlockPos pos){if(to.getBlockEntity(pos) instanceof CouplerEntity e)register(to,e);}
     private static boolean restore(ServerLevel level,CouplerEntity e){
         var key=GlobalPos.of(level.dimension(),e.getBlockPos());var transfer=TRANSFERS.get(key);if(transfer==null)return true;
         e.endpointId=transfer.endpoint;
-        if(transfer.geometry){var b=body(level,e);if(b==null||b.getMassTracker().getMass()<=0)return false;e.geometry(local(b,transfer.anchor).sub(blockOrigin(e)),localFrame(b,transfer.frame));}
+        if(transfer.geometry){var b=body(level,e);if(b==null||b.getMassTracker().getMass()<=0)return false;e.geometry(local(b,transfer.anchor).sub(blockOrigin(e)),localFrame(b,transfer.frame),transfer.length);}
         else{e.hasGeometry=false;e.setChanged();}
         TRANSFERS.remove(key);MOVING.put(transfer.source,new Moving(e.endpointId,level.getGameTime()+5));return true;
     }
