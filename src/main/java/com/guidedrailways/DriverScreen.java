@@ -127,15 +127,21 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         takeover.active=menu.value(16)!=0&&menu.value(20)!=0&&(menu.value(11)==0||menu.value(19)!=0);
         autoRemove.active=menu.value(12)!=0&&menu.value(18)!=0&&menu.value(20)!=0;
         super.render(g,x,y,partial);renderTooltip(g,x,y);
-        if(!gearTab&&isHovering(18,124,264,10,x,y))g.renderTooltip(font,List.of(Component.translatable("gui.guidedrailways.auto.state."+menu.value(13))),Optional.empty(),x,y);
-        if(!gearTab&&isHovering(36,108,246,10,x,y)&&!menu.details.target().isEmpty())g.renderTooltip(font,List.of(Component.translatable("gui.guidedrailways.auto.target",menu.details.target())),Optional.empty(),x,y);
-        if(isHovering(12,gearTab?195:211,248,gearTab?14:18,x,y))g.renderTooltip(font,UserText.lines(text("gears_help")),Optional.empty(),x,y);
-        if(gearTab&&!isDragging()&&lever.isHoveredOrFocused())g.renderTooltip(font,UserText.lines(text("lever_help")),Optional.empty(),x,y);
-        if(gearTab&&!isDragging()&&speedSlider.isHoveredOrFocused())g.renderTooltip(font,UserText.lines(text("slider_help")),Optional.empty(),x,y);
+        Component status=Component.translatable("gui.guidedrailways.auto.state."+menu.value(13));
+        if(!gearTab&&font.width(status)>264&&isHovering(18,124,264,10,x,y))g.renderTooltip(font,List.of(status),Optional.empty(),x,y);
+        Component target=Component.translatable("gui.guidedrailways.auto.target",menu.details.target());
+        if(!gearTab&&font.width(target)>246&&isHovering(36,108,246,10,x,y)&&!menu.details.target().isEmpty())g.renderTooltip(font,List.of(target),Optional.empty(),x,y);
+        if(!isDragging()&&isHovering(12,gearTab?195:211,248,gearTab?14:18,x,y))g.renderTooltip(font,UserText.lines(text("gears_help")),Optional.empty(),x,y);
     }
     @Override public boolean mouseClicked(double x,double y,int button){
         if(gearTab&&button==0)for(int i=0;i<gears.length;i++)if(isHovering(106+(i<4?0:92),138+(i%4)*14,90,13,x,y)){selectGear(i);setFocused(lever);return true;}
         return super.mouseClicked(x,y,button);
+    }
+    @Override public boolean mouseDragged(double x,double y,int button,double dx,double dy){
+        // Container screens consume drags for item slots instead of forwarding them to widgets.
+        if(gearTab&&button==0&&isDragging()&&(getFocused()==lever||getFocused()==speedSlider))
+            return getFocused().mouseDragged(x,y,button,dx,dy);
+        return super.mouseDragged(x,y,button,dx,dy);
     }
     @Override public boolean keyPressed(int key,int scan,int mods){
         if(key==GLFW.GLFW_KEY_ESCAPE){if(gearTab){gearTab=false;setFocused(null);}else{DriverClient.exit();onClose();}return true;}

@@ -105,17 +105,31 @@ public final class DriverClient {
     private static Component text(String key,Object... args){return Component.translatable("gui.guidedrailways.driver."+key,args);}
     private static void hud(RenderGuiEvent.Post event){
         var mc=Minecraft.getInstance();if(!state.active()||mc.screen!=null||mc.options.hideGui)return;
-        var g=event.getGuiGraphics();int x=12,y=mc.getWindow().getGuiScaledHeight()-92;
-        CreateGuiTheme.panel(g,x-5,y-6,310,90);
-        g.drawString(mc.font,text("actual",String.format(java.util.Locale.ROOT,"%+.2f",state.speed())),x,y,CreateGuiTheme.HEADER,false);
+        var lines=new java.util.ArrayList<Component>();
+        lines.add(text("actual",String.format(java.util.Locale.ROOT,"%+.2f",state.speed())));
         if(state.observing()){
-            g.drawString(mc.font,text(state.emergency()?"emergency_on":"observing"),x,y+15,CreateGuiTheme.ACCENT,false);
-            g.drawString(mc.font,text("takeover_hint"),x,y+35,CreateGuiTheme.TEXT,false);
-            g.drawString(mc.font,text("observe_keys"),x,y+55,CreateGuiTheme.DIM,false);return;
+            lines.add(text(state.emergency()?"emergency_on":"observing"));
+            lines.add(text("takeover_hint"));
+            lines.add(text("observe_keys"));
+        }else{
+            int n=state.notch();
+            lines.add(state.emergency()?text("emergency_on"):n>0?text("traction_speed",n,String.format(java.util.Locale.ROOT,"%.1f",state.gearTarget())):text(n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25));
+            if(steer!=0)lines.add(text(steer<0?"steer_left":"steer_right"));
+            lines.add(text(state.emergency()?"reset_hint":grabbing?"dragging_hint":"world_hint"));
+            lines.add(text("world_keys"));
         }
-        int n=state.notch();g.drawString(mc.font,state.emergency()?text("emergency_on"):n>0?text("traction_speed",n,String.format(java.util.Locale.ROOT,"%.1f",state.gearTarget())):text(n<0?"brake_notch":"coasting",Math.abs(n),Math.abs(n)*25),x,y+15,CreateGuiTheme.ACCENT,false);
-        g.drawString(mc.font,text(steer<0?"steer_left":steer>0?"steer_right":"steer_default"),x,y+30,CreateGuiTheme.TEXT,false);
-        g.drawString(mc.font,text(state.emergency()?"reset_hint":grabbing?"dragging_hint":"world_hint"),x,y+45,CreateGuiTheme.TEXT,false);
-        g.drawString(mc.font,text("world_keys"),x,y+60,CreateGuiTheme.DIM,false);
+        // Size to the current state; wrap on small windows instead of clipping controls.
+        int contentWidth=Math.min(260,Math.max(40,mc.getWindow().getGuiScaledWidth()-26));
+        int actualWidth=0;
+        for(var line:lines)actualWidth=Math.max(actualWidth,Math.min(contentWidth,mc.font.width(line)));
+        var rows=new java.util.ArrayList<net.minecraft.util.FormattedCharSequence>();
+        var colors=new java.util.ArrayList<Integer>();
+        for(int i=0;i<lines.size();i++){
+            var wrapped=mc.font.split(lines.get(i),contentWidth);
+            for(var row:wrapped){rows.add(row);colors.add(i==0?CreateGuiTheme.HEADER:i==1?CreateGuiTheme.ACCENT:i==lines.size()-1?CreateGuiTheme.DIM:CreateGuiTheme.TEXT);}
+        }
+        var g=event.getGuiGraphics();int x=12,height=rows.size()*12+12,y=mc.getWindow().getGuiScaledHeight()-height-8;
+        CreateGuiTheme.panel(g,x-5,y,actualWidth+16,height);
+        for(int i=0;i<rows.size();i++)g.drawString(mc.font,rows.get(i),x+3,y+6+i*12,colors.get(i),false);
     }
 }
