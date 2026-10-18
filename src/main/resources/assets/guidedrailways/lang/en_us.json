@@ -95,7 +95,7 @@
   "gui.guidedrailways.auto.state.10": "Conflicting carriage orientations; paused",
   "gui.guidedrailways.auto.state.11": "Train formation changed; check before resuming",
   "gui.guidedrailways.auto.state.12": "Stop overrun; reposition the train manually",
-  "gui.guidedrailways.auto.state.13": "Waiting for route chunks to load",
+  "gui.guidedrailways.auto.state.13": "Waiting for required chunks to load",
   "gui.guidedrailways.auto.state.14": "Emergency brake applied; Schedule paused",
   "gui.guidedrailways.driver.secondary": "Standby controls: the first placed controls operate this train",
   "gui.guidedrailways.auto.state.15": "Standby controls; stored Schedule may be retrieved",
@@ -184,5 +184,7 @@
   "gui.guidedrailways.auto.title": "Schedule title: %s",
   "gui.guidedrailways.auto.speed_limit": "Automatic speed limit: %s%%",
   "gui.guidedrailways.auto.state.17": "Waiting for a compatible cargo connector",
-  "gui.guidedrailways.auto.state.18": "Waiting for undocking"
+  "gui.guidedrailways.auto.state.18": "Waiting for undocking",
+  "gui.guidedrailways.auto.state.19": "No matching delivery station",
+  "gui.guidedrailways.auto.state.20": "Waiting for package transfer"
 }

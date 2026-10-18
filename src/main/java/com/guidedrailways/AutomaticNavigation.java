@@ -28,11 +28,14 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
         return out;
     }
     List<ScheduleRoute.Goal> goals(DestinationInstruction instruction,UUID preferred){
-        var out=new ArrayList<ScheduleRoute.Goal>();if(paths.isEmpty())return out;
         Pattern pattern=Pattern.compile(instruction.getFilterForRegex());
+        return goals(station->pattern.matcher(station.name).matches(),preferred);
+    }
+    List<ScheduleRoute.Goal> goals(java.util.function.Predicate<GlobalStation> matches,UUID preferred){
+        var out=new ArrayList<ScheduleRoute.Goal>();if(paths.isEmpty())return out;
         var network=paths.values().iterator().next().network();
         for(GlobalStation station:network.getPoints(EdgePointType.STATION)){
-            if(!pattern.matcher(station.name).matches()||preferred!=null&&!preferred.equals(station.id)||station.edgeLocation==null)continue;
+            if(!matches.test(station)||preferred!=null&&!preferred.equals(station.id)||station.edgeLocation==null)continue;
             var from=network.locateNode(station.edgeLocation.getFirst());var to=network.locateNode(station.edgeLocation.getSecond());
             if(from==null||to==null||!station.canApproachFrom(to))continue;
             var edge=new ScheduleRoute.Edge(from.getNetId(),to.getNetId());var real=network.getConnectionsFrom(from).get(to);

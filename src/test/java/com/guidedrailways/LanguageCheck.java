@@ -45,7 +45,7 @@ public final class LanguageCheck {
                 if(!path.getFileName().toString().equals("UserText.java"))check(!source.contains("Component.literal("),"unlocalized player-facing literal: "+path);
             }
         }
-        for(int state=0;state<=16;state++)check(en.containsKey("gui.guidedrailways.auto.state."+state),"missing automatic state "+state);
+        for(int state=0;state<=20;state++)check(en.containsKey("gui.guidedrailways.auto.state."+state),"missing automatic state "+state);
         for(String key:List.of("steer_left","steer_right","steer_default","brake_notch","coasting","world_hint","dragging_hint","reset_hint","observing","emergency_on","back_settings","gear_settings"))
             check(en.containsKey("gui.guidedrailways.driver."+key),"missing conditional driver text: "+key);
         for(String key:List.of("bogie","coupler","driver_console"))check(zh.get("tooltip.guidedrailways."+key).contains("\n"),"item tooltip has actual translated line breaks");

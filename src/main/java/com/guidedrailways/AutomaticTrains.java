@@ -137,7 +137,7 @@ final class AutomaticTrains {
     private static TrackNetwork.Sample sample(ServerLevel level,VehiclePhysics.Unit u,int end){
         var current=u.samples[end];var p=VehiclePhysics.world(u.bogie,u.axle(end));return TrackNetwork.nearest(level,p,heading(u),current==null?null:current.path(),1);
     }
-    private static Plan plan(ServerLevel level,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,ScheduleController c){
+    private static Plan plan(ServerLevel level,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,ScheduleController c,Set<UUID> packageTargets){
         var instruction=c.instruction();if(instruction==null)return null;Plan best=null;
         boolean stopped=maximumSpeed(group)<.15;
         int forward=c.owner.actual<-.05?-1:1;
@@ -145,7 +145,9 @@ final class AutomaticTrains {
             if(direction!=forward&&!stopped)continue;
             var basis=basis(c.owner,group,links,direction);if(basis==null)continue;var head=basis.head;var sample=sample(level,head,basis.end);if(sample==null)continue;
             var network=new AutomaticNavigation(level,sample.path().graph());var travel=new Vector3d(sample.tangent()).mul(basis.signs.get(head.bogie.getUniqueId()));var start=network.direction(sample,travel);
-            var route=ScheduleRoute.find(network,start,network.offset(sample,start),network.goals(instruction,c.waiting?c.station:null),AutomaticDriveModel.STOP_TOLERANCE);
+            var goals=instruction instanceof com.simibubi.create.content.trains.schedule.destination.DestinationInstruction destination
+                ?network.goals(destination,c.waiting?c.station:null):network.goals(stop->packageTargets.contains(stop.id),c.waiting?c.station:null);
+            var route=ScheduleRoute.find(network,start,network.offset(sample,start),goals,AutomaticDriveModel.STOP_TOLERANCE);
             if(route!=null&&(best==null||route.distance()<best.route.distance()-1e-6))best=new Plan(network,route,head,basis.end,basis.signs,direction);
         }
         return best;
@@ -154,7 +156,24 @@ final class AutomaticTrains {
         if(c.plan!=null&&!c.plan.network.live(c.plan.route)){c.plan=null;c.remaining=Double.NaN;c.waiting=false;c.station=null;c.resetConditions();c.nextPlan=0;}
         if(c.plan==null){
             if(level.getGameTime()<c.nextPlan){hold(group,c,false);return;}c.nextPlan=level.getGameTime()+10;
-            c.plan=plan(level,group,links,c);
+            Set<UUID> packageTargets=Set.of();
+            if(c.packageInstruction()){
+                if(c.waiting&&c.station!=null)packageTargets=Set.of(c.station);
+                else{
+                    var selection=PackageMail.targets(level,c);packageTargets=selection.stations();
+                    if(selection.decision()!=PackageTask.Decision.VISIT){
+                        hold(group,c,false);
+                        switch(selection.decision()){
+                            case SKIP->c.advance();
+                            case UNLOADED->c.state(ScheduleController.UNLOADED);
+                            case NO_TARGET->c.state(ScheduleController.PACKAGE_TARGET);
+                            default->throw new IllegalStateException("Invalid package selection");
+                        }
+                        return;
+                    }
+                }
+            }
+            c.plan=plan(level,group,links,c,packageTargets);
             if(c.plan==null){c.state(ScheduleController.NO_ROUTE);hold(group,c,false);return;}
             c.station=c.plan.route.goal().id();c.owner.setChanged();
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticRoute] target={} distance={} edges={} leadingBogie={} end={}",c.plan.route.goal().name(),c.plan.route.distance(),c.plan.route.edges().size(),c.plan.head.bogie.getUniqueId(),c.plan.end);
@@ -172,7 +191,7 @@ final class AutomaticTrains {
         if(c.waiting&&!arrived){c.waiting=false;c.resetConditions();}
         if(arrived){
             hold(group,c,false);c.stableTicks++;
-            if(c.stableTicks>=6){c.waiting=true;c.state(ScheduleController.WAITING);if(c.tickConditions(level))c.advance();}
+            if(c.stableTicks>=6){c.waiting=true;if(c.exchangeMail(level)&&c.tickConditions(level))c.advance();}
             return;
         }
         c.stableTicks=0;

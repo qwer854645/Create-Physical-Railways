@@ -95,7 +95,7 @@
   "gui.guidedrailways.auto.state.10": "车体连接方向冲突，已暂停",
   "gui.guidedrailways.auto.state.11": "列车编组已改变，确认后继续时刻表",
   "gui.guidedrailways.auto.state.12": "已越过停车位置，请手动调整",
-  "gui.guidedrailways.auto.state.13": "等待前方区块加载",
+  "gui.guidedrailways.auto.state.13": "等待所需区块加载",
   "gui.guidedrailways.auto.state.14": "紧急制动已启用，时刻表已暂停",
   "gui.guidedrailways.driver.secondary": "备用驾驶台：列车由最先放置的驾驶台控制",
   "gui.guidedrailways.auto.state.15": "备用驾驶台，可取回存放的时刻表",
@@ -184,5 +184,7 @@
   "gui.guidedrailways.auto.title": "行程标题：%s",
   "gui.guidedrailways.auto.speed_limit": "自动限速：%s%%",
   "gui.guidedrailways.auto.state.17": "等待兼容的装卸接口",
-  "gui.guidedrailways.auto.state.18": "等待解除对接"
+  "gui.guidedrailways.auto.state.18": "等待解除对接",
+  "gui.guidedrailways.auto.state.19": "没有匹配的收件车站",
+  "gui.guidedrailways.auto.state.20": "等待包裹装卸"
 }

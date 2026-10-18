@@ -13,12 +13,12 @@ import java.util.*;
 /** An original runtime for Create schedule DATA; never ticks a fake Create Train. */
 final class ScheduleController {
     static final int EMPTY=0,PAUSED=1,PLANNING=2,TRAVELLING=3,WAITING=4,FINISHED=5,UNSUPPORTED=6,
-        NO_ROUTE=7,NO_POWER=8,TRACK_MISSING=9,CONFLICT=10,CHANGED=11,OVERSHOOT=12,UNLOADED=13,EMERGENCY=14,SIGNAL_WAIT=16,CARGO_CONNECTOR=17,DOCK_WAIT=18;
+        NO_ROUTE=7,NO_POWER=8,TRACK_MISSING=9,CONFLICT=10,CHANGED=11,OVERSHOOT=12,UNLOADED=13,EMERGENCY=14,SIGNAL_WAIT=16,CARGO_CONNECTOR=17,DOCK_WAIT=18,PACKAGE_TARGET=19,PACKAGE_WAIT=20;
     final DriverConsoleEntity owner;ItemStack item=ItemStack.EMPTY;Schedule program;
     boolean running,manualOverride,waiting,releaseBrakes;long nextPlan,nextVisual;boolean visualDirty;int entry,status,stableTicks;UUID station;
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
     boolean resumePending;private ScheduleReloadGate reloadGate;
-    double remaining=Double.NaN;
+    double remaining=Double.NaN;long nextMail;int mailState=WAITING,conditionState=WAITING;boolean mailMonitored;
     double throttle=1;String currentTitle="";
     Set<UUID> cargoBodies;
     final List<Integer> progress=new ArrayList<>();final List<CompoundTag> contexts=new ArrayList<>();
@@ -34,8 +34,8 @@ final class ScheduleController {
         for(var entry:schedule.entries){
             if(entry==null||entry.instruction==null||entry.conditions==null)return "invalid";
             var type=entry.instruction.getClass();
-            if(type!=DestinationInstruction.class&&type!=ChangeThrottleInstruction.class&&type!=ChangeTitleInstruction.class)return entry.instruction.getId().toString();
-            if(type!=DestinationInstruction.class)continue;
+            if(!travelInstruction(entry.instruction)&&type!=ChangeThrottleInstruction.class&&type!=ChangeTitleInstruction.class)return entry.instruction.getId().toString();
+            if(!travelInstruction(entry.instruction))continue;
             for(var branch:entry.conditions)for(var c:branch)
                 if(!supportedCondition(c))return c.getId().toString();
         }
@@ -51,7 +51,7 @@ final class ScheduleController {
     boolean prepareInstructions(){
         var p=program();int previousEntry=entry;double previousThrottle=throttle;String previousTitle=currentTitle;
         var result=SchedulePrelude.run(p.entries.size(),p.cyclic,entry,32,
-            i->p.entries.get(i).instruction.getClass()==DestinationInstruction.class,
+            i->travelInstruction(p.entries.get(i).instruction),
             i->{
                 var instruction=p.entries.get(i).instruction;
                 if(instruction.getClass()==ChangeThrottleInstruction.class)throttle=SchedulePrelude.throttle(((ChangeThrottleInstruction)instruction).getThrottle());
@@ -159,13 +159,23 @@ final class ScheduleController {
     String target(){
         if(!present()||entry>=total())return "";
         if(plan!=null)return plan.route.goal().name();
-        var instruction=instruction();return instruction==null?"":instruction.getFilter();
+        var instruction=instruction();
+        if(instruction instanceof DestinationInstruction destination)return destination.getFilter();
+        return instruction==null?"":instruction.getSummary().getSecond().getString();
     }
-    DestinationInstruction instruction(){var p=program();return p!=null&&entry>=0&&entry<p.entries.size()&&p.entries.get(entry).instruction instanceof DestinationInstruction d?d:null;}
-    void resetConditions(){progress.clear();contexts.clear();}
+    private static boolean travelInstruction(ScheduleInstruction instruction){return instruction!=null&&(instruction.getClass()==DestinationInstruction.class||instruction.getClass()==FetchPackagesInstruction.class||instruction.getClass()==DeliverPackagesInstruction.class);}
+    ScheduleInstruction instruction(){var p=program();return p!=null&&entry>=0&&entry<p.entries.size()&&travelInstruction(p.entries.get(entry).instruction)?p.entries.get(entry).instruction:null;}
+    boolean packageInstruction(){return instruction() instanceof FetchPackagesInstruction||instruction() instanceof DeliverPackagesInstruction;}
+    void resetConditions(){progress.clear();contexts.clear();nextMail=0;mailState=WAITING;mailMonitored=false;}
+    boolean exchangeMail(ServerLevel level){
+        if(level.getGameTime()>=nextMail){nextMail=level.getGameTime()+20;mailState=PackageMail.exchange(level,this);}
+        if(mailState!=WAITING){state(mailState);return false;}
+        return true;
+    }
     boolean tickConditions(ServerLevel level){
+        conditionState=WAITING;
         var branches=program().entries.get(entry).conditions;if(branches.isEmpty())return true;
-        if(progress.size()!=branches.size()){resetConditions();for(var b:branches){progress.add(0);contexts.add(new CompoundTag());}}
+        if(progress.size()!=branches.size()){progress.clear();contexts.clear();for(var b:branches){progress.add(0);contexts.add(new CompoundTag());}}
         for(int i=0;i<branches.size();i++){
             var branch=branches.get(i);int index=progress.get(i);if(index>=branch.size())return true;
             var c=branch.get(index);
@@ -176,12 +186,12 @@ final class ScheduleController {
                 if(index+1>=branch.size())return true;
             }
         }
-        if(level.getGameTime()%20==0)owner.setChanged();return false;
+        state(conditionState);if(level.getGameTime()%20==0)owner.setChanged();return false;
     }
     private boolean conditionComplete(ServerLevel level,ScheduleWaitCondition condition,CompoundTag context){
         if(condition.getClass()==PlayerPassengerCondition.class){
             var passengers=TrainPassengers.snapshot(level,DriverControls.body(owner));
-            if(!passengers.complete()||cargoBodies!=null&&!cargoBodies.equals(passengers.bodies())){state(UNLOADED);return false;}
+            if(!passengers.complete()||cargoBodies!=null&&!cargoBodies.equals(passengers.bodies())){conditionState=UNLOADED;return false;}
             if(cargoBodies==null){cargoBodies=passengers.bodies();owner.setChanged();}
             var count=(PlayerPassengerCondition)condition;
             if(!context.contains("PrevPlayerCount")||context.getInt("PrevPlayerCount")!=passengers.count()){
@@ -192,12 +202,12 @@ final class ScheduleController {
         }
         if(condition.getClass()==ItemThresholdCondition.class||condition.getClass()==FluidThresholdCondition.class||condition.getClass()==IdleCargoCondition.class){
             var snapshot=CargoStorage.snapshot(level,DriverControls.body(owner));
-            if(!snapshot.complete()||cargoBodies!=null&&!cargoBodies.equals(snapshot.bodies())){state(UNLOADED);context.remove("CargoWaitStarted");return false;}
+            if(!snapshot.complete()||cargoBodies!=null&&!cargoBodies.equals(snapshot.bodies())){conditionState=UNLOADED;context.remove("CargoWaitStarted");return false;}
             if(cargoBodies==null){cargoBodies=snapshot.bodies();owner.setChanged();}
             if(condition.getClass()==IdleCargoCondition.class){
-                if(!snapshot.monitored()){state(CARGO_CONNECTOR);context.remove("CargoWaitStarted");return false;}
+                if(!snapshot.monitored()&&!mailMonitored){conditionState=CARGO_CONNECTOR;context.remove("CargoWaitStarted");return false;}
                 if(!context.contains("CargoWaitStarted"))context.putLong("CargoWaitStarted",level.getGameTime());
-                return CargoStorage.idle(level,snapshot,context.getLong("CargoWaitStarted"),((IdleCargoCondition)condition).totalWaitTicks());
+                return CargoStorage.idle(level,snapshot,context.getLong("CargoWaitStarted"),((IdleCargoCondition)condition).totalWaitTicks(),mailMonitored);
             }
             if(context.contains("CargoNextCheck")&&level.getGameTime()<context.getLong("CargoNextCheck"))return false;
             context.putLong("CargoNextCheck",level.getGameTime()+20);

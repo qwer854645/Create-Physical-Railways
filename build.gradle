@@ -355,3 +355,10 @@ tasks.register('checkPassengerManifest', JavaExec) {
     mainClass = 'com.guidedrailways.PassengerManifestCheck'
 }
 tasks.named('check') { dependsOn 'checkPassengerManifest' }
+
+tasks.register('checkPackageMail', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.PackageMailCheck'
+}
+tasks.named('check') { dependsOn 'checkPackageMail' }

@@ -102,11 +102,28 @@ public final class CargoStorage {
         for(int i=0;i<a.fluids.size();i++)if(!FluidStack.matches(a.fluids.get(i),b.fluids.get(i)))return false;
         return true;
     }
-    static boolean idle(ServerLevel level,Snapshot snapshot,long since,long duration){
-        if(!snapshot.complete||!snapshot.monitored)return false;
+    static boolean idle(ServerLevel level,Snapshot snapshot,long since,long duration,boolean mailMonitored){
+        if(!snapshot.complete||!snapshot.monitored&&!mailMonitored)return false;
         for(var id:snapshot.bodies)if(!CargoTransfers.clock(level,id).idle(level.getGameTime(),since,duration))return false;
         return true;
     }
+    record ItemAccess(BlockEntity owner,IItemHandlerModifiable inventory){}
+    static List<ItemAccess> packageInventories(ServerLevel level,Snapshot snapshot){
+        var out=new ArrayList<ItemAccess>();var seen=Collections.newSetFromMap(new IdentityHashMap<Object,Boolean>());
+        for(var location:snapshot.locations)if(location.items&&!location.dock&&level.hasChunkAt(location.pos)){
+            var entity=level.getBlockEntity(location.pos);if(entity==null||entity.isRemoved())continue;
+            IItemHandler inventory;
+            if(CargoAdapters.hose(entity))inventory=CargoAdapters.localItems(entity);
+            else if(entity instanceof Container container)inventory=new InvWrapper(container);
+            else{
+                inventory=level.getCapability(Capabilities.ItemHandler.BLOCK,location.pos,(Direction)null);
+                for(var side:Direction.values())if(inventory==null)inventory=level.getCapability(Capabilities.ItemHandler.BLOCK,location.pos,side);
+            }
+            if(inventory instanceof IItemHandlerModifiable writable&&seen.add(inventory))out.add(new ItemAccess(entity,writable));
+        }
+        return out;
+    }
+    static void invalidate(ServerLevel level,Set<UUID> bodies){var cache=CACHE.get(level);if(cache!=null)for(var id:bodies)cache.remove(id);}
     static boolean blockedByDock(ServerLevel level,ServerSubLevel root){
         var snapshot=snapshot(level,root);
         for(var location:snapshot.locations)if(location.dock&&level.hasChunkAt(location.pos)){
