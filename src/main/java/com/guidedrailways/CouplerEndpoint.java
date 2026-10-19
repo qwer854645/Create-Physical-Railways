@@ -32,17 +32,25 @@ public final class CouplerEndpoint {
     boolean hasGeometry;double restLength=-1;
     boolean visualConnected;UUID visualPeerId;BlockPos visualPeerPos;
     float lockProgress,previousLockProgress;
+    int mechanismVersion;
+    long operationStart;int operationTicks;double operationFrom,operationTo;
+    public double hardwareProgress(float partial){return operationTicks==0?(visualConnected?1:0):operationFrom+(operationTo-operationFrom)*CouplerMechanism.progress(getLevel().getGameTime()+partial-operationStart,operationTicks);}
+    private void operation(boolean connected){
+        var kind=RailwayHardware.kind(this);if(kind==null||getLevel()==null)return;
+        double current=hardwareProgress(0);operationStart=getLevel().getGameTime();operationTicks=connected?CouplerMechanism.profile(kind).ticks():CouplerMechanism.profile(kind).releaseTicks();operationFrom=current;operationTo=connected?1:0;
+    }
+
     void visualPeer(CouplerEndpoint peer){
         UUID id=peer==null?null:peer.endpointId;BlockPos pos=peer==null?null:peer.getBlockPos().immutable();
         boolean connected=peer!=null;
         if(visualConnected==connected&&java.util.Objects.equals(visualPeerId,id)&&java.util.Objects.equals(visualPeerPos,pos))return;
-        livingShape=null;visualConnected=connected;visualPeerId=id;visualPeerPos=pos;syncVisual();
+        operation(connected);livingShape=null;visualConnected=connected;if(peer!=null){visualPeerId=id;visualPeerPos=pos;}setChanged();syncVisual();
     }
     private void syncVisual(){if(getLevel()!=null&&!getLevel().isClientSide&&!isRemoved())getLevel().sendBlockUpdated(getBlockPos(),getBlockState(),getBlockState(),2);}
     void clientTick(){previousLockProgress=lockProgress;lockProgress=Math.clamp(lockProgress+(visualConnected?.25f:-.25f),0,1);}
-    void geometry(Vector3d anchor,Quaterniond frame,double length){livingShape=null;restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
+    void geometry(Vector3d anchor,Quaterniond frame,double length){livingShape=null;mechanismVersion=1;restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
     public void write(CompoundTag tag){
-        tag.putInt("CouplerVersion",4);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
+        tag.putInt("CouplerVersion",5);tag.putInt("MechanismVersion",mechanismVersion);tag.putBoolean("VisualConnected",visualConnected);tag.putLong("OperationStart",operationStart);tag.putInt("OperationTicks",operationTicks);tag.putDouble("OperationFrom",operationFrom);tag.putDouble("OperationTo",operationTo);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
         tag.putDouble("RestLength",restLength);tag.putDouble("Ax",anchor.x);tag.putDouble("Ay",anchor.y);tag.putDouble("Az",anchor.z);
         tag.putDouble("Qx",frame.x);tag.putDouble("Qy",frame.y);tag.putDouble("Qz",frame.z);tag.putDouble("Qw",frame.w);
     }
@@ -52,8 +60,10 @@ public final class CouplerEndpoint {
         anchor.set(tag.getDouble("Ax"),tag.getDouble("Ay"),tag.getDouble("Az"));frame.set(tag.getDouble("Qx"),tag.getDouble("Qy"),tag.getDouble("Qz"),tag.getDouble("Qw"));
         restLength=tag.getInt("CouplerVersion")>=4&&tag.contains("RestLength")?tag.getDouble("RestLength"):-1;
         if(!Double.isFinite(restLength)||restLength<0)restLength=-1;
-        hasGeometry=(tag.getInt("CouplerVersion")>=2&&tag.getInt("CouplerVersion")<=4)&&tag.getBoolean("HasGeometry")&&anchor.isFinite()&&frame.isFinite()&&frame.lengthSquared()>.5;
+        hasGeometry=(tag.getInt("CouplerVersion")>=2&&tag.getInt("CouplerVersion")<=5)&&tag.getBoolean("HasGeometry")&&anchor.isFinite()&&frame.isFinite()&&frame.lengthSquared()>.5;
         if(hasGeometry)frame.normalize();else{anchor.set(.5,.5,.5);frame.identity();}
+        mechanismVersion=tag.getInt("MechanismVersion");
+        operationStart=tag.getLong("OperationStart");operationTicks=Math.clamp(tag.getInt("OperationTicks"),0,80);operationFrom=Math.clamp(tag.getDouble("OperationFrom"),0,1);operationTo=Math.clamp(tag.getDouble("OperationTo"),0,1);
         visualConnected=tag.getBoolean("VisualConnected");visualPeerId=tag.hasUUID("VisualPeer")?tag.getUUID("VisualPeer"):null;
         visualPeerPos=tag.contains("VisualPeerPos")?BlockPos.of(tag.getLong("VisualPeerPos")):null;
     }

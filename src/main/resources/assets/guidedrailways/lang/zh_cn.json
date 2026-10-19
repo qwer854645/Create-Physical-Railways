@@ -214,5 +214,7 @@
   "message.guidedrailways.rail_coupler.align": "停车并对齐两处标记与车钩",
   "item.guidedrailways.coupler_link": "车钩连接工具",
   "tooltip.guidedrailways.coupler_link": "连接物理车体上的同型车钩\n依次右击两端车钩时：连挂\n右击已连挂的车钩时：解挂\n再次右击所选车钩时：取消选择",
-  "message.guidedrailways.coupler.type_mismatch": "无法连挂：车钩类型不同"
+  "message.guidedrailways.coupler.type_mismatch": "无法连挂：车钩类型不同",
+  "message.guidedrailways.coupler.connecting": "正在连挂车钩",
+  "message.guidedrailways.coupler.approach": "将两端车钩靠拢后再连挂"
 }

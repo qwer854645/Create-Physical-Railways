@@ -13,13 +13,10 @@ final class SteamRailwaysHardware implements RailwayHardware.Bridge {
     }
     private Vector3d point(CouplerEndpoint endpoint,boolean front){
         var state=endpoint.getBlockState();var facing=state.getValue(CouplerBlock.FACING);
-        var shape=state.getShape(endpoint.getLevel(),endpoint.getBlockPos());
-        if(shape.isEmpty())return new Vector3d(.5,.5,.5);
-        var box=shape.bounds();double x=(box.minX+box.maxX)*.5,y=(box.minY+box.maxY)*.5,z=(box.minZ+box.maxZ)*.5;
-        if(facing.getStepX()!=0)x=(facing.getStepX()>0==front?box.maxX:box.minX);
-        else z=(facing.getStepZ()>0==front?box.maxZ:box.minZ);
-        if(!front){x+=facing.getStepX()*.08;z+=facing.getStepZ()*.08;}
-        return new Vector3d(x,y,z);
+        var kind=kind(state);double shift=state.getBlock() instanceof LinkPinBlock?0:-3/16.0;
+        double z=front?(kind==CouplerKind.SCREWLINK?.5625:kind==CouplerKind.LINK||kind==CouplerKind.LINKLESS?.375:.25)
+                :(kind==CouplerKind.SCREWLINK?.75:kind==CouplerKind.LINK||kind==CouplerKind.LINKLESS?.5:.875);
+        return new Vector3d(0,0,z+shift-.5).rotate(new org.joml.Quaterniond().rotationTo(new Vector3d(0,0,-1),new Vector3d(facing.getStepX(),0,facing.getStepZ()))).add(.5,.5,.5);
     }
     @Override public Vector3d pivot(CouplerEndpoint endpoint){return point(endpoint,false);}
     @Override public Vector3d tip(CouplerEndpoint endpoint){return point(endpoint,true);}

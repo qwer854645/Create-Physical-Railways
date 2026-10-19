@@ -214,5 +214,7 @@
   "message.guidedrailways.rail_coupler.align": "Stop and align both markers and couplers",
   "item.guidedrailways.coupler_link": "Coupling Tool",
   "tooltip.guidedrailways.coupler_link": "Connect matching couplers on physical carriages\nR-Click two couplers in sequence to couple\nR-Click a connected coupler to uncouple\nR-Click the selected coupler again to cancel",
-  "message.guidedrailways.coupler.type_mismatch": "Cannot couple: coupler types do not match"
+  "message.guidedrailways.coupler.type_mismatch": "Cannot couple: coupler types do not match",
+  "message.guidedrailways.coupler.connecting": "Coupling in progress",
+  "message.guidedrailways.coupler.approach": "Bring the coupler heads closer before coupling"
 }
