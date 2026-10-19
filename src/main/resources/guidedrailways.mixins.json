@@ -4,6 +4,8 @@
   "package": "com.guidedrailways.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "TrackedContraptionAccessor",
+    "NativeTrainContactMixin",
     "StationBlockMixin",
     "StationBlockEntityMixin",
     "SignalEdgeGroupMixin",
