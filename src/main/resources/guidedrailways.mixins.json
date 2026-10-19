@@ -18,6 +18,8 @@
     "RailDockHeadMixin",
     "RailDockMailMixin",
     "RailwayCouplerMixin",
+    "RailwayHardwareBlockMixin",
+    "RailwayHardwareEntityMixin",
     "HoseCargoBindingMixin",
     "LogisticsSnapshotMixin",
     "LogisticsDockTransferMixin"

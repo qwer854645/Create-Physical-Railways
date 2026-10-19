@@ -29,7 +29,7 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
         // Native rigid bodies use getSubLevelCollisionShape above and keep the fixed buffer.
         if((!(context instanceof EntityCollisionContext entity)||entity.getEntity() instanceof net.minecraft.world.entity.LivingEntity)
                 &&level.getBlockEntity(pos) instanceof CouplerEntity coupler)
-            return Shapes.or(fixed,CouplerLivingShape.get(coupler));
+            return Shapes.or(fixed,CouplerLivingShape.get(coupler.endpoint));
         return fixed;
     }
     private static Map<Direction,VoxelShape> shapes(){
@@ -45,21 +45,18 @@ public final class CouplerBlock extends HorizontalDirectionalBlock implements IW
     @Override public BlockEntity newBlockEntity(BlockPos pos,BlockState state){return new CouplerEntity(pos,state);}
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,BlockState state,BlockEntityType<T> type){
         if(type!=Content.COUPLER_ENTITY.get())return null;
-        return (l,p,s,be)->{if(be instanceof CouplerEntity coupler){if(l instanceof ServerLevel server)CouplerConnections.register(server,coupler);else coupler.clientTick();}};
+        return (l,p,s,be)->{if(be instanceof CouplerEntity coupler){if(l instanceof ServerLevel server)CouplerConnections.register(server,coupler.endpoint);else coupler.clientTick();}};
     }
     @Override public InteractionResult onWrenched(BlockState state,UseOnContext c){
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;
-        if(c.getLevel().isClientSide)return InteractionResult.SUCCESS;
-        if(!(c.getPlayer() instanceof net.minecraft.server.level.ServerPlayer player)||!(c.getLevel() instanceof ServerLevel level)||!(level.getBlockEntity(c.getClickedPos()) instanceof CouplerEntity e))return InteractionResult.FAIL;
-        try{CouplerConnections.wrench(level,e,player);player.swing(c.getHand(),true);return InteractionResult.CONSUME;}
-        catch(IllegalArgumentException|IllegalStateException error){player.displayClientMessage(UserText.error(error),true);return InteractionResult.FAIL;}
+        return IWrenchable.super.onWrenched(state,c);
     }
     @Override public InteractionResult onSneakWrenched(BlockState state,UseOnContext c){
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;
         return IWrenchable.super.onSneakWrenched(state,c);
     }
     @Override protected void onRemove(BlockState state,Level level,BlockPos pos,BlockState next,boolean moving){
-        if(!state.is(next.getBlock())&&level instanceof ServerLevel server&&level.getBlockEntity(pos) instanceof CouplerEntity e)CouplerConnections.destroyed(server,e);
+        if(!state.is(next.getBlock())&&level instanceof ServerLevel server&&level.getBlockEntity(pos) instanceof CouplerEntity e)CouplerConnections.destroyed(server,e.endpoint);
         IBE.onRemove(state,level,pos,next);super.onRemove(state,level,pos,next,moving);
     }
     @Override public void beforeMove(ServerLevel from,ServerLevel to,BlockState state,BlockPos oldPos,BlockPos newPos){CouplerConnections.beforeMove(from,to,oldPos,newPos);}

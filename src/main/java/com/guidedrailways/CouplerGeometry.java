@@ -36,9 +36,14 @@ public final class CouplerGeometry {
     }
     public static double extension(Vector3dc a,Vector3dc b,double restLength){return a.distance(b)-restLength;}
     /** Engage end stops only after the capped spring has settled inside the working stroke. */
-    public static boolean canCapture(double length,double radialSpeed){
+    public static boolean canCapture(double length,double radialSpeed){return canCapture(length,radialSpeed,REST_LENGTH);}
+    public static double nominalLength(double reachA,double reachB){
+        if(!Double.isFinite(reachA)||!Double.isFinite(reachB)||reachA<=0||reachB<=0)throw new IllegalArgumentException("invalid coupler reach");
+        return reachA+reachB;
+    }
+    public static boolean canCapture(double length,double radialSpeed,double restLength){
         return Double.isFinite(length)&&Double.isFinite(radialSpeed)
-            &&Math.abs(length-REST_LENGTH)<=HALF_STROKE*.8&&Math.abs(radialSpeed)<=.25;
+            &&Math.abs(length-restLength)<=HALF_STROKE*.8&&Math.abs(radialSpeed)<=.25;
     }
     public static boolean slowEnough(Vector3dc va,Vector3dc vb,Vector3dc wa,Vector3dc wb){
         return va.isFinite()&&vb.isFinite()&&wa.isFinite()&&wb.isFinite()&&va.lengthSquared()<=4&&vb.lengthSquared()<=4&&va.distanceSquared(vb)<=4&&wa.lengthSquared()<=2.25&&wb.lengthSquared()<=2.25;

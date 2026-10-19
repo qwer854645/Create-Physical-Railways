@@ -5,15 +5,16 @@ import net.minecraft.world.phys.shapes.*;
 import org.joml.Vector3d;
 /** Entity movement, including Sable's context-free queries; native colliders use the fixed buffer. */
 final class CouplerLivingShape {
-    private static SubLevelAccess body(CouplerEntity e){return SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos());}
-    private static Vector3d anchor(CouplerEntity e,SubLevelAccess body){return body.logicalPose().transformPosition(new Vector3d(e.anchor).add(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ()),new Vector3d());}
-    static VoxelShape get(CouplerEntity e){
+    private static SubLevelAccess body(CouplerEndpoint e){return SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos());}
+    private static Vector3d anchor(CouplerEndpoint e,SubLevelAccess body){return body.logicalPose().transformPosition(new Vector3d(e.anchor).add(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ()),new Vector3d());}
+    static VoxelShape get(CouplerEndpoint e){
         long tick=e.getLevel().getGameTime();if(e.livingShape!=null&&e.livingShapeTick==tick)return e.livingShape;
         var facing=e.getBlockState().getValue(CouplerBlock.FACING);var pivot=CouplerVisual.pivot(facing.getStepX(),facing.getStepZ());var tip=CouplerVisual.restTip(facing.getStepX(),facing.getStepZ());var up=new Vector3d(0,1,0);
         var own=body(e);
         if(e.visualConnected&&e.hasGeometry&&own!=null){
             var target=anchor(e,own);var worldUp=own.logicalPose().transformNormal(new Vector3d(0,1,0),new Vector3d());
-            if(e.visualPeerPos!=null&&e.getLevel().hasChunkAt(e.visualPeerPos)&&e.getLevel().getBlockEntity(e.visualPeerPos) instanceof CouplerEntity peer&&peer.endpointId.equals(e.visualPeerId)&&peer.hasGeometry){
+            var peer=e.visualPeerPos!=null&&e.getLevel().hasChunkAt(e.visualPeerPos)?CouplerEndpoint.get(e.getLevel().getBlockEntity(e.visualPeerPos)):null;
+            if(peer!=null&&peer.endpointId.equals(e.visualPeerId)&&peer.hasGeometry){
                 var other=body(peer);if(other!=null){target=CouplerVisual.joint(target,anchor(peer,other));worldUp.add(other.logicalPose().transformNormal(new Vector3d(0,1,0),new Vector3d()));}
             }
             tip=own.logicalPose().transformPositionInverse(target,new Vector3d()).sub(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ());

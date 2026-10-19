@@ -31,6 +31,11 @@ with ZipFile(args.railways) as rail, ZipFile(args.create) as create, ZipFile(arg
     check(create, 'com.simibubi.create.content.trains.bogey.BogeyStyle', [
         'render(Lcom/simibubi/create/content/trains/bogey/BogeySizes$BogeySize;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;IIFLnet/minecraft/nbt/CompoundTag;Z)V'])
     check(rail, prefix+'content.buffer.TrackBuffer', ['<init>()V'])
+    for owner in ('content.buffer.DyeableBlockEntity', 'content.buffer.headstock.CopycatHeadstockBlockEntity'):
+        check(rail, prefix+owner, ['read(Lnet/minecraft/nbt/CompoundTag;Lnet/minecraft/core/HolderLookup$Provider;Z)V', 'write(Lnet/minecraft/nbt/CompoundTag;Lnet/minecraft/core/HolderLookup$Provider;Z)V'])
+    for owner in ('content.buffer.single_deco.AbstractDyeableSingleBufferBlock', 'content.buffer.headstock.HeadstockBlock', 'content.buffer.headstock.CopycatHeadstockBlock'):
+        check(rail, prefix+owner, ['getShape(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;'])
+    check(rail, prefix+'content.buffer.headstock.HeadstockBlock', ['STYLELnet/minecraft/world/level/block/state/properties/EnumProperty;'])
     metadata = rail.read('META-INF/neoforge.mods.toml').decode()
     assert '0.3.0-beta.2+neoforge-mc1.21.1' in metadata and '[21.1.233,)' in metadata
     for path in ('frame.obj', 'wheel.obj', 'frame.json', 'wheel.json'):

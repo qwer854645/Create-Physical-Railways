@@ -8,7 +8,7 @@
   "block.guidedrailways.bogie_collision": "Bogey Part",
   "block.guidedrailways.driver_console": "Physical Train Controls",
   "tooltip.guidedrailways.bogie": "Drives physical trains using rotational power\nR-Click track to place, including curves\nR-Click beneath a physical carriage to attach\nSupply rotational power from above the mount\nR-Click with a Wrench to toggle brakes, or select for rerailing when off track\nSneak-R-Click with a Wrench to remove",
-  "tooltip.guidedrailways.coupler": "Connects two physical carriages\nR-Click both couplers with a Wrench to couple\nR-Click a coupled end with a Wrench to uncouple\nCoupler heads must be within 2 blocks, with at most 1 block of height difference\nSneak-R-Click with a Wrench to remove",
+  "tooltip.guidedrailways.coupler": "Connects two physical carriages\nR-Click both couplers with a Coupling Tool to couple\nR-Click a coupled end with a Coupling Tool to uncouple\nCoupler heads must be within 2 blocks, with at most 1 block of height difference\nSneak-R-Click with a Wrench to remove",
   "tooltip.guidedrailways.driver_console": "Controls an entire physical train\nR-Click to drive, or observe a running Schedule\nSneak-R-Click to open settings; Take Control switches to manual driving\nWhile driving: hold right-click and drag the lever; left-click for emergency braking\nMovement left/right selects junctions; Esc leaves without changing the notch\nR-Click with a Schedule to insert and run it\nSupports destinations, Scheduled Delay and Time of Day conditions",
   "gui.guidedrailways.driver.take": "Take Control",
   "gui.guidedrailways.driver.leave": "Leave Controls",
@@ -107,9 +107,9 @@
   "message.guidedrailways.body.invalid_mass": "Carriage not ready; try again shortly",
   "message.guidedrailways.coupler.not_connected": "Coupler is not connected",
   "message.guidedrailways.coupler.disconnected": "Couplers disconnected",
-  "message.guidedrailways.coupler.already_connected_hint": "Coupler connected; R-Click with a Wrench to uncouple",
+  "message.guidedrailways.coupler.already_connected_hint": "Coupler connected; R-Click with a Coupling Tool to uncouple",
   "message.guidedrailways.coupler.install": "Attach the coupler to a physical carriage",
-  "message.guidedrailways.coupler.selected": "Coupler selected; R-Click the other end with a Wrench",
+  "message.guidedrailways.coupler.selected": "Coupler selected; R-Click the other end with a Coupling Tool",
   "message.guidedrailways.coupler.cancelled": "Coupling cancelled",
   "message.guidedrailways.coupler.unloaded": "Selected coupler is not loaded; select it again",
   "message.guidedrailways.coupler.denied": "Cannot access the other coupler",
@@ -211,5 +211,8 @@
   "item.guidedrailways.monorail_bogie": "Monorail Physical Bogey",
   "message.guidedrailways.rail_coupler.couple": "Physical train: ready to couple",
   "message.guidedrailways.rail_coupler.decouple": "Physical train: ready to uncouple",
-  "message.guidedrailways.rail_coupler.align": "Stop and align both markers and couplers"
+  "message.guidedrailways.rail_coupler.align": "Stop and align both markers and couplers",
+  "item.guidedrailways.coupler_link": "Coupling Tool",
+  "tooltip.guidedrailways.coupler_link": "Connect matching couplers on physical carriages\nR-Click two couplers in sequence to couple\nR-Click a connected coupler to uncouple\nR-Click the selected coupler again to cancel",
+  "message.guidedrailways.coupler.type_mismatch": "Cannot couple: coupler types do not match"
 }

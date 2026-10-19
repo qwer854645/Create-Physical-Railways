@@ -8,7 +8,7 @@ import java.util.*;
 /** Optional release-jar adapter; never constructs native trains or carriages. */
 final class SteamRailways implements RailwaysCompat.Bridge {
     private final Map<ServerLevel,SwitchReservations> reservations=new WeakHashMap<>();
-    static void register(){RailwaysCompat.bridge=new SteamRailways();}
+    static void register(){RailwaysCompat.bridge=new SteamRailways();RailwayHardware.bridge=new SteamRailwaysHardware();}
     @Override public boolean geometry(TrackEdge from,TrackEdge to){
         boolean previous=MixinVariables.temporarilySkipSwitches;
         try{MixinVariables.temporarilySkipSwitches=true;return from.canTravelTo(to);}

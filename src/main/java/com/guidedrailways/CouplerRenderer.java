@@ -11,24 +11,26 @@ import org.joml.Quaternionf;
 /** Moving hardware is visual only; the native coupling joint remains authoritative. */
 public final class CouplerRenderer implements BlockEntityRenderer<CouplerEntity> {
     CouplerRenderer(BlockEntityRendererProvider.Context context){}
-    private static ClientSubLevelAccess body(CouplerEntity e){
+    private static ClientSubLevelAccess body(CouplerEndpoint e){
         var b=SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos());
         return b instanceof ClientSubLevelAccess client?client:null;
     }
-    private static Vector3d worldAnchor(CouplerEntity e,float partial){
+    private static Vector3d worldAnchor(CouplerEndpoint e,float partial){
         var p=new Vector3d(e.anchor).add(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ());
         var body=body(e);return body==null?p:body.renderPose(partial).transformPosition(p,new Vector3d());
     }
-    private static Vector3d worldUp(CouplerEntity e,float partial){
+    private static Vector3d worldUp(CouplerEndpoint e,float partial){
         var body=body(e);return body==null?new Vector3d(0,1,0):body.renderPose(partial).transformNormal(new Vector3d(0,1,0),new Vector3d());
     }
-    @Override public void render(CouplerEntity e,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
+    @Override public void render(CouplerEntity entity,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
+        var e=entity.endpoint;
         var facing=e.getBlockState().getValue(CouplerBlock.FACING);
         var pivot=CouplerVisual.pivot(facing.getStepX(),facing.getStepZ());
         var tip=CouplerVisual.restTip(facing.getStepX(),facing.getStepZ());var up=new Vector3d(0,1,0);
         if(e.visualConnected&&e.hasGeometry&&body(e)!=null){
             var target=worldAnchor(e,partial);var worldUp=worldUp(e,partial);
-            if(e.visualPeerPos!=null&&e.getLevel().hasChunkAt(e.visualPeerPos)&&e.getLevel().getBlockEntity(e.visualPeerPos) instanceof CouplerEntity peer
+            var peer=e.visualPeerPos!=null&&e.getLevel().hasChunkAt(e.visualPeerPos)?CouplerEndpoint.get(e.getLevel().getBlockEntity(e.visualPeerPos)):null;
+            if(peer!=null
                     &&peer.endpointId.equals(e.visualPeerId)&&peer.hasGeometry&&body(peer)!=null){
                 target=CouplerVisual.joint(target,worldAnchor(peer,partial));worldUp.add(worldUp(peer,partial));
             }

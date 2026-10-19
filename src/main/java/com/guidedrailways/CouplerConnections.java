@@ -15,14 +15,14 @@ import java.util.*;
 public final class CouplerConnections {
     private record Pending(UUID endpoint,long expires){}
     private static final class Live {
-        final GenericConstraintHandle joint;final ServerSubLevel a,b;final BlockPos pa,pb;final CouplerEntity visualA,visualB;
+        final GenericConstraintHandle joint;final ServerSubLevel a,b;final BlockPos pa,pb;final CouplerEndpoint visualA,visualB;
         double ma,mb;long nextLog;boolean captured;
-        Live(GenericConstraintHandle joint,ServerSubLevel a,ServerSubLevel b,CouplerEntity ea,CouplerEntity eb){this.joint=joint;this.a=a;this.b=b;this.pa=ea.getBlockPos().immutable();this.pb=eb.getBlockPos().immutable();visualA=ea;visualB=eb;}
+        Live(GenericConstraintHandle joint,ServerSubLevel a,ServerSubLevel b,CouplerEndpoint ea,CouplerEndpoint eb){this.joint=joint;this.a=a;this.b=b;this.pa=ea.getBlockPos().immutable();this.pb=eb.getBlockPos().immutable();visualA=ea;visualB=eb;}
         void close(){close(true);}
         void close(boolean notify){if(joint.isValid())joint.remove();if(notify){visualA.visualPeer(null);visualB.visualPeer(null);}}
     }
     private static final class State {
-        final Map<UUID,CouplerEntity> endpoints=new HashMap<>();final Map<UUID,Live> live=new HashMap<>();
+        final Map<UUID,CouplerEndpoint> endpoints=new HashMap<>();final Map<UUID,Live> live=new HashMap<>();
         final Map<UUID,Pending> pending=new HashMap<>();final Set<UUID> warned=new HashSet<>();
     }
     private record Transfer(UUID endpoint,Vector3d anchor,Quaterniond frame,boolean geometry,double length,GlobalPos source,long expires){}
@@ -32,24 +32,29 @@ public final class CouplerConnections {
     private static final Map<GlobalPos,Moving> MOVING=new HashMap<>();
     private CouplerConnections(){}
     private static State state(ServerLevel level){return STATES.computeIfAbsent(level,l->new State());}
-    private static boolean loaded(ServerLevel level,CouplerEntity e){return e!=null&&!e.isRemoved()&&level.hasChunkAt(e.getBlockPos())&&level.getBlockEntity(e.getBlockPos())==e;}
-    private static ServerSubLevel body(ServerLevel level,CouplerEntity e){return SableCompanion.INSTANCE.getContaining(level,e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
-    private static Vector3d blockOrigin(CouplerEntity e){var p=e.getBlockPos();return new Vector3d(p.getX(),p.getY(),p.getZ());}
-    private static Vector3d socket(CouplerEntity e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return blockOrigin(e).add(CouplerVisual.pivot(f.getStepX(),f.getStepZ()));}
-    private static Vector3d head(CouplerEntity e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return blockOrigin(e).add(.5+f.getStepX()*.48,.5,.5+f.getStepZ()*.48);}
-    private static Vector3d facing(ServerSubLevel b,CouplerEntity e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d()).orientation());}
+    private static boolean loaded(ServerLevel level,CouplerEndpoint e){return e!=null&&!e.isRemoved()&&level.hasChunkAt(e.getBlockPos())&&level.getBlockEntity(e.getBlockPos())==e.owner;}
+    private static ServerSubLevel body(ServerLevel level,CouplerEndpoint e){return SableCompanion.INSTANCE.getContaining(level,e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
+    private static Vector3d blockOrigin(CouplerEndpoint e){var p=e.getBlockPos();return new Vector3d(p.getX(),p.getY(),p.getZ());}
+    private static Vector3d socket(CouplerEndpoint e){return blockOrigin(e).add(RailwayHardware.pivot(e));}
+    private static Vector3d head(CouplerEndpoint e){return blockOrigin(e).add(RailwayHardware.tip(e));}
+    private static Vector3d facing(ServerSubLevel b,CouplerEndpoint e){var f=e.getBlockState().getValue(CouplerBlock.FACING);return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d()).orientation());}
     private static Vector3d up(ServerSubLevel b){return new Vector3d(0,1,0).rotate(SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d()).orientation());}
     private static Vector3d local(ServerSubLevel b,Vector3d world){var pose=SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d());return new Vector3d(world).sub(pose.position()).rotate(new Quaterniond(pose.orientation()).conjugate()).add(b.logicalPose().rotationPoint());}
     private static Quaterniond localFrame(ServerSubLevel b,Quaterniond world){var pose=SubLevelPhysicsSystem.get(b.getLevel()).getPipeline().readPose(b,new Pose3d());return new Quaterniond(pose.orientation()).conjugate().mul(world);}
-    static void register(ServerLevel level,CouplerEntity e){
-        if(!restore(level,e))return;var s=state(level);var previous=s.endpoints.get(e.endpointId);
+    static void register(ServerLevel level,CouplerEndpoint e){
+        if(!restore(level,e))return;
+        var frame=String.valueOf(RailwayHardware.kind(e))+":"+e.getBlockState().getValue(CouplerBlock.FACING);
+        var flip=e.getBlockState().getProperties().stream().filter(p->p.getName().equals("upside_down")).findFirst();
+        if(flip.isPresent())frame+=":"+e.getBlockState().getValue(flip.get());
+        if(e.hardwareFrame!=null&&!e.hardwareFrame.equals(frame))disconnect(level,e.endpointId,"hardware_changed");
+        e.hardwareFrame=frame;var s=state(level);var previous=s.endpoints.get(e.endpointId);
         if(previous!=null&&previous!=e&&loaded(level,previous)){
             e.endpointId=UUID.randomUUID();e.hasGeometry=false;e.setChanged();
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("Cloned coupler assigned a new endpoint ID at {}",e.getBlockPos());
         }
         s.endpoints.put(e.endpointId,e);
     }
-    static void unloaded(ServerLevel level,CouplerEntity e){var s=STATES.get(level);if(s!=null&&s.endpoints.get(e.endpointId)==e)suspend(level,e.endpointId);}
+    static void unloaded(ServerLevel level,CouplerEndpoint e){var s=STATES.get(level);if(s!=null&&s.endpoints.get(e.endpointId)==e)suspend(level,e.endpointId);}
     static void suspend(ServerLevel level,UUID endpoint){
         var s=STATES.get(level);if(s==null)return;s.endpoints.remove(endpoint);
         // Unloading a plot must not send block updates into a holder being removed.
@@ -63,15 +68,15 @@ public final class CouplerConnections {
         for(var id:List.of(link.a(),link.b())){var e=s.endpoints.get(id);if(e!=null){e.hasGeometry=false;e.setChanged();e.visualPeer(null);}}
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] disconnected link={} reason={}",link.id(),reason);
     }
-    private static boolean moving(ServerLevel level,CouplerEntity e){var moving=MOVING.get(GlobalPos.of(level.dimension(),e.getBlockPos()));return moving!=null&&moving.expires>=level.getGameTime()&&moving.endpoint.equals(e.endpointId);}
-    static void destroyed(ServerLevel level,CouplerEntity e){
+    private static boolean moving(ServerLevel level,CouplerEndpoint e){var moving=MOVING.get(GlobalPos.of(level.dimension(),e.getBlockPos()));return moving!=null&&moving.expires>=level.getGameTime()&&moving.endpoint.equals(e.endpointId);}
+    static void destroyed(ServerLevel level,CouplerEndpoint e){
         if(moving(level,e))return;
         disconnect(level,e.endpointId,"removed");suspend(level,e.endpointId);state(level).pending.values().removeIf(p->p.endpoint.equals(e.endpointId));
     }
-    static void wrench(ServerLevel level,CouplerEntity e,ServerPlayer player){
+    static void link(ServerLevel level,CouplerEndpoint e,ServerPlayer player){
         boolean unlink=connected(level,e);
         register(level,e);var s=state(level);var data=CouplerSavedData.get(level);
-        if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.not_connected"),true);else{disconnect(level,e.endpointId,"wrench");player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.disconnected"),true);}return;}
+        if(unlink){s.pending.remove(player.getUUID());if(data.links.forEndpoint(e.endpointId)==null)player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.not_connected"),true);else{disconnect(level,e.endpointId,"link_tool");player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.disconnected"),true);}return;}
         if(data.links.forEndpoint(e.endpointId)!=null){player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.already_connected_hint"),true);return;}
         var pending=s.pending.get(player.getUUID());
         if(pending==null||pending.expires<level.getGameTime()){
@@ -84,7 +89,8 @@ public final class CouplerConnections {
         if(!level.mayInteract(player,first.getBlockPos()))throw new IllegalArgumentException("message.guidedrailways.coupler.denied");
         connect(level,first,e);s.pending.remove(player.getUUID());player.displayClientMessage(Component.translatable("message.guidedrailways.coupler.connected"),true);
     }
-    private static void connect(ServerLevel level,CouplerEntity a,CouplerEntity b){
+    private static void connect(ServerLevel level,CouplerEndpoint a,CouplerEndpoint b){
+        if(!CouplerKind.compatible(RailwayHardware.kind(a),RailwayHardware.kind(b)))throw new IllegalArgumentException("message.guidedrailways.coupler.type_mismatch");
         var data=CouplerSavedData.get(level);if(data.links.forEndpoint(a.endpointId)!=null||data.links.forEndpoint(b.endpointId)!=null)throw new IllegalArgumentException("message.guidedrailways.coupler.occupied");
         var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null)throw new IllegalArgumentException("message.guidedrailways.coupler.install_both");
         if(ba==bb)throw new IllegalArgumentException("message.guidedrailways.coupler.same_body");
@@ -92,14 +98,14 @@ public final class CouplerConnections {
         if(!CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d())))throw new IllegalArgumentException("message.guidedrailways.coupler.too_fast");
         var geometry=CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));
         var socketA=socket(a);var socketB=socket(b);
-        double length=CouplerGeometry.REST_LENGTH;
+        double length=CouplerGeometry.nominalLength(RailwayHardware.pivot(a).distance(RailwayHardware.tip(a)),RailwayHardware.pivot(b).distance(RailwayHardware.tip(b)));
         a.geometry(socketA.sub(blockOrigin(a)),localFrame(ba,geometry.frame()),length);
         b.geometry(socketB.sub(blockOrigin(b)),localFrame(bb,geometry.frame()),length);
         var link=new CouplingLinks.Link(UUID.randomUUID(),a.endpointId,b.endpointId);data.add(link);
         try{reconcile(level,link);if(!state(level).live.containsKey(link.id()))throw new IllegalStateException("message.guidedrailways.coupler.failed");}
         catch(RuntimeException error){disconnect(level,a.endpointId,"creation_failed");throw error;}
     }
-    static boolean connected(ServerLevel level,CouplerEntity e){return CouplerSavedData.get(level).links.forEndpoint(e.endpointId)!=null;}
+    static boolean connected(ServerLevel level,CouplerEndpoint e){return CouplerSavedData.get(level).links.forEndpoint(e.endpointId)!=null;}
     /** Trackside operation reuses exactly the same saved links and physics joints as a wrench. */
     static int trackOperation(ServerLevel level,ServerSubLevel ba,ServerSubLevel bb,boolean couple,boolean decouple,boolean execute){
         if(ba==null||bb==null||ba==bb)return 0;
@@ -108,11 +114,11 @@ public final class CouplerConnections {
         if(!stopped)return 0;
         var endsA=s.endpoints.values().stream().filter(e->loaded(level,e)&&body(level,e)==ba).sorted(Comparator.comparing(e->e.endpointId)).toList();
         var endsB=s.endpoints.values().stream().filter(e->loaded(level,e)&&body(level,e)==bb).sorted(Comparator.comparing(e->e.endpointId)).toList();
-        CouplerEntity first=null,second=null;int mode=0;double best=Double.POSITIVE_INFINITY;
+        CouplerEndpoint first=null,second=null;int mode=0;double best=Double.POSITIVE_INFINITY;
         boolean sameTrain=CargoStorage.consist(level,ba).bodies().containsKey(bb.getUniqueId());
         for(var a:endsA)for(var b:endsB){
             var link=data.links.forEndpoint(a.endpointId);boolean linked=link!=null&&(link.a().equals(b.endpointId)||link.b().equals(b.endpointId));
-            boolean free=linked||link==null&&data.links.forEndpoint(b.endpointId)==null;
+            boolean free=linked||CouplerKind.compatible(RailwayHardware.kind(a),RailwayHardware.kind(b))&&link==null&&data.links.forEndpoint(b.endpointId)==null;
             int candidate=RailCouplerMode.choose(linked,sameTrain,stopped,free,couple,decouple);if(candidate==0)continue;
             double distance=VehiclePhysics.world(ba,head(a)).distanceSquared(VehiclePhysics.world(bb,head(b)));
             if(!linked)try{CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));}catch(IllegalArgumentException rejected){continue;}
@@ -159,6 +165,7 @@ public final class CouplerConnections {
     private static void reconcile(ServerLevel level,CouplingLinks.Link link){
         var s=state(level);var a=s.endpoints.get(link.a());var b=s.endpoints.get(link.b());
         if(!loaded(level,a)||!loaded(level,b)){close(s,link.id());return;}
+        if(!CouplerKind.compatible(RailwayHardware.kind(a),RailwayHardware.kind(b))){disconnect(level,a.endpointId,"incompatible_hardware");return;}
         var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null){close(s,link.id());return;}
         if(ba==bb){disconnect(level,link.a(),"merged_into_same_body");return;}
         var old=s.live.get(link.id());
@@ -200,8 +207,8 @@ public final class CouplerConnections {
                 var vb=pipe.getAngularVelocity(bb,new Vector3d()).cross(new Vector3d(worldB).sub(poseB.position())).add(pipe.getLinearVelocity(bb,new Vector3d()));
                 radialSpeed=vb.sub(va).dot(delta.div(distance));
             }
-            if(CouplerGeometry.canCapture(distance,radialSpeed)){
-                old.joint.setLimit(ConstraintJointAxis.LINEAR_X,CouplerGeometry.REST_LENGTH-CouplerGeometry.HALF_STROKE,CouplerGeometry.REST_LENGTH+CouplerGeometry.HALF_STROKE);
+            if(CouplerGeometry.canCapture(distance,radialSpeed,a.restLength)){
+                old.joint.setLimit(ConstraintJointAxis.LINEAR_X,a.restLength-CouplerGeometry.HALF_STROKE,a.restLength+CouplerGeometry.HALF_STROKE);
                 old.captured=true;
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] buffer captured link={} distance={} stroke={}",link.id(),distance,CouplerGeometry.HALF_STROKE*2);
             }
@@ -223,15 +230,15 @@ public final class CouplerConnections {
         var spring=CouplerGeometry.spring(ma,mb);live.joint.setMotor(ConstraintJointAxis.LINEAR_X,live.visualA.restLength,spring.stiffness(),spring.damping(),true,spring.maxForce());live.ma=ma;live.mb=mb;
     }
     static void beforeMove(ServerLevel from,ServerLevel to,BlockPos oldPos,BlockPos newPos){
-        if(!(from.getBlockEntity(oldPos) instanceof CouplerEntity e))return;
+        var e=CouplerEndpoint.get(from.getBlockEntity(oldPos));if(e==null)return;
         if(from!=to)disconnect(from,e.endpointId,"dimension_changed");
         var b=body(from,e);Vector3d worldAnchor=null;Quaterniond worldFrame=null;
         if(b!=null&&e.hasGeometry){worldAnchor=VehiclePhysics.world(b,blockOrigin(e).add(e.anchor));worldFrame=new Quaterniond(SubLevelPhysicsSystem.get(from).getPipeline().readPose(b,new Pose3d()).orientation()).mul(e.frame);}
         var source=GlobalPos.of(from.dimension(),oldPos.immutable());MOVING.put(source,new Moving(e.endpointId,from.getGameTime()+200));
         TRANSFERS.put(GlobalPos.of(to.dimension(),newPos.immutable()),new Transfer(e.endpointId,worldAnchor,worldFrame,e.hasGeometry&&worldAnchor!=null,e.restLength,source,to.getGameTime()+200));suspend(from,e.endpointId);
     }
-    static void afterMove(ServerLevel to,BlockPos pos){if(to.getBlockEntity(pos) instanceof CouplerEntity e)register(to,e);}
-    private static boolean restore(ServerLevel level,CouplerEntity e){
+    static void afterMove(ServerLevel to,BlockPos pos){var e=CouplerEndpoint.get(to.getBlockEntity(pos));if(e!=null)register(to,e);}
+    private static boolean restore(ServerLevel level,CouplerEndpoint e){
         var key=GlobalPos.of(level.dimension(),e.getBlockPos());var transfer=TRANSFERS.get(key);if(transfer==null)return true;
         e.endpointId=transfer.endpoint;
         if(transfer.geometry){var b=body(level,e);if(b==null||b.getMassTracker().getMass()<=0)return false;e.geometry(local(b,transfer.anchor).sub(blockOrigin(e)),localFrame(b,transfer.frame),transfer.length);}

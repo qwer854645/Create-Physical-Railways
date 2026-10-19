@@ -39,6 +39,11 @@ public final class GuidedRailways {
             if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);DriverControls.unload(level);CargoStorage.unload(level);RailwaysCompat.unload(level);}
         });
         NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock e)->{
+            if(!e.getItemStack().is(Content.COUPLER_LINK.get())||e.getHitVec()==null||CouplerEndpoint.get(e.getLevel().getBlockEntity(e.getPos()))==null)return;
+            var result=Content.COUPLER_LINK.get().useOn(new net.minecraft.world.item.context.UseOnContext(e.getEntity(),e.getHand(),e.getHitVec()));
+            e.setCanceled(true);e.setCancellationResult(result);
+        });
+        NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock e)->{
             if(!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;
             if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePhysics.hasRelocation(player))return;
             if(VehiclePhysics.owner(level,e.getPos())!=null)return;

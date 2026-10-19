@@ -8,7 +8,7 @@
   "block.guidedrailways.bogie_collision": "转向架部件",
   "block.guidedrailways.driver_console": "物理列车驾驶台",
   "tooltip.guidedrailways.bogie": "使用旋转动力驱动物理列车\n对轨道右击时：放置转向架，支持弯轨\n对物理车体底面右击时：安装转向架\n从安装座顶部接入旋转动力\n使用扳手右击时：切换制动；离轨时选择重新上轨\n潜行使用扳手右击时：拆除转向架",
-  "tooltip.guidedrailways.coupler": "连接两节物理车体\n使用扳手依次右击两端车钩时：连挂\n使用扳手右击已连挂的车钩时：解挂\n连挂距离不超过 2 格，高差不超过 1 格\n潜行使用扳手右击时：拆除车钩",
+  "tooltip.guidedrailways.coupler": "连接两节物理车体\n使用连接工具依次右击两端车钩时：连挂\n使用连接工具右击已连挂的车钩时：解挂\n连挂距离不超过 2 格，高差不超过 1 格\n潜行使用扳手右击时：拆除车钩",
   "tooltip.guidedrailways.driver_console": "控制整列物理列车\n右击时：进入驾驶；时刻表运行时仅查看\n潜行右击时：打开设置，选择接管驾驶可中断自动驾驶\n手动驾驶时：长按右键拖动操纵杆，左击紧急制动\n左右移动键选择岔路，Esc 退出并保持档位\n手持时刻表右击时：装入并运行\n支持目的地、调度延迟与一天中的时间",
   "gui.guidedrailways.driver.take": "接管驾驶",
   "gui.guidedrailways.driver.leave": "退出驾驶",
@@ -107,9 +107,9 @@
   "message.guidedrailways.body.invalid_mass": "车体尚未就绪，请稍后重试",
   "message.guidedrailways.coupler.not_connected": "车钩尚未连挂",
   "message.guidedrailways.coupler.disconnected": "车钩已解挂",
-  "message.guidedrailways.coupler.already_connected_hint": "车钩已连挂，使用扳手右击可解挂",
+  "message.guidedrailways.coupler.already_connected_hint": "车钩已连挂，使用连接工具右击可解挂",
   "message.guidedrailways.coupler.install": "车钩需要安装在物理车体上",
-  "message.guidedrailways.coupler.selected": "已选择车钩，使用扳手右击另一端以连挂",
+  "message.guidedrailways.coupler.selected": "已选择车钩，使用连接工具右击另一端以连挂",
   "message.guidedrailways.coupler.cancelled": "已取消连挂",
   "message.guidedrailways.coupler.unloaded": "所选车钩未加载，请重新选择",
   "message.guidedrailways.coupler.denied": "无法操作另一端车钩",
@@ -211,5 +211,8 @@
   "item.guidedrailways.monorail_bogie": "单轨物理转向架",
   "message.guidedrailways.rail_coupler.couple": "物理列车：可连挂",
   "message.guidedrailways.rail_coupler.decouple": "物理列车：可解挂",
-  "message.guidedrailways.rail_coupler.align": "停车并对齐两处标记与车钩"
+  "message.guidedrailways.rail_coupler.align": "停车并对齐两处标记与车钩",
+  "item.guidedrailways.coupler_link": "车钩连接工具",
+  "tooltip.guidedrailways.coupler_link": "连接物理车体上的同型车钩\n依次右击两端车钩时：连挂\n右击已连挂的车钩时：解挂\n再次右击所选车钩时：取消选择",
+  "message.guidedrailways.coupler.type_mismatch": "无法连挂：车钩类型不同"
 }

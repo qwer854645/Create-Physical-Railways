@@ -86,6 +86,18 @@ public final class CouplerCheck {
                 check(relativeAcceleration*dt<=1.2+1e-10,"even a stretched reload cannot command an unbounded spring velocity kick");
         }
         rejects(()->CouplerGeometry.spring(0,100),"invalid masses rejected");
+        for(double reachA:new double[]{.25,.5,.73,1})for(double reachB:new double[]{.25,.5,.73,1}){
+            double rest=CouplerGeometry.nominalLength(reachA,reachB);
+            check(rest==reachA+reachB,"hardware length comes from its geometry rather than engagement gap");
+            check(CouplerGeometry.canCapture(rest,.1,rest),"short and mixed native couplers can capture at their own nominal length");
+            check(!CouplerGeometry.canCapture(rest+.2,0,rest),"native couplers retain the same finite stroke");
+        }
+        check(CouplerGeometry.nominalLength(.73,.73)==CouplerGeometry.REST_LENGTH,"standard saved geometry retains its original length");
+        rejects(()->CouplerGeometry.nominalLength(0,.5),"empty hardware geometry cannot create a collapsed joint");
+        for(var kindA:CouplerKind.values())for(var kindB:CouplerKind.values())check(CouplerKind.compatible(kindA,kindB)==(kindA==kindB),"all different hardware types are rejected, including standard/native pairs");
+        check(!CouplerKind.compatible(null,null),"plain buffer panels are not coupling endpoints");
+        for(String style:new String[]{"link","linkless","knuckle","knuckle_split","screwlink"})check(CouplerKind.railway(style)!=null,"native standalone and headstock styles share the same mechanism key");
+        check(CouplerKind.railway("plain")==null&&CouplerKind.railway("buffer")==null,"headstock buffer styles cannot couple");
         var links=new CouplingLinks();var ids=new ArrayList<UUID>();var endpoints=new ArrayList<UUID>();
         for(int i=0;i<50;i++){
             var id=UUID.randomUUID();var ea=UUID.randomUUID();var eb=UUID.randomUUID();ids.add(id);endpoints.add(ea);endpoints.add(eb);
