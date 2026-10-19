@@ -18,12 +18,13 @@ public final class BogieItem extends Item {
             VehiclePhysics.placeAimed((net.minecraft.server.level.ServerPlayer)player,gauge);
             if(!player.getAbilities().instabuild)player.getItemInHand(hand).shrink(1);player.swing(hand,true);
             return net.minecraft.world.InteractionResultHolder.consume(player.getItemInHand(hand));
-        }catch(IllegalArgumentException|IllegalStateException error){player.displayClientMessage(UserText.error(error),true);return net.minecraft.world.InteractionResultHolder.fail(player.getItemInHand(hand));}
+        }catch(IllegalArgumentException|IllegalStateException error){rejected(error);player.displayClientMessage(UserText.error(error),true);return net.minecraft.world.InteractionResultHolder.fail(player.getItemInHand(hand));}
     }
     @Override public InteractionResult useOn(UseOnContext c){
         if(c.getPlayer()==null||!c.getPlayer().mayBuild()||!c.getLevel().mayInteract(c.getPlayer(),c.getClickedPos()))return InteractionResult.FAIL;
         if(c.getLevel().isClientSide)return InteractionResult.SUCCESS;
         try{VehiclePhysics.place((ServerLevel)c.getLevel(),c);if(!c.getPlayer().getAbilities().instabuild)c.getItemInHand().shrink(1);c.getPlayer().swing(c.getHand(),true);return InteractionResult.CONSUME;}
-        catch(IllegalArgumentException|IllegalStateException error){c.getPlayer().displayClientMessage(UserText.error(error),true);return InteractionResult.FAIL;}
+        catch(IllegalArgumentException|IllegalStateException error){rejected(error);c.getPlayer().displayClientMessage(UserText.error(error),true);return InteractionResult.FAIL;}
     }
+    private static void rejected(RuntimeException error){org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeyPlacement] rejected reason={}",error.getMessage());}
 }
