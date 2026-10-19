@@ -396,3 +396,10 @@ tasks.register('checkRailDock', JavaExec) {
     mainClass = 'com.guidedrailways.RailDockCheck'
 }
 tasks.named('check') { dependsOn 'checkRailDock' }
+
+tasks.register('checkRailways', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.RailwaysCheck'
+}
+tasks.named('check') { dependsOn 'checkRailways' }

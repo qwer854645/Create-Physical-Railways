@@ -13,7 +13,7 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
     final ServerLevel level;final UUID graph;final Map<ScheduleRoute.Edge,TrackNetwork.Path> paths=new HashMap<>();
     AutomaticNavigation(ServerLevel level,UUID graph){
         this.level=level;this.graph=graph;
-        for(var p:TrackNetwork.paths(level))if(p.graph().equals(graph)){
+        for(var p:TrackNetwork.paths(level))if(p.graph().equals(graph)&&p.supports(RailGauge.STANDARD)){
             paths.put(new ScheduleRoute.Edge(p.a(),p.b()),p);paths.put(new ScheduleRoute.Edge(p.b(),p.a()),p);
         }
     }

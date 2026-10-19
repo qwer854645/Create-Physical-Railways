@@ -14,6 +14,7 @@ import java.util.*;
 /** Read-only Create graph adapter. It never creates blocks, rail colliders or train entities. */
 public final class TrackNetwork {
     public record Path(UUID graph,int a,int b,TrackGraph network,TrackEdge edge) {
+        boolean supports(RailGauge gauge){return gauge.accepts(edge.getTrackMaterial().trackType.id.toString());}
         Vector3d at(double t){var v=edge.getPosition(network,t);return new Vector3d(v.x,v.y,v.z);}
         boolean adjacent(Path p){return graph.equals(p.graph)&&(a==p.a||a==p.b||b==p.a||b==p.b);}
     }
@@ -143,7 +144,7 @@ public final class TrackNetwork {
             if(entry.getKey()==enter||entry.getValue().isInterDimensional())continue;
             if(!current.canTravelTo(entry.getValue()))continue;
             var path=idx.paths.get(key(live.graph,exit.getNetId(),entry.getKey().getNetId()));
-            if(path==null)continue;
+            if(path==null||!path.supports(RailGauge.STANDARD))continue;
             options.add(new Branch(entry.getKey(),entry.getValue(),path));
         }
         if(options.isEmpty())return null;
@@ -207,6 +208,7 @@ public final class TrackNetwork {
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         Path live=previous==null?null:idx.paths.get(key(previous));
         for(var p:candidates){
+            if(!p.supports(RailGauge.STANDARD))continue;
             if(live!=null&&!p.equals(live)&&!p.adjacent(live))continue;
             var sample=project(p,point,heading,null);if(sample==null)continue;double d=sample.position.distanceSquared(point);double align=sample.tangent.dot(heading);
             if(d>radius*radius||align<.5||!level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))continue;
@@ -229,6 +231,7 @@ public final class TrackNetwork {
         for(int i=0;i<=16;i++){var q=new Vector3d(a).lerp(b,i/16.0);candidates.addAll(idx.cells.getOrDefault(cell(q.x,q.z),Set.of()));}
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         for(var path:candidates){
+            if(!path.supports(RailGauge.STANDARD))continue;
             int n=Math.clamp((int)Math.ceil(path.edge.getLength()/.25),1,16384);
             var prev=at(path,0,heading);
             for(int i=1;i<=n;i++){
@@ -281,7 +284,7 @@ public final class TrackNetwork {
             Path best=null;double alignment=-2;int bestId=Integer.MAX_VALUE;var idx=INDEX.get(level);
             for(var e:span.path.network.getConnectionsFrom(exit).entrySet()){
                 if(e.getKey()==entry||e.getValue().isInterDimensional()||!incoming.canTravelTo(e.getValue()))continue;
-                var p=idx.paths.get(key(span.path.graph,exitId,e.getKey().getNetId()));if(p==null)continue;
+                var p=idx.paths.get(key(span.path.graph,exitId,e.getKey().getNetId()));if(p==null||!p.supports(RailGauge.STANDARD))continue;
                 var dir=PathGeometry.tangent(p::at,p.a==exitId?0:1).mul(p.a==exitId?1:-1);double dot=dir.dot(wanted);
                 if(dot>alignment+1e-9||(Math.abs(dot-alignment)<1e-9&&e.getKey().getNetId()<bestId)){best=p;alignment=dot;bestId=e.getKey().getNetId();}
             }
