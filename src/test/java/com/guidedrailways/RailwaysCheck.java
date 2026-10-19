@@ -50,6 +50,13 @@ public final class RailwaysCheck {
         check(Math.abs(mono.origin().y-1)<1e-8,"mono model origin aligns horizontal side rollers with the one-block beam");
         check(Math.abs(mono.origin().y+BogieGeometry.plateOffset(RailGauge.MONORAIL)+.5-2)<1e-8,"monorail keeps the mounting platform on the same integral grid");
         check(Math.abs(mono.pivot().y-1.75)<1e-8,"monorail bearing agrees with the mounting plate underside");
+        check(RailCouplerMode.choose(false,false,true,true,true,true)==1,"two stopped free ends can couple");
+        check(RailCouplerMode.choose(true,true,true,true,true,true)==2,"an existing direct link can uncouple");
+        check(RailCouplerMode.choose(false,true,true,true,true,true)==0,"trackside coupling cannot close a loop in the same train");
+        check(RailCouplerMode.choose(false,false,false,true,true,true)==0,"moving trains cannot be forcibly joined");
+        check(RailCouplerMode.choose(false,false,true,false,true,true)==0,"missing or occupied sockets cannot be joined");
+        check(RailCouplerMode.choose(true,true,true,true,true,false)==0,"coupling-only setting never uncouples");
+        check(RailCouplerMode.choose(false,false,true,true,false,true)==0,"uncoupling-only setting never couples");
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }

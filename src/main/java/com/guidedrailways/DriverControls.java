@@ -12,6 +12,13 @@ public final class DriverControls {
     private static final Map<ServerLevel,List<VehiclePhysics.Unit>> DRIVEN=new WeakHashMap<>();
     private static final Map<ServerLevel,Map<UUID,DriverConsoleEntity>> VIEW=new WeakHashMap<>();
     private DriverControls(){}
+    static void topologyChanged(ServerLevel level,Set<UUID> affected){
+        for(var console:CONSOLES.getOrDefault(level,Map.of()).values()){
+            var body=body(console);if(body==null||!affected.contains(body.getUniqueId()))continue;
+            var c=console.schedule;RailDocks.release(c);c.members=null;c.cargoBodies=null;c.plan=null;c.nextPlan=0;c.routeRetry=false;c.waiting=false;c.station=null;c.stableTicks=0;c.resetConditions();console.setChanged();
+        }
+        refresh(level,VehiclePhysics.cargoUnits(level));
+    }
     static void register(ServerLevel level,DriverConsoleEntity e){if(!e.identitySaved){e.identitySaved=true;e.setChanged();}CONSOLES.computeIfAbsent(level,l->new HashMap<>()).put(e.getBlockPos().immutable(),e);}
     static ServerSubLevel body(DriverConsoleEntity e){return e.getLevel()!=null&&SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
     private static Map<UUID,DriverConsoleEntity> election(ServerLevel level){

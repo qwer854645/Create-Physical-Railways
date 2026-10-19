@@ -208,5 +208,8 @@
   "item.guidedrailways.narrow_bogie": "窄轨物理转向架",
   "item.guidedrailways.wide_bogie": "宽轨物理转向架",
   "message.guidedrailways.rail.gauge": "轨距不匹配，请选择对应轨道",
-  "item.guidedrailways.monorail_bogie": "单轨物理转向架"
+  "item.guidedrailways.monorail_bogie": "单轨物理转向架",
+  "message.guidedrailways.rail_coupler.couple": "物理列车：可连挂",
+  "message.guidedrailways.rail_coupler.decouple": "物理列车：可解挂",
+  "message.guidedrailways.rail_coupler.align": "停车并对齐两处标记与车钩"
 }

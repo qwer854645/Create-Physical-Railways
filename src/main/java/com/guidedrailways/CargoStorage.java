@@ -145,5 +145,6 @@ public final class CargoStorage {
         }
         return membership.bodies.get(body.getUniqueId());
     }
+    static void topologyChanged(ServerLevel level){CACHE.remove(level);MEMBERSHIP.remove(level);}
     static void unload(ServerLevel level){CACHE.remove(level);MEMBERSHIP.remove(level);CargoTransfers.unload(level);}
 }

@@ -100,6 +100,31 @@ public final class CouplerConnections {
         catch(RuntimeException error){disconnect(level,a.endpointId,"creation_failed");throw error;}
     }
     static boolean connected(ServerLevel level,CouplerEntity e){return CouplerSavedData.get(level).links.forEndpoint(e.endpointId)!=null;}
+    /** Trackside operation reuses exactly the same saved links and physics joints as a wrench. */
+    static int trackOperation(ServerLevel level,ServerSubLevel ba,ServerSubLevel bb,boolean couple,boolean decouple,boolean execute){
+        if(ba==null||bb==null||ba==bb)return 0;
+        var s=state(level);var data=CouplerSavedData.get(level);var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
+        boolean stopped=CouplerGeometry.slowEnough(pipe.getLinearVelocity(ba,new Vector3d()),pipe.getLinearVelocity(bb,new Vector3d()),pipe.getAngularVelocity(ba,new Vector3d()),pipe.getAngularVelocity(bb,new Vector3d()));
+        if(!stopped)return 0;
+        var endsA=s.endpoints.values().stream().filter(e->loaded(level,e)&&body(level,e)==ba).sorted(Comparator.comparing(e->e.endpointId)).toList();
+        var endsB=s.endpoints.values().stream().filter(e->loaded(level,e)&&body(level,e)==bb).sorted(Comparator.comparing(e->e.endpointId)).toList();
+        CouplerEntity first=null,second=null;int mode=0;double best=Double.POSITIVE_INFINITY;
+        boolean sameTrain=CargoStorage.consist(level,ba).bodies().containsKey(bb.getUniqueId());
+        for(var a:endsA)for(var b:endsB){
+            var link=data.links.forEndpoint(a.endpointId);boolean linked=link!=null&&(link.a().equals(b.endpointId)||link.b().equals(b.endpointId));
+            boolean free=linked||link==null&&data.links.forEndpoint(b.endpointId)==null;
+            int candidate=RailCouplerMode.choose(linked,sameTrain,stopped,free,couple,decouple);if(candidate==0)continue;
+            double distance=VehiclePhysics.world(ba,head(a)).distanceSquared(VehiclePhysics.world(bb,head(b)));
+            if(!linked)try{CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));}catch(IllegalArgumentException rejected){continue;}
+            if(distance<best){best=distance;first=a;second=b;mode=candidate;}
+        }
+        if(mode==0||!execute)return mode;
+        var affected=new HashSet<>(CargoStorage.consist(level,ba).bodies().keySet());affected.addAll(CargoStorage.consist(level,bb).bodies().keySet());
+        if(mode==2)disconnect(level,first.endpointId,"trackside");else connect(level,first,second);
+        CargoStorage.topologyChanged(level);ConsistRoutes.topologyChanged(level);DriverControls.topologyChanged(level,affected);
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[RailwayCoupler] mode={} bodies={}/{} endpoints={}/{}",mode,ba.getUniqueId(),bb.getUniqueId(),first.endpointId,second.endpointId);
+        return mode;
+    }
     record BodyLink(ServerSubLevel a,ServerSubLevel b,Vector3d anchorA,Vector3d anchorB){}
     static List<BodyLink> bodyLinks(ServerLevel level){
         var s=STATES.get(level);if(s==null)return List.of();var result=new ArrayList<BodyLink>();

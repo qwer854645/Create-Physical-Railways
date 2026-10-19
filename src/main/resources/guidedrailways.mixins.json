@@ -15,6 +15,7 @@
     "DockCargoBindingMixin",
     "RailDockHeadMixin",
     "RailDockMailMixin",
+    "RailwayCouplerMixin",
     "HoseCargoBindingMixin",
     "LogisticsSnapshotMixin",
     "LogisticsDockTransferMixin"

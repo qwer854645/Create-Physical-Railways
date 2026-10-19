@@ -116,4 +116,5 @@ final class ConsistRoutes {
         STATES.put(level,next);CACHE.put(level,new Cached(level.getGameTime(),output));return output;
     }
     static void unload(ServerLevel level){STATES.remove(level);CACHE.remove(level);}
+    static void topologyChanged(ServerLevel level){CACHE.remove(level);}
 }
