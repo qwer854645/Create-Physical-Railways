@@ -19,6 +19,11 @@ public abstract class RailwayHardwareEntityMixin extends SmartBlockEntity implem
         if(guidedrailways$coupler==null)guidedrailways$coupler=new CouplerEndpoint(this);
         return guidedrailways$coupler;
     }
+    @Override public net.neoforged.neoforge.client.model.data.ModelData getModelData(){
+        boolean dynamic=com.guidedrailways.HardwareRenderData.ready&&RailwayHardware.coupler(getBlockState())&&getLevel()!=null
+                &&dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContaining(getLevel(),getBlockPos())!=null;
+        return super.getModelData().derive().with(com.guidedrailways.HardwareRenderData.DYNAMIC,dynamic).build();
+    }
     @Override public void tick(){
         super.tick();var endpoint=guidedrailways$endpoint();
         if(endpoint!=null)endpoint.tick();

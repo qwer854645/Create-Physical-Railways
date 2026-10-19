@@ -1,4 +1,6 @@
-# Create: Guided Railways 0.1.54
+# Create: Guided Railways 0.1.55
+
+0.1.55 按链销、自动钩、螺旋连挂分开处理承载过程与原生模型部件动画，保留统一连接工具和类型限制。详见 [分型机械逻辑与测试](docs/COUPLER_MECHANISMS.md)
 
 0.1.54 让 Railway 的装饰车钩和缓冲板参与物理碰撞，新增车钩连接工具统一操作所有物理车车钩，禁止不同类型互连，支持保存和物理体移动。详见 [硬件兼容与测试](docs/RAILWAY_HARDWARE.md)
 
