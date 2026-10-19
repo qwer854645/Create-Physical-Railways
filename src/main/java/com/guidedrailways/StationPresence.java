@@ -25,7 +25,7 @@ public final class StationPresence {
             int direction=Math.abs(owner.actual)>.12?(owner.actual<0?-1:1):owner.direction==0?1:owner.direction;
             var basis=AutomaticTrains.basis(owner,group,links,direction);if(basis==null)continue;
             var head=basis.head();int end=basis.end();var heading=new Vector3d(0,0,1).rotate(pipe.readPose(head.bogie,new Pose3d()).orientation());
-            var sample=TrackNetwork.nearest(level,VehiclePhysics.world(head.bogie,head.axle(end)),heading,head.samples[end]==null?null:head.samples[end].path(),1);if(sample==null)continue;
+            var sample=TrackNetwork.nearest(level,VehiclePhysics.world(head.bogie,head.axle(end)),heading,head.samples[end]==null?null:head.samples[end].path(),1,head.mount.gauge);if(sample==null)continue;
             var path=sample.path();boolean increasing=PathGeometry.tangent(path::at,sample.t()).dot(heading)*basis.signs().get(head.bogie.getUniqueId())>=0;
             int from=increasing?path.a():path.b(),to=increasing?path.b():path.a();var fromNode=path.network().getNode(from);var toNode=path.network().getNode(to);if(fromNode==null||toNode==null)continue;
             var edge=path.network().getConnectionsFrom(fromNode).get(toNode);if(edge==null)continue;

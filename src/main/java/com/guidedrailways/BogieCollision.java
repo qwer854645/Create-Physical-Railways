@@ -12,6 +12,35 @@ public final class BogieCollision {
     public record Cell(int part,int x,int y,int z,List<Box> boxes){}
     public static final int CENTRE_PART=13;
     public static final List<Cell> CELLS=partition();
+    private static final java.util.Map<RailGauge,List<Box>> PROFILE_BOXES=new java.util.EnumMap<>(RailGauge.class);
+    private static final java.util.Map<RailGauge,List<Cell>> PROFILE_CELLS=new java.util.EnumMap<>(RailGauge.class);
+    static {
+        PROFILE_BOXES.put(RailGauge.STANDARD,BOXES);PROFILE_CELLS.put(RailGauge.STANDARD,CELLS);
+        for(var gauge:RailGauge.values())if(gauge!=RailGauge.STANDARD){
+            var boxes=BOXES.stream().map(b->new Box(.5+(b.x0-.5)*gauge.widthScale(),b.y0,b.z0,.5+(b.x1-.5)*gauge.widthScale(),b.y1,b.z1)).toList();
+            PROFILE_BOXES.put(gauge,boxes);PROFILE_CELLS.put(gauge,partition(boxes));
+        }
+    }
+    public static List<Box> boxes(RailGauge gauge){return PROFILE_BOXES.get(gauge);}
+    public static List<Cell> cells(RailGauge gauge){return PROFILE_CELLS.get(gauge);}
+    private static List<Cell> partition(List<Box> boxes){
+        var result=new ArrayList<Cell>();int part=0;
+        int minX=(int)Math.floor(boxes.stream().mapToDouble(Box::x0).min().orElse(0)),maxX=(int)Math.ceil(boxes.stream().mapToDouble(Box::x1).max().orElse(1));
+        int minY=(int)Math.floor(boxes.stream().mapToDouble(Box::y0).min().orElse(0)),maxY=(int)Math.ceil(boxes.stream().mapToDouble(Box::y1).max().orElse(1));
+        int minZ=(int)Math.floor(boxes.stream().mapToDouble(Box::z0).min().orElse(0)),maxZ=(int)Math.ceil(boxes.stream().mapToDouble(Box::z1).max().orElse(1));
+        for(int y=minY;y<maxY;y++)for(int x=minX;x<maxX;x++)for(int z=minZ;z<maxZ;z++){
+            var local=new ArrayList<Box>();for(var b:boxes){
+                double x0=Math.max(x,b.x0)-x,y0=Math.max(y,b.y0)-y,z0=Math.max(z,b.z0)-z;
+                double x1=Math.min(x+1,b.x1)-x,y1=Math.min(y+1,b.y1)-y,z1=Math.min(z+1,b.z1)-z;
+                if(x1-x0>1e-9&&y1-y0>1e-9&&z1-z0>1e-9)local.add(new Box(x0,y0,z0,x1,y1,z1));
+            }
+            if(local.isEmpty())continue;while(part==CENTRE_PART)part++;
+            int id=x==0&&y==0&&z==0?CENTRE_PART:part++;
+            if(id>127)throw new IllegalStateException("Bogie collision profile exceeds part capacity");
+            result.add(new Cell(id,x,y,z,List.copyOf(local)));
+        }
+        return List.copyOf(result);
+    }
     /** Preserve the pre-distribution central block's bounds-based vertical mass centre. */
     public static double massCenterY(){
         var cell=CELLS.stream().filter(c->c.part==CENTRE_PART).findFirst().orElseThrow();

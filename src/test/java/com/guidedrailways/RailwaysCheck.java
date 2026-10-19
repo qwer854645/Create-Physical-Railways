@@ -35,6 +35,15 @@ public final class RailwaysCheck {
         check(ScheduleRoute.find(buffered,edge,0,java.util.List.of(after))==null,"a target beyond a buffer on the same edge is unreachable");
         check(ScheduleRoute.find(buffered,edge,0,java.util.List.of(before))!=null,"a station before the buffer remains reachable");
         check(ScheduleRoute.find(buffered,edge,6,java.util.List.of(after))!=null,"a buffer behind the train does not block forward navigation");
+        for(var gauge:new RailGauge[]{RailGauge.NARROW,RailGauge.WIDE}){
+            var cells=BogieCollision.cells(gauge);var ids=new java.util.HashSet<Integer>();
+            check(cells.stream().anyMatch(c->c.part()==BogieCollision.CENTRE_PART&&c.x()==0&&c.y()==0&&c.z()==0),"every gauge retains its block entity at the physical centre");
+            for(var cell:cells){check(ids.add(cell.part())&&cell.part()<=127,"collision part ids are unique and fit block properties");for(var box:cell.boxes())check(box.x0()>=0&&box.y0()>=0&&box.z0()>=0&&box.x1()<=1&&box.y1()<=1&&box.z1()<=1,"scaled collision remains partitioned inside occupied cells");}
+            for(var box:BogieCollision.boxes(gauge)){
+                double x=(box.x0()+box.x1())*.5,y=(box.y0()+box.y1())*.5,z=(box.z0()+box.z1())*.5;
+                check(cells.stream().anyMatch(c->c.boxes().stream().anyMatch(v->v.contains(x-c.x(),y-c.y(),z-c.z()))),"partitioning cannot lose the centre of a scaled collision primitive");
+            }
+        }
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }

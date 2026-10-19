@@ -35,6 +35,7 @@ public final class TrackNetwork {
         BranchSelect.Steer steer();
         Sample leader();
         default boolean mayPass(Path incoming,int node,int from,int to){return true;}
+        default RailGauge gauge(){return RailGauge.STANDARD;}
     }
     private record PathKey(UUID graph,int a,int b){}
     private static final class Index {
@@ -114,7 +115,7 @@ public final class TrackNetwork {
         PerfCounters.query(level);
         var idx=INDEX.get(level);if(previous!=null&&idx!=null){
             var live=idx.paths.get(key(previous.path));
-            if(live!=null){
+            if(live!=null&&live.supports(policy==null?RailGauge.STANDARD:policy.gauge())){
                 var sample=project(live,point,heading,previous.t);
                 if(sample!=null&&sample.t>.0001&&sample.t<.9999&&sample.position.distanceSquared(point)<.09
                         &&sample.tangent.dot(heading)>.75&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return sample;
@@ -127,7 +128,7 @@ public final class TrackNetwork {
             }
             if(policy!=null)return null;
         }
-        return nearest(level,point,heading,previous==null?null:previous.path,radius);
+        return nearest(level,point,heading,previous==null?null:previous.path,radius,policy==null?RailGauge.STANDARD:policy.gauge());
     }
     /** Create-style node transition: enumerate outgoing edges, then steer / follow. */
     private static Sample advance(ServerLevel level,Index idx,Path live,Vector3dc point,Vector3dc heading,Sample previous,Sample leader,double radius,boolean reverse,RoutePolicy policy){
@@ -145,7 +146,7 @@ public final class TrackNetwork {
             if(entry.getKey()==enter||entry.getValue().isInterDimensional())continue;
             if(!RailwaysCompat.geometry(current,entry.getValue()))continue;
             var path=idx.paths.get(key(live.graph,exit.getNetId(),entry.getKey().getNetId()));
-            if(path==null||!path.supports(RailGauge.STANDARD))continue;
+            if(path==null||!path.supports(policy==null?RailGauge.STANDARD:policy.gauge()))continue;
             options.add(new Branch(entry.getKey(),entry.getValue(),path));
         }
         if(options.isEmpty())return null;
@@ -198,7 +199,7 @@ public final class TrackNetwork {
             var options=new ArrayList<Branch>();
             for(var entry:path.network.getConnectionsFrom(exit).entrySet()){
                 if(entry.getKey()==enter||entry.getValue().isInterDimensional()||!RailwaysCompat.geometry(incoming,entry.getValue()))continue;
-                var next=idx.paths.get(key(path.graph,node,entry.getKey().getNetId()));if(next!=null&&next.supports(RailGauge.STANDARD))options.add(new Branch(entry.getKey(),entry.getValue(),next));
+                var next=idx.paths.get(key(path.graph,node,entry.getKey().getNetId()));if(next!=null&&next.supports(policy.gauge()))options.add(new Branch(entry.getKey(),entry.getValue(),next));
             }
             if(options.isEmpty())return Double.POSITIVE_INFINITY;
             options.sort(Comparator.comparingInt(b->b.node.getNetId()));
@@ -249,12 +250,13 @@ public final class TrackNetwork {
         return null;
     }
     private static Vector3d vec(Vec3 v){return new Vector3d(v.x,v.y,v.z);}
-    public static Sample nearest(ServerLevel level,Vector3dc point,Vector3dc heading,Path previous,double radius){
+    public static Sample nearest(ServerLevel level,Vector3dc point,Vector3dc heading,Path previous,double radius){return nearest(level,point,heading,previous,radius,RailGauge.STANDARD);}
+    static Sample nearest(ServerLevel level,Vector3dc point,Vector3dc heading,Path previous,double radius,RailGauge gauge){
         var idx=INDEX.get(level);if(idx==null)return null;var candidates=idx.cells.getOrDefault(cell(point.x(),point.z()),Set.of());
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         Path live=previous==null?null:idx.paths.get(key(previous));
         for(var p:candidates){
-            if(!p.supports(RailGauge.STANDARD))continue;
+            if(!p.supports(gauge))continue;
             if(live!=null&&!p.equals(live)&&!p.adjacent(live))continue;
             var sample=project(p,point,heading,null);if(sample==null)continue;double d=sample.position.distanceSquared(point);double align=sample.tangent.dot(heading);
             if(d>radius*radius||align<.5||!level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))continue;
@@ -266,7 +268,8 @@ public final class TrackNetwork {
     /** Interactive actions must not use the half-second background index throttle. */
     public static void refreshNow(ServerLevel level){INDEX.computeIfAbsent(level,l->new Index()).next=0;refresh(level);}
     /** Server-side rail picking also hits Bezier track drawn through air, without an ITrackBlock hit. */
-    public static Sample pick(net.minecraft.server.level.ServerPlayer player){
+    public static Sample pick(net.minecraft.server.level.ServerPlayer player){return pick(player,RailGauge.STANDARD);}
+    static Sample pick(net.minecraft.server.level.ServerPlayer player,RailGauge gauge){
         var level=player.serverLevel();refreshNow(level);
         var eye=player.getEyePosition();var look=player.getLookAngle();double reach=player.blockInteractionRange();
         var end=eye.add(look.scale(reach));
@@ -277,7 +280,7 @@ public final class TrackNetwork {
         for(int i=0;i<=16;i++){var q=new Vector3d(a).lerp(b,i/16.0);candidates.addAll(idx.cells.getOrDefault(cell(q.x,q.z),Set.of()));}
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         for(var path:candidates){
-            if(!path.supports(RailGauge.STANDARD))continue;
+            if(!path.supports(gauge))continue;
             int n=Math.clamp((int)Math.ceil(path.edge.getLength()/.25),1,16384);
             var prev=at(path,0,heading);
             for(int i=1;i<=n;i++){
@@ -313,9 +316,9 @@ public final class TrackNetwork {
     /** One connected, deterministic route, sampled by arc length for placing and fitting bodies. */
     public static final class PlacementRoute implements RailPlacement.Route {
         private record Span(Path path,boolean increasing,double start,ArcTable arc){double end(){return start+arc.length();}}
-        final ServerLevel level;final List<Span> spans=new ArrayList<>();final Map<Path,ArcTable> tables=new HashMap<>();
-        PlacementRoute(ServerLevel level,Sample anchor,double extent){
-            this.level=level;var arc=table(anchor.path);boolean increasing=PathGeometry.tangent(anchor.path::at,anchor.t).dot(anchor.tangent)>=0;
+        final ServerLevel level;final Set<RailGauge> gauges;final List<Span> spans=new ArrayList<>();final Map<Path,ArcTable> tables=new HashMap<>();
+        PlacementRoute(ServerLevel level,Sample anchor,double extent,Set<RailGauge> gauges){
+            this.level=level;this.gauges=Set.copyOf(gauges);if(gauges.stream().anyMatch(g->!anchor.path.supports(g)))throw new IllegalArgumentException("message.guidedrailways.rail.gauge");var arc=table(anchor.path);boolean increasing=PathGeometry.tangent(anchor.path::at,anchor.t).dot(anchor.tangent)>=0;
             spans.add(new Span(anchor.path,increasing,-(increasing?arc.distance(anchor.t):arc.length()-arc.distance(anchor.t)),arc));
             for(int i=0;i<256&&spans.get(spans.size()-1).end()<extent;i++)if(!extend(true))break;
             for(int i=0;i<256&&spans.get(0).start> -extent;i++)if(!extend(false))break;
@@ -330,7 +333,7 @@ public final class TrackNetwork {
             Path best=null;double alignment=-2;int bestId=Integer.MAX_VALUE;var idx=INDEX.get(level);
             for(var e:span.path.network.getConnectionsFrom(exit).entrySet()){
                 if(e.getKey()==entry||e.getValue().isInterDimensional()||!incoming.canTravelTo(e.getValue()))continue;
-                var p=idx.paths.get(key(span.path.graph,exitId,e.getKey().getNetId()));if(p==null||!p.supports(RailGauge.STANDARD))continue;
+                var p=idx.paths.get(key(span.path.graph,exitId,e.getKey().getNetId()));if(p==null||gauges.stream().anyMatch(g->!p.supports(g)))continue;
                 var dir=PathGeometry.tangent(p::at,p.a==exitId?0:1).mul(p.a==exitId?1:-1);double dot=dir.dot(wanted);
                 if(dot>alignment+1e-9||(Math.abs(dot-alignment)<1e-9&&e.getKey().getNetId()<bestId)){best=p;alignment=dot;bestId=e.getKey().getNetId();}
             }
@@ -350,6 +353,7 @@ public final class TrackNetwork {
         }
         @Override public RailPlacement.Point at(double d){var s=sample(d);return s==null?null:new RailPlacement.Point(s.position,s.tangent,s.up);}
     }
-    public static PlacementRoute placementRoute(ServerLevel level,Sample anchor,double extent){return new PlacementRoute(level,anchor,extent);}
+    public static PlacementRoute placementRoute(ServerLevel level,Sample anchor,double extent){return new PlacementRoute(level,anchor,extent,Set.of(RailGauge.STANDARD));}
+    static PlacementRoute placementRoute(ServerLevel level,Sample anchor,double extent,Set<RailGauge> gauges){return new PlacementRoute(level,anchor,extent,gauges);}
     static void unload(ServerLevel level){INDEX.remove(level);}
 }

@@ -204,5 +204,8 @@
   "message.guidedrailways.rail_dock.station": "Station: %s",
   "message.guidedrailways.rail_dock.addresses": "Postbox addresses: %s",
   "message.guidedrailways.rail_dock.no_mailbox": "No postboxes linked to the station",
-  "message.guidedrailways.rail_dock.unbound": "No station linked"
+  "message.guidedrailways.rail_dock.unbound": "No station linked",
+  "item.guidedrailways.narrow_bogie": "Narrow Gauge Physical Bogey",
+  "item.guidedrailways.wide_bogie": "Wide Gauge Physical Bogey",
+  "message.guidedrailways.rail.gauge": "Incompatible gauge; select a matching track"
 }

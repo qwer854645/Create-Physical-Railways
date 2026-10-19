@@ -204,5 +204,8 @@
   "message.guidedrailways.rail_dock.station": "车站：%s",
   "message.guidedrailways.rail_dock.addresses": "邮箱地址：%s",
   "message.guidedrailways.rail_dock.no_mailbox": "车站未关联邮箱",
-  "message.guidedrailways.rail_dock.unbound": "未绑定车站"
+  "message.guidedrailways.rail_dock.unbound": "未绑定车站",
+  "item.guidedrailways.narrow_bogie": "窄轨物理转向架",
+  "item.guidedrailways.wide_bogie": "宽轨物理转向架",
+  "message.guidedrailways.rail.gauge": "轨距不匹配，请选择对应轨道"
 }

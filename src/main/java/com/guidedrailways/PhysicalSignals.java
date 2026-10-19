@@ -61,7 +61,7 @@ public final class PhysicalSignals {
             var samples=anchors.computeIfAbsent(body,k->new ArrayList<>());
             var heading=new Vector3d(0,0,1).rotate(pipe.readPose(u.bogie,new Pose3d()).orientation());
             if(!u.detached)for(int i=0;i<2;i++){
-                var old=u.samples[i];var sample=TrackNetwork.nearest(level,VehiclePhysics.world(u.bogie,u.axle(i)),heading,old==null?null:old.path(),1);
+                var old=u.samples[i];var sample=TrackNetwork.nearest(level,VehiclePhysics.world(u.bogie,u.axle(i)),heading,old==null?null:old.path(),1,u.mount.gauge);
                 if(sample!=null){
                     samples.add(sample);mark(sample.path(),sample.t()*sample.path().edge().getLength(),sample.t()*sample.path().edge().getLength(),groups);
                     var key=new Axle(u.bogie.getUniqueId(),i);liveAxles.add(key);

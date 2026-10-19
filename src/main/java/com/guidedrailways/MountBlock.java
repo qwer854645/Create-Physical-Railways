@@ -10,7 +10,7 @@ import com.simibubi.create.foundation.block.IBE;
 import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
 import java.util.*;
 public final class MountBlock extends ComponentBlock implements IRotate,IBE<MountEntity>,BlockSubLevelAssemblyListener {
-    private record Transfer(UUID bogie,boolean brake,int heightVersion,org.joml.Quaterniond worldReference,long expires){}
+    private record Transfer(UUID bogie,boolean brake,int heightVersion,RailGauge gauge,org.joml.Quaterniond worldReference,long expires){}
     private static final Map<GlobalPos,Transfer> TRANSFERS=new HashMap<>();
     MountBlock(Properties p){super(p);}
     private static final VoxelShape SHAPE=Shapes.or(box(0,12,0,16,16,16),box(5,BogieGeometry.SUPPORT_BOTTOM*16,5,11,12,11));
@@ -27,7 +27,7 @@ public final class MountBlock extends ComponentBlock implements IRotate,IBE<Moun
                 var pose=dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(from).getPipeline().readPose(carrier,new dev.ryanhcode.sable.companion.math.Pose3d());
                 reference=new org.joml.Quaterniond(pose.orientation()).mul(mount.pivotReference);
             }
-            TRANSFERS.put(GlobalPos.of(to.dimension(),b),new Transfer(mount.bogieId,mount.braking,mount.heightVersion,reference,to.getGameTime()+20));
+            TRANSFERS.put(GlobalPos.of(to.dimension(),b),new Transfer(mount.bogieId,mount.braking,mount.heightVersion,mount.gauge,reference,to.getGameTime()+20));
         }
     }
     @Override public void afterMove(ServerLevel from,ServerLevel to,BlockState s,BlockPos a,BlockPos b){
@@ -43,7 +43,7 @@ public final class MountBlock extends ComponentBlock implements IRotate,IBE<Moun
                 var pose=dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(level).getPipeline().readPose(carrier,new dev.ryanhcode.sable.companion.math.Pose3d());
                 mount.pivotReference.set(BogieYawModel.transfer(new org.joml.Quaterniond(),t.worldReference,pose.orientation()));mount.pivotReferenceKnown=true;
             }
-            mount.bogieId=t.bogie;mount.braking=t.brake;mount.heightVersion=t.heightVersion;mount.setChanged();TRANSFERS.remove(key);
+            mount.bogieId=t.bogie;mount.braking=t.brake;mount.heightVersion=t.heightVersion;mount.gauge=t.gauge;mount.setChanged();TRANSFERS.remove(key);
         }
     }
     static void clear(ServerLevel level){TRANSFERS.keySet().removeIf(p->p.dimension().equals(level.dimension()));}

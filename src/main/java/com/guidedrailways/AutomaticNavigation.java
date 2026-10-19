@@ -11,9 +11,10 @@ import java.util.regex.Pattern;
 /** Adapter to the installed Create graph; no synthetic Create Train or carriage entities. */
 final class AutomaticNavigation implements ScheduleRoute.Network {
     final ServerLevel level;final UUID graph;final Map<ScheduleRoute.Edge,TrackNetwork.Path> paths=new HashMap<>();
-    AutomaticNavigation(ServerLevel level,UUID graph){
+    AutomaticNavigation(ServerLevel level,UUID graph){this(level,graph,Set.of());}
+    AutomaticNavigation(ServerLevel level,UUID graph,Set<RailGauge> gauges){
         this.level=level;this.graph=graph;
-        for(var p:TrackNetwork.paths(level))if(p.graph().equals(graph)&&p.supports(RailGauge.STANDARD)){
+        for(var p:TrackNetwork.paths(level))if(p.graph().equals(graph)&&gauges.stream().allMatch(p::supports)){
             paths.put(new ScheduleRoute.Edge(p.a(),p.b()),p);paths.put(new ScheduleRoute.Edge(p.b(),p.a()),p);
         }
     }

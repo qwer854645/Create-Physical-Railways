@@ -3,6 +3,7 @@ package com.guidedrailways;
 /** Stable saved identifiers; independent of optional mod classes. */
 public enum RailGauge {
     STANDARD, NARROW, WIDE, MONORAIL;
+    public double widthScale(){return switch(this){case NARROW->.5;case WIDE->1.5;case MONORAIL->.5;default->1;};}
     public boolean accepts(String trackType){
         if("railways:universal".equals(trackType))return this!=MONORAIL;
         return switch(this){

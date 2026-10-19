@@ -15,9 +15,10 @@ final class ConsistRoutes {
         Context(RouteMemory memory,ServerLevel level){this.memory=memory;this.level=level;identity=memory.members().stream().map(RouteMemory.Axle::bogie).min(UUID::compareTo).orElseThrow();}
     }
     static final class Cursor implements TrackNetwork.RoutePolicy {
-        final Context context;final RouteMemory.Axle axle;final boolean leading;
+        final Context context;final RouteMemory.Axle axle;final boolean leading;final RailGauge gauge;
         boolean switchWaiting;
-        Cursor(Context c,RouteMemory.Axle a,boolean leading){context=c;axle=a;this.leading=leading;}
+        Cursor(Context c,RouteMemory.Axle a,boolean leading,RailGauge gauge){context=c;axle=a;this.leading=leading;this.gauge=gauge;}
+        @Override public RailGauge gauge(){return gauge;}
         @Override public TrackNetwork.Sample leader(){return leading?null:context.head;}
         void followed(TrackNetwork.Sample sample){if(leading)context.head=sample;}
         double limit(double room){if(leading)context.switchRoom=room;return Math.min(room,context.switchRoom);}
@@ -110,7 +111,7 @@ final class ConsistRoutes {
             if(automaticHead!=null&&group.remove(automaticHead))group.addFirst(automaticHead);
             VehiclePhysics.Unit first=null;for(var u:group)if(!u.detached){first=u;break;}
             int leading=0;if(first!=null){var h=new Vector3d(0,0,1).rotate(pipe.readPose(first.bogie,new Pose3d()).orientation());leading=BranchSelect.reverseTravel(pipe.getLinearVelocity(first.bogie,new Vector3d()).dot(h),VehiclePhysics.driverRpm(first,h),first.reverseTravel)?1:0;if(automaticHead==first)leading=automaticEnd;context.head=first.samples[leading];}
-            for(var u:group)output.add(new Plan(u,new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),0),u==first&&leading==0),new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),1),u==first&&leading==1)));
+            for(var u:group)output.add(new Plan(u,new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),0),u==first&&leading==0,u.mount.gauge),new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),1),u==first&&leading==1,u.mount.gauge)));
         }
         STATES.put(level,next);CACHE.put(level,new Cached(level.getGameTime(),output));return output;
     }

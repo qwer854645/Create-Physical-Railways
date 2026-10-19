@@ -135,7 +135,7 @@ final class AutomaticTrains {
     }
     private static TrackNetwork.Sample sample(ServerLevel level,VehiclePhysics.Unit u,int end){
         var current=u.samples[end];var p=VehiclePhysics.world(u.bogie,u.axle(end));
-        return current==null?TrackNetwork.nearest(level,p,heading(u),null,1):TrackNetwork.resample(level,current,p,heading(u),1);
+        return current==null?TrackNetwork.nearest(level,p,heading(u),null,1,u.mount.gauge):TrackNetwork.resample(level,current,p,heading(u),1);
     }
     private static Plan plan(ServerLevel level,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,ScheduleController c,Set<UUID> packageTargets){
         var instruction=c.instruction();if(instruction==null)return null;Plan best=null;
@@ -144,7 +144,7 @@ final class AutomaticTrains {
         for(int direction:new int[]{forward,-forward}){
             if(direction!=forward&&!stopped)continue;
             var basis=basis(c.owner,group,links,direction);if(basis==null)continue;var head=basis.head;var sample=sample(level,head,basis.end);if(sample==null)continue;
-            var network=new AutomaticNavigation(level,sample.path().graph());var travel=new Vector3d(sample.tangent()).mul(basis.signs.get(head.bogie.getUniqueId()));var start=network.direction(sample,travel);
+            var network=new AutomaticNavigation(level,sample.path().graph(),group.stream().map(u->u.mount.gauge).collect(java.util.stream.Collectors.toSet()));var travel=new Vector3d(sample.tangent()).mul(basis.signs.get(head.bogie.getUniqueId()));var start=network.direction(sample,travel);
             var goals=instruction instanceof com.simibubi.create.content.trains.schedule.destination.DestinationInstruction destination
                 ?network.goals(destination,c.waiting?c.station:null):network.goals(stop->packageTargets.contains(stop.id),c.waiting?c.station:null);
             var route=ScheduleRoute.find(network,start,network.offset(sample,start),goals,AutomaticDriveModel.STOP_TOLERANCE);
