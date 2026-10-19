@@ -1,6 +1,6 @@
-# Create: Guided Railways 0.1.52
+# Create: Guided Railways 0.1.53
 
-0.1.52 为铁路连接器的原生物品入口与 Automated Logistics 缓冲交接补上包裹地址校验，并清理断电后的残留配对与伸出头
+0.1.53 接入 Steam ’n’ Rails NeoForge 0.3.0-beta.2：轨距识别、道岔、止冲挡、窄轨/宽轨/单轨转向架与轨旁连挂设备。代码与自动检查已完成，游戏内兼容性仍待客户端验收
 
 全新实现的轨道导向物理火车原型，优先验证自由造车与驾驶手感
 
@@ -12,10 +12,18 @@
 
 ## 环境与边界
 
-Minecraft 1.21.1 / NeoForge 21.1.229 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
+Minecraft 1.21.1 / NeoForge 21.1.233 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
 只复用已有工程的构建环境，不包含旧轮轨物理、原生补丁或参考项目的实现代码
 直接读取机械动力原版轨道网络，不新增轨道、轨道碰撞体或 Create Train 实体
 原版直轨与贝塞尔弯轨用于导向；道岔已有前轴选路、后轴跟随的初步实现，现支持 A/D 岔路偏向与连挂编组路线共享，现已接入基础闭塞占用与自动驾驶信号停车，尚无跨维度或移动轨道支持
+
+## Steam ’n’ Rails 可选兼容
+
+锁定 `0.3.0-beta.2+neoforge-mc1.21.1`，不是对其他 Beta 的兼容承诺。安装后可在创造物品栏找到窄轨、宽轨和单轨物理转向架；普通款用于标准轨，单轨款仅用于单轨梁，通用轨可承载三种普通轮轨款式
+
+开发环境首次准备执行 `powershell -NoProfile -ExecutionPolicy Bypass -File verification/prepare_railways.ps1`，然后正常构建；发布包不包含 Steam ’n’ Rails。未安装时不加载对应适配器，保留原有标准轨功能
+
+完整实现范围、边界、逐项测试和检查命令见 [Steam ’n’ Rails 兼容说明](docs/STEAM_RAILS_COMPATIBILITY.md)。首版单轨仅支持梁上跨坐，不支持与 Create 原版 Train 混合连挂
 
 ## 使用
 

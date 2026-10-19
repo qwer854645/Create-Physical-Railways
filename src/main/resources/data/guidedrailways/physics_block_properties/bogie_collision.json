@@ -6,16 +6,52 @@
     "sable:restitution": 0
   },
   "overrides": {
-    "part=9": {
+    "gauge=0,part=9": {
       "sable:mass": 8
     },
-    "part=11": {
+    "gauge=0,part=11": {
       "sable:mass": 8
     },
-    "part=15": {
+    "gauge=0,part=15": {
       "sable:mass": 8
     },
-    "part=17": {
+    "gauge=0,part=17": {
+      "sable:mass": 8
+    },
+    "gauge=1,part=7": {
+      "sable:mass": 8
+    },
+    "gauge=1,part=9": {
+      "sable:mass": 8
+    },
+    "gauge=1,part=12": {
+      "sable:mass": 8
+    },
+    "gauge=1,part=15": {
+      "sable:mass": 8
+    },
+    "gauge=2,part=14": {
+      "sable:mass": 8
+    },
+    "gauge=2,part=16": {
+      "sable:mass": 8
+    },
+    "gauge=2,part=25": {
+      "sable:mass": 8
+    },
+    "gauge=2,part=27": {
+      "sable:mass": 8
+    },
+    "gauge=3,part=6": {
+      "sable:mass": 8
+    },
+    "gauge=3,part=8": {
+      "sable:mass": 8
+    },
+    "gauge=3,part=11": {
+      "sable:mass": 8
+    },
+    "gauge=3,part=14": {
       "sable:mass": 8
     }
   }

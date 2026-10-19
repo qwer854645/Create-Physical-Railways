@@ -54,15 +54,21 @@ def main():
     parser = argparse.ArgumentParser()
     for mod in ('hose', 'simulated', 'logistics'):
         parser.add_argument('--' + mod, required=True, type=Path)
+    parser.add_argument('--railways', type=Path)
     args = parser.parse_args()
     archives = {key: ZipFile(getattr(args, key)) for key in ('hose', 'simulated', 'logistics')}
+    if args.railways:
+        archives['railways'] = ZipFile(args.railways)
     root = Path(__file__).resolve().parents[1]
     source = root / 'src/main/java/com/guidedrailways/mixin'
     plugin = (source / 'CargoCompatPlugin.java').read_text('utf-8')
     count = 0
     def check(cls, expected):
         nonlocal count
-        mod = 'hose' if cls.startswith('com.mk2525.') else 'simulated' if cls.startswith('dev.simulated_team.') else 'logistics'
+        mod = 'railways' if cls.startswith('com.railwayteam.') else 'hose' if cls.startswith('com.mk2525.') else 'simulated' if cls.startswith('dev.simulated_team.') else 'logistics'
+        if mod not in archives:
+            print(f'Skipped {cls}: supply --{mod} to verify this optional adapter')
+            return
         actual = signatures(archives[mod].read(cls.replace('.', '/') + '.class'))
         missing = set(expected) - actual
         assert not missing, f'{cls}: missing {sorted(missing)}'

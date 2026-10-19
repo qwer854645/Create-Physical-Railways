@@ -15,7 +15,7 @@ public final class BogieItem extends Item {
     @Override public net.minecraft.world.InteractionResultHolder<ItemStack> use(net.minecraft.world.level.Level level,net.minecraft.world.entity.player.Player player,net.minecraft.world.InteractionHand hand){
         if(level.isClientSide)return net.minecraft.world.InteractionResultHolder.success(player.getItemInHand(hand));
         try{
-            VehiclePhysics.placeAimed((net.minecraft.server.level.ServerPlayer)player);
+            VehiclePhysics.placeAimed((net.minecraft.server.level.ServerPlayer)player,gauge);
             if(!player.getAbilities().instabuild)player.getItemInHand(hand).shrink(1);player.swing(hand,true);
             return net.minecraft.world.InteractionResultHolder.consume(player.getItemInHand(hand));
         }catch(IllegalArgumentException|IllegalStateException error){player.displayClientMessage(UserText.error(error),true);return net.minecraft.world.InteractionResultHolder.fail(player.getItemInHand(hand));}

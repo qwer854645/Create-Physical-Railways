@@ -285,9 +285,10 @@ public final class TrackNetwork {
             var prev=at(path,0,heading);
             for(int i=1;i<=n;i++){
                 var next=at(path,(double)i/n,heading);
-                for(double offset:new double[]{0,-.875,.875}){
-                    var prevTop=new Vector3d(prev.position).fma(BogieGeometry.RAIL_TOP,prev.up).fma(offset,new Vector3d(prev.tangent).cross(prev.up));
-                    var top=new Vector3d(next.position).fma(BogieGeometry.RAIL_TOP,next.up).fma(offset,new Vector3d(next.tangent).cross(next.up));
+                for(double offset:new double[]{0,-.875*gauge.widthScale(),.875*gauge.widthScale()}){
+                    double railTop=gauge==RailGauge.MONORAIL?1:BogieGeometry.RAIL_TOP;
+                    var prevTop=new Vector3d(prev.position).fma(railTop,prev.up).fma(offset,new Vector3d(prev.tangent).cross(prev.up));
+                    var top=new Vector3d(next.position).fma(railTop,next.up).fma(offset,new Vector3d(next.tangent).cross(next.up));
                     var hit=RailPlacement.raySegment(a,b,prevTop,top);double tolerance=offset==0?.55:.30;
                     double rank=hit.distanceSquared()+hit.rayFraction()*1e-5;
                     if(hit.distanceSquared()<=tolerance*tolerance&&rank<score){

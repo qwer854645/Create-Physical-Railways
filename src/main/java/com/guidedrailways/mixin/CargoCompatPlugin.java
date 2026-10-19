@@ -24,7 +24,7 @@ public final class CargoCompatPlugin implements IMixinConfigPlugin {
             if(methods.containsAll(expected))return true;
             org.slf4j.LoggerFactory.getLogger("guidedrailways").warn("Cargo compatibility hook disabled: {} has an unsupported API",target);
         }catch(ClassNotFoundException|java.io.IOException ignored){}
-        com.guidedrailways.CargoHookStatus.disable(target.startsWith("com.mk2525.")?"hose":target.startsWith("dev.simulated_team.")?"dock":"logistics");
+        com.guidedrailways.CargoHookStatus.disable(target.startsWith("com.railwayteam.")?"railways":target.startsWith("com.mk2525.")?"hose":target.startsWith("dev.simulated_team.")?"dock":"logistics");
         return false;
     }
     @Override public void onLoad(String p){}

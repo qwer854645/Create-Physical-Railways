@@ -361,14 +361,17 @@ public final class VehiclePhysics {
         if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("message.guidedrailways.placement.no_physics");
         var carrierBody=SableCompanion.INSTANCE.getContaining(level,context.getClickedPos());
         if(carrierBody instanceof ServerSubLevel carrier){installBelow(level,context,carrier);return;}
-        placeAimed(player);
+        placeAimed(player,context.getItemInHand().getItem() instanceof BogieItem item?item.gauge:RailGauge.STANDARD);
     }
     /** Shared by block-use and air-use: the server picks the visible rail, including Bezier spans. */
     static void placeAimed(net.minecraft.server.level.ServerPlayer player){
+        placeAimed(player,BogieItem.held(player));
+    }
+    static void placeAimed(net.minecraft.server.level.ServerPlayer player,RailGauge gauge){
         var level=player.serverLevel();
         if(!player.mayBuild())throw new IllegalArgumentException("message.guidedrailways.placement.denied");
         if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("message.guidedrailways.placement.no_physics");
-        var gauge=BogieItem.held(player);var sample=TrackNetwork.pick(player,gauge);
+        var sample=TrackNetwork.pick(player,gauge);
         if(sample==null)throw new IllegalArgumentException("message.guidedrailways.rail.aim");
         var pos=BlockPos.containing(sample.position().x,sample.position().y,sample.position().z);
         if(!level.mayInteract(player,pos))throw new IllegalArgumentException("message.guidedrailways.placement.track_denied");
@@ -391,7 +394,7 @@ public final class VehiclePhysics {
         var pos=context.getClickedPos().below();if(!level.getBlockState(pos).canBeReplaced())throw new IllegalArgumentException("message.guidedrailways.placement.no_space");
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();var rotation=new Quaterniond(pipe.readPose(carrier,new Pose3d()).orientation());
         var pivot=world(carrier,new Vector3d(pos.getX()+.5,pos.getY()+PLATE_BOTTOM,pos.getZ()+.5));
-        var gauge=BogieItem.held(context.getPlayer());
+        var gauge=context.getItemInHand().getItem() instanceof BogieItem item?item.gauge:RailGauge.STANDARD;
         var origin=new Vector3d(pivot).sub(new Vector3d(0,BogieGeometry.pivotHeight(BogieGeometry.MOUNT_HEIGHT_VERSION,gauge),0).rotate(rotation));
         checkPlacementSpace(level,origin,List.of());var bogie=createBody(level,Content.BOGIE.get().defaultBlockState().setValue(BogieBlock.GAUGE,gauge.ordinal()),origin,rotation);
         var tag=bogie.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();tag.putBoolean("GuidedDerailed",true);bogie.setUserDataTag(tag);

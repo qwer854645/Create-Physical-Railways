@@ -2,7 +2,14 @@ package com.guidedrailways;
 public final class RailwaysCheck {
     private static int checks;
     private static void check(boolean value,String why){checks++;if(!value)throw new AssertionError(why);}
-    public static void main(String[] args){
+    public static void main(String[] args)throws Exception{
+        if(args.length>0&&args[0].equals("ballast")){
+            for(var gauge:RailGauge.values()){
+                var cells=BogieCollision.cells(gauge);int width=cells.stream().mapToInt(c->Math.abs(c.x())).max().orElse(1);
+                for(var c:cells)if(c.y()==0&&Math.abs(c.x())==width&&Math.abs(c.z())==1)System.out.println("gauge="+gauge.ordinal()+",part="+c.part());
+            }
+            return;
+        }
         for(var gauge:RailGauge.values()){
             check(RailGauge.read(gauge.name())==gauge,"profile round trip");
             check(gauge.accepts("railways:universal")== (gauge!=RailGauge.MONORAIL),"universal rail does not turn into a monorail beam");
@@ -57,6 +64,15 @@ public final class RailwaysCheck {
         check(RailCouplerMode.choose(false,false,true,false,true,true)==0,"missing or occupied sockets cannot be joined");
         check(RailCouplerMode.choose(true,true,true,true,true,false)==0,"coupling-only setting never uncouples");
         check(RailCouplerMode.choose(false,false,true,true,false,true)==0,"uncoupling-only setting never couples");
+        var mass=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/data/guidedrailways/physics_block_properties/bogie_collision.json"))).getAsJsonObject().getAsJsonObject("overrides");
+        for(var gauge:RailGauge.values()){
+            var cells=BogieCollision.cells(gauge);int outer=cells.stream().mapToInt(c->Math.abs(c.x())).max().orElse(1);int count=0;
+            for(var c:cells)if(c.y()==0&&Math.abs(c.x())==outer&&Math.abs(c.z())==1){
+                String massKey="gauge="+gauge.ordinal()+",part="+c.part();check(mass.has(massKey)&&mass.getAsJsonObject(massKey).get("sable:mass").getAsDouble()==8,"ballast remains symmetric at the four outer corners for every geometry profile");count++;
+            }
+            check(count==4,"every bogie retains four equal ballast cells");
+        }
+        CargoHookStatus.disable("railways");check(CargoHookStatus.ready("logistics")&&CargoHookStatus.ready("dock"),"an absent railways adapter cannot disable unrelated cargo compatibility");
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }
