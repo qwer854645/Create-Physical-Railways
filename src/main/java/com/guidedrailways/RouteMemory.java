@@ -20,14 +20,29 @@ public final class RouteMemory {
     }
     public void clearRepeat(Axle axle){repeat.remove(axle);}
     public int choose(Axle axle,Junction node,int from,int[] exits,int proposed){
+        return select(axle,node,from,exits,proposed,true,false);
+    }
+    public int preview(Axle axle,Junction node,int from,int[] exits,int proposed,boolean planned){
+        return select(axle,node,from,exits,proposed,false,planned);
+    }
+    public int commit(Axle axle,Junction node,int from,int[] exits,int proposed,boolean planned){
+        return select(axle,node,from,exits,proposed,true,planned);
+    }
+    private int select(Axle axle,Junction node,int from,int[] exits,int proposed,boolean commit,boolean planned){
         if(!members.contains(axle))throw new IllegalArgumentException("unknown axle");
         var last=repeat.get(axle);
         if(last!=null&&last.node.equals(node)&&last.from==from)return contains(exits,last.to)?last.to:-1;
         Passage choice=null;boolean forward=true;
         for(var p:history)if(p.node.equals(node)&&p.from==from&&!p.after.getOrDefault(axle,true)){choice=p;break;}
         if(choice==null)for(int i=history.size()-1;i>=0;i--){var p=history.get(i);if(p.node.equals(node)&&p.to==from&&p.after.getOrDefault(axle,false)){choice=p;forward=false;break;}}
-        if(choice!=null){int out=forward?choice.to:choice.from;if(!contains(exits,out))return -1;choice.after.put(axle,forward);if(!forward&&choice.after.values().stream().noneMatch(Boolean::booleanValue))history.remove(choice);repeat.put(axle,new Repeat(node,from,out));return out;}
+        // A fully cleared historical passage is not an active train-spanning lock.
+        // Automatic navigation may make a new trip instead of retracing that old visit.
+        if(choice!=null&&!forward&&choice.complete()&&planned&&proposed!=choice.from)choice=null;
+        if(choice!=null){int out=forward?choice.to:choice.from;if(!contains(exits,out))return -1;
+            if(commit){choice.after.put(axle,forward);if(!forward&&choice.after.values().stream().noneMatch(Boolean::booleanValue))history.remove(choice);repeat.put(axle,new Repeat(node,from,out));}
+            return out;}
         if(!contains(exits,proposed))return -1;
+        if(!commit)return history.size()<4096||history.stream().anyMatch(Passage::complete)?proposed:-1;
         if(history.size()>=512){for(var it=history.iterator();it.hasNext()&&history.size()>=512;)if(it.next().complete())it.remove();}
         // Preserve incomplete passages rather than letting a long consist split between branches.
         if(history.size()>=4096)return -1;

@@ -20,12 +20,33 @@ final class ConsistRoutes {
         @Override public TrackNetwork.Sample leader(){return leading?null:context.head;}
         void followed(TrackNetwork.Sample sample){if(leading)context.head=sample;}
         @Override public BranchSelect.Steer steer(){return context.intent<0?BranchSelect.Steer.LEFT:context.intent>0?BranchSelect.Steer.RIGHT:BranchSelect.Steer.NONE;}
+        @Override public boolean blocked(){return leading&&context.automatic!=null&&context.automatic.running&&(context.automatic.plan==null||context.automatic.routeRetry);}
         @Override public void observe(Vector3dc position){var p=context.anchors.get(axle);if(p!=null&&p.distanceSquared(position)>1.44){context.memory.clearRepeat(axle);context.anchors.remove(axle);}}
         @Override public int choose(TrackNetwork.Path path,int node,int from,int[] exits,int proposed,Vector3d position){
-            if(leading&&context.automatic!=null&&context.automatic.running&&context.automatic.plan!=null)proposed=context.automatic.plan.choose(path,node,from,proposed);
-            int selected=context.memory.choose(axle,new RouteMemory.Junction(path.graph(),node),from,exits,proposed);context.anchors.put(axle,new Vector3d(position));
-            if(leading&&selected>=0&&selected!=proposed&&context.automatic!=null&&context.automatic.running){context.automatic.plan=null;context.automatic.nextPlan=0;context.automatic.state(ScheduleController.PLANNING);}
-            return selected;
+            boolean planned=leading&&context.automatic!=null&&context.automatic.running&&context.automatic.plan!=null;
+            if(blocked())return -1;
+            if(planned){
+                proposed=context.automatic.plan.choose(path,node,from);
+                final int expected=proposed;
+                if(expected<0||java.util.Arrays.stream(exits).noneMatch(exit->exit==expected)){
+                    context.automatic.routeRetry=true;
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[AutomaticJunctionRetry] console={} bogie={} node={} from={} planned={} exits={} target={}",context.automatic.owner.getBlockPos(),axle.bogie(),node,from,expected,java.util.Arrays.toString(exits),context.automatic.station);
+                    return -1;
+                }
+            }
+            return context.memory.preview(axle,new RouteMemory.Junction(path.graph(),node),from,exits,proposed,planned);
+        }
+        @Override public boolean commit(TrackNetwork.Path path,int node,int from,int[] exits,int selected,Vector3d position){
+            boolean planned=leading&&context.automatic!=null&&context.automatic.running&&context.automatic.plan!=null;
+            int committed=context.memory.commit(axle,new RouteMemory.Junction(path.graph(),node),from,exits,selected,planned);
+            if(committed!=selected)return false;
+            context.anchors.put(axle,new Vector3d(position));
+            if(planned){
+                int expected=context.automatic.plan.choose(path,node,from);
+                org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticJunction] console={} bogie={} axle={} node={} from={} planned={} selected={} target={}",context.automatic.owner.getBlockPos(),axle.bogie(),axle.end(),node,from,expected,selected,context.automatic.station);
+                if(expected!=selected)context.automatic.routeRetry=true;
+            }
+            return true;
         }
     }
     record Plan(VehiclePhysics.Unit unit,Cursor front,Cursor rear){Cursor axle(int i){return i==0?front:rear;}}

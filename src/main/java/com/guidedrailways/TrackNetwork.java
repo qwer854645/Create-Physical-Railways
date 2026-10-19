@@ -28,6 +28,8 @@ public final class TrackNetwork {
     }
     interface RoutePolicy {
         int choose(Path incoming,int node,int from,int[] exits,int proposed,Vector3d position);
+        boolean commit(Path incoming,int node,int from,int[] exits,int selected,Vector3d position);
+        boolean blocked();
         void observe(Vector3dc position);
         BranchSelect.Steer steer();
         Sample leader();
@@ -84,6 +86,13 @@ public final class TrackNetwork {
         if(PathGeometry.beyondEndpoint(t,p,query,original,.08))return null;
         return new Sample(path,t,p,x,up);
     }
+    /** Navigation observes the physics-owned edge; proximity must never select a neighbouring branch. */
+    static Sample resample(ServerLevel level,Sample current,Vector3dc point,Vector3dc heading,double radius){
+        if(current==null||!live(level,current.path))return null;
+        var sample=project(current.path,point,heading,current.t);
+        if(sample==null)sample=current; // Physics may not have published the node crossing yet.
+        return sample.position.distanceSquared(point)<=radius*radius&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z))?sample:null;
+    }
     public static Sample follow(ServerLevel level,Vector3dc point,Vector3dc heading,Sample previous,double radius){
         return follow(level,point,heading,previous,null,radius);
     }
@@ -109,6 +118,8 @@ public final class TrackNetwork {
                         &&sample.tangent.dot(heading)>.75&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return sample;
                 var branched=advance(level,idx,live,point,heading,previous,leader,radius,reverse,policy);
                 if(branched!=null)return branched;
+                if(policy!=null&&policy.blocked()&&previous.position.distanceSquared(point)<=radius*radius
+                    &&level.hasChunkAt(BlockPos.containing(previous.position.x,previous.position.y,previous.position.z)))return previous;
                 // A locked passage must never be bypassed by nearest-edge recovery.
                 if(policy!=null)return sample!=null&&sample.position.distanceSquared(point)<=radius*radius&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z))?sample:null;
             }
@@ -154,6 +165,10 @@ public final class TrackNetwork {
         var sample=project(chosen.path,point,heading,hint);
         if(sample==null||sample.position.distanceSquared(point)>radius*radius)return null;
         if(!level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return null;
+        if(policy!=null&&live.network.getConnectionsFrom(exit).size()>2){
+            int[] ids=options.stream().mapToInt(c->c.node.getNetId()).toArray();
+            if(!policy.commit(live,exitId,enterId,ids,chosen.node.getNetId(),live.at(endT)))return null;
+        }
         return sample;
     }
     private record Branch(TrackNode node,TrackEdge edge,Path path){}

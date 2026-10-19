@@ -171,7 +171,7 @@ public final class VehiclePhysics {
                 double force;
                 if(u.automatic!=null){
                     var control=u.automatic;double ceiling=control.sign()*control.ceiling();
-                    boolean hold=control.hold()||control.owner().isRemoved()||u.mount.braking;
+                    boolean hold=control.hold()||control.owner().isRemoved()||u.mount.braking||control.navigation()!=null&&control.navigation().routeRetry;
                     if(control.navigation()==null){
                         ceiling=Math.copySign(control.owner().manualCeiling(control.notch(),Math.abs(ceiling)),ceiling);
                         force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);

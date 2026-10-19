@@ -24,6 +24,24 @@ public final class ConsistRouteCheck {
         split.clearRepeat(c);check(split.choose(c,node,10,new int[]{20,30},30)==30,"uncoupled component can create an independent next passage");
         loop.clearRepeat(a);check(loop.choose(a,node,10,new int[]{20,30},20)==20,"other component retains independent history after split");
         var otherGraph=new RouteMemory.Junction(UUID.randomUUID(),100);journal.clearRepeat(a);check(journal.choose(a,otherGraph,10,new int[]{20,30},30)==30,"same numeric node in another graph is independent");
+        var speculative=new RouteMemory(ids);
+        check(speculative.preview(a,node,10,new int[]{20,30},20,true)==20,"preview a candidate before checking its physical projection");
+        check(speculative.preview(a,node,10,new int[]{20,30},30,true)==30,"a rejected projection cannot lock the first speculative branch");
+        check(speculative.commit(a,node,10,new int[]{20,30},30,true)==30,"only an accepted crossing commits the chosen branch");
+        for(var follower:List.of(b,c,d)){
+            check(speculative.preview(follower,node,10,new int[]{20,30},20,false)==30,"followers preview the head's accepted passage");
+            check(speculative.commit(follower,node,10,new int[]{20,30},30,false)==30,"all coupled axles commit the same passage");
+        }
+        for(var axle:ids)speculative.clearRepeat(axle);
+        check(speculative.preview(a,node,30,new int[]{10,40},40,true)==40,"automatic trip may leave a fully cleared junction by a new scheduled exit");
+        check(speculative.commit(a,node,30,new int[]{10,40},40,true)==40,"the new trip is committed separately from historical reverse retracing");
+        for(var follower:List.of(b,c,d))check(speculative.choose(follower,node,30,new int[]{10,40},10)==40,"trailers follow the new trip rather than a completed older passage");
+        var straddled=new RouteMemory(ids);straddled.choose(a,node,10,new int[]{20,30},30);straddled.clearRepeat(a);
+        check(straddled.preview(a,node,30,new int[]{10,40},40,true)==10,"a consist still spanning the junction must retrace its active passage");
+        var rejectedReverse=new RouteMemory(ids);for(var axle:ids)rejectedReverse.choose(axle,node,10,new int[]{20,30},30);
+        for(var axle:ids)rejectedReverse.clearRepeat(axle);
+        check(rejectedReverse.preview(d,node,30,new int[]{10,40},40,false)==10,"manual reverse preview retains retracing behaviour");
+        check(rejectedReverse.preview(d,node,10,new int[]{20,30},20,false)==20,"rejecting a reverse projection must not mark that axle as having reversed");
         var forward=new Vector3d(0,0,1);var up=new Vector3d(0,1,0);
         for(double yaw:new double[]{0,.3,1.4,3.1})for(int sign:new int[]{-1,1}){
             var f=new Vector3d(forward).rotateY(yaw).mul(sign);var right=new Vector3d(f).cross(up);

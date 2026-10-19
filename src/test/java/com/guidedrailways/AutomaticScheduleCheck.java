@@ -33,6 +33,12 @@ public final class AutomaticScheduleCheck {
         check(Math.abs(docked.remaining(loop,0,3.08)+.08)<1e-9,"arrival tolerance preserves the measured signed stop error");
         check(back.next(3,1,2)==2,"loop route preserves repeated-edge transitions");
         check(ScheduleRoute.find(loop,e(1,2),Double.NaN,List.of(goal(1,2,3)))==null,"invalid location is rejected");
+        var progressRoute=new ScheduleRoute.Route(List.of(e(1,2),e(2,3),e(3,4),e(4,5),e(5,6)),goal(5,6,1),5);
+        check(progressRoute.progress(e(4,5),0)==3,"several short graph edges may be crossed between navigation ticks");
+        check(progressRoute.progress(e(3,4),3)==2,"a one-edge publication delay remains on the same planned route");
+        check(progressRoute.progress(e(2,9),1)==-1,"an adjacent wrong branch is never accepted as navigation progress");
+        check(progressRoute.progress(e(5,4),3)==-1,"opposite travel direction is not silently accepted");
+        check(progressRoute.next(1,2,0)==3&&progressRoute.next(2,9,0)==-1,"junction lookup returns only the planned exit");
         var a=new UUID(0,1);var b=new UUID(0,2);var middle=new UUID(0,3);
         for(int direction:new int[]{-1,1})for(int outA:new int[]{-1,1})for(int outB:new int[]{-1,1}){
             var signs=ConsistDirection.orient(a,direction,List.of(new ConsistDirection.Link(a,b,outA,outB)));

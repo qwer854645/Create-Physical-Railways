@@ -6,6 +6,15 @@ public final class ScheduleRoute {
     public interface Network {double length(Edge edge);List<Edge> exits(Edge edge);}
     public record Goal(UUID id,String name,Edge edge,double offset){}
     public record Route(List<Edge> edges,Goal goal,double distance){
+        /** Physics may cross several short edges between two server ticks. */
+        public int progress(Edge observed,int current){
+            if(edges.isEmpty())return -1;
+            int at=Math.clamp(current,0,edges.size()-1);
+            if(edges.get(at).equals(observed))return at;
+            if(at>0&&edges.get(at-1).equals(observed))return at-1;
+            for(int i=at+1;i<edges.size();i++)if(edges.get(i).equals(observed))return i;
+            return -1;
+        }
         public int next(int from,int via,int start){
             for(int i=Math.max(0,start-1);i+1<edges.size();i++)if(edges.get(i).equals(new Edge(from,via)))return edges.get(i+1).to;
             return -1;

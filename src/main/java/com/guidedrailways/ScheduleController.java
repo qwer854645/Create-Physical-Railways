@@ -17,6 +17,7 @@ final class ScheduleController {
     final DriverConsoleEntity owner;ItemStack item=ItemStack.EMPTY;Schedule program;
     boolean running,manualOverride,waiting,releaseBrakes;long nextPlan,nextVisual;boolean visualDirty;int entry,status,stableTicks;UUID station;
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
+    volatile boolean routeRetry;
     boolean resumePending;private ScheduleReloadGate reloadGate;
     double remaining=Double.NaN;long nextMail;int mailState=WAITING,conditionState=WAITING;boolean mailMonitored;
     double throttle=1;String currentTitle="";
@@ -118,12 +119,12 @@ final class ScheduleController {
         if(owner.emergency){hint(player,"emergency");return false;}
         if(DriverControls.body(owner)==null){hint(player,"install_body");return false;}
         if(entry>=p.entries.size()){entry=0;waiting=false;station=null;resetConditions();resetSettings();}
-        owner.leave();owner.enabled=false;running=true;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;cargoBodies=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
+        owner.leave();owner.enabled=false;running=true;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;cargoBodies=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
     }
     void manual(DriverConsoleEntity source){
-        running=false;resumePending=false;reloadGate=null;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
+        running=false;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
     }
-    void pause(int reason){running=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
+    void pause(int reason){running=false;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
     boolean restore(ServerLevel level,Set<UUID> actual){
         if(!resumePending)return true;
         var readiness=reloadGate.tick(actual,level.getGameTime());
@@ -166,7 +167,7 @@ final class ScheduleController {
     private static boolean travelInstruction(ScheduleInstruction instruction){return instruction!=null&&(instruction.getClass()==DestinationInstruction.class||instruction.getClass()==FetchPackagesInstruction.class||instruction.getClass()==DeliverPackagesInstruction.class);}
     ScheduleInstruction instruction(){var p=program();return p!=null&&entry>=0&&entry<p.entries.size()&&travelInstruction(p.entries.get(entry).instruction)?p.entries.get(entry).instruction:null;}
     boolean packageInstruction(){return instruction() instanceof FetchPackagesInstruction||instruction() instanceof DeliverPackagesInstruction;}
-    void resetConditions(){progress.clear();contexts.clear();nextMail=0;mailState=WAITING;mailMonitored=false;}
+    void resetConditions(){progress.clear();contexts.clear();nextMail=0;mailState=WAITING;mailMonitored=false;routeRetry=false;}
     boolean exchangeMail(ServerLevel level){
         if(level.getGameTime()>=nextMail){nextMail=level.getGameTime()+20;mailState=PackageMail.exchange(level,this);}
         if(mailState!=WAITING){state(mailState);return false;}

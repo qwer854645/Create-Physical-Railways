@@ -13,9 +13,8 @@ final class AutomaticTrains {
         final AutomaticNavigation network;final ScheduleRoute.Route route;final VehiclePhysics.Unit head;final int end;
         final Map<UUID,Integer> signs;final int direction;int leg;long nextLoaded;boolean loaded;
         Plan(AutomaticNavigation n,ScheduleRoute.Route r,VehiclePhysics.Unit h,int end,Map<UUID,Integer> signs,int direction){network=n;route=r;head=h;this.end=end;this.signs=signs;this.direction=direction;}
-        int choose(TrackNetwork.Path path,int node,int from,int fallback){
-            if(!path.graph().equals(network.graph))return fallback;
-            int result=route.next(from,node,leg);return result<0?fallback:result;
+        int choose(TrackNetwork.Path path,int node,int from){
+            return path.graph().equals(network.graph)?route.next(from,node,leg):-1;
         }
     }
     record Basis(Map<UUID,Integer> signs,VehiclePhysics.Unit head,int end){}
@@ -93,7 +92,7 @@ final class AutomaticTrains {
         return Math.clamp(supportedMass/Math.max(.001,total),.001,1);
     }
     private static double maximumSpeed(List<VehiclePhysics.Unit> group){double speed=0;for(var u:group)speed=Math.max(speed,SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline().getLinearVelocity(u.bogie,new Vector3d()).length());return speed;}
-    private static void hold(List<VehiclePhysics.Unit> group,ScheduleController c,boolean emergency){c.visual(-4,c.owner.direction);for(var u:group)u.automatic=new Control(c.owner,null,1,0,-4,emergency,true);}
+    private static void hold(List<VehiclePhysics.Unit> group,ScheduleController c,boolean emergency){c.visual(-4,c.owner.direction);for(var u:group)u.automatic=new Control(c.owner,c.running?c:null,1,0,-4,emergency,true);}
     private static void bind(List<VehiclePhysics.Unit> group,DriverConsoleEntity owner,ScheduleController navigation,Map<UUID,Integer> signs,double cap,int notch,boolean emergency,boolean hold){if(navigation!=null)navigation.visual(notch,navigation.plan.direction);for(var u:group)u.automatic=new Control(owner,navigation,signs.getOrDefault(u.bogie.getUniqueId(),1),cap,notch,emergency,hold);}
     static Basis basis(DriverConsoleEntity console,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,int direction){
         var root=DriverControls.body(console);if(root==null)return null;
@@ -135,7 +134,8 @@ final class AutomaticTrains {
         if(head==null)return null;return new Basis(signs,head,signs.get(head.bogie.getUniqueId())>0?0:1);
     }
     private static TrackNetwork.Sample sample(ServerLevel level,VehiclePhysics.Unit u,int end){
-        var current=u.samples[end];var p=VehiclePhysics.world(u.bogie,u.axle(end));return TrackNetwork.nearest(level,p,heading(u),current==null?null:current.path(),1);
+        var current=u.samples[end];var p=VehiclePhysics.world(u.bogie,u.axle(end));
+        return current==null?TrackNetwork.nearest(level,p,heading(u),null,1):TrackNetwork.resample(level,current,p,heading(u),1);
     }
     private static Plan plan(ServerLevel level,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,ScheduleController c,Set<UUID> packageTargets){
         var instruction=c.instruction();if(instruction==null)return null;Plan best=null;
@@ -153,6 +153,7 @@ final class AutomaticTrains {
         return best;
     }
     private static void drive(ServerLevel level,List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links,ScheduleController c,double cap){
+        if(c.routeRetry){c.routeRetry=false;c.plan=null;c.remaining=Double.NaN;c.nextPlan=0;c.state(ScheduleController.PLANNING);hold(group,c,false);return;}
         if(c.plan!=null&&!c.plan.network.live(c.plan.route)){c.plan=null;c.remaining=Double.NaN;c.waiting=false;c.station=null;c.resetConditions();c.nextPlan=0;}
         if(c.plan==null){
             if(level.getGameTime()<c.nextPlan){hold(group,c,false);return;}c.nextPlan=level.getGameTime()+10;
@@ -179,10 +180,12 @@ final class AutomaticTrains {
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticRoute] target={} distance={} edges={} leadingBogie={} end={}",c.plan.route.goal().name(),c.plan.route.distance(),c.plan.route.edges().size(),c.plan.head.bogie.getUniqueId(),c.plan.end);
         }
         var p=c.plan;var sample=sample(level,p.head,p.end);if(sample==null){c.pause(ScheduleController.TRACK_MISSING);hold(group,c,false);return;}
-        int found=-1;
-        for(int i=p.leg;i<=Math.min(p.leg+1,p.route.edges().size()-1);i++){var edge=p.route.edges().get(i);if(sameEdge(sample,edge)){found=i;break;}}
-        if(found<0&&p.leg>0&&sameEdge(sample,p.route.edges().get(p.leg-1)))found=p.leg-1;
-        if(found<0){c.pause(ScheduleController.NO_ROUTE);hold(group,c,false);return;}p.leg=found;
+        var observed=p.network.direction(sample,new Vector3d(sample.tangent()).mul(p.signs.get(p.head.bogie.getUniqueId())));
+        int found=p.route.progress(observed,p.leg);
+        if(found<0){
+            org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[AutomaticRouteMismatch] console={} bogie={} observed={} leg={} expected={} target={}",c.owner.getBlockPos(),p.head.bogie.getUniqueId(),observed,p.leg,p.route.edges().get(p.leg),p.route.goal().id());
+            c.plan=null;c.nextPlan=0;c.state(ScheduleController.PLANNING);hold(group,c,false);return;
+        }p.leg=found;
         var edge=p.route.edges().get(p.leg);double offset=p.network.offset(sample,edge);double remaining=p.route.remaining(p.network,p.leg,offset);
         c.remaining=remaining;
         if(level.getGameTime()>=p.nextLoaded){p.loaded=p.network.loaded(p.route,p.leg,offset);p.nextLoaded=level.getGameTime()+10;}
@@ -208,5 +211,4 @@ final class AutomaticTrains {
         c.state(waitingSignal?ScheduleController.SIGNAL_WAIT:ScheduleController.TRAVELLING);bind(group,c.owner,c,p.signs,demand.ceiling(),demand.notch(),false,false);
         if(level.getGameTime()%20==0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[AutomaticDrive] target={} remaining={} speed={} ceiling={} notch={} bogies={} signalRoom={} nose={}",p.route.goal().name(),remaining,speed,demand.ceiling(),demand.notch(),group.size(),signalRoom,nose);
     }
-    private static boolean sameEdge(TrackNetwork.Sample s,ScheduleRoute.Edge e){return s.path().a()==e.from()&&s.path().b()==e.to()||s.path().b()==e.from()&&s.path().a()==e.to();}
 }
