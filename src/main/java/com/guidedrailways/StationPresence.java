@@ -28,7 +28,7 @@ public final class StationPresence {
             var sample=TrackNetwork.nearest(level,VehiclePhysics.world(head.bogie,head.axle(end)),heading,head.samples[end]==null?null:head.samples[end].path(),1,head.mount.gauge);if(sample==null)continue;
             var path=sample.path();boolean increasing=PathGeometry.tangent(path::at,sample.t()).dot(heading)*basis.signs().get(head.bogie.getUniqueId())>=0;
             int from=increasing?path.a():path.b(),to=increasing?path.b():path.a();var fromNode=path.network().getNode(from);var toNode=path.network().getNode(to);if(fromNode==null||toNode==null)continue;
-            var edge=path.network().getConnectionsFrom(fromNode).get(toNode);if(edge==null)continue;
+            var edge=TrackNetwork.connections(path.network(),fromNode).get(toNode);if(edge==null)continue;
             double speed=0;for(var u:group){speed=Math.max(speed,pipe.getLinearVelocity(u.bogie,new Vector3d()).length());speed=Math.max(speed,pipe.getLinearVelocity(u.carrier,new Vector3d()).length());}
             for(var station:path.network().getPoints(EdgePointType.STATION)){
                 if(station.edgeLocation==null||!station.edgeLocation.getFirst().equals(fromNode.getLocation())||!station.edgeLocation.getSecond().equals(toNode.getLocation())||!station.canApproachFrom(toNode)||!level.dimension().equals(station.getBlockEntityDimension()))continue;

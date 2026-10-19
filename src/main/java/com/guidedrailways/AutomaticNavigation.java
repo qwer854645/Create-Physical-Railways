@@ -26,8 +26,8 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
     }
     @Override public List<ScheduleRoute.Edge> exits(ScheduleRoute.Edge edge){
         var p=paths.get(edge);if(p==null)return List.of();var node=p.network().getNode(edge.to());var from=p.network().getNode(edge.from());if(node==null||from==null)return List.of();
-        var incoming=p.network().getConnectionsFrom(from).get(node);if(incoming==null)return List.of();var out=new ArrayList<ScheduleRoute.Edge>();
-        for(var entry:p.network().getConnectionsFrom(node).entrySet()){
+        var incoming=TrackNetwork.connections(p.network(),from).get(node);if(incoming==null)return List.of();var out=new ArrayList<ScheduleRoute.Edge>();
+        for(var entry:TrackNetwork.connections(p.network(),node).entrySet()){
             var next=new ScheduleRoute.Edge(edge.to(),entry.getKey().getNetId());
             if(next.to()!=edge.from()&&!entry.getValue().isInterDimensional()&&RailwaysCompat.geometry(incoming,entry.getValue())&&RailwaysCompat.navigable(entry.getValue())&&paths.containsKey(next))out.add(next);
         }
@@ -45,7 +45,7 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
             if(!matches.test(station)||preferred!=null&&!preferred.equals(station.id)||station.edgeLocation==null)continue;
             var from=network.locateNode(station.edgeLocation.getFirst());var to=network.locateNode(station.edgeLocation.getSecond());
             if(from==null||to==null||!station.canApproachFrom(to))continue;
-            var edge=new ScheduleRoute.Edge(from.getNetId(),to.getNetId());var real=network.getConnectionsFrom(from).get(to);
+            var edge=new ScheduleRoute.Edge(from.getNetId(),to.getNetId());var real=TrackNetwork.connections(network,from).get(to);
             if(!paths.containsKey(edge)||real==null)continue;
             out.add(new ScheduleRoute.Goal(station.id,station.name,edge,station.getLocationOn(real)));
         }
@@ -60,7 +60,7 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
         for(var edge:route.edges()){var p=paths.get(edge);if(p==null||!TrackNetwork.live(level,p))return false;}
         var p=paths.get(route.goal().edge());var station=p.network().getPoint(EdgePointType.STATION,route.goal().id());
         var from=p.network().getNode(route.goal().edge().from());var to=p.network().getNode(route.goal().edge().to());
-        var real=from==null||to==null?null:p.network().getConnectionsFrom(from).get(to);
+        var real=from==null||to==null?null:TrackNetwork.connections(p.network(),from).get(to);
         return station!=null&&RailwaysCompat.stationEnabled(station)&&real!=null&&station.edgeLocation!=null&&station.edgeLocation.getFirst().equals(from.getLocation())&&station.edgeLocation.getSecond().equals(to.getLocation())
             &&station.canApproachFrom(to)&&station.name.equals(route.goal().name())&&Math.abs(station.getLocationOn(real)-route.goal().offset())<1e-6;
     }

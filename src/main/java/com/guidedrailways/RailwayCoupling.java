@@ -16,7 +16,7 @@ public final class RailwayCoupling {
         if(point==null||point.edgeLocation==null)return null;
         for(var graph:Create.RAILWAYS.sided(level).trackNetworks.values())if(graph.getPoint(CREdgePointTypes.COUPLER,point.id)==point){
             var a=graph.locateNode(point.edgeLocation.getFirst());var b=graph.locateNode(point.edgeLocation.getSecond());if(a==null||b==null)return null;
-            var edge=graph.getConnectionsFrom(a).get(b);if(edge==null||edge.getLength()<=0)return null;
+            var edge=TrackNetwork.connections(graph,a).get(b);if(edge==null||edge.getLength()<=0)return null;
             var p=edge.getPosition(graph,Math.clamp(point.getLocationOn(edge)/edge.getLength(),0,1));return new Target(graph.id,a.getNetId(),b.getNetId(),new Vector3d(p.x,p.y,p.z));
         }
         return null;

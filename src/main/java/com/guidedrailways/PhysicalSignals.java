@@ -195,7 +195,8 @@ public final class PhysicalSignals {
     private static List<Boundary> ahead(AutomaticTrains.Plan plan,int leg,double offset){
         var out=new ArrayList<Boundary>();double distance=-offset;
         for(int i=leg;i<plan.route.edges().size();i++){
-            var e=plan.route.edges().get(i);var path=plan.network.paths.get(e);var from=path.network().getNode(e.from());var to=path.network().getNode(e.to());var edge=path.network().getConnectionsFrom(from).get(to);
+            var e=plan.route.edges().get(i);var path=plan.network.paths.get(e);var from=path.network().getNode(e.from());var to=path.network().getNode(e.to());var edge=TrackNetwork.connections(path.network(),from).get(to);
+            if(edge==null)break;
             double end=i==plan.route.edges().size()-1?plan.route.goal().offset():edge.getLength();
             for(var point:edge.getEdgeData().getPoints())if(point instanceof SignalBoundary signal){
                 double d=signal.getLocationOn(edge);if(d>end+1e-6||i==leg&&d<offset-1e-5)continue;

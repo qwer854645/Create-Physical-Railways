@@ -51,7 +51,7 @@ public final class TrackNetwork {
         var next=new HashMap<PathKey,Path>();boolean changed=false;
         for(var graph:Create.RAILWAYS.sided(level).trackNetworks.values())for(var loc:graph.getNodes()){
             if(!loc.dimension.equals(level.dimension()))continue;var node=graph.locateNode(loc);if(node==null)continue;
-            for(var entry:graph.getConnectionsFrom(node).entrySet()){
+            for(var entry:connections(graph,node).entrySet()){
                 var other=entry.getKey();var edge=entry.getValue();if(node.getNetId()>=other.getNetId()||edge.isInterDimensional())continue;
                 var key=new PathKey(graph.id,node.getNetId(),other.getNetId());var old=idx.paths.get(key);
                 if(old!=null&&old.network==graph&&old.edge==edge)next.put(key,old);
@@ -67,8 +67,17 @@ public final class TrackNetwork {
         }
         if(start!=0)PerfCounters.index(level,System.nanoTime()-start,true);
     }
-    static boolean live(ServerLevel level,Path path){var index=INDEX.get(level);return index!=null&&index.paths.get(key(path))==path;}
-    static Collection<Path> paths(ServerLevel level){var index=INDEX.get(level);return index==null?List.of():List.copyOf(index.paths.values());}
+    /** Create may remove a node or its adjacency map before our throttled index is rebuilt. */
+    static Map<TrackNode,TrackEdge> connections(TrackGraph graph,TrackNode node){
+        if(node==null)return Collections.emptyMap();var edges=graph.getConnectionsFrom(node);return edges==null?Collections.emptyMap():edges;
+    }
+    static boolean live(ServerLevel level,Path path){
+        var index=INDEX.get(level);
+        return path!=null&&index!=null&&index.paths.get(key(path))==path
+                &&Create.RAILWAYS.sided(level).trackNetworks.get(path.graph)==path.network
+                &&connections(path.network,path.network.getNode(path.a)).get(path.network.getNode(path.b))==path.edge;
+    }
+    static Collection<Path> paths(ServerLevel level){var index=INDEX.get(level);return index==null?List.of():index.paths.values().stream().filter(p->live(level,p)).toList();}
     private static Sample project(Path path,Vector3dc query,Vector3dc heading,Double hint){
         double seed=0,span;
         if(!path.edge.isTurn()){
@@ -115,7 +124,7 @@ public final class TrackNetwork {
         PerfCounters.query(level);
         var idx=INDEX.get(level);if(previous!=null&&idx!=null){
             var live=idx.paths.get(key(previous.path));
-            if(live!=null&&live.supports(policy==null?RailGauge.STANDARD:policy.gauge())){
+            if(live!=null&&live(level,live)&&live.supports(policy==null?RailGauge.STANDARD:policy.gauge())){
                 var sample=project(live,point,heading,previous.t);
                 if(sample!=null&&sample.t>.0001&&sample.t<.9999&&sample.position.distanceSquared(point)<.09
                         &&sample.tangent.dot(heading)>.75&&level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return sample;
@@ -139,14 +148,14 @@ public final class TrackNetwork {
         int exitId=alongIncreasing?live.b:live.a,enterId=alongIncreasing?live.a:live.b;
         var exit=live.network.getNode(exitId);var enter=live.network.getNode(enterId);
         if(exit==null||enter==null)return null;
-        var current=live.network.getConnectionsFrom(enter).get(exit);
+        var current=connections(live.network,enter).get(exit);
         if(current==null)return null;
         var options=new ArrayList<Branch>();
-        for(var entry:live.network.getConnectionsFrom(exit).entrySet()){
+        for(var entry:connections(live.network,exit).entrySet()){
             if(entry.getKey()==enter||entry.getValue().isInterDimensional())continue;
             if(!RailwaysCompat.geometry(current,entry.getValue()))continue;
             var path=idx.paths.get(key(live.graph,exit.getNetId(),entry.getKey().getNetId()));
-            if(path==null||!path.supports(policy==null?RailGauge.STANDARD:policy.gauge()))continue;
+            if(path==null||!live(level,path)||!path.supports(policy==null?RailGauge.STANDARD:policy.gauge()))continue;
             options.add(new Branch(entry.getKey(),entry.getValue(),path));
         }
         if(options.isEmpty())return null;
@@ -160,7 +169,7 @@ public final class TrackNetwork {
             if(!available.isEmpty()){var open=new Vector3dc[available.size()];for(int i=0;i<open.length;i++)open[i]=directions[available.get(i)];pick=available.get(BranchSelect.choose(incoming,previous.up,open,policy==null?BranchSelect.Steer.NONE:policy.steer()));}
         }
         Branch chosen=options.get(pick);
-        if(policy!=null&&live.network.getConnectionsFrom(exit).size()>2){
+        if(policy!=null&&connections(live.network,exit).size()>2){
             var target=policy.leader();
             if(target!=null&&!key(target.path).equals(key(live))){var followed=followLeader(options,target);if(followed!=null)chosen=followed;}
             int[] ids=options.stream().mapToInt(c->c.node.getNetId()).toArray();
@@ -174,7 +183,7 @@ public final class TrackNetwork {
         var sample=project(chosen.path,point,heading,hint);
         if(sample==null||sample.position.distanceSquared(point)>radius*radius)return null;
         if(!level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))return null;
-        if(policy!=null&&live.network.getConnectionsFrom(exit).size()>2){
+        if(policy!=null&&connections(live.network,exit).size()>2){
             int[] ids=options.stream().mapToInt(c->c.node.getNetId()).toArray();
             if(!policy.commit(live,exitId,enterId,ids,chosen.node.getNetId(),live.at(endT)))return null;
         }
@@ -183,10 +192,11 @@ public final class TrackNetwork {
     private record Branch(TrackNode node,TrackEdge edge,Path path){}
     /** Read ahead without committing route memory or moving a body. */
     static double switchDistance(ServerLevel level,Sample sample,Vector3dc heading,boolean reverse,RoutePolicy policy,double horizon,double clearance){
-        if(RailwaysCompat.bridge==null||sample==null)return Double.POSITIVE_INFINITY;
+        if(RailwaysCompat.bridge==null||sample==null||!live(level,sample.path))return Double.POSITIVE_INFINITY;
         Path path=sample.path;boolean inc=BranchSelect.exitsIncreasing(PathGeometry.tangent(path::at,sample.t),heading,reverse);
         double offset=sample.t*path.edge.getLength(),distance=(inc?1-sample.t:sample.t)*path.edge.getLength();var idx=INDEX.get(level);
         for(int depth=0;depth<128;depth++){
+            if(!live(level,path))return Double.POSITIVE_INFINITY;
             double start=distance-(inc?path.edge.getLength()-offset:offset),bufferDistance=Double.POSITIVE_INFINITY;
             for(double buffer:RailwaysCompat.buffers(path)){
                 double along=inc?buffer-offset:offset-buffer;
@@ -195,15 +205,15 @@ public final class TrackNetwork {
             if(Double.isFinite(bufferDistance))return bufferDistance;
             if(distance>horizon)return Double.POSITIVE_INFINITY;
             int node=inc?path.b:path.a,from=inc?path.a:path.b;
-            var exit=path.network.getNode(node);var enter=path.network.getNode(from);var incoming=path.network.getConnectionsFrom(enter).get(exit);
+            var exit=path.network.getNode(node);var enter=path.network.getNode(from);var incoming=connections(path.network,enter).get(exit);if(incoming==null)return Double.POSITIVE_INFINITY;
             var options=new ArrayList<Branch>();
-            for(var entry:path.network.getConnectionsFrom(exit).entrySet()){
+            for(var entry:connections(path.network,exit).entrySet()){
                 if(entry.getKey()==enter||entry.getValue().isInterDimensional()||!RailwaysCompat.geometry(incoming,entry.getValue()))continue;
-                var next=idx.paths.get(key(path.graph,node,entry.getKey().getNetId()));if(next!=null&&next.supports(policy.gauge()))options.add(new Branch(entry.getKey(),entry.getValue(),next));
+                var next=idx.paths.get(key(path.graph,node,entry.getKey().getNetId()));if(next!=null&&live(level,next)&&next.supports(policy.gauge()))options.add(new Branch(entry.getKey(),entry.getValue(),next));
             }
             if(options.isEmpty())return Double.POSITIVE_INFINITY;
             options.sort(Comparator.comparingInt(b->b.node.getNetId()));
-            if(options.size()>1||path.network.getConnectionsFrom(exit).size()>2){
+            if(options.size()>1||connections(path.network,exit).size()>2){
                 var available=options.stream().filter(b->RailwaysCompat.navigable(b.edge)).toList();int proposed=-1;
                 if(!available.isEmpty()){
                     var directions=new Vector3dc[available.size()];for(int i=0;i<directions.length;i++){var b=available.get(i);directions[i]=PathGeometry.tangent(b.path::at,b.path.a==node?0:1).mul(b.path.a==node?1:-1);}
@@ -242,7 +252,7 @@ public final class TrackNetwork {
             var frontier=frontiers.get(j);if(frontier.isEmpty())continue;
             var step=frontier.removeFirst();
             if(step.node.getNetId()==la||step.node.getNetId()==lb)return options.get(j);
-            for(var next:options.get(j).path.network.getConnectionsFrom(step.node).entrySet()){
+            for(var next:connections(options.get(j).path.network,step.node).entrySet()){
                 if(!visited.get(j).add(next.getValue())||!step.via.canTravelTo(next.getValue()))continue;
                 frontier.add(new Step(next.getKey(),next.getValue()));
             }
@@ -256,7 +266,7 @@ public final class TrackNetwork {
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         Path live=previous==null?null:idx.paths.get(key(previous));
         for(var p:candidates){
-            if(!p.supports(gauge))continue;
+            if(!live(level,p)||!p.supports(gauge))continue;
             if(live!=null&&!p.equals(live)&&!p.adjacent(live))continue;
             var sample=project(p,point,heading,null);if(sample==null)continue;double d=sample.position.distanceSquared(point);double align=sample.tangent.dot(heading);
             if(d>radius*radius||align<.5||!level.hasChunkAt(BlockPos.containing(sample.position.x,sample.position.y,sample.position.z)))continue;
@@ -280,7 +290,7 @@ public final class TrackNetwork {
         for(int i=0;i<=16;i++){var q=new Vector3d(a).lerp(b,i/16.0);candidates.addAll(idx.cells.getOrDefault(cell(q.x,q.z),Set.of()));}
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         for(var path:candidates){
-            if(!path.supports(gauge))continue;
+            if(!live(level,path)||!path.supports(gauge))continue;
             int n=Math.clamp((int)Math.ceil(path.edge.getLength()/.25),1,16384);
             var prev=at(path,0,heading);
             for(int i=1;i<=n;i++){
@@ -329,10 +339,10 @@ public final class TrackNetwork {
             var span=positive?spans.get(spans.size()-1):spans.get(0);boolean increasing=positive?span.increasing:!span.increasing;
             int exitId=increasing?span.path.b:span.path.a,entryId=increasing?span.path.a:span.path.b;
             var exit=span.path.network.getNode(exitId);var entry=span.path.network.getNode(entryId);if(exit==null||entry==null)return false;
-            var incoming=span.path.network.getConnectionsFrom(entry).get(exit);if(incoming==null)return false;
+            var incoming=connections(span.path.network,entry).get(exit);if(incoming==null)return false;
             var wanted=PathGeometry.tangent(span.path::at,increasing?1:0).mul(increasing?1:-1);
             Path best=null;double alignment=-2;int bestId=Integer.MAX_VALUE;var idx=INDEX.get(level);
-            for(var e:span.path.network.getConnectionsFrom(exit).entrySet()){
+            for(var e:connections(span.path.network,exit).entrySet()){
                 if(e.getKey()==entry||e.getValue().isInterDimensional()||!incoming.canTravelTo(e.getValue()))continue;
                 var p=idx.paths.get(key(span.path.graph,exitId,e.getKey().getNetId()));if(p==null||gauges.stream().anyMatch(g->!p.supports(g)))continue;
                 var dir=PathGeometry.tangent(p::at,p.a==exitId?0:1).mul(p.a==exitId?1:-1);double dot=dir.dot(wanted);

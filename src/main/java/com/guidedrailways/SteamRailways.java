@@ -17,7 +17,7 @@ final class SteamRailways implements RailwaysCompat.Bridge {
     private static ISwitchDisabledEdge flags(TrackEdge edge){return (ISwitchDisabledEdge)edge.getEdgeData();}
     @Override public boolean navigable(TrackEdge to){var f=flags(to);return f.isEnabled()||f.isAutomatic();}
     @Override public boolean pass(ServerLevel level,TrackNetwork.Path path,int node,int from,int to,UUID train,boolean committed){
-        var target=path.network().getConnectionsFrom(path.network().getNode(node)).get(path.network().getNode(to));
+        var target=TrackNetwork.connections(path.network(),path.network().getNode(node)).get(path.network().getNode(to));
         if(target==null)return false;var f=flags(target);
         var claims=reservations.computeIfAbsent(level,l->new SwitchReservations());var key=new SwitchReservations.Key(path.graph(),node);long now=level.getGameTime();
         if(claims.owns(key,train,from,to,now)&&committed)return true;
