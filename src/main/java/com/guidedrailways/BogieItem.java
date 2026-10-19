@@ -11,7 +11,7 @@ public final class BogieItem extends Item {
     BogieItem(Properties p){this(p,RailGauge.STANDARD);}
     BogieItem(Properties p,RailGauge gauge){super(p);this.gauge=gauge;}
     static RailGauge held(net.minecraft.world.entity.player.Player player){return player.getMainHandItem().getItem() instanceof BogieItem item?item.gauge:RailGauge.STANDARD;}
-    @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.bogie");}
+    @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.bogie");if(PhysicalBogeySelection.tooltip!=null)PhysicalBogeySelection.tooltip.accept(text);}
     @Override public net.minecraft.world.InteractionResultHolder<ItemStack> use(net.minecraft.world.level.Level level,net.minecraft.world.entity.player.Player player,net.minecraft.world.InteractionHand hand){
         if(level.isClientSide)return net.minecraft.world.InteractionResultHolder.success(player.getItemInHand(hand));
         try{

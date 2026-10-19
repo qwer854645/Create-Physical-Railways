@@ -1,4 +1,6 @@
-# Create: Guided Railways 0.1.56
+# Create: Guided Railways 0.1.57
+
+0.1.57 接入 Railway 原生转向架菜单，首批支持货运、客运、现代、Blomberg、Y25 五款普通轨距小型双轴款，按款式保存、渲染并生成对应碰撞。见 [转向架选择与验收](docs/RAILWAY_BOGEYS.md)
 
 0.1.56 校准 Railway 自动车钩闭锁间距，连挂钩头共用对接姿态；缓冲板按原模型生成碰撞并参与连接间距检查。详见 [车钩几何与验收](docs/COUPLER_MECHANISMS.md)
 

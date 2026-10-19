@@ -59,6 +59,30 @@ public final class BogieCollision {
         }
         return List.copyOf(result);
     }
+    private static final java.util.Map<BogeyVariant,List<Box>> NATIVE_BOXES=new java.util.EnumMap<>(BogeyVariant.class);
+    private static final java.util.Map<BogeyVariant,List<Cell>> NATIVE_CELLS=new java.util.EnumMap<>(BogeyVariant.class);
+    static {
+        try(var stream=BogieCollision.class.getResourceAsStream("/assets/guidedrailways/geometry/railway_bogeys.json")){
+            var data=com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(java.util.Objects.requireNonNull(stream),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            for(var variant:BogeyVariant.values())if(variant!=BogeyVariant.DEFAULT){
+                var boxes=new ArrayList<Box>();
+                for(var value:data.getAsJsonObject(variant.frame).getAsJsonArray("frameBoxes")){
+                    var b=value.getAsJsonArray();boxes.add(new Box(.5+b.get(0).getAsDouble(),BogieGeometry.RENDER_Y+b.get(1).getAsDouble(),.5+b.get(2).getAsDouble(),.5+b.get(3).getAsDouble(),BogieGeometry.RENDER_Y+b.get(4).getAsDouble(),.5+b.get(5).getAsDouble()));
+                }
+                double axleY=BogieGeometry.RENDER_Y+BogieGeometry.AXLE_RENDER_Y;
+                for(double z:new double[]{-1,1}){
+                    cylinder(boxes,-.75,.75,axleY,z,.176777);
+                    for(double side:new double[]{-1,1}){
+                        cylinder(boxes,side<0?-1.0625:.875,side<0?-.875:1.0625,axleY,z,.419347);
+                        cylinder(boxes,side<0?-.875:.75,side<0?-.75:.875,axleY,z,RIM_RADIUS);
+                    }
+                }
+                NATIVE_BOXES.put(variant,List.copyOf(boxes));NATIVE_CELLS.put(variant,partition(boxes));
+            }
+        }catch(Exception error){throw new ExceptionInInitializerError(error);}
+    }
+    public static List<Box> boxes(RailGauge gauge,BogeyVariant variant){return variant==BogeyVariant.DEFAULT?boxes(gauge):NATIVE_BOXES.get(variant);}
+    public static List<Cell> cells(RailGauge gauge,BogeyVariant variant){return variant==BogeyVariant.DEFAULT?cells(gauge):NATIVE_CELLS.get(variant);}
     public static List<Box> boxes(RailGauge gauge){return PROFILE_BOXES.get(gauge);}
     public static List<Cell> cells(RailGauge gauge){return PROFILE_CELLS.get(gauge);}
     private static List<Cell> partition(List<Box> boxes){

@@ -20,8 +20,8 @@ final class BogiePairContacts {
         var pipe=physics.getPipeline();var level=physics.getLevel();var live=STATES.computeIfAbsent(level,k->new HashMap<>());
         var bodies=new ArrayList<Body>();
         for(var u:units)if(!u.bogie.isRemoved()&&!u.mount.isRemoved()&&u.lastSeen+2>=level.getGameTime()){
-            var pose=pipe.readPose(u.bogie,new Pose3d());var anchor=new Vector3d(u.localCenter).add(BogiePairContact.offset(u.mount.gauge));
-            bodies.add(new Body(u,anchor,new BogiePairContact.Pose(VehiclePhysics.world(u.bogie,anchor),new Quaterniond(pose.orientation()),!u.detached,BogiePairContact.half(u.mount.gauge))));
+            var pose=pipe.readPose(u.bogie,new Pose3d());var anchor=new Vector3d(u.localCenter).add(BogiePairContact.offset(u.mount.gauge,BogieBlock.variant(level.getBlockState(u.bogie.getPlot().getCenterBlock()))));
+            bodies.add(new Body(u,anchor,new BogiePairContact.Pose(VehiclePhysics.world(u.bogie,anchor),new Quaterniond(pose.orientation()),!u.detached,BogiePairContact.half(u.mount.gauge,BogieBlock.variant(level.getBlockState(u.bogie.getPlot().getCenterBlock()))))));
         }
         bodies.sort(Comparator.comparing(b->b.unit.bogie.getUniqueId()));var seen=new HashSet<Pair>();
         for(int i=0;i<bodies.size();i++)for(int j=i+1;j<bodies.size();j++){
