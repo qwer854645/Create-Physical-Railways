@@ -53,7 +53,7 @@ public final class RailPlacement {
         var up=new Vector3d(a.up).add(b.up).normalize();var forward=new Vector3d(a.position).sub(b.position);
         var rotation=orientation(forward,up);up.set(0,1,0).rotate(rotation);
         var origin=new Vector3d(a.position).add(b.position).mul(.5).fma(ride,up);
-        return new Bogie(origin,rotation,new Vector3d(origin).fma(.375,up),centre+half,centre-half);
+        return new Bogie(origin,rotation,new Vector3d(origin).fma(BogieGeometry.PIVOT_HEIGHT,up),centre+half,centre-half);
     }
     /** Fit one rigid carrier to every mounting seat; invalid plans never mutate a body. */
     public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,double ride,double halfWheelbase){

@@ -362,3 +362,10 @@ tasks.register('checkPackageMail', JavaExec) {
     mainClass = 'com.guidedrailways.PackageMailCheck'
 }
 tasks.named('check') { dependsOn 'checkPackageMail' }
+
+tasks.register('checkPlatformHeight', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.PlatformHeightCheck'
+}
+tasks.named('check') { dependsOn 'checkPlatformHeight' }
