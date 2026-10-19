@@ -18,7 +18,9 @@ final class RailDockInteractions {
     private static final String SELECTED="guidedrailways:rail_dock_selection";
     static void register(){NeoForge.EVENT_BUS.addListener(EventPriority.HIGH,RailDockInteractions::click);}
     private static void click(PlayerInteractEvent.RightClickBlock event){
-        if(event.getHand()!=InteractionHand.MAIN_HAND||!event.getItemStack().isEmpty())return;
+        if(event.getHand()!=InteractionHand.MAIN_HAND)return;
+        boolean wrench=com.simibubi.create.AllItems.WRENCH.isIn(event.getItemStack());
+        if((!wrench&&!event.getItemStack().isEmpty())||(wrench&&event.getEntity().isShiftKeyDown()))return;
         var actor=event.getEntity();var world=event.getLevel();var clicked=event.getPos();
         var endpoint=endpoint(world,clicked);
         // Create opens the station screen locally, before the server can consume the click.
@@ -26,11 +28,11 @@ final class RailDockInteractions {
         // Vanilla still sends ServerboundUseItemOnPacket when this local event is canceled.
         if(world.isClientSide){
             if(endpoint!=null){
-                if(actor.isShiftKeyDown()&&actor.mayBuild()&&SableCompanion.INSTANCE.getContaining(world,endpoint.getBlockPos())==null)
+                if(wrench&&actor.mayBuild()&&SableCompanion.INSTANCE.getContaining(world,endpoint.getBlockPos())==null)
                     select(actor,world,endpoint.getBlockPos());
                 consume(event);return;
             }
-            if(world.getBlockEntity(clicked) instanceof StationBlockEntity&&actor.getPersistentData().contains(SELECTED)){
+            if(wrench&&world.getBlockEntity(clicked) instanceof StationBlockEntity&&actor.getPersistentData().contains(SELECTED)){
                 actor.getPersistentData().remove(SELECTED);consume(event);
             }
             return;
@@ -39,7 +41,7 @@ final class RailDockInteractions {
         var level=player.serverLevel();var pos=endpoint==null?clicked:endpoint.getBlockPos();
         var entity=endpoint==null?level.getBlockEntity(pos):endpoint;
         if(entity instanceof RailDockEntity dock){
-            if(player.isShiftKeyDown()){
+            if(wrench){
                 if(!player.mayBuild()||!level.mayInteract(player,pos))return;
                 if(SableCompanion.INSTANCE.getContaining(level,pos)!=null){hint(player,"world_only");}
                 else{
@@ -50,7 +52,7 @@ final class RailDockInteractions {
             }
             handled(event,player);return;
         }
-        if(!(entity instanceof StationBlockEntity station)||!player.getPersistentData().contains(SELECTED))return;
+        if(!wrench||!(entity instanceof StationBlockEntity station)||!player.getPersistentData().contains(SELECTED))return;
         var selection=player.getPersistentData().getCompound(SELECTED);player.getPersistentData().remove(SELECTED);
         var chosen=BlockPos.of(selection.getLong("Position"));
         if(!player.mayBuild()||!level.mayInteract(player,pos)||!selection.getString("Dimension").equals(level.dimension().location().toString())
