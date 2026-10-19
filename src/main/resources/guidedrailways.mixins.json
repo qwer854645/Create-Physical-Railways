@@ -29,6 +29,7 @@
   },
   "plugin": "com.guidedrailways.mixin.CargoCompatPlugin",
   "client": [
-    "RailwayBogeyMenuMixin"
+    "RailwayBogeyMenuMixin",
+    "RailwayBogeyIconMixin"
   ]
 }
