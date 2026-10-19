@@ -73,6 +73,17 @@ public final class RailwaysCheck {
             check(count==4,"every bogie retains four equal ballast cells");
         }
         CargoHookStatus.disable("railways");check(CargoHookStatus.ready("logistics")&&CargoHookStatus.ready("dock"),"an absent railways adapter cannot disable unrelated cargo compatibility");
+        check(RailGauge.forTrack("create:standard")==RailGauge.STANDARD,"unified standard item resolves ordinary rails");
+        check(RailGauge.forTrack("railways:narrow_gauge")==RailGauge.NARROW,"unified standard item resolves narrow rails");
+        check(RailGauge.forTrack("railways:wide_gauge")==RailGauge.WIDE,"unified standard item resolves wide rails");
+        check(RailGauge.forTrack("railways:monorail")==RailGauge.MONORAIL,"unified standard item resolves monorail beams");
+        check(RailGauge.forTrack("railways:universal")==RailGauge.STANDARD,"universal rails choose one deterministic default geometry");
+        check(RailGauge.forTrack("other:unknown")==null,"unknown rails cannot silently acquire an incompatible bogey");
+        for(String legacy:java.util.List.of("narrow_bogie","wide_bogie","monorail_bogie")){
+            var recipe=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/data/guidedrailways/recipe/"+legacy+".json"))).getAsJsonObject();
+            check(recipe.getAsJsonArray("ingredients").size()==1&&recipe.getAsJsonArray("ingredients").get(0).getAsJsonObject().get("item").getAsString().equals("guidedrailways:"+legacy),"legacy conversion consumes exactly one old bogey, without new material cost");
+            check(recipe.getAsJsonObject("result").get("id").getAsString().equals("guidedrailways:bogie")&&recipe.getAsJsonObject("result").get("count").getAsInt()==1,"all legacy recipes return the same unified item without duplication");
+        }
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }

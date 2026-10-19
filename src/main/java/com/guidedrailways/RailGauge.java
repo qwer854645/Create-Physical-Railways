@@ -14,4 +14,6 @@ public enum RailGauge {
         };
     }
     public static RailGauge read(String value){try{return valueOf(value);}catch(IllegalArgumentException ignored){return STANDARD;}}
+    /** Universal track chooses the standard profile; unknown track types remain unplaceable. */
+    public static RailGauge forTrack(String type){for(var gauge:values())if(gauge.accepts(type))return gauge;return null;}
 }

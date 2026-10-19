@@ -354,26 +354,25 @@ public final class VehiclePhysics {
             if(u.carrier.getMassTracker().getMass()<=.001){if(!u.carrier.isRemoved())container.removeSubLevel(u.carrier,SubLevelRemovalReason.REMOVED);}
             else if(!u.carrier.isRemoved())SubLevelPhysicsSystem.get(level).getPipeline().onStatsChanged(u.carrier);
         }
-        if(!player.getAbilities().instabuild){var stack=Content.bogieItem(u.mount.gauge);if(!player.getInventory().add(stack))player.drop(stack,false);}
+        if(!player.getAbilities().instabuild){var stack=Content.bogieItem();if(!player.getInventory().add(stack))player.drop(stack,false);}
     }
     static void place(ServerLevel level,UseOnContext context){
         var player=(net.minecraft.server.level.ServerPlayer)context.getPlayer();
         if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("message.guidedrailways.placement.no_physics");
         var carrierBody=SableCompanion.INSTANCE.getContaining(level,context.getClickedPos());
         if(carrierBody instanceof ServerSubLevel carrier){installBelow(level,context,carrier);return;}
-        placeAimed(player,context.getItemInHand().getItem() instanceof BogieItem item?item.gauge:RailGauge.STANDARD);
+        placeAimed(player);
     }
     /** Shared by block-use and air-use: the server picks the visible rail, including Bezier spans. */
     static void placeAimed(net.minecraft.server.level.ServerPlayer player){
-        placeAimed(player,BogieItem.held(player));
-    }
-    static void placeAimed(net.minecraft.server.level.ServerPlayer player,RailGauge gauge){
         var level=player.serverLevel();
         if(!player.mayBuild())throw new IllegalArgumentException("message.guidedrailways.placement.denied");
         if(SubLevelPhysicsSystem.get(level)==null)throw new IllegalStateException("message.guidedrailways.placement.no_physics");
-        var selection=PhysicalBogeySelection.selected(player,gauge);
-        var sample=TrackNetwork.pick(player,gauge);
+        var selection=PhysicalBogeySelection.selected(player);
+        var sample=TrackNetwork.pick(player,null);
         if(sample==null)throw new IllegalArgumentException("message.guidedrailways.rail.aim");
+        if(selection.gauge()!=null&&!sample.path().supports(selection.gauge()))throw new IllegalArgumentException("message.guidedrailways.bogey.gauge");
+        var gauge=selection.gauge()==null?RailGauge.forTrack(sample.path().edge().getTrackMaterial().trackType.id.toString()):selection.gauge();
         var pos=BlockPos.containing(sample.position().x,sample.position().y,sample.position().z);
         if(!level.mayInteract(player,pos))throw new IllegalArgumentException("message.guidedrailways.placement.track_denied");
         var route=TrackNetwork.placementRoute(level,sample,4,Set.of(gauge));
@@ -396,8 +395,8 @@ public final class VehiclePhysics {
         var pos=context.getClickedPos().below();if(!level.getBlockState(pos).canBeReplaced())throw new IllegalArgumentException("message.guidedrailways.placement.no_space");
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();var rotation=new Quaterniond(pipe.readPose(carrier,new Pose3d()).orientation());
         var pivot=world(carrier,new Vector3d(pos.getX()+.5,pos.getY()+PLATE_BOTTOM,pos.getZ()+.5));
-        var gauge=context.getItemInHand().getItem() instanceof BogieItem item?item.gauge:RailGauge.STANDARD;
-        var selection=PhysicalBogeySelection.selected((net.minecraft.server.level.ServerPlayer)context.getPlayer(),gauge);
+        var selection=PhysicalBogeySelection.selected((net.minecraft.server.level.ServerPlayer)context.getPlayer());
+        var gauge=selection.gauge()==null?RailGauge.STANDARD:selection.gauge();
         var origin=new Vector3d(pivot).sub(new Vector3d(0,BogieGeometry.pivotHeight(BogieGeometry.MOUNT_HEIGHT_VERSION,gauge),0).rotate(rotation));
         checkPlacementSpace(level,origin,List.of());var bogie=createBody(level,Content.BOGIE.get().defaultBlockState().setValue(BogieBlock.GAUGE,gauge.ordinal()).setValue(BogieBlock.STYLE,selection.variant().ordinal()),origin,rotation);
         applyBogeySelection(bogie,selection);
@@ -411,7 +410,7 @@ public final class VehiclePhysics {
     }
     private static void applyBogeySelection(ServerSubLevel body,PhysicalBogeySelection.Selection selection){
         if(body.getLevel().getBlockEntity(body.getPlot().getCenterBlock()) instanceof BogieEntity entity){entity.bogeyData=selection.data().copy();entity.setChanged();entity.sendData();}
-        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeySelection] body={} variant={} size=small",body.getUniqueId(),selection.variant());
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeySelection] body={} variant={} gauge={} size=small",body.getUniqueId(),selection.variant(),BogieBlock.gauge(body.getLevel().getBlockState(body.getPlot().getCenterBlock())));
     }
     private static void seedPlacement(Unit u,RailPlacement.Bogie fit,TrackNetwork.PlacementRoute route){
         u.samples[0]=route.sample(fit.front());u.samples[1]=route.sample(fit.rear());

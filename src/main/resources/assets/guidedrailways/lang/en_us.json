@@ -217,8 +217,8 @@
   "message.guidedrailways.coupler.type_mismatch": "Cannot couple: coupler types do not match",
   "message.guidedrailways.coupler.connecting": "Coupling in progress",
   "message.guidedrailways.coupler.approach": "Bring the coupler heads closer before coupling",
-  "tooltip.guidedrailways.bogey.menu": "Press %s to select a bogey style",
+  "tooltip.guidedrailways.bogey.menu": "Press %s to select a style before placing",
   "tooltip.guidedrailways.bogey.selected": "Selected style: %s",
-  "message.guidedrailways.bogey.gauge": "Selected style does not fit this bogey gauge",
+  "message.guidedrailways.bogey.gauge": "Selected style does not fit this track",
   "message.guidedrailways.bogey.unsupported": "This style or size is not yet supported by physical bogeys"
 }

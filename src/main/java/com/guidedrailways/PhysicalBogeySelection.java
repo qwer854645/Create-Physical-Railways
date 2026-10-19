@@ -6,10 +6,11 @@ import java.util.List;
 
 /** No optional mod types in the core item/placement path. */
 final class PhysicalBogeySelection {
-    record Selection(BogeyVariant variant,CompoundTag data){}
-    interface Bridge {Selection selected(ServerPlayer player,RailGauge gauge);}
+    /** Null gauge is the standard style's automatic adaptation to the targeted rail. */
+    record Selection(RailGauge gauge,BogeyVariant variant,CompoundTag data){}
+    interface Bridge {Selection selected(ServerPlayer player);}
     static Bridge bridge;
     static java.util.function.Consumer<List<Component>> tooltip;
-    static Selection selected(ServerPlayer player,RailGauge gauge){return bridge==null?new Selection(BogeyVariant.DEFAULT,new CompoundTag()):bridge.selected(player,gauge);}
+    static Selection selected(ServerPlayer player){return bridge==null?new Selection(RailGauge.STANDARD,BogeyVariant.DEFAULT,new CompoundTag()):bridge.selected(player);}
     private PhysicalBogeySelection(){}
 }

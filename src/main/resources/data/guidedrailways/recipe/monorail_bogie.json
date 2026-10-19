@@ -1,21 +1,12 @@
 {
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "railways"
-    }
-  ],
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "guidedrailways:bogie"
-    },
-    {
-      "item": "create:metal_girder"
+      "item": "guidedrailways:monorail_bogie"
     }
   ],
   "result": {
-    "id": "guidedrailways:monorail_bogie",
+    "id": "guidedrailways:bogie",
     "count": 1
   }
 }

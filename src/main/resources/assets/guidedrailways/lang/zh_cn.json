@@ -217,8 +217,8 @@
   "message.guidedrailways.coupler.type_mismatch": "无法连挂：车钩类型不同",
   "message.guidedrailways.coupler.connecting": "正在连挂车钩",
   "message.guidedrailways.coupler.approach": "将两端车钩靠拢后再连挂",
-  "tooltip.guidedrailways.bogey.menu": "按 %s：选择转向架款式",
+  "tooltip.guidedrailways.bogey.menu": "按 %s：选择款式后放置",
   "tooltip.guidedrailways.bogey.selected": "已选款式：%s",
-  "message.guidedrailways.bogey.gauge": "所选款式与转向架轨距不符",
+  "message.guidedrailways.bogey.gauge": "所选款式不适用于此轨道",
   "message.guidedrailways.bogey.unsupported": "此款式或尺寸尚未适配物理转向架"
 }

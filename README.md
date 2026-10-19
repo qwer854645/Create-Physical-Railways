@@ -1,4 +1,6 @@
-# Create: Guided Railways 0.1.57
+# Create: Guided Railways 0.1.58
+
+0.1.58 将转向架统一为一个物品，款式在放置前选择，标准小型款按目标铁路自动确定轨距；旧物品保留并可一比一转换。见 [选择、兼容范围与验收](docs/RAILWAY_BOGEYS.md)
 
 0.1.57 接入 Railway 原生转向架菜单，首批支持货运、客运、现代、Blomberg、Y25 五款普通轨距小型双轴款，按款式保存、渲染并生成对应碰撞。见 [转向架选择与验收](docs/RAILWAY_BOGEYS.md)
 

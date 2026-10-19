@@ -28,15 +28,15 @@ public final class Content {
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<BogieEntity>> BOGIE_ENTITY=ENTITIES.register("bogie_frame",()->BlockEntityType.Builder.of(BogieEntity::new,BOGIE.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CouplerEntity>> COUPLER_ENTITY=ENTITIES.register("coupler",()->BlockEntityType.Builder.of(CouplerEntity::new,COUPLER.get()).build(null));
     public static final DeferredItem<BogieItem> BOGIE_ITEM=ITEMS.register("bogie",()->new BogieItem(new Item.Properties()));
-    public static final DeferredItem<BogieItem> NARROW_BOGIE=ITEMS.register("narrow_bogie",()->new BogieItem(new Item.Properties(),RailGauge.NARROW));
-    public static final DeferredItem<BogieItem> WIDE_BOGIE=ITEMS.register("wide_bogie",()->new BogieItem(new Item.Properties(),RailGauge.WIDE));
-    public static final DeferredItem<BogieItem> MONO_BOGIE=ITEMS.register("monorail_bogie",()->new BogieItem(new Item.Properties(),RailGauge.MONORAIL));
-    static ItemStack bogieItem(RailGauge gauge){return new ItemStack(switch(gauge){case NARROW->NARROW_BOGIE.get();case WIDE->WIDE_BOGIE.get();case MONORAIL->MONO_BOGIE.get();default->BOGIE_ITEM.get();});}
+    public static final DeferredItem<BogieItem> NARROW_BOGIE=ITEMS.register("narrow_bogie",()->new BogieItem(new Item.Properties()));
+    public static final DeferredItem<BogieItem> WIDE_BOGIE=ITEMS.register("wide_bogie",()->new BogieItem(new Item.Properties()));
+    public static final DeferredItem<BogieItem> MONO_BOGIE=ITEMS.register("monorail_bogie",()->new BogieItem(new Item.Properties()));
+    static ItemStack bogieItem(){return new ItemStack(BOGIE_ITEM.get());}
     public static final DeferredItem<CouplerLinkItem> COUPLER_LINK=ITEMS.register("coupler_link",()->new CouplerLinkItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<BlockItem> COUPLER_ITEM=ITEMS.register("coupler",()->new BlockItem(COUPLER.get(),new Item.Properties()){
         @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.coupler");}
     });
-    static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());if(net.neoforged.fml.ModList.get().isLoaded("railways")){o.accept(NARROW_BOGIE.get());o.accept(WIDE_BOGIE.get());o.accept(MONO_BOGIE.get());}o.accept(COUPLER_ITEM.get());o.accept(COUPLER_LINK.get());o.accept(DRIVER_ITEM.get());if(RailDocks.available())o.accept(RailDocks.bridge.item());}).build());}
+    static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());o.accept(COUPLER_ITEM.get());o.accept(COUPLER_LINK.get());o.accept(DRIVER_ITEM.get());if(RailDocks.available())o.accept(RailDocks.bridge.item());}).build());}
     static void register(IEventBus bus){bus.addListener(DriverNetwork::register);BLOCKS.register(bus);MENUS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);TABS.register(bus);
         if(net.neoforged.fml.loading.FMLEnvironment.dist==net.neoforged.api.distmarker.Dist.CLIENT)TrainClient.register(bus);
     }

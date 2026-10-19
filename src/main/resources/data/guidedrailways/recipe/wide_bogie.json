@@ -1,21 +1,12 @@
 {
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "railways"
-    }
-  ],
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "guidedrailways:bogie"
-    },
-    {
-      "item": "minecraft:iron_block"
+      "item": "guidedrailways:wide_bogie"
     }
   ],
   "result": {
-    "id": "guidedrailways:wide_bogie",
+    "id": "guidedrailways:bogie",
     "count": 1
   }
 }

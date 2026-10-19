@@ -290,13 +290,14 @@ public final class TrackNetwork {
         for(int i=0;i<=16;i++){var q=new Vector3d(a).lerp(b,i/16.0);candidates.addAll(idx.cells.getOrDefault(cell(q.x,q.z),Set.of()));}
         Sample best=null;double score=Double.POSITIVE_INFINITY;
         for(var path:candidates){
-            if(!live(level,path)||!path.supports(gauge))continue;
+            var pathGauge=gauge==null?RailGauge.forTrack(path.edge.getTrackMaterial().trackType.id.toString()):gauge;
+            if(pathGauge==null||!live(level,path)||!path.supports(pathGauge))continue;
             int n=Math.clamp((int)Math.ceil(path.edge.getLength()/.25),1,16384);
             var prev=at(path,0,heading);
             for(int i=1;i<=n;i++){
                 var next=at(path,(double)i/n,heading);
-                for(double offset:new double[]{0,-.875*gauge.widthScale(),.875*gauge.widthScale()}){
-                    double railTop=gauge==RailGauge.MONORAIL?1:BogieGeometry.RAIL_TOP;
+                for(double offset:new double[]{0,-.875*pathGauge.widthScale(),.875*pathGauge.widthScale()}){
+                    double railTop=pathGauge==RailGauge.MONORAIL?1:BogieGeometry.RAIL_TOP;
                     var prevTop=new Vector3d(prev.position).fma(railTop,prev.up).fma(offset,new Vector3d(prev.tangent).cross(prev.up));
                     var top=new Vector3d(next.position).fma(railTop,next.up).fma(offset,new Vector3d(next.tangent).cross(next.up));
                     var hit=RailPlacement.raySegment(a,b,prevTop,top);double tolerance=offset==0?.55:.30;
