@@ -18,6 +18,9 @@ public final class CouplerMechanismCheck {
             }
             check(CouplerMechanism.carries(kind,1),"completed operations can carry load");
             check(CouplerMechanism.lower(kind,1)<=1&&CouplerMechanism.upper(kind,1)>1,"joint range spans its nominal length");
+            check(CouplerMechanism.canCapture(kind,1,0,1),"settled nominal spacing can capture");
+            check(!CouplerMechanism.canCapture(kind,1+profile.slack()*1.1,0,1),"capture cannot snap a pair outside its own end stops");
+            check(!CouplerMechanism.canCapture(kind,1,.3,1),"moving gap settles before hard end stops engage");
         }
         check(CouplerMechanism.profile(CouplerKind.LINK).tensionOnly()&&CouplerMechanism.profile(CouplerKind.SCREWLINK).tensionOnly(),"chain mechanisms cannot transmit compression through a radial spring");
         check(!CouplerMechanism.profile(CouplerKind.KNUCKLE).tensionOnly(),"closed automatic coupler has draft and buff response");

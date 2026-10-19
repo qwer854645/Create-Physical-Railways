@@ -1,4 +1,6 @@
-# Create: Guided Railways 0.1.55
+# Create: Guided Railways 0.1.56
+
+0.1.56 校准 Railway 自动车钩闭锁间距，连挂钩头共用对接姿态；缓冲板按原模型生成碰撞并参与连接间距检查。详见 [车钩几何与验收](docs/COUPLER_MECHANISMS.md)
 
 0.1.55 按链销、自动钩、螺旋连挂分开处理承载过程与原生模型部件动画，保留统一连接工具和类型限制。详见 [分型机械逻辑与测试](docs/COUPLER_MECHANISMS.md)
 

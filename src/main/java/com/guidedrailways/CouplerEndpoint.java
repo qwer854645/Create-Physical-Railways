@@ -48,7 +48,7 @@ public final class CouplerEndpoint {
     }
     private void syncVisual(){if(getLevel()!=null&&!getLevel().isClientSide&&!isRemoved())getLevel().sendBlockUpdated(getBlockPos(),getBlockState(),getBlockState(),2);}
     void clientTick(){previousLockProgress=lockProgress;lockProgress=Math.clamp(lockProgress+(visualConnected?.25f:-.25f),0,1);}
-    void geometry(Vector3d anchor,Quaterniond frame,double length){livingShape=null;mechanismVersion=1;restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
+    void geometry(Vector3d anchor,Quaterniond frame,double length){livingShape=null;mechanismVersion=2;restLength=length;this.anchor=new Vector3d(anchor);this.frame=new Quaterniond(frame);hasGeometry=true;setChanged();syncVisual();}
     public void write(CompoundTag tag){
         tag.putInt("CouplerVersion",5);tag.putInt("MechanismVersion",mechanismVersion);tag.putBoolean("VisualConnected",visualConnected);tag.putLong("OperationStart",operationStart);tag.putInt("OperationTicks",operationTicks);tag.putDouble("OperationFrom",operationFrom);tag.putDouble("OperationTo",operationTo);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
         tag.putDouble("RestLength",restLength);tag.putDouble("Ax",anchor.x);tag.putDouble("Ay",anchor.y);tag.putDouble("Az",anchor.z);

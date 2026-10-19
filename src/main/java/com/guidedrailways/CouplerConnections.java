@@ -99,6 +99,7 @@ public final class CouplerConnections {
         var geometry=engagement(level,a,b,ba,bb);var kind=RailwayHardware.kind(a);
         var socketA=socket(a);var socketB=socket(b);
         double length=CouplerMechanism.nominalLength(kind,CouplerGeometry.nominalLength(RailwayHardware.pivot(a).distance(RailwayHardware.tip(a)),RailwayHardware.pivot(b).distance(RailwayHardware.tip(b))));
+        length=CouplerBufferSpacing.length(level,a,b,ba,bb,length);
         a.geometry(socketA.sub(blockOrigin(a)),localFrame(ba,geometry.frame()),length);
         b.geometry(socketB.sub(blockOrigin(b)),localFrame(bb,geometry.frame()),length);
         a.visualPeer(b);b.visualPeer(a);
@@ -191,9 +192,10 @@ public final class CouplerConnections {
         }
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
         // Migrate older anchors/engagement-dependent lengths to standard drawbars.
-        if(a.restLength<0||b.restLength<0||kind!=CouplerKind.STANDARD&&(a.mechanismVersion<1||b.mechanismVersion<1)){
+        if(a.restLength<0||b.restLength<0||kind!=CouplerKind.STANDARD&&(a.mechanismVersion<2||b.mechanismVersion<2)){
             var pa=socket(a);var pb=socket(b);var wa=VehiclePhysics.world(ba,pa);var wb=VehiclePhysics.world(bb,pb);
             double length=CouplerMechanism.nominalLength(kind,CouplerGeometry.nominalLength(RailwayHardware.pivot(a).distance(RailwayHardware.tip(a)),RailwayHardware.pivot(b).distance(RailwayHardware.tip(b))));var frame=CouplerGeometry.distanceFrame(wa,wb);
+            try{length=CouplerBufferSpacing.length(level,a,b,ba,bb,length);}catch(IllegalArgumentException impossible){disconnect(level,a.endpointId,"buffer_spacing_changed");return;}
             a.geometry(pa.sub(blockOrigin(a)),localFrame(ba,frame),length);b.geometry(pb.sub(blockOrigin(b)),localFrame(bb,frame),length);
             if(old!=null){close(s,link.id());old=null;}
         }
@@ -225,7 +227,7 @@ public final class CouplerConnections {
                 var vb=pipe.getAngularVelocity(bb,new Vector3d()).cross(new Vector3d(worldB).sub(poseB.position())).add(pipe.getLinearVelocity(bb,new Vector3d()));
                 radialSpeed=vb.sub(va).dot(delta.div(distance));
             }
-            if((!CouplerMechanism.profile(kind).tensionOnly()||progress>=1)&&CouplerGeometry.canCapture(distance,radialSpeed,a.restLength)){
+            if((!CouplerMechanism.profile(kind).tensionOnly()||progress>=1)&&CouplerMechanism.canCapture(kind,distance,radialSpeed,a.restLength)){
                 old.joint.setLimit(ConstraintJointAxis.LINEAR_X,CouplerMechanism.lower(kind,a.restLength),CouplerMechanism.upper(kind,a.restLength));
                 old.captured=true;
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] buffer captured link={} distance={} stroke={}",link.id(),distance,CouplerGeometry.HALF_STROKE*2);

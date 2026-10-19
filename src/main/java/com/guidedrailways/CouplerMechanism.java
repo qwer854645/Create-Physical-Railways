@@ -4,8 +4,8 @@ public final class CouplerMechanism {
     public record Profile(int ticks,int releaseTicks,boolean tensionOnly,double slack,double reach,double maxSpeed,double lockAt){}
     public static Profile profile(CouplerKind kind){return switch(kind){
         case STANDARD->new Profile(0,4,false,.1,2,2,0);
-        case LINK,LINKLESS->new Profile(20,16,true,.12,.75,.3,1);
-        case KNUCKLE,KNUCKLE_SPLIT->new Profile(12,12,false,.045,.45,2,1);
+        case LINK,LINKLESS->new Profile(20,16,true,1/16.0,.75,.3,1);
+        case KNUCKLE,KNUCKLE_SPLIT->new Profile(12,12,false,1/32.0,.45,2,1);
         case SCREWLINK->new Profile(40,28,true,.025,.9,.3,.35);
     };}
     public static double progress(double elapsed,int duration){if(duration<=0)return 1;double t=Math.clamp(elapsed/duration,0,1);return t*t*(3-2*t);}
@@ -20,7 +20,11 @@ public final class CouplerMechanism {
     public static double tensionDamping(double extension,double radialSpeed,double stiffness,double damping){
         if(extension<=0)return 0;return radialSpeed<0?Math.min(damping,stiffness*extension/-radialSpeed):damping;
     }
-    public static double nominalLength(CouplerKind kind,double geometryLength){return switch(kind){case LINK,LINKLESS->.375;case SCREWLINK->.65;default->geometryLength;};}
+    public static double nominalLength(CouplerKind kind,double geometryLength){return switch(kind){case LINK,LINKLESS->.375;case SCREWLINK->.65;case KNUCKLE,KNUCKLE_SPLIT->18/16.0;default->geometryLength;};}
     public static double lower(CouplerKind kind,double rest){return profile(kind).tensionOnly()?0:Math.max(0,rest-profile(kind).slack());}
     public static double upper(CouplerKind kind,double rest){return rest+profile(kind).slack();}
+    public static boolean canCapture(CouplerKind kind,double distance,double radialSpeed,double rest){
+        var p=profile(kind);return Double.isFinite(distance)&&Double.isFinite(radialSpeed)&&Math.abs(radialSpeed)<=.25
+            &&distance>= (p.tensionOnly()?0:rest-p.slack()*.8)&&distance<=rest+p.slack()*.8;
+    }
 }

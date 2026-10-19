@@ -96,6 +96,7 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
     private static Vector3d world(CouplerEndpoint e,float partial){var b=body(e);return b==null?null:b.renderPose(partial).transformPosition(new Vector3d(e.anchor).add(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ()),new Vector3d());}
     private static void part(PoseStack pose,VertexConsumer consumer,List<BakedQuad> quads,int light,int overlay){if(quads!=null)for(var quad:quads)consumer.putBulkData(pose.last(),quad,1,1,1,1,light,overlay);}
     private static void at(PoseStack pose,Vector3d point,Quaterniond rotation){pose.translate(point.x,point.y,point.z);pose.mulPose(new Quaternionf(rotation));pose.translate(-point.x,-point.y,-point.z);}
+    private static Vector3d canonical(CouplerEndpoint e,float partial,Quaterniond facing,Vector3d world){return body(e).renderPose(partial).transformPositionInverse(world,new Vector3d()).sub(e.getBlockPos().getX()+.5,e.getBlockPos().getY()+.5,e.getBlockPos().getZ()+.5).rotate(new Quaterniond(facing).conjugate()).add(.5,.5,.5);}
     @Override public void render(T owner,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
         var e=CouplerEndpoint.get(owner);if(e==null||!HardwareRenderData.ready||body(e)==null)return;var kind=RailwayHardware.kind(e);if(kind==null||kind==CouplerKind.STANDARD)return;
         String mounting=mount(e.getBlockState());var mesh=MESHES.get(path(mounting,kind,flip(e.getBlockState())));if(mesh==null)return;
@@ -104,12 +105,18 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
         double p=e.hardwareProgress(partial);var motion=CouplerMechanism.motion(kind,p);var peer=e.visualPeerPos!=null&&e.getLevel().hasChunkAt(e.visualPeerPos)?CouplerEndpoint.get(e.getLevel().getBlockEntity(e.visualPeerPos)):null;
         boolean valid=peer!=null&&peer.endpointId.equals(e.visualPeerId)&&e.endpointId.equals(peer.visualPeerId)&&body(peer)!=null;
         boolean active=valid&&e.endpointId.compareTo(peer.endpointId)<0;var target=valid?world(peer,partial):null;
-        Vector3d toward=null;if(target!=null){toward=body(e).renderPose(partial).transformPositionInverse(target,new Vector3d()).sub(e.getBlockPos().getX(),e.getBlockPos().getY(),e.getBlockPos().getZ()).sub(.5,.5,.5).rotate(new Quaterniond(facingRotation).conjugate()).add(.5,.5,.5);}
+        Vector3d toward=target==null?null:canonical(e,partial,facingRotation,target);
         pose.pushPose();pose.translate(.5,.5,.5);pose.mulPose(new Quaternionf(facingRotation));pose.translate(-.5,-.5,-.5);
         var consumer=buffers.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));part(pose,consumer,quads.get(Part.MOUNT),light,overlay);pose.pushPose();
         if((kind==CouplerKind.KNUCKLE||kind==CouplerKind.KNUCKLE_SPLIT)&&valid&&p>0&&toward!=null){
-            var bearing=new Vector3d(.5,.5,.875+mesh.shift);var direction=new Vector3d(toward).sub(bearing);
-            if(direction.lengthSquared()>.001){var turn=new Quaterniond().rotationTo(new Vector3d(0,0,-1),direction.normalize());double angle=turn.angle();if(angle>Math.toRadians(25))turn=new Quaterniond().slerp(turn,Math.toRadians(25)/angle);at(pose,bearing,turn);}
+            var bearing=new Vector3d(.5,.5,.875+mesh.shift);
+            var peerOrigin=new Vector3d(peer.getBlockPos().getX(),peer.getBlockPos().getY(),peer.getBlockPos().getZ());
+            var peerBase=body(peer).renderPose(partial).transformPosition(peerOrigin,new Vector3d());
+            var peerTop=body(peer).renderPose(partial).transformPosition(new Vector3d(peerOrigin).add(0,1,0),new Vector3d());
+            var peerUp=canonical(e,partial,facingRotation,peerTop).sub(canonical(e,partial,facingRotation,peerBase));
+            var mating=CouplerMating.head(bearing,toward,new Vector3d(0,1,0),peerUp,CouplerMechanism.nominalLength(kind,0));
+            double blend=Math.min(p,peer.hardwareProgress(partial));var shift=new Vector3d(mating.bearing()).sub(bearing).mul(blend);
+            pose.translate(shift.x,shift.y,shift.z);at(pose,bearing,new Quaterniond().slerp(mating.rotation(),blend));
         }
         part(pose,consumer,quads.get(Part.BODY),light,overlay);
         if(kind==CouplerKind.KNUCKLE||kind==CouplerKind.KNUCKLE_SPLIT){
@@ -119,8 +126,10 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
             var links=quads.get(Part.LINK);if(links==null&&active&&p>0)links=MESHES.get(path(mounting,CouplerKind.LINK,flip(e.getBlockState()))).quads(paint).get(Part.LINK);
             pose.pushPose();var pivot=new Vector3d(.5,.5,.5+mesh.shift);double insert=motion.linkInsertion();
             if(active&&toward!=null&&toward.distanceSquared(pivot)<16){
-                var delta=new Vector3d(toward).sub(pivot);double length=delta.length();if(length>.001){at(pose,pivot,new Quaterniond().slerp(new Quaterniond().rotationTo(new Vector3d(0,0,-1),delta.normalize()),insert));}
-                at(pose,pivot,new Quaterniond().rotateX(Math.toRadians(22.5)*insert));
+                var centre=new Vector3d(.5,7.653284439003997/16,6.270598714406038/16+mesh.shift);
+                var destination=new Vector3d(pivot).add(toward).mul(.5);var delta=new Vector3d(toward).sub(pivot);
+                var rotation=new Quaterniond();if(delta.lengthSquared()>.001)rotation.rotationTo(new Vector3d(0,0,-1),delta.normalize()).rotateX(Math.toRadians(22.5));
+                var animated=new Vector3d(centre).lerp(destination,insert);pose.translate(animated.x,animated.y,animated.z);pose.mulPose(new Quaternionf(new Quaterniond().slerp(rotation,insert)));pose.translate(-centre.x,-centre.y,-centre.z);
             }else if(valid)at(pose,pivot,new Quaterniond().rotateX(-Math.PI/2*insert));
             part(pose,consumer,links,light,overlay);pose.popPose();
         }else if(kind==CouplerKind.SCREWLINK){

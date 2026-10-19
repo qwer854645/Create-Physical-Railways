@@ -418,3 +418,10 @@ tasks.register('checkCouplerMechanism', JavaExec) {
     mainClass = 'com.guidedrailways.CouplerMechanismCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerMechanism' }
+
+tasks.register('checkCouplerMating', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.CouplerMatingCheck'
+}
+tasks.named('check') { dependsOn 'checkCouplerMating' }
