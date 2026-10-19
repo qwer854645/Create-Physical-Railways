@@ -8,7 +8,7 @@ public final class MountEntity extends KineticBlockEntity {
     UUID bogieId;boolean braking;double load;
     int heightVersion=BogieGeometry.MOUNT_HEIGHT_VERSION;
     RailGauge gauge=RailGauge.STANDARD;
-    double pivotHeight(){return BogieGeometry.pivotHeight(heightVersion);}
+    double pivotHeight(){return BogieGeometry.pivotHeight(heightVersion,gauge);}
     org.joml.Quaterniond pivotReference=new org.joml.Quaterniond();boolean pivotReferenceKnown;
     public MountEntity(BlockPos p,BlockState s){super(Content.MOUNT_ENTITY.get(),p,s);}
     @Override public void tick(){super.tick();MountBlock.restore(this);VehiclePhysics.register(this);}

@@ -207,5 +207,6 @@
   "message.guidedrailways.rail_dock.unbound": "No station linked",
   "item.guidedrailways.narrow_bogie": "Narrow Gauge Physical Bogey",
   "item.guidedrailways.wide_bogie": "Wide Gauge Physical Bogey",
-  "message.guidedrailways.rail.gauge": "Incompatible gauge; select a matching track"
+  "message.guidedrailways.rail.gauge": "Incompatible gauge; select a matching track",
+  "item.guidedrailways.monorail_bogie": "Monorail Physical Bogey"
 }

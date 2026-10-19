@@ -20,6 +20,15 @@ public final class BogiePairContact {
         OFFSET=new Vector3d(low).add(high).mul(.5).sub(.5,.5,.5);
         HALF=new Vector3d(high).sub(low).mul(.5);
     }
+    private record Bounds(Vector3dc offset,Vector3dc half){}
+    private static final Map<RailGauge,Bounds> PROFILES=new EnumMap<>(RailGauge.class);
+    static{for(var gauge:RailGauge.values()){
+        var low=new Vector3d(Double.POSITIVE_INFINITY);var high=new Vector3d(Double.NEGATIVE_INFINITY);
+        for(var b:BogieCollision.boxes(gauge)){low.min(new Vector3d(b.x0(),b.y0(),b.z0()));high.max(new Vector3d(b.x1(),b.y1(),b.z1()));}
+        PROFILES.put(gauge,new Bounds(new Vector3d(low).add(high).mul(.5).sub(.5,.5,.5),new Vector3d(high).sub(low).mul(.5)));
+    }}
+    public static Vector3dc offset(RailGauge gauge){return PROFILES.get(gauge).offset;}
+    public static Vector3dc half(RailGauge gauge){return PROFILES.get(gauge).half;}
     private static Vector3d[] axes(Quaterniond q){return new Vector3d[]{new Vector3d(1,0,0).rotate(q),new Vector3d(0,1,0).rotate(q),new Vector3d(0,0,1).rotate(q)};}
     private static double radius(Vector3d n,Vector3d[] axes,Vector3dc half){return Math.abs(n.dot(axes[0]))*half.x()+Math.abs(n.dot(axes[1]))*half.y()+Math.abs(n.dot(axes[2]))*half.z();}
     public static Contact find(Pose a,Pose b,Vector3dc previous){

@@ -17,4 +17,7 @@ public final class BogieGeometry {
     public static final double SUPPORT_BOTTOM=MOUNT_UNDERSIDE-PLATFORM_RAISE;
     public static final int MOUNT_HEIGHT_VERSION=2;
     public static double pivotHeight(int version){return version>=MOUNT_HEIGHT_VERSION?PIVOT_HEIGHT:LEGACY_PIVOT_HEIGHT;}
+    public static double ride(RailGauge gauge){return gauge==RailGauge.MONORAIL?1:RIDE_HEIGHT;}
+    public static double plateOffset(RailGauge gauge){return MOUNT_TOP-.5-ride(gauge);}
+    public static double pivotHeight(int version,RailGauge gauge){return gauge==RailGauge.MONORAIL?plateOffset(gauge)+MOUNT_UNDERSIDE-.5:pivotHeight(version);}
 }

@@ -35,6 +35,9 @@ public final class RailPlacement {
         return new RayHit(new Vector3d(start).fma(s,u).distanceSquared(new Vector3d(a).fma(t,v)),s,t);
     }
     public static Bogie bogie(Route route,double centre,double ride,double halfWheelbase){
+        return bogie(route,centre,ride,halfWheelbase,BogieGeometry.PIVOT_HEIGHT);
+    }
+    public static Bogie bogie(Route route,double centre,double ride,double halfWheelbase,double pivotHeight){
         double lo=0,hi=halfWheelbase*1.65;
         Point a=route.at(centre+hi),b=route.at(centre-hi);
         // Find the available symmetric interval first: a short curve can still fit a rigid wheelbase.
@@ -53,10 +56,13 @@ public final class RailPlacement {
         var up=new Vector3d(a.up).add(b.up).normalize();var forward=new Vector3d(a.position).sub(b.position);
         var rotation=orientation(forward,up);up.set(0,1,0).rotate(rotation);
         var origin=new Vector3d(a.position).add(b.position).mul(.5).fma(ride,up);
-        return new Bogie(origin,rotation,new Vector3d(origin).fma(BogieGeometry.PIVOT_HEIGHT,up),centre+half,centre-half);
+        return new Bogie(origin,rotation,new Vector3d(origin).fma(pivotHeight,up),centre+half,centre-half);
     }
     /** Fit one rigid carrier to every mounting seat; invalid plans never mutate a body. */
     public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,double ride,double halfWheelbase){
+        return carriage(route,seats,selected,localForward,ride,halfWheelbase,BogieGeometry.PIVOT_HEIGHT);
+    }
+    public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,double ride,double halfWheelbase,double pivotHeight){
         if(seats.isEmpty()||selected<0||selected>=seats.size())throw new IllegalArgumentException("message.guidedrailways.rail.no_mount");
         var arcs=new double[seats.size()];var anchor=seats.get(selected);
         int pa=0,pb=0;double spread=0;
@@ -66,7 +72,7 @@ public final class RailPlacement {
         for(int i=0;i<arcs.length;i++)arcs[i]=new Vector3d(seats.get(i)).sub(anchor).dot(along);
         Quaterniond rotation=new Quaterniond();Vector3d position=new Vector3d();var bogies=new ArrayList<Bogie>();
         for(int iteration=0;iteration<40;iteration++){
-            bogies.clear();for(double arc:arcs)bogies.add(bogie(route,arc,ride,halfWheelbase));
+            bogies.clear();for(double arc:arcs)bogies.add(bogie(route,arc,ride,halfWheelbase,pivotHeight));
             var worldUp=new Vector3d();for(var b:bogies)worldUp.add(new Vector3d(0,1,0).rotate(b.rotation));worldUp.normalize();
             if(spread>1e-8){
                 var localLine=new Vector3d(seats.get(pb)).sub(seats.get(pa));

@@ -18,8 +18,46 @@ public final class BogieCollision {
         PROFILE_BOXES.put(RailGauge.STANDARD,BOXES);PROFILE_CELLS.put(RailGauge.STANDARD,CELLS);
         for(var gauge:RailGauge.values())if(gauge!=RailGauge.STANDARD){
             var boxes=BOXES.stream().map(b->new Box(.5+(b.x0-.5)*gauge.widthScale(),b.y0,b.z0,.5+(b.x1-.5)*gauge.widthScale(),b.y1,b.z1)).toList();
+            if(gauge==RailGauge.MONORAIL)boxes=mono();
             PROFILE_BOXES.put(gauge,boxes);PROFILE_CELLS.put(gauge,partition(boxes));
         }
+    }
+    /** Frame bounds measured from the installed Beta model; side rollers use swept discs.
+     * Clip the inner collision edge clear of beam flanges while retaining the native appearance. */
+    private static List<Box> mono(){
+        var result=new ArrayList<Box>();
+        double[][] frame={
+            {-0.25,1.25,-0.25,0.25,1.5,0.25},
+            {-0.6875,1.0,-0.6875,0.6875,1.25,0.6875},
+            {-0.3125,1.0,0.6875,0.3125,1.1875,1.3125},
+            {-1.0625,0.3125,-1.25,-0.5625,0.6875,-0.75},
+            {-1.125,0.1875,-0.5,-0.5,0.8125,0.5},
+            {-0.875,0.716829,-0.4375,-0.500524,1.158955,-0.1875},
+            {-1.0,0.8125,-0.1875,-0.5,1.3125,0.1875},
+            {-0.09375,1.1875,-1.09375,0.09375,1.375,-0.90625},
+            {-0.09375,1.1875,0.90625,0.09375,1.375,1.09375},
+            {-0.875,0.716829,0.1875,-0.500524,1.158955,0.4375},
+            {-1.0625,0.3125,0.75,-0.5625,0.6875,1.25},
+            {-0.3125,1.0,-1.3125,0.3125,1.1875,-0.6875},
+            {0.500524,0.716829,0.1875,0.875,1.158955,0.4375},
+            {0.5,0.8125,-0.1875,1.0,1.3125,0.1875},
+            {0.500524,0.716829,-0.4375,0.875,1.158955,-0.1875},
+            {0.5,0.1875,-0.5,1.125,0.8125,0.5},
+            {0.5625,0.3125,-1.25,1.0625,0.6875,-0.75},
+            {0.5625,0.3125,0.75,1.0625,0.6875,1.25},
+        };
+        for(var b:frame)result.add(new Box(.5+b[0],BogieGeometry.RENDER_Y+b[1],.5+b[2],.5+b[3],BogieGeometry.RENDER_Y+b[4],.5+b[5]));
+        for(double side:new double[]{-1,1})for(double z:new double[]{-1,1})for(double y:new double[]{.0625,.6875}){
+            double cx=side*.8125,r=.4375;
+            for(int i=0;i<12;i++){
+                double a=-Math.PI/2+i*Math.PI/12,b=-Math.PI/2+(i+1)*Math.PI/12;
+                double near=a<=0&&b>=0?0:Math.min(Math.abs(a),Math.abs(b));
+                double half=r*Math.cos(near),x0=cx-half,x1=cx+half;
+                if(side<0)x1=Math.min(x1,-.52);else x0=Math.max(x0,.52);
+                if(x1>x0)result.add(new Box(.5+x0,BogieGeometry.RENDER_Y+y,.5+z+r*Math.sin(a),.5+x1,BogieGeometry.RENDER_Y+y+.25,.5+z+r*Math.sin(b)));
+            }
+        }
+        return List.copyOf(result);
     }
     public static List<Box> boxes(RailGauge gauge){return PROFILE_BOXES.get(gauge);}
     public static List<Cell> cells(RailGauge gauge){return PROFILE_CELLS.get(gauge);}
