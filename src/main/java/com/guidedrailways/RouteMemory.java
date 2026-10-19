@@ -13,6 +13,8 @@ public final class RouteMemory {
     private final Set<Axle> members;private final List<Passage> history=new ArrayList<>();private final Map<Axle,Repeat> repeat=new HashMap<>();
     public RouteMemory(Set<Axle> members){this.members=Set.copyOf(members);}
     public Set<Axle> members(){return members;}
+    /** Detached consists have no guided axles; retain a real carrier identity until rerailing. */
+    public UUID reservationIdentity(UUID carrier){return members.stream().map(Axle::bogie).min(UUID::compareTo).orElse(Objects.requireNonNull(carrier));}
     public record Active(Junction node,int from,int to){}
     public List<Active> active(){return history.stream().filter(p->!p.complete()||repeat.values().stream().anyMatch(r->r.node.equals(p.node))).map(p->new Active(p.node,p.from,p.to)).toList();}
     public RouteMemory copyFor(Set<Axle> next){

@@ -7,6 +7,14 @@ public final class ConsistRouteCheck {
     public static void main(String[] args){
         var a=new RouteMemory.Axle(UUID.randomUUID(),0);var b=new RouteMemory.Axle(a.bogie(),1);
         var c=new RouteMemory.Axle(UUID.randomUUID(),0);var d=new RouteMemory.Axle(c.bogie(),1);
+        var carrier=UUID.randomUUID();var empty=new RouteMemory(Set.of());
+        check(empty.reservationIdentity(carrier).equals(carrier),"fully detached consist has a stable carrier identity instead of throwing during physics tick");
+        check(empty.active().isEmpty(),"detached consist holds no switch passages");
+        var guided=new RouteMemory(Set.of(a,b,c,d));var expected=a.bogie().compareTo(c.bogie())<0?a.bogie():c.bogie();
+        check(guided.reservationIdentity(carrier).equals(expected),"guided identity remains the least bogie UUID");
+        var detached=guided.copyFor(Set.of());
+        check(detached.reservationIdentity(carrier).equals(carrier),"releasing all guides safely switches to carrier identity");
+        check(detached.copyFor(Set.of(c,d)).reservationIdentity(carrier).equals(c.bogie()),"rerailing restores the actual guided identity");
         var ids=Set.of(a,b,c,d);var journal=new RouteMemory(ids);var node=new RouteMemory.Junction(UUID.randomUUID(),100);
         check(journal.choose(a,node,10,new int[]{20,30},30)==30,"physical leading axle chooses branch");
         check(journal.choose(a,node,10,new int[]{20,30},20)==30,"same junction contact cannot record multiple passages or switch branch");

@@ -12,7 +12,7 @@ final class ConsistRoutes {
     private static final Map<ServerLevel,Cached> CACHE=new WeakHashMap<>();
     private static final class Context {
         final RouteMemory memory;final ServerLevel level;final UUID identity;final Map<RouteMemory.Axle,Vector3d> anchors=new HashMap<>();TrackNetwork.Sample head;int intent;ScheduleController automatic;double switchRoom=Double.POSITIVE_INFINITY;
-        Context(RouteMemory memory,ServerLevel level){this.memory=memory;this.level=level;identity=memory.members().stream().map(RouteMemory.Axle::bogie).min(UUID::compareTo).orElseThrow();}
+        Context(RouteMemory memory,ServerLevel level,UUID carrier){this.memory=memory;this.level=level;identity=memory.reservationIdentity(carrier);}
     }
     static final class Cursor implements TrackNetwork.RoutePolicy {
         final Context context;final RouteMemory.Axle axle;final boolean leading;final RailGauge gauge;
@@ -103,7 +103,7 @@ final class ConsistRoutes {
             var previous=old.get(head);if(previous==null)for(var u:group)if(old.containsKey(u.carrier.getUniqueId())){previous=old.get(u.carrier.getUniqueId());break;}
             Context context;
             if(previous!=null&&previous.memory.members().equals(axleIds))context=previous;
-            else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds),level);if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
+            else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds),level,seedId);if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
             for(var passage:context.memory.active())RailwaysCompat.hold(level,passage,context.identity);
             context.automatic=null;for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null){context.automatic=u.automatic.navigation();break;}
             context.intent=0;for(var u:group)if(u.driver!=null&&u.driver.active&&!u.driver.observing){context.intent=level.getGameTime()-u.driver.steerAt<=30?u.driver.steer:0;break;}
