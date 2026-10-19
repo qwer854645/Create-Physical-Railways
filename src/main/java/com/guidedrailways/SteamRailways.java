@@ -28,4 +28,6 @@ final class SteamRailways implements RailwaysCompat.Bridge {
     }
     @Override public void hold(ServerLevel level,UUID graph,int node,int from,int to,UUID train){reservations.computeIfAbsent(level,l->new SwitchReservations()).claim(new SwitchReservations.Key(graph,node),train,from,to,level.getGameTime());}
     @Override public void unload(ServerLevel level){reservations.remove(level);}
+    @Override public double[] buffers(TrackNetwork.Path path){return path.edge().getEdgeData().getPoints().stream().filter(p->p instanceof com.railwayteam.railways.content.buffer.TrackBuffer).mapToDouble(p->p.getLocationOn(path.edge())).toArray();}
+    @Override public boolean stationEnabled(com.simibubi.create.content.trains.station.GlobalStation station){return ((com.railwayteam.railways.mixin_interfaces.ILimitedGlobalStation)station).isStationEnabled();}
 }

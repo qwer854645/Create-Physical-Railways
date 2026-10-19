@@ -181,11 +181,18 @@ public final class TrackNetwork {
     }
     private record Branch(TrackNode node,TrackEdge edge,Path path){}
     /** Read ahead without committing route memory or moving a body. */
-    static double switchDistance(ServerLevel level,Sample sample,Vector3dc heading,boolean reverse,RoutePolicy policy,double horizon){
+    static double switchDistance(ServerLevel level,Sample sample,Vector3dc heading,boolean reverse,RoutePolicy policy,double horizon,double clearance){
         if(RailwaysCompat.bridge==null||sample==null)return Double.POSITIVE_INFINITY;
         Path path=sample.path;boolean inc=BranchSelect.exitsIncreasing(PathGeometry.tangent(path::at,sample.t),heading,reverse);
-        double distance=(inc?1-sample.t:sample.t)*path.edge.getLength();var idx=INDEX.get(level);
-        for(int depth=0;depth<128&&distance<=horizon;depth++){
+        double offset=sample.t*path.edge.getLength(),distance=(inc?1-sample.t:sample.t)*path.edge.getLength();var idx=INDEX.get(level);
+        for(int depth=0;depth<128;depth++){
+            double start=distance-(inc?path.edge.getLength()-offset:offset),bufferDistance=Double.POSITIVE_INFINITY;
+            for(double buffer:RailwaysCompat.buffers(path)){
+                double along=inc?buffer-offset:offset-buffer;
+                if(along>=-.05)bufferDistance=Math.min(bufferDistance,Math.max(0,start+along-clearance));
+            }
+            if(Double.isFinite(bufferDistance))return bufferDistance;
+            if(distance>horizon)return Double.POSITIVE_INFINITY;
             int node=inc?path.b:path.a,from=inc?path.a:path.b;
             var exit=path.network.getNode(node);var enter=path.network.getNode(from);var incoming=path.network.getConnectionsFrom(enter).get(exit);
             var options=new ArrayList<Branch>();
@@ -203,9 +210,12 @@ public final class TrackNetwork {
                     proposed=available.get(BranchSelect.choose(tangent,sample.up,directions,policy.steer())).node.getNetId();
                 }
                 int selected=policy.choose(path,node,from,options.stream().mapToInt(b->b.node.getNetId()).toArray(),proposed,path.at(inc?1:0));
-                return selected<0||!policy.mayPass(path,node,from,selected)?Math.max(0,distance-.4):Double.POSITIVE_INFINITY;
+                if(selected<0||!policy.mayPass(path,node,from,selected))return Math.max(0,distance-.4);
+                Branch chosen=null;for(var option:options)if(option.node.getNetId()==selected){chosen=option;break;}
+                if(chosen==null)return Math.max(0,distance-.4);
+                options.clear();options.add(chosen);
             }
-            var next=options.getFirst();inc=next.path.a==node;path=next.path;distance+=path.edge.getLength();
+            var next=options.getFirst();inc=next.path.a==node;path=next.path;offset=inc?0:path.edge.getLength();distance+=path.edge.getLength();
         }
         return Double.POSITIVE_INFINITY;
     }

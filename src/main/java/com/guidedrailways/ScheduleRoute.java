@@ -3,7 +3,7 @@ import java.util.*;
 /** Directed-edge Dijkstra: turns, approach direction and partial edge distances all matter. */
 public final class ScheduleRoute {
     public record Edge(int from,int to){}
-    public interface Network {double length(Edge edge);List<Edge> exits(Edge edge);}
+    public interface Network {double length(Edge edge);List<Edge> exits(Edge edge);default boolean clear(Edge edge,double from,double to){return true;}}
     public record Goal(UUID id,String name,Edge edge,double offset){}
     public record Route(List<Edge> edges,Goal goal,double distance){
         /** Physics may cross several short edges between two server ticks. */
@@ -41,8 +41,9 @@ public final class ScheduleRoute {
             if(v.cost>answerCost||v.cost>maximumDistance)continue;
             for(var goal:goals)if(goal.edge.equals(v.key.edge)&&goal.offset>=0&&goal.offset<=network.length(goal.edge)+1e-6){
                 double cost=v.cost+goal.offset;
-                if(cost>=-Math.max(0,arrivalTolerance)-1e-6&&cost<answerCost&&cost<=maximumDistance){answer=v;target=goal;answerCost=Math.max(0,cost);}
+                if(cost>=-Math.max(0,arrivalTolerance)-1e-6&&cost<answerCost&&cost<=maximumDistance&&network.clear(v.key.edge,v.key.initial?offset:0,goal.offset)){answer=v;target=goal;answerCost=Math.max(0,cost);}
             }
+            if(!network.clear(v.key.edge,v.key.initial?offset:0,network.length(v.key.edge)))continue;
             var exits=new ArrayList<>(network.exits(v.key.edge));exits.sort(Comparator.comparingInt(Edge::to));
             for(var edge:exits){
                 double length=network.length(edge);if(!Double.isFinite(length)||length<=0)continue;

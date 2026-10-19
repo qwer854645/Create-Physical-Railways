@@ -149,7 +149,8 @@ public final class VehiclePhysics {
             boolean reverse=u.reverseTravel;
             int lead=reverse?1:0,trail=1-lead;
             double approachSpeed=Math.abs(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading));
-            double switchRoom=TrackNetwork.switchDistance(level,u.samples[lead],heading,reverse,plan.axle(lead),approachSpeed*approachSpeed/(2*TrainConfig.BRAKING.get())+8);
+            double nose=PhysicalSignals.nose(u,world(u.bogie,u.axle(lead)),new Vector3d(heading).mul(reverse?-1:1))+.25;
+            double switchRoom=TrackNetwork.switchDistance(level,u.samples[lead],heading,reverse,plan.axle(lead),approachSpeed*approachSpeed/(2*TrainConfig.BRAKING.get())+nose+8,nose);
             switchRoom=plan.axle(lead).limit(switchRoom);
             var atLead=world(u.bogie,u.axle(lead));
             u.samples[lead]=TrackNetwork.follow(level,atLead,heading,u.samples[lead],null,.8,reverse,plan.axle(lead));

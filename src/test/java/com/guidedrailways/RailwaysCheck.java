@@ -25,6 +25,16 @@ public final class RailwaysCheck {
         check(RailwayStopModel.force(10,100,2,10,4,.05)<0,"a blocked switch applies braking before the junction");
         check(RailwayStopModel.force(0,100,0,10,4,.05)==0,"a stopped train cannot power through a closed switch");
         check(RailwayStopModel.force(-1,-100,0,10,4,.05)==200,"terminal braking opposes reverse travel without reversing momentum");
+        var edge=new ScheduleRoute.Edge(1,2);
+        ScheduleRoute.Network buffered=new ScheduleRoute.Network(){
+            public double length(ScheduleRoute.Edge e){return 10;}
+            public java.util.List<ScheduleRoute.Edge> exits(ScheduleRoute.Edge e){return java.util.List.of();}
+            public boolean clear(ScheduleRoute.Edge e,double from,double to){return !(Math.min(from,to)<=5&&Math.max(from,to)>=5);}
+        };
+        var after=new ScheduleRoute.Goal(a,"after",edge,8);var before=new ScheduleRoute.Goal(b,"before",edge,3);
+        check(ScheduleRoute.find(buffered,edge,0,java.util.List.of(after))==null,"a target beyond a buffer on the same edge is unreachable");
+        check(ScheduleRoute.find(buffered,edge,0,java.util.List.of(before))!=null,"a station before the buffer remains reachable");
+        check(ScheduleRoute.find(buffered,edge,6,java.util.List.of(after))!=null,"a buffer behind the train does not block forward navigation");
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }

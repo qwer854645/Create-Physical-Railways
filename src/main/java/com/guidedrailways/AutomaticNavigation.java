@@ -18,6 +18,11 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
         }
     }
     @Override public double length(ScheduleRoute.Edge edge){var p=paths.get(edge);return p==null?Double.POSITIVE_INFINITY:p.edge().getLength();}
+    @Override public boolean clear(ScheduleRoute.Edge edge,double from,double to){
+        var p=paths.get(edge);if(p==null)return false;
+        for(double buffer:RailwaysCompat.buffers(p)){double d=p.a()==edge.from()?buffer:length(edge)-buffer;if(d>=Math.min(from,to)-1e-6&&d<=Math.max(from,to)+1e-6)return false;}
+        return true;
+    }
     @Override public List<ScheduleRoute.Edge> exits(ScheduleRoute.Edge edge){
         var p=paths.get(edge);if(p==null)return List.of();var node=p.network().getNode(edge.to());var from=p.network().getNode(edge.from());if(node==null||from==null)return List.of();
         var incoming=p.network().getConnectionsFrom(from).get(node);if(incoming==null)return List.of();var out=new ArrayList<ScheduleRoute.Edge>();
@@ -35,6 +40,7 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
         var out=new ArrayList<ScheduleRoute.Goal>();if(paths.isEmpty())return out;
         var network=paths.values().iterator().next().network();
         for(GlobalStation station:network.getPoints(EdgePointType.STATION)){
+            if(!RailwaysCompat.stationEnabled(station))continue;
             if(!matches.test(station)||preferred!=null&&!preferred.equals(station.id)||station.edgeLocation==null)continue;
             var from=network.locateNode(station.edgeLocation.getFirst());var to=network.locateNode(station.edgeLocation.getSecond());
             if(from==null||to==null||!station.canApproachFrom(to))continue;
@@ -54,7 +60,7 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
         var p=paths.get(route.goal().edge());var station=p.network().getPoint(EdgePointType.STATION,route.goal().id());
         var from=p.network().getNode(route.goal().edge().from());var to=p.network().getNode(route.goal().edge().to());
         var real=from==null||to==null?null:p.network().getConnectionsFrom(from).get(to);
-        return station!=null&&real!=null&&station.edgeLocation!=null&&station.edgeLocation.getFirst().equals(from.getLocation())&&station.edgeLocation.getSecond().equals(to.getLocation())
+        return station!=null&&RailwaysCompat.stationEnabled(station)&&real!=null&&station.edgeLocation!=null&&station.edgeLocation.getFirst().equals(from.getLocation())&&station.edgeLocation.getSecond().equals(to.getLocation())
             &&station.canApproachFrom(to)&&station.name.equals(route.goal().name())&&Math.abs(station.getLocationOn(real)-route.goal().offset())<1e-6;
     }
     boolean loaded(ScheduleRoute.Route route,int leg,double offset){
