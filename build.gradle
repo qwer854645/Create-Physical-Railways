@@ -116,6 +116,8 @@ def extractSimulatedApi = tasks.register('extractSimulatedApi', Copy) {
 }
 
 dependencies {
+    def railwaysApi = file("libs/railways-${railways_version}.jar")
+    if (railwaysApi.exists()) compileOnly files(railwaysApi)
     if (simulatedApiFile.isPresent()) compileOnly files(simulatedApiFile.get())
     else if (simulatedBundle.exists()) compileOnly files(extractedSimulated).builtBy(extractSimulatedApi)
     else compileOnly('dev.simulated_team.simulated:simulated-neoforge-1.21.1:1.3.2') { transitive = false }
