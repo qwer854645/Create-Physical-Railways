@@ -19,6 +19,7 @@ public final class GuidedRailways {
     public GuidedRailways(IEventBus bus,ModContainer container){
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,TrainConfig.SPEC);
         Content.register(bus);
+        if(net.neoforged.fml.ModList.get().isLoaded("railways"))SteamRailways.register();
         if(net.neoforged.fml.ModList.get().isLoaded("simulated"))RailDockContent.register(bus);
         NeoForge.EVENT_BUS.addListener((LevelTickEvent.Pre e)->{
             if(e.getLevel() instanceof ServerLevel level){if(VehiclePhysics.hasVehicles(level))TrackNetwork.refresh(level);VehiclePhysics.tick(level);}
@@ -35,7 +36,7 @@ public final class GuidedRailways {
             }
         });
         NeoForge.EVENT_BUS.addListener((LevelEvent.Unload e)->{
-            if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);DriverControls.unload(level);CargoStorage.unload(level);}
+            if(e.getLevel() instanceof ServerLevel level){VehiclePhysics.unload(level);TrackNetwork.unload(level);CouplerConnections.unload(level);DriverControls.unload(level);CargoStorage.unload(level);RailwaysCompat.unload(level);}
         });
         NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock e)->{
             if(!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;

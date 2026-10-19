@@ -23,7 +23,7 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
         var incoming=p.network().getConnectionsFrom(from).get(node);if(incoming==null)return List.of();var out=new ArrayList<ScheduleRoute.Edge>();
         for(var entry:p.network().getConnectionsFrom(node).entrySet()){
             var next=new ScheduleRoute.Edge(edge.to(),entry.getKey().getNetId());
-            if(next.to()!=edge.from()&&!entry.getValue().isInterDimensional()&&incoming.canTravelTo(entry.getValue())&&paths.containsKey(next))out.add(next);
+            if(next.to()!=edge.from()&&!entry.getValue().isInterDimensional()&&RailwaysCompat.geometry(incoming,entry.getValue())&&RailwaysCompat.navigable(entry.getValue())&&paths.containsKey(next))out.add(next);
         }
         return out;
     }

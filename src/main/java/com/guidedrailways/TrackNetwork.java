@@ -34,6 +34,7 @@ public final class TrackNetwork {
         void observe(Vector3dc position);
         BranchSelect.Steer steer();
         Sample leader();
+        default boolean mayPass(Path incoming,int node,int from,int to){return true;}
     }
     private record PathKey(UUID graph,int a,int b){}
     private static final class Index {
@@ -142,7 +143,7 @@ public final class TrackNetwork {
         var options=new ArrayList<Branch>();
         for(var entry:live.network.getConnectionsFrom(exit).entrySet()){
             if(entry.getKey()==enter||entry.getValue().isInterDimensional())continue;
-            if(!current.canTravelTo(entry.getValue()))continue;
+            if(!RailwaysCompat.geometry(current,entry.getValue()))continue;
             var path=idx.paths.get(key(live.graph,exit.getNetId(),entry.getKey().getNetId()));
             if(path==null||!path.supports(RailGauge.STANDARD))continue;
             options.add(new Branch(entry.getKey(),entry.getValue(),path));
@@ -153,6 +154,10 @@ public final class TrackNetwork {
         var directions=new Vector3dc[options.size()];
         for(int i=0;i<options.size();i++){var p=options.get(i).path;directions[i]=PathGeometry.tangent(p::at,p.a==exitId?0:1).mul(p.a==exitId?1:-1);}
         int pick=BranchSelect.choose(incoming,previous.up,directions,policy==null?BranchSelect.Steer.NONE:policy.steer());
+        if(!RailwaysCompat.navigable(options.get(pick).edge)){
+            var available=new ArrayList<Integer>();for(int i=0;i<options.size();i++)if(RailwaysCompat.navigable(options.get(i).edge))available.add(i);
+            if(!available.isEmpty()){var open=new Vector3dc[available.size()];for(int i=0;i<open.length;i++)open[i]=directions[available.get(i)];pick=available.get(BranchSelect.choose(incoming,previous.up,open,policy==null?BranchSelect.Steer.NONE:policy.steer()));}
+        }
         Branch chosen=options.get(pick);
         if(policy!=null&&live.network.getConnectionsFrom(exit).size()>2){
             var target=policy.leader();
@@ -162,6 +167,8 @@ public final class TrackNetwork {
             chosen=null;for(var c:options)if(c.node.getNetId()==selected){chosen=c;break;}
             if(chosen==null)return null;
         }else if(policy==null&&leader!=null){var followed=followLeader(options,leader);if(followed!=null)chosen=followed;}
+        if(policy!=null&&!policy.mayPass(live,exitId,enterId,chosen.node.getNetId()))return null;
+        if(policy==null&&!RailwaysCompat.navigable(chosen.edge))return null;
         double hint=chosen.path.a==exit.getNetId()?0:1;
         var sample=project(chosen.path,point,heading,hint);
         if(sample==null||sample.position.distanceSquared(point)>radius*radius)return null;
@@ -173,6 +180,35 @@ public final class TrackNetwork {
         return sample;
     }
     private record Branch(TrackNode node,TrackEdge edge,Path path){}
+    /** Read ahead without committing route memory or moving a body. */
+    static double switchDistance(ServerLevel level,Sample sample,Vector3dc heading,boolean reverse,RoutePolicy policy,double horizon){
+        if(RailwaysCompat.bridge==null||sample==null)return Double.POSITIVE_INFINITY;
+        Path path=sample.path;boolean inc=BranchSelect.exitsIncreasing(PathGeometry.tangent(path::at,sample.t),heading,reverse);
+        double distance=(inc?1-sample.t:sample.t)*path.edge.getLength();var idx=INDEX.get(level);
+        for(int depth=0;depth<128&&distance<=horizon;depth++){
+            int node=inc?path.b:path.a,from=inc?path.a:path.b;
+            var exit=path.network.getNode(node);var enter=path.network.getNode(from);var incoming=path.network.getConnectionsFrom(enter).get(exit);
+            var options=new ArrayList<Branch>();
+            for(var entry:path.network.getConnectionsFrom(exit).entrySet()){
+                if(entry.getKey()==enter||entry.getValue().isInterDimensional()||!RailwaysCompat.geometry(incoming,entry.getValue()))continue;
+                var next=idx.paths.get(key(path.graph,node,entry.getKey().getNetId()));if(next!=null&&next.supports(RailGauge.STANDARD))options.add(new Branch(entry.getKey(),entry.getValue(),next));
+            }
+            if(options.isEmpty())return Double.POSITIVE_INFINITY;
+            options.sort(Comparator.comparingInt(b->b.node.getNetId()));
+            if(options.size()>1||path.network.getConnectionsFrom(exit).size()>2){
+                var available=options.stream().filter(b->RailwaysCompat.navigable(b.edge)).toList();int proposed=-1;
+                if(!available.isEmpty()){
+                    var directions=new Vector3dc[available.size()];for(int i=0;i<directions.length;i++){var b=available.get(i);directions[i]=PathGeometry.tangent(b.path::at,b.path.a==node?0:1).mul(b.path.a==node?1:-1);}
+                    var tangent=PathGeometry.tangent(path::at,inc?1:0).mul(inc?1:-1);
+                    proposed=available.get(BranchSelect.choose(tangent,sample.up,directions,policy.steer())).node.getNetId();
+                }
+                int selected=policy.choose(path,node,from,options.stream().mapToInt(b->b.node.getNetId()).toArray(),proposed,path.at(inc?1:0));
+                return selected<0||!policy.mayPass(path,node,from,selected)?Math.max(0,distance-.4):Double.POSITIVE_INFINITY;
+            }
+            var next=options.getFirst();inc=next.path.a==node;path=next.path;distance+=path.edge.getLength();
+        }
+        return Double.POSITIVE_INFINITY;
+    }
     private static Branch steerBranch(List<Branch> options,TrackEdge current,Vector3dc up,Vector3dc heading){
         var exitDir=vec(current.getDirection(false));
         var entries=new Vector3d[options.size()];

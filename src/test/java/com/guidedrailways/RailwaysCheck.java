@@ -14,6 +14,17 @@ public final class RailwaysCheck {
         check(!RailGauge.STANDARD.accepts("railways:wide_gauge"),"standard bogie cannot enter wide rail");
         check(!RailGauge.STANDARD.accepts("railways:monorail"),"standard bogie cannot enter a beam");
         check(RailGauge.NARROW.accepts("railways:narrow_gauge")&&RailGauge.WIDE.accepts("railways:wide_gauge")&&RailGauge.MONORAIL.accepts("railways:monorail"),"special track types are distinct");
+        var claims=new SwitchReservations();var key=new SwitchReservations.Key(java.util.UUID.randomUUID(),12);var a=java.util.UUID.randomUUID();var b=java.util.UUID.randomUUID();
+        check(claims.claim(key,a,1,2,0),"first approach reserves the switch");
+        check(!claims.claim(key,b,1,2,10),"another train cannot steal a live passage");
+        check(!claims.claim(key,a,1,3,10),"a train cannot split itself across different branches");
+        check(claims.claim(key,a,2,1,20),"the same consist can reverse through its reserved passage");
+        check(claims.owns(key,a,1,2,59)&&!claims.owns(key,a,1,2,60),"heartbeat ownership expires");
+        check(claims.claim(key,b,1,3,60),"a cleared or removed train eventually releases the switch");
+        check(RailwayStopModel.force(10,100,Double.POSITIVE_INFINITY,10,4,.05)==100,"unblocked travel keeps its existing traction");
+        check(RailwayStopModel.force(10,100,2,10,4,.05)<0,"a blocked switch applies braking before the junction");
+        check(RailwayStopModel.force(0,100,0,10,4,.05)==0,"a stopped train cannot power through a closed switch");
+        check(RailwayStopModel.force(-1,-100,0,10,4,.05)==200,"terminal braking opposes reverse travel without reversing momentum");
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }

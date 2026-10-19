@@ -13,6 +13,8 @@ public final class RouteMemory {
     private final Set<Axle> members;private final List<Passage> history=new ArrayList<>();private final Map<Axle,Repeat> repeat=new HashMap<>();
     public RouteMemory(Set<Axle> members){this.members=Set.copyOf(members);}
     public Set<Axle> members(){return members;}
+    public record Active(Junction node,int from,int to){}
+    public List<Active> active(){return history.stream().filter(p->!p.complete()||repeat.values().stream().anyMatch(r->r.node.equals(p.node))).map(p->new Active(p.node,p.from,p.to)).toList();}
     public RouteMemory copyFor(Set<Axle> next){
         var copy=new RouteMemory(next);
         for(var old:history){var p=new Passage(old.node,old.from,old.to,next);for(var a:next)p.after.put(a,old.after.getOrDefault(a,old.complete()));copy.history.add(p);}

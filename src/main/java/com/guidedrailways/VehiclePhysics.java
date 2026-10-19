@@ -148,6 +148,9 @@ public final class VehiclePhysics {
             u.reverseTravel=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading),driverRpm(u,heading),u.reverseTravel);
             boolean reverse=u.reverseTravel;
             int lead=reverse?1:0,trail=1-lead;
+            double approachSpeed=Math.abs(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading));
+            double switchRoom=TrackNetwork.switchDistance(level,u.samples[lead],heading,reverse,plan.axle(lead),approachSpeed*approachSpeed/(2*TrainConfig.BRAKING.get())+8);
+            switchRoom=plan.axle(lead).limit(switchRoom);
             var atLead=world(u.bogie,u.axle(lead));
             u.samples[lead]=TrackNetwork.follow(level,atLead,heading,u.samples[lead],null,.8,reverse,plan.axle(lead));
             plan.axle(lead).followed(u.samples[lead]);
@@ -186,6 +189,7 @@ public final class VehiclePhysics {
                     force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.speedPerRpm(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get());
                     if(!u.mount.braking&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
                 }
+                force=RailwayStopModel.force(speed,force,switchRoom,u.mass,TrainConfig.BRAKING.get(),dt);
                 var impulse=new Vector3d(sample.tangent()).mul(force*dt*.5).rotate(new Quaterniond(pose.orientation()).conjugate());
                 // Apply traction at the frame centre height, with front/rear positions distributed along its length.
                 var point=new Vector3d(u.localCenter).add(0,0,i==0?HALF_WHEELBASE:-HALF_WHEELBASE);

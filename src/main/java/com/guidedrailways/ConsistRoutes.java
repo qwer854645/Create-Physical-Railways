@@ -11,20 +11,27 @@ final class ConsistRoutes {
     private record Cached(long tick,List<Plan> plans){}
     private static final Map<ServerLevel,Cached> CACHE=new WeakHashMap<>();
     private static final class Context {
-        final RouteMemory memory;final Map<RouteMemory.Axle,Vector3d> anchors=new HashMap<>();TrackNetwork.Sample head;int intent;ScheduleController automatic;
-        Context(RouteMemory memory){this.memory=memory;}
+        final RouteMemory memory;final ServerLevel level;final UUID identity;final Map<RouteMemory.Axle,Vector3d> anchors=new HashMap<>();TrackNetwork.Sample head;int intent;ScheduleController automatic;double switchRoom=Double.POSITIVE_INFINITY;
+        Context(RouteMemory memory,ServerLevel level){this.memory=memory;this.level=level;identity=memory.members().stream().map(RouteMemory.Axle::bogie).min(UUID::compareTo).orElseThrow();}
     }
     static final class Cursor implements TrackNetwork.RoutePolicy {
         final Context context;final RouteMemory.Axle axle;final boolean leading;
+        boolean switchWaiting;
         Cursor(Context c,RouteMemory.Axle a,boolean leading){context=c;axle=a;this.leading=leading;}
         @Override public TrackNetwork.Sample leader(){return leading?null:context.head;}
         void followed(TrackNetwork.Sample sample){if(leading)context.head=sample;}
+        double limit(double room){if(leading)context.switchRoom=room;return Math.min(room,context.switchRoom);}
         @Override public BranchSelect.Steer steer(){return context.intent<0?BranchSelect.Steer.LEFT:context.intent>0?BranchSelect.Steer.RIGHT:BranchSelect.Steer.NONE;}
-        @Override public boolean blocked(){return leading&&context.automatic!=null&&context.automatic.running&&(context.automatic.plan==null||context.automatic.routeRetry);}
+        @Override public boolean blocked(){return switchWaiting||leading&&context.automatic!=null&&context.automatic.running&&(context.automatic.plan==null||context.automatic.routeRetry);}
+        @Override public boolean mayPass(TrackNetwork.Path path,int node,int from,int to){
+            boolean recorded=context.memory.active().stream().anyMatch(p->p.node().equals(new RouteMemory.Junction(path.graph(),node))&&(p.from()==from&&p.to()==to||p.from()==to&&p.to()==from));
+            boolean allowed=RailwaysCompat.pass(context.level,path,node,from,to,context.identity,recorded);
+            switchWaiting=!allowed;return allowed;
+        }
         @Override public void observe(Vector3dc position){var p=context.anchors.get(axle);if(p!=null&&p.distanceSquared(position)>1.44){context.memory.clearRepeat(axle);context.anchors.remove(axle);}}
         @Override public int choose(TrackNetwork.Path path,int node,int from,int[] exits,int proposed,Vector3d position){
             boolean planned=leading&&context.automatic!=null&&context.automatic.running&&context.automatic.plan!=null;
-            if(blocked())return -1;
+            if(leading&&context.automatic!=null&&context.automatic.running&&(context.automatic.plan==null||context.automatic.routeRetry))return -1;
             if(planned){
                 proposed=context.automatic.plan.choose(path,node,from);
                 final int expected=proposed;
@@ -95,7 +102,8 @@ final class ConsistRoutes {
             var previous=old.get(head);if(previous==null)for(var u:group)if(old.containsKey(u.carrier.getUniqueId())){previous=old.get(u.carrier.getUniqueId());break;}
             Context context;
             if(previous!=null&&previous.memory.members().equals(axleIds))context=previous;
-            else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds));if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
+            else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds),level);if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
+            for(var passage:context.memory.active())RailwaysCompat.hold(level,passage,context.identity);
             context.automatic=null;for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null){context.automatic=u.automatic.navigation();break;}
             context.intent=0;for(var u:group)if(u.driver!=null&&u.driver.active&&!u.driver.observing){context.intent=level.getGameTime()-u.driver.steerAt<=30?u.driver.steer:0;break;}
             for(var id:members)next.put(id,context);
