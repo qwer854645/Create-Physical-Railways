@@ -17,6 +17,16 @@ public final class RailDockCheck {
         check(!lease.claim(first,99)&&lease.claim(first,100),"expired heartbeat releases a connector after controller removal");
         check(!lease.release(second,101)&&lease.active(101),"late release from a previous owner cannot unlock a new arrival");
         lease.clear(102);check(!lease.active(102)&&!lease.canClaim(first,103),"rebinding clears the active request and observes release cooldown");
+        check(RailDockMail.allows(true,true,true,true,true),"unload matching mail at the linked station");
+        check(!RailDockMail.allows(true,true,true,true,false),"never unload a package addressed to another station");
+        check(!RailDockMail.allows(true,true,false,true,false),"an unbound station or one without mailboxes rejects packages");
+        check(RailDockMail.allows(true,true,true,false,false),"load outgoing mail for another address");
+        check(!RailDockMail.allows(true,true,true,false,true),"do not reload mail already delivered to the current station");
+        for(boolean shore:new boolean[]{false,true})for(boolean address:new boolean[]{false,true}){
+            check(!RailDockMail.allows(true,false,true,shore,address),"unlocked or nonreciprocal pairs cannot transfer packages");
+            check(!RailDockMail.allows(true,true,false,shore,address),"invalid station identity cannot transfer packages");
+            check(RailDockMail.allows(false,false,false,shore,address),"ordinary items keep native insertion permissions");
+        }
         var station=UUID.randomUUID();var car=UUID.randomUUID();var trailer=UUID.randomUUID();var stranger=UUID.randomUUID();
         for(boolean reciprocal:new boolean[]{false,true})for(boolean a:new boolean[]{false,true})for(boolean b:new boolean[]{false,true})
             check(RailDockGate.ready(station,station,car,Set.of(car,trailer),reciprocal,a,b)==(reciprocal&&a&&b),"both native endpoints must be mutually paired and fully locked");

@@ -13,19 +13,48 @@ import java.util.*;
 final class RailDockEntity extends DockingConnectorBlockEntity implements IHaveGoggleInformation {
     UUID stationId;BlockPos stationPos;final RailDockLease lease=new RailDockLease();
     private boolean trainSide,infoReady;private int bodies;private String stationName="",addresses="";
-    RailDockEntity(BlockPos pos,BlockState state){super(RailDockContent.ENTITY.get(),pos,state);}
+    private int powerTrace=-1;
+    RailDockEntity(BlockPos pos,BlockState state){super(RailDockContent.ENTITY.get(),pos,state);inventory=new RailDockInventory(this);}
     @Override public void initialize(){super.initialize();if(level instanceof ServerLevel){RailDockContent.track(this);refreshBinding();updateInfo();}}
     @Override public void tick(){
         if(level instanceof ServerLevel){RailDockContent.track(this);applyPower();if(level.getGameTime()%20==0){refreshBinding();updateInfo();}}
         super.tick();
+        if(level instanceof ServerLevel server&&!powered&&extension.getValue()==0){
+            // Native cleanup only runs when the animation target changes. Repair an orphaned
+            // head too, including saves loaded with an already-retracted animation target.
+            var facing=getBlockState().getValue(DockingConnectorBlock.FACING);var front=worldPosition.relative(facing);
+            if(server.hasChunkAt(front)){
+                var head=server.getBlockState(front);
+                if(head.getBlock() instanceof PairedDockingConnectorBlock&&head.getValue(PairedDockingConnectorBlock.FACING)==facing.getOpposite())
+                    server.removeBlock(front,false);
+            }
+        }
     }
     @Override public void remove(){RailDockContent.untrack(this);super.remove();}
     @Override public void onChunkUnloaded(){RailDockContent.untrack(this);super.onChunkUnloaded();}
     void applyPower(){
         if(!(level instanceof ServerLevel server)||isRemoved()||!server.hasChunkAt(worldPosition))return;
-        boolean requested=lease.active(server.getGameTime())||server.hasNeighborSignal(worldPosition);
+        boolean automatic=lease.active(server.getGameTime()),redstone=server.hasNeighborSignal(worldPosition);
+        boolean requested=automatic||redstone;
+        int trace=(automatic?1:0)|(redstone?2:0);
+        if(powerTrace!=trace){powerTrace=trace;org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[RailDockPower] pos={} automatic={} redstone={} requested={} locked={}",worldPosition,automatic,redstone,requested,isLocked());}
         var state=getBlockState();
         if(state.getValue(DockingConnectorBlock.POWERED)!=requested)server.setBlock(worldPosition,state.setValue(DockingConnectorBlock.POWERED,requested),2);
+        if(!requested){
+            powered=false;setVirtualLock(false);
+            // Do not depend on a surviving entry in the native magnet-pair map. A broken,
+            // unloaded or moved peer can leave one endpoint with a stale lock/constraint.
+            if(hasOtherConnector()||isLocked()){
+                var peer=getOtherConnector();
+                if(peer!=null&&peer.getOtherConnector()==this)peer.unDock();
+                unDock();
+            }
+        }
+    }
+    com.simibubi.create.content.trains.station.GlobalStation linkedStation(){
+        if(!(level instanceof ServerLevel server)||stationId==null||stationPos==null||SableCompanion.INSTANCE.getContaining(level,worldPosition)!=null
+            ||!server.hasChunkAt(stationPos)||!(server.getBlockEntity(stationPos) instanceof StationBlockEntity station)||station.getStation()==null)return null;
+        return stationId.equals(station.getStation().id)?station.getStation():null;
     }
     void refreshBinding(){
         if(!(level instanceof ServerLevel server))return;

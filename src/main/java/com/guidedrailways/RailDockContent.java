@@ -37,6 +37,14 @@ final class RailDockContent {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.level.LevelEvent.Unload e)->{if(e.getLevel() instanceof ServerLevel server){LIVE.remove(server);TRACE.remove(server);}});
         RailDocks.bridge=new RailDocks.Bridge(){
             public ItemStack item(){return new ItemStack(ITEM.get());}
+            public boolean allowsHandoff(net.minecraft.world.level.block.entity.BlockEntity source,net.minecraft.world.level.block.entity.BlockEntity destination){return !(source instanceof DockingConnectorBlockEntity dock)||RailDockContent.allowsTransfer(source,destination,dock.inventory.getItem(0));}
+            public boolean allowsBuffers(Object source,Object destination,ItemStack stack){
+                if(!(source instanceof RailDockInventory)&&!(destination instanceof RailDockInventory))return true;
+                DockingConnectorBlockEntity from,to;
+                if(source instanceof RailDockInventory buffer){from=buffer.owner;to=from.getOtherConnector();}
+                else{to=((RailDockInventory)destination).owner;from=to.getOtherConnector();}
+                return from!=null&&to!=null&&from.inventory==source&&to.inventory==destination&&RailDockContent.allowsTransfer(from,to,stack);
+            }
             public int acquire(ServerLevel level,ScheduleController controller,CargoStorage.Snapshot cargo){
                 int state=RailDockContent.acquire(level,controller,cargo);String value=controller.station+":"+state;
                 var traces=TRACE.computeIfAbsent(level,k->new HashMap<>());
@@ -62,9 +70,39 @@ final class RailDockContent {
         }catch(ReflectiveOperationException error){org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("Railway connector wired capability unavailable",error);}
     }
     private static void capabilities(RegisterCapabilitiesEvent event){
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK,ENTITY.get(),(dock,side)->new ContainerWrapper<>(dock.getInventory()));
+        // A capability can outlive a docking session. Resolve the native pair on every call
+        // rather than retaining the former peer's buffers after undocking or redocking.
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK,ENTITY.get(),(dock,side)->new net.neoforged.neoforge.items.IItemHandler(){
+            private ContainerWrapper<?> current(){return new ContainerWrapper<>(dock.getInventory());}
+            public int getSlots(){return current().getSlots();}
+            public ItemStack getStackInSlot(int slot){return current().getStackInSlot(slot);}
+            public ItemStack insertItem(int slot,ItemStack stack,boolean simulate){
+                if(!RailDockContent.allowsTransfer(dock,dock.getOtherConnector(),stack))return stack;
+                return current().insertItem(slot,stack,simulate);
+            }
+            public ItemStack extractItem(int slot,int amount,boolean simulate){return current().extractItem(slot,amount,simulate);}
+            public int getSlotLimit(int slot){return current().getSlotLimit(slot);}
+            public boolean isItemValid(int slot,ItemStack stack){
+                var peer=dock.getOtherConnector();
+                return slot==0&&peer!=null&&RailDockContent.allowsTransfer(dock,peer,stack);
+            }
+        });
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK,ENTITY.get(),(dock,side)->new SingleTankWrapper(dock.tank));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK,ENTITY.get(),(dock,side)->new SingleBatteryWrapper(dock.battery));
+    }
+    static boolean allowsTransfer(net.minecraft.world.level.block.entity.BlockEntity source,net.minecraft.world.level.block.entity.BlockEntity destination,ItemStack stack){
+        if(!(source instanceof RailDockEntity)&&!(destination instanceof RailDockEntity))return true;
+        if(!com.simibubi.create.content.logistics.box.PackageItem.isPackage(stack))return true;
+        if(!CargoHookStatus.ready("dock"))return false;
+        if(!(source instanceof DockingConnectorBlockEntity from)||!(destination instanceof DockingConnectorBlockEntity to)
+            ||!(from.getLevel() instanceof ServerLevel level)||to.getLevel()!=level)return false;
+        boolean receivingWorld=SableCompanion.INSTANCE.getContaining(level,to.getBlockPos())==null;
+        var shore=receivingWorld?to:from;var car=receivingWorld?from:to;
+        var station=shore instanceof RailDockEntity dock?dock.linkedStation():null;
+        boolean ready=station!=null&&!station.connectedPorts.isEmpty()&&CargoStorage.trainBody(level,car.getBlockPos())!=null;
+        boolean matches=ready&&station.connectedPorts.values().stream().anyMatch(port->com.simibubi.create.content.logistics.box.PackageItem.matchAddress(stack,port.address));
+        boolean paired=from.getOtherConnector()==to&&to.getOtherConnector()==from&&from.isLocked()&&to.isLocked();
+        return RailDockMail.allows(true,paired,ready,receivingWorld,matches);
     }
     private static Vector3d position(RailDockEntity dock){
         var p=dock.getBlockPos();var local=new Vector3d(p.getX()+.5,p.getY()+.5,p.getZ()+.5);
