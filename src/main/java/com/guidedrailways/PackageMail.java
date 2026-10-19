@@ -25,6 +25,7 @@ final class PackageMail {
         var ids=new HashSet<UUID>();boolean complete=true;
         for(var graph:Create.RAILWAYS.sided(level).trackNetworks.values())for(var station:graph.getPoints(EdgePointType.STATION)){
             if(!level.dimension().equals(station.getBlockEntityDimension()))continue;
+            if(!RailDocks.bound(level,station.id))continue;
             for(var entry:station.connectedPorts.entrySet()){
                 var port=entry.getValue();
                 if(CargoStorage.trainBody(level,entry.getKey())!=null)continue;
@@ -69,6 +70,9 @@ final class PackageMail {
             ports.add(new Port(box,entry.getValue().address));
         }
         if(ports.isEmpty())return ScheduleController.WAITING;
+        if(!RailDocks.bound(level,stop.id))return controller.packageInstruction()?ScheduleController.RAIL_DOCK:ScheduleController.WAITING;
+        int docking=RailDocks.acquire(level,controller,snapshot);
+        if(docking!=ScheduleController.WAITING)return docking;
         controller.mailMonitored=true;
         var stores=CargoStorage.packageInventories(level,snapshot);var cargo=new ArrayList<Store>();
         for(var access:stores)cargo.add(new Store(access.inventory(),()->{access.owner().setChanged();CargoTransfers.changed(access.owner());}));

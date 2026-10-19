@@ -13,6 +13,7 @@
     "DockCargoTankMixin",
     "DockCargoItemMixin",
     "DockCargoBindingMixin",
+    "RailDockHeadMixin",
     "HoseCargoBindingMixin",
     "LogisticsSnapshotMixin",
     "LogisticsDockTransferMixin"

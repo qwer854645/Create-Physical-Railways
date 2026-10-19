@@ -31,7 +31,7 @@ public final class Content {
     public static final DeferredItem<BlockItem> COUPLER_ITEM=ITEMS.register("coupler",()->new BlockItem(COUPLER.get(),new Item.Properties()){
         @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.coupler");}
     });
-    static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());o.accept(COUPLER_ITEM.get());o.accept(DRIVER_ITEM.get());}).build());}
+    static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());o.accept(COUPLER_ITEM.get());o.accept(DRIVER_ITEM.get());if(RailDocks.available())o.accept(RailDocks.bridge.item());}).build());}
     static void register(IEventBus bus){bus.addListener(DriverNetwork::register);BLOCKS.register(bus);MENUS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);TABS.register(bus);
         if(net.neoforged.fml.loading.FMLEnvironment.dist==net.neoforged.api.distmarker.Dist.CLIENT)TrainClient.register(bus);
     }

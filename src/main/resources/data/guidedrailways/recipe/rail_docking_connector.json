@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "simulated"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    {
+      "item": "simulated:docking_connector"
+    },
+    {
+      "item": "create:railway_casing"
+    }
+  ],
+  "result": {
+    "id": "guidedrailways:rail_docking_connector",
+    "count": 1
+  }
+}

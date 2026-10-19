@@ -5,6 +5,10 @@
     "guidedrailways:bogie_frame",
     "guidedrailways:bogie_collision",
     "guidedrailways:coupler",
-    "guidedrailways:driver_console"
+    "guidedrailways:driver_console",
+    {
+      "id": "guidedrailways:rail_docking_connector",
+      "required": false
+    }
   ]
 }

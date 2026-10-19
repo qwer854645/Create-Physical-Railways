@@ -38,14 +38,14 @@ public final class LanguageCheck {
                 while(matcher.find()){String key=matcher.group(1);if(!key.endsWith("."))check(en.containsKey(key),"missing literal key in "+path+": "+key);}
                 matcher=helper.matcher(source);while(matcher.find())check(en.containsKey("gui.guidedrailways.driver."+matcher.group(1)),"missing driver helper key: "+matcher.group(1));
                 matcher=hint.matcher(source);while(matcher.find()){
-                    String prefix=path.getFileName().toString().equals("ScheduleController.java")?"gui.guidedrailways.auto.":"gui.guidedrailways.driver.";
+                    String prefix=path.getFileName().toString().equals("ScheduleController.java")?"gui.guidedrailways.auto.":path.getFileName().toString().equals("RailDockInteractions.java")?"message.guidedrailways.rail_dock.":"gui.guidedrailways.driver.";
                     check(en.containsKey(prefix+matcher.group(1)),"missing action hint: "+prefix+matcher.group(1));
                 }
                 check(!Pattern.compile("[\\x{4e00}-\\x{9fff}]").matcher(source).find(),"hard-coded Chinese bypasses localization: "+path);
                 if(!path.getFileName().toString().equals("UserText.java"))check(!source.contains("Component.literal("),"unlocalized player-facing literal: "+path);
             }
         }
-        for(int state=0;state<=20;state++)check(en.containsKey("gui.guidedrailways.auto.state."+state),"missing automatic state "+state);
+        for(int state=0;state<=21;state++)check(en.containsKey("gui.guidedrailways.auto.state."+state),"missing automatic state "+state);
         for(String key:List.of("steer_left","steer_right","steer_default","brake_notch","coasting","world_hint","dragging_hint","reset_hint","observing","emergency_on","back_settings","gear_settings"))
             check(en.containsKey("gui.guidedrailways.driver."+key),"missing conditional driver text: "+key);
         for(String key:List.of("bogie","coupler","driver_console"))check(zh.get("tooltip.guidedrailways."+key).contains("\n"),"item tooltip has actual translated line breaks");

@@ -25,7 +25,11 @@ public final class CargoAdapters {
         if(member==null){member=object.getClass().getField(name);MEMBERS.put(key,member);}
         return ((Field)member).get(object);
     }
-    public static boolean dock(BlockEntity entity){return entity!=null&&entity.getClass().getName().equals(DOCK);}
+    public static boolean dock(BlockEntity entity){
+        if(entity==null)return false;
+        for(Class<?> type=entity.getClass();type!=null;type=type.getSuperclass())if(type.getName().equals(DOCK))return true;
+        return false;
+    }
     static boolean hose(BlockEntity entity){return entity.getClass().getName().startsWith("com.mk2525.vsfluidlink.content.");}
     public static void bindConnector(BlockEntity entity){
         try{

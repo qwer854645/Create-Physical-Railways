@@ -13,7 +13,7 @@ import java.util.*;
 /** An original runtime for Create schedule DATA; never ticks a fake Create Train. */
 final class ScheduleController {
     static final int EMPTY=0,PAUSED=1,PLANNING=2,TRAVELLING=3,WAITING=4,FINISHED=5,UNSUPPORTED=6,
-        NO_ROUTE=7,NO_POWER=8,TRACK_MISSING=9,CONFLICT=10,CHANGED=11,OVERSHOOT=12,UNLOADED=13,EMERGENCY=14,SIGNAL_WAIT=16,CARGO_CONNECTOR=17,DOCK_WAIT=18,PACKAGE_TARGET=19,PACKAGE_WAIT=20;
+        NO_ROUTE=7,NO_POWER=8,TRACK_MISSING=9,CONFLICT=10,CHANGED=11,OVERSHOOT=12,UNLOADED=13,EMERGENCY=14,SIGNAL_WAIT=16,CARGO_CONNECTOR=17,DOCK_WAIT=18,PACKAGE_TARGET=19,PACKAGE_WAIT=20,RAIL_DOCK=21;
     final DriverConsoleEntity owner;ItemStack item=ItemStack.EMPTY;Schedule program;
     boolean running,manualOverride,waiting,releaseBrakes;long nextPlan,nextVisual;boolean visualDirty;int entry,status,stableTicks;UUID station;
     AutomaticTrains.Plan plan;Set<UUID> members;DriverConsoleEntity manualSource;
@@ -35,6 +35,7 @@ final class ScheduleController {
         for(var entry:schedule.entries){
             if(entry==null||entry.instruction==null||entry.conditions==null)return "invalid";
             var type=entry.instruction.getClass();
+            if((type==FetchPackagesInstruction.class||type==DeliverPackagesInstruction.class)&&!RailDocks.available())return "simulated";
             if(!travelInstruction(entry.instruction)&&type!=ChangeThrottleInstruction.class&&type!=ChangeTitleInstruction.class)return entry.instruction.getId().toString();
             if(!travelInstruction(entry.instruction))continue;
             for(var branch:entry.conditions)for(var c:branch)
@@ -122,9 +123,10 @@ final class ScheduleController {
         owner.leave();owner.enabled=false;running=true;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;members=null;cargoBodies=null;stableTicks=0;nextPlan=0;releaseBrakes=true;syncProgress();state(PLANNING);return true;
     }
     void manual(DriverConsoleEntity source){
+        RailDocks.release(this);
         running=false;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=true;manualSource=source;plan=null;remaining=Double.NaN;stableTicks=0;state(PAUSED);
     }
-    void pause(int reason){running=false;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
+    void pause(int reason){RailDocks.release(this);running=false;routeRetry=false;resumePending=false;reloadGate=null;manualOverride=false;manualSource=null;plan=null;remaining=Double.NaN;stableTicks=0;state(reason);}
     boolean restore(ServerLevel level,Set<UUID> actual){
         if(!resumePending)return true;
         var readiness=reloadGate.tick(actual,level.getGameTime());
@@ -242,6 +244,7 @@ final class ScheduleController {
         return condition.tickCompletion(level,null,context);
     }
     void advance(){
+        RailDocks.release(this);
         nextPlan=0;entry++;waiting=false;station=null;plan=null;remaining=Double.NaN;stableTicks=0;resetConditions();
         if(entry>=program().entries.size()){
             if(program().cyclic)entry=0;else{running=false;syncProgress();state(FINISHED);return;}
