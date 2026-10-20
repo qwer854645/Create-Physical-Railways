@@ -35,6 +35,13 @@ public final class TrainIntegrationCheck {
         for (int i = 0; i < n; i++)
           for (int j = 0; j < n; j++) reach[i][j] |= reach[i][k] && reach[k][j];
       var groups = ConsistGraph.components(ids, edges);
+      var buckets = ConsistGraph.bucket(groups, edges, ConsistGraph.Link::a);
+      for (int i = 0; i < groups.size(); i++) {
+        var members = groups.get(i);
+        check(
+            buckets.get(i).equals(edges.stream().filter(e -> members.contains(e.a())).toList()),
+            "linear bucketing retains every consist edge and original processing order");
+      }
       var owner = new HashMap<UUID, Set<UUID>>();
       for (var group : groups)
         for (var member : group)

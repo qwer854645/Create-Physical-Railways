@@ -64,14 +64,17 @@ final class TrainConsists {
     var byCarrier = new HashMap<UUID, List<VehiclePhysics.Unit>>();
     for (var unit : units)
       byCarrier.computeIfAbsent(unit.carrier.getUniqueId(), k -> new ArrayList<>()).add(unit);
-    for (var members : ConsistGraph.components(bodies.keySet(), edges)) {
+    var components = ConsistGraph.components(bodies.keySet(), edges);
+    var linkGroups = ConsistGraph.bucket(components, links, link -> link.a().getUniqueId());
+    int componentIndex = 0;
+    for (var members : components) {
       var groupBodies = new HashMap<UUID, ServerSubLevel>();
       var groupUnits = new ArrayList<VehiclePhysics.Unit>();
       for (var id : members) {
         groupBodies.put(id, bodies.get(id));
         groupUnits.addAll(byCarrier.getOrDefault(id, List.of()));
       }
-      var groupLinks = links.stream().filter(l -> members.contains(l.a().getUniqueId())).toList();
+      var groupLinks = linkGroups.get(componentIndex++);
       var group = new Group(members, List.copyOf(groupUnits), Map.copyOf(groupBodies), groupLinks);
       groups.add(group);
       for (var id : members) byBody.put(id, group);

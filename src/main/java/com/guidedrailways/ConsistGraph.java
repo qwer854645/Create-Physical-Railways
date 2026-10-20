@@ -35,4 +35,22 @@ public final class ConsistGraph {
     }
     return List.copyOf(result);
   }
+
+  static <T> List<List<T>> bucket(
+      List<Set<UUID>> components,
+      Collection<T> links,
+      java.util.function.Function<T, UUID> endpoint) {
+    var owner = new HashMap<UUID, Integer>();
+    var output = new ArrayList<List<T>>();
+    for (int i = 0; i < components.size(); i++) {
+      output.add(new ArrayList<>());
+      for (var body : components.get(i)) owner.put(body, i);
+    }
+    for (var link : links) {
+      var index = owner.get(endpoint.apply(link));
+      if (index == null) throw new IllegalArgumentException("Connection outside consist partition");
+      output.get(index).add(link);
+    }
+    return output.stream().map(List::copyOf).toList();
+  }
 }
