@@ -6,12 +6,13 @@ public final class BogeyVariant {
     public static final BogeyVariant DEFAULT=new BogeyVariant();
     private static final List<BogeyVariant> ALL=new ArrayList<>();
     public static final BogeyVariant FREIGHT,PASSENGER,MODERN,BLOMBERG,Y25;
-    public final String id,size;public final RailGauge gauge;public final double renderY,tread,ride,half,animationRatio;public final int mountTop;
+    public final String id,size;public final RailGauge gauge;public final double renderY,tread,ride,half,animationRatio,supportBottom;public final int mountTop,legacyMountTop;
     final List<double[]> boxes;private final int index;
-    private BogeyVariant(){index=0;id="";size="";gauge=RailGauge.STANDARD;renderY=BogieGeometry.RENDER_Y;tread=BogieGeometry.TREAD_RADIUS;ride=BogieGeometry.RIDE_HEIGHT;half=1;mountTop=2;animationRatio=1;boxes=List.of();}
+    private BogeyVariant(){index=0;id="";size="";gauge=RailGauge.STANDARD;renderY=BogieGeometry.RENDER_Y;tread=BogieGeometry.TREAD_RADIUS;ride=BogieGeometry.RIDE_HEIGHT;half=1;mountTop=2;legacyMountTop=2;supportBottom=BogieGeometry.SUPPORT_BOTTOM;animationRatio=1;boxes=List.of();}
     private BogeyVariant(JsonObject data){
         index=data.get("index").getAsInt();id=data.get("id").getAsString();size=data.get("size").getAsString();gauge=Objects.requireNonNull(RailGauge.forTrack(data.get("gauge").getAsString()));
         renderY=data.get("renderY").getAsDouble();tread=data.get("tread").getAsDouble();ride=data.get("ride").getAsDouble();half=data.get("half").getAsDouble();mountTop=data.get("mountTop").getAsInt();animationRatio=data.get("animationRatio").getAsDouble();
+        legacyMountTop=data.get("legacyMountTop").getAsInt();supportBottom=data.get("supportBottom").getAsDouble();
         var list=new ArrayList<double[]>();for(var value:data.getAsJsonArray("boxes")){double[] b=new double[6];for(int i=0;i<6;i++)b[i]=value.getAsJsonArray().get(i).getAsDouble();list.add(b);}boxes=List.copyOf(list);
     }
     static{
@@ -31,6 +32,6 @@ public final class BogeyVariant {
     public static BogeyVariant defaultFor(RailGauge gauge){return Objects.requireNonNull(find(switch(gauge){case NARROW->"railways:narrow_default";case WIDE->"railways:wide_default";case MONORAIL->"railways:monobogey";default->"create:standard";},"create:small"));}
     public double ride(RailGauge gauge){return this==DEFAULT?BogieGeometry.ride(gauge):ride;}
     public double plateOffset(RailGauge gauge){return this==DEFAULT?BogieGeometry.plateOffset(gauge):mountTop-.5-ride;}
-    public double pivotHeight(int version,RailGauge gauge){return this==DEFAULT?BogieGeometry.pivotHeight(version,gauge):plateOffset(gauge)+BogieGeometry.MOUNT_UNDERSIDE-.5;}
+    public double pivotHeight(int version,RailGauge gauge){return this==DEFAULT?BogieGeometry.pivotHeight(version,gauge):(version>=3?mountTop:legacyMountTop)-.5-ride+BogieGeometry.MOUNT_UNDERSIDE-.5;}
     @Override public String toString(){return this==DEFAULT?"DEFAULT":id+"/"+size;}
 }

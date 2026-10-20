@@ -1,7 +1,124 @@
 {
   "variants": {
-    "": {
+    "style=0": {
       "model": "guidedrailways:block/bogie_mount"
+    },
+    "style=1": {
+      "model": "guidedrailways:block/bogie_mount_1"
+    },
+    "style=2": {
+      "model": "guidedrailways:block/bogie_mount_2"
+    },
+    "style=3": {
+      "model": "guidedrailways:block/bogie_mount_3"
+    },
+    "style=4": {
+      "model": "guidedrailways:block/bogie_mount_4"
+    },
+    "style=5": {
+      "model": "guidedrailways:block/bogie_mount_5"
+    },
+    "style=6": {
+      "model": "guidedrailways:block/bogie_mount_6"
+    },
+    "style=7": {
+      "model": "guidedrailways:block/bogie_mount_7"
+    },
+    "style=8": {
+      "model": "guidedrailways:block/bogie_mount_8"
+    },
+    "style=9": {
+      "model": "guidedrailways:block/bogie_mount_9"
+    },
+    "style=10": {
+      "model": "guidedrailways:block/bogie_mount_10"
+    },
+    "style=11": {
+      "model": "guidedrailways:block/bogie_mount_11"
+    },
+    "style=12": {
+      "model": "guidedrailways:block/bogie_mount_12"
+    },
+    "style=13": {
+      "model": "guidedrailways:block/bogie_mount_13"
+    },
+    "style=14": {
+      "model": "guidedrailways:block/bogie_mount_14"
+    },
+    "style=15": {
+      "model": "guidedrailways:block/bogie_mount_15"
+    },
+    "style=16": {
+      "model": "guidedrailways:block/bogie_mount_16"
+    },
+    "style=17": {
+      "model": "guidedrailways:block/bogie_mount_17"
+    },
+    "style=18": {
+      "model": "guidedrailways:block/bogie_mount_18"
+    },
+    "style=19": {
+      "model": "guidedrailways:block/bogie_mount_19"
+    },
+    "style=20": {
+      "model": "guidedrailways:block/bogie_mount_20"
+    },
+    "style=21": {
+      "model": "guidedrailways:block/bogie_mount_21"
+    },
+    "style=22": {
+      "model": "guidedrailways:block/bogie_mount_22"
+    },
+    "style=23": {
+      "model": "guidedrailways:block/bogie_mount_23"
+    },
+    "style=24": {
+      "model": "guidedrailways:block/bogie_mount_24"
+    },
+    "style=25": {
+      "model": "guidedrailways:block/bogie_mount_25"
+    },
+    "style=26": {
+      "model": "guidedrailways:block/bogie_mount_26"
+    },
+    "style=27": {
+      "model": "guidedrailways:block/bogie_mount_27"
+    },
+    "style=28": {
+      "model": "guidedrailways:block/bogie_mount_28"
+    },
+    "style=29": {
+      "model": "guidedrailways:block/bogie_mount_29"
+    },
+    "style=30": {
+      "model": "guidedrailways:block/bogie_mount_30"
+    },
+    "style=31": {
+      "model": "guidedrailways:block/bogie_mount_31"
+    },
+    "style=32": {
+      "model": "guidedrailways:block/bogie_mount_32"
+    },
+    "style=33": {
+      "model": "guidedrailways:block/bogie_mount_33"
+    },
+    "style=34": {
+      "model": "guidedrailways:block/bogie_mount_34"
+    },
+    "style=35": {
+      "model": "guidedrailways:block/bogie_mount_35"
+    },
+    "style=36": {
+      "model": "guidedrailways:block/bogie_mount_36"
+    },
+    "style=37": {
+      "model": "guidedrailways:block/bogie_mount_37"
+    },
+    "style=38": {
+      "model": "guidedrailways:block/bogie_mount_38"
+    },
+    "style=39": {
+      "model": "guidedrailways:block/bogie_mount_39"
     }
   }
 }

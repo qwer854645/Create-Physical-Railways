@@ -39,7 +39,7 @@ public final class VehiclePhysics {
         final TrackNetwork.Sample[] samples=new TrackNetwork.Sample[2];
         final DerailmentModel.Exposure exposure=new DerailmentModel.Exposure();
         double mass,speed,curveRisk,lateralSpeed;long lastSeen,nextLog,derailGraceUntil;boolean detached,reverseTravel;int supports=1;
-        Unit(MountEntity mount,ServerSubLevel carrier,ServerSubLevel bogie){var variant=BogieBlock.variant(bogie.getLevel().getBlockState(bogie.getPlot().getCenterBlock()));if(mount.variant!=variant){mount.variant=variant;mount.setChanged();}this.mount=mount;this.carrier=carrier;this.bogie=bogie;localCenter=center(bogie);var tag=bogie.getUserDataTag();detached=tag!=null&&tag.getBoolean("GuidedDerailed");}
+        Unit(MountEntity mount,ServerSubLevel carrier,ServerSubLevel bogie){var variant=BogieBlock.variant(bogie.getLevel().getBlockState(bogie.getPlot().getCenterBlock()));if(mount.variant!=variant){mount.variant=variant;mount.setChanged();}MountBlock.updateStyle(mount);this.mount=mount;this.carrier=carrier;this.bogie=bogie;localCenter=center(bogie);var tag=bogie.getUserDataTag();detached=tag!=null&&tag.getBoolean("GuidedDerailed");}
         Vector3d axle(int i){return new Vector3d(localCenter).add(0,-mount.variant.ride(mount.gauge),i==0?mount.variant.half:-mount.variant.half);}
         void clearGuides(){for(int i=0;i<2;i++){if(guides[i]!=null&&guides[i].isValid())guides[i].remove();guides[i]=null;}}
         void close(){clearGuides();if(pivot!=null&&pivot.isValid())pivot.remove();}
@@ -278,7 +278,7 @@ public final class VehiclePhysics {
         double extent=4;for(int i=0;i<seats.size();i++)extent=Math.max(extent,seats.get(i).distance(seats.get(selectedIndex))*1.8+units.get(i).mount.variant.half*2+4);
         if(extent>256)throw new IllegalArgumentException("message.guidedrailways.rail.too_long");
         var route=TrackNetwork.placementRoute(level,sample,extent,units.stream().map(u->u.mount.gauge).collect(java.util.stream.Collectors.toSet()));
-        var plan=RailPlacement.carriage(route,seats,selectedIndex,localForward,units.stream().map(u->new RailPlacement.Dimensions(u.mount.variant.ride(u.mount.gauge),u.mount.variant.half,u.mount.pivotHeight())).toList());
+        var plan=RailPlacement.carriage(route,seats,selectedIndex,localForward,units.stream().map(u->new RailPlacement.Dimensions(u.mount.variant.ride(u.mount.gauge),u.mount.variant.half,u.mount.variant.pivotHeight(BogieGeometry.MOUNT_HEIGHT_VERSION,u.mount.gauge))).toList());
         if(pipe.getLinearVelocity(selected.carrier,new Vector3d()).length()>.25)throw new IllegalArgumentException("message.guidedrailways.rail.stop");
         record Move(ServerSubLevel body,Vector3d position,Quaterniond rotation,Pose3d before,Vector3d velocity,Vector3d angular){}
         var moves=new ArrayList<Move>();
@@ -303,7 +303,7 @@ public final class VehiclePhysics {
             var unit=units.get(i);
             if(unit.mount.heightVersion<BogieGeometry.MOUNT_HEIGHT_VERSION){
                 if(unit.pivot!=null&&unit.pivot.isValid())unit.pivot.remove();
-                unit.mount.heightVersion=BogieGeometry.MOUNT_HEIGHT_VERSION;unit.mount.setChanged();unit.mount.sendData();connectPivot(unit);
+                unit.mount.heightVersion=BogieGeometry.MOUNT_HEIGHT_VERSION;MountBlock.updateStyle(unit.mount);unit.mount.setChanged();unit.mount.sendData();connectPivot(unit);
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[PlatformHeight] carrier={} mount={} version={} raised={}",unit.carrier.getUniqueId(),unit.mount.getBlockPos(),unit.mount.heightVersion,BogieGeometry.PLATFORM_RAISE);
             }
             finishReraile(unit);seedPlacement(unit,plan.bogies().get(i),route);
@@ -383,7 +383,7 @@ public final class VehiclePhysics {
             bogie=createBody(level,Content.BOGIE.get().defaultBlockState().setValue(BogieBlock.GAUGE,gauge.ordinal()).setValue(BogieBlock.STYLE,selection.variant().ordinal()),fit.origin(),fit.rotation());
             applyBogeySelection(bogie,selection);
             var upperOrigin=new Vector3d(fit.origin()).add(new Vector3d(0,selection.variant().plateOffset(gauge),0).rotate(fit.rotation()));
-            carrier=createBody(level,Content.MOUNT.get().defaultBlockState(),upperOrigin,fit.rotation());
+            carrier=createBody(level,Content.MOUNT.get().defaultBlockState().setValue(BogieBlock.STYLE,selection.variant().ordinal()),upperOrigin,fit.rotation());
             var mount=(MountEntity)level.getBlockEntity(carrier.getPlot().getCenterBlock());if(mount==null)throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
             mount.gauge=gauge;mount.variant=selection.variant();mount.bogieId=bogie.getUniqueId();mount.setChanged();register(mount);tick(level);
             var u=ACTIVE.getOrDefault(level,Map.of()).get(bogie.getUniqueId());if(u!=null)seedPlacement(u,fit,route);
@@ -403,7 +403,7 @@ public final class VehiclePhysics {
         applyBogeySelection(bogie,selection);
         var tag=bogie.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();tag.putBoolean("GuidedDerailed",true);bogie.setUserDataTag(tag);
         try{
-            level.setBlock(pos,Content.MOUNT.get().defaultBlockState(),3);
+            level.setBlock(pos,Content.MOUNT.get().defaultBlockState().setValue(BogieBlock.STYLE,selection.variant().ordinal()),3);
             if(!(level.getBlockEntity(pos) instanceof MountEntity mount))throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
             mount.gauge=gauge;mount.variant=selection.variant();mount.bogieId=bogie.getUniqueId();mount.setChanged();register(mount);carrier.buildMassTracker();carrier.updateMergedMassData(1);pipe.onStatsChanged(carrier);tick(level);
             context.getPlayer().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guidedrailways.placement.installed"),true);

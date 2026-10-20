@@ -2,6 +2,7 @@
 import json,math,collections,argparse,hashlib
 from pathlib import Path
 import numpy as np
+from fit_bogey_mounts import fit_mount, write_models, measure_bearing
 p=argparse.ArgumentParser();p.add_argument('--input',default='build/bogey-capture.json');a=p.parse_args()
 rows=json.loads(Path(a.input).read_text());out=[]
 legacy=['railways:freight','railways:passenger','railways:modern','railways:blomberg','railways:y25']
@@ -9,6 +10,7 @@ rows.sort(key=lambda r:(0,legacy.index(r['id'])) if r['id'] in legacy else (1,r[
 S=16;RENDER_Y=1.0078125
 for index,row in enumerate(rows,1):
     frames=np.array(row.pop('frames'));vertices=frames[0] if frames.size else np.empty((0,3));circles=[]
+    row['bearingTop']=measure_bearing(frames)
     if frames.size:
         mean=frames.mean(axis=0);r=np.linalg.norm(frames[:,:,1:]-mean[None,:,1:],axis=2)
         valid=(np.ptp(frames[:,:,0],axis=0)<1e-4)&(r.mean(axis=0)>.06)&(np.ptp(r,axis=0)<.003)
@@ -68,9 +70,11 @@ for index,row in enumerate(rows,1):
     if (0,0,0) not in cells:boxes.append([.375,.75,.375,.625,1,.625]);cells.add((0,0,0))
     assert len(cells)<127,(row['id'],len(cells))
     row.update(index=index,renderY=RENDER_Y,tread=round(max(.05,tread),7),ride=round(ride,7),half=round(half,7),mountTop=top,animationRatio=2 if row['id']=='railways:handcar' else 1,sourceJarSha256=hashlib.sha256(Path('libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar').read_bytes()).hexdigest(),boxes=boxes)
+    fit_mount(row)
     out.append(row);print(index,row['id'],row['size'],'ride',round(ride,3),'tread',round(tread,3),'half',half,'cells',len(cells),'boxes',len(boxes))
 dest=Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json');dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')
 print('Wrote',len(out),'native style/size profiles',dest)
+write_models(out)
 mass_path=Path('src/main/resources/data/guidedrailways/physics_block_properties/bogie_collision.json')
 mass=json.loads(mass_path.read_text());mass['overrides']={('style=0,'+k if not k.startswith('style=') else k):v for k,v in mass['overrides'].items() if not k.startswith('style=') or k.startswith('style=0,')}
 for row in out:

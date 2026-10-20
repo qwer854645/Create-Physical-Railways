@@ -12,9 +12,17 @@ import java.util.*;
 public final class MountBlock extends ComponentBlock implements IRotate,IBE<MountEntity>,BlockSubLevelAssemblyListener {
     private record Transfer(UUID bogie,boolean brake,int heightVersion,RailGauge gauge,BogeyVariant variant,org.joml.Quaterniond worldReference,long expires){}
     private static final Map<GlobalPos,Transfer> TRANSFERS=new HashMap<>();
-    MountBlock(Properties p){super(p);}
+    MountBlock(Properties p){super(p);registerDefaultState(stateDefinition.any().setValue(BogieBlock.STYLE,0));}
+    @Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block,BlockState> builder){builder.add(BogieBlock.STYLE);}
     private static final VoxelShape SHAPE=Shapes.or(box(0,12,0,16,16,16),box(5,BogieGeometry.SUPPORT_BOTTOM*16,5,11,12,11));
-    @Override protected VoxelShape getShape(BlockState s,BlockGetter l,BlockPos p,CollisionContext c){return SHAPE;}
+    private static final Map<BogeyVariant,VoxelShape> SHAPES=new HashMap<>();
+    static{for(var v:BogeyVariant.values())SHAPES.put(v,v==BogeyVariant.DEFAULT?SHAPE:Shapes.or(box(0,12,0,16,16,16),box(5,v.supportBottom*16,5,11,12,11)));}
+    @Override protected VoxelShape getShape(BlockState s,BlockGetter l,BlockPos p,CollisionContext c){return SHAPES.get(BogieBlock.variant(s));}
+    static void updateStyle(MountEntity mount){
+        // Existing changed-height mounts retain their anchors until an explicit rerail.
+        if(mount.heightVersion<3&&mount.variant.mountTop!=mount.variant.legacyMountTop)return;
+        var state=mount.getBlockState();if(state.getValue(BogieBlock.STYLE)!=mount.variant.ordinal())mount.getLevel().setBlockAndUpdate(mount.getBlockPos(),state.setValue(BogieBlock.STYLE,mount.variant.ordinal()));
+    }
     @Override public Direction.Axis getRotationAxis(BlockState s){return Direction.Axis.Y;}
     @Override public boolean hasShaftTowards(LevelReader l,BlockPos p,BlockState s,Direction face){return face==Direction.UP;}
     @Override public Class<MountEntity> getBlockEntityClass(){return MountEntity.class;}
