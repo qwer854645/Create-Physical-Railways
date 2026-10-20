@@ -6,6 +6,7 @@
   "mixins": [
     "TrackedContraptionAccessor",
     "TrackTopologyMixin",
+    "MonorailTrackContactMixin",
     "CouplerRemovalMixin",
     "NativeTrainContactMixin",
     "StationBlockMixin",

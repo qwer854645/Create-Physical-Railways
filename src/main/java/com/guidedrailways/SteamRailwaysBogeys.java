@@ -37,6 +37,16 @@ final class SteamRailwaysBogeys implements PhysicalBogeySelection.Bridge {
   }
 
   static void verifyRegisteredStyles() {
+    var rail =
+        net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                "railways", "track_monorail"));
+    if (dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback.sable$getCallback(
+            rail.defaultBlockState())
+        != MonorailContacts.INSTANCE)
+      throw new IllegalStateException("Monorail contact callback missing");
+    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+        .info("[MonorailContact] selective guided-bogie callback registered");
     int count = 0;
     for (var style : AllBogeyStyles.BOGEY_STYLES.values())
       if (style.id.getNamespace().equals("railways") || style == AllBogeyStyles.STANDARD)
