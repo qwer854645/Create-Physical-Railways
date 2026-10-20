@@ -17,7 +17,7 @@ public final class BogieYawCheck {
                 check(Math.abs(returned.dot(local))>1-1e-10,"splitting back out preserves the mounting reference without accumulated drift");
             }
             for(double yaw:new double[]{-.4,0,.4,Math.PI-.4,Math.PI,Math.PI+.4}){
-                var bogie=new Quaterniond(before).rotateY(yaw);var reference=BogieYawModel.migrate(before,bogie);
+                var bogie=new Quaterniond(before).rotateY(yaw);var reference=BogieYawModel.reference(before,bogie);
                 var difference=new Vector3d(0,0,1).rotate(bogie).rotate(new Quaterniond(before).mul(reference).conjugate());
                 check(Math.abs(Math.atan2(difference.x,difference.z))<.41,"old reversed bogies recover the nearer longitudinal direction rather than being forced through 180 degrees");
             }

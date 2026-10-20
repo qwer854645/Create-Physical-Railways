@@ -18,7 +18,7 @@ public final class DriverControls {
             var c=console.schedule;RailDocks.release(c);c.members=null;c.cargoBodies=null;c.plan=null;c.nextPlan=0;c.routeRetry=false;c.waiting=false;c.station=null;c.stableTicks=0;c.resetConditions();console.setChanged();
         }
     }
-    static void register(ServerLevel level,DriverConsoleEntity e){if(!e.identitySaved){e.identitySaved=true;e.setChanged();}CONSOLES.computeIfAbsent(level,l->new HashMap<>()).put(e.getBlockPos().immutable(),e);}
+    static void register(ServerLevel level,DriverConsoleEntity e){CONSOLES.computeIfAbsent(level,l->new HashMap<>()).put(e.getBlockPos().immutable(),e);}
     static ServerSubLevel body(DriverConsoleEntity e){return e.getLevel()!=null&&SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
     private static Map<UUID,DriverConsoleEntity> election(ServerLevel level){
         var records=new ArrayList<ConsoleElection.Console>();var byId=new HashMap<UUID,DriverConsoleEntity>();

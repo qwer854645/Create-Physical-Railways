@@ -265,7 +265,7 @@ final class ScheduleController {
     }
     void load(CompoundTag tag,HolderLookup.Provider registries){
         var data=tag.getCompound("PhysicalSchedule");item=ItemStack.parseOptional(registries,data.getCompound("Item"));program=null;
-        throttle=data.contains("Throttle")?SchedulePrelude.throttle(data.getDouble("Throttle")):1;currentTitle=data.getString("Title");
+        throttle=SchedulePrelude.throttle(data.getDouble("Throttle"));currentTitle=data.getString("Title");
         entry=Math.max(0,data.getInt("Entry"));waiting=data.getBoolean("Waiting");station=data.hasUUID("Station")?data.getUUID("Station"):null;
         resetConditions();var list=data.getList("Conditions",Tag.TAG_COMPOUND);for(int i=0;i<list.size();i++){var b=list.getCompound(i);progress.add(Math.max(0,b.getInt("Progress")));var context=b.getCompound("Context").copy();context.remove("CargoNextCheck");context.remove("CargoWaitStarted");contexts.add(context);}
         var cargo=new HashSet<UUID>();var cargoList=data.getList("CargoBodies",Tag.TAG_STRING);for(int i=0;i<cargoList.size();i++)try{cargo.add(UUID.fromString(cargoList.getString(i)));}catch(IllegalArgumentException ignored){}cargoBodies=cargo.isEmpty()?null:Set.copyOf(cargo);

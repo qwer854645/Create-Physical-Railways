@@ -6,3668 +6,3665 @@
     "sable:restitution": 0
   },
   "overrides": {
-    "style=0,gauge=0,part=9": {
-      "sable:mass": 8
+    "shape\u003d0": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=0,part=11": {
-      "sable:mass": 8
+    "shape\u003d1": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=0,part=15": {
-      "sable:mass": 8
+    "shape\u003d2": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=0,part=17": {
-      "sable:mass": 8
+    "shape\u003d3": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=1,part=7": {
-      "sable:mass": 8
+    "shape\u003d4": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=1,part=9": {
-      "sable:mass": 8
+    "shape\u003d5": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=1,part=12": {
-      "sable:mass": 8
+    "shape\u003d6": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=1,part=15": {
-      "sable:mass": 8
+    "shape\u003d7": {
+      "sable:mass": 8.0
     },
-    "style=0,gauge=2,part=14": {
-      "sable:mass": 8
+    "shape\u003d8": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=2,part=16": {
-      "sable:mass": 8
+    "shape\u003d9": {
+      "sable:mass": 8.0
     },
-    "style=0,gauge=2,part=25": {
-      "sable:mass": 8
+    "shape\u003d10": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=2,part=27": {
-      "sable:mass": 8
+    "shape\u003d11": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=3,part=6": {
-      "sable:mass": 8
+    "shape\u003d12": {
+      "sable:mass": 8.0
     },
-    "style=0,gauge=3,part=8": {
-      "sable:mass": 8
+    "shape\u003d13": {
+      "sable:mass": 0.0
     },
-    "style=0,gauge=3,part=11": {
-      "sable:mass": 8
+    "shape\u003d14": {
+      "sable:mass": 8.0
     },
-    "style=0,gauge=3,part=14": {
-      "sable:mass": 8
+    "shape\u003d15": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=0": {
-      "sable:mass": 2.133333333
+    "shape\u003d16": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=1": {
-      "sable:mass": 2.133333333
+    "shape\u003d17": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=2": {
-      "sable:mass": 2.133333333
+    "shape\u003d18": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=3": {
-      "sable:mass": 2.133333333
+    "shape\u003d19": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=4": {
-      "sable:mass": 2.133333333
+    "shape\u003d20": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=5": {
-      "sable:mass": 2.133333333
+    "shape\u003d21": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=6": {
-      "sable:mass": 2.133333333
+    "shape\u003d22": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=7": {
-      "sable:mass": 2.133333333
+    "shape\u003d23": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=8": {
-      "sable:mass": 2.133333333
+    "shape\u003d24": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=9": {
-      "sable:mass": 2.133333333
+    "shape\u003d25": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=10": {
-      "sable:mass": 2.133333333
+    "shape\u003d26": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=11": {
-      "sable:mass": 2.133333333
+    "shape\u003d27": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=12": {
-      "sable:mass": 2.133333333
+    "shape\u003d28": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=14": {
-      "sable:mass": 2.133333333
+    "shape\u003d29": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=1,part=15": {
-      "sable:mass": 2.133333333
+    "shape\u003d30": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=0": {
-      "sable:mass": 2.285714286
+    "shape\u003d31": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=1": {
-      "sable:mass": 2.285714286
+    "shape\u003d32": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=2": {
-      "sable:mass": 2.285714286
+    "shape\u003d33": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=3": {
-      "sable:mass": 2.285714286
+    "shape\u003d34": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=4": {
-      "sable:mass": 2.285714286
+    "shape\u003d35": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=5": {
-      "sable:mass": 2.285714286
+    "shape\u003d36": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=6": {
-      "sable:mass": 2.285714286
+    "shape\u003d37": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=7": {
-      "sable:mass": 2.285714286
+    "shape\u003d38": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=8": {
-      "sable:mass": 2.285714286
+    "shape\u003d39": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=9": {
-      "sable:mass": 2.285714286
+    "shape\u003d40": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=10": {
-      "sable:mass": 2.285714286
+    "shape\u003d41": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=11": {
-      "sable:mass": 2.285714286
+    "shape\u003d42": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=12": {
-      "sable:mass": 2.285714286
+    "shape\u003d43": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=2,part=14": {
-      "sable:mass": 2.285714286
+    "shape\u003d44": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=0": {
-      "sable:mass": 2.285714286
+    "shape\u003d45": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=1": {
-      "sable:mass": 2.285714286
+    "shape\u003d46": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=2": {
-      "sable:mass": 2.285714286
+    "shape\u003d47": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=3": {
-      "sable:mass": 2.285714286
+    "shape\u003d48": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=4": {
-      "sable:mass": 2.285714286
+    "shape\u003d49": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=5": {
-      "sable:mass": 2.285714286
+    "shape\u003d50": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=6": {
-      "sable:mass": 2.285714286
+    "shape\u003d51": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=7": {
-      "sable:mass": 2.285714286
+    "shape\u003d52": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=8": {
-      "sable:mass": 2.285714286
+    "shape\u003d53": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=9": {
-      "sable:mass": 2.285714286
+    "shape\u003d54": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=10": {
-      "sable:mass": 2.285714286
+    "shape\u003d55": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=11": {
-      "sable:mass": 2.285714286
+    "shape\u003d56": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=12": {
-      "sable:mass": 2.285714286
+    "shape\u003d57": {
+      "sable:mass": 2.2857142857142856
     },
-    "style=3,part=14": {
-      "sable:mass": 2.285714286
+    "shape\u003d58": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=0": {
-      "sable:mass": 1.684210526
+    "shape\u003d59": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=1": {
-      "sable:mass": 1.684210526
+    "shape\u003d60": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=2": {
-      "sable:mass": 1.684210526
+    "shape\u003d61": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=3": {
-      "sable:mass": 1.684210526
+    "shape\u003d62": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=4": {
-      "sable:mass": 1.684210526
+    "shape\u003d63": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=5": {
-      "sable:mass": 1.684210526
+    "shape\u003d64": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=6": {
-      "sable:mass": 1.684210526
+    "shape\u003d65": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=7": {
-      "sable:mass": 1.684210526
+    "shape\u003d66": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=8": {
-      "sable:mass": 1.684210526
+    "shape\u003d67": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=9": {
-      "sable:mass": 1.684210526
+    "shape\u003d68": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=10": {
-      "sable:mass": 1.684210526
+    "shape\u003d69": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=11": {
-      "sable:mass": 1.684210526
+    "shape\u003d70": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=12": {
-      "sable:mass": 1.684210526
+    "shape\u003d71": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=14": {
-      "sable:mass": 1.684210526
+    "shape\u003d72": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=15": {
-      "sable:mass": 1.684210526
+    "shape\u003d73": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=16": {
-      "sable:mass": 1.684210526
+    "shape\u003d74": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=17": {
-      "sable:mass": 1.684210526
+    "shape\u003d75": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=18": {
-      "sable:mass": 1.684210526
+    "shape\u003d76": {
+      "sable:mass": 1.6842105263157894
     },
-    "style=4,part=19": {
-      "sable:mass": 1.684210526
+    "shape\u003d77": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=0": {
-      "sable:mass": 1.777777778
+    "shape\u003d78": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=1": {
-      "sable:mass": 1.777777778
+    "shape\u003d79": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=2": {
-      "sable:mass": 1.777777778
+    "shape\u003d80": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=3": {
-      "sable:mass": 1.777777778
+    "shape\u003d81": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=4": {
-      "sable:mass": 1.777777778
+    "shape\u003d82": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=5": {
-      "sable:mass": 1.777777778
+    "shape\u003d83": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=6": {
-      "sable:mass": 1.777777778
+    "shape\u003d84": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=7": {
-      "sable:mass": 1.777777778
+    "shape\u003d85": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=8": {
-      "sable:mass": 1.777777778
+    "shape\u003d86": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=9": {
-      "sable:mass": 1.777777778
+    "shape\u003d87": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=10": {
-      "sable:mass": 1.777777778
+    "shape\u003d88": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=11": {
-      "sable:mass": 1.777777778
+    "shape\u003d89": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=12": {
-      "sable:mass": 1.777777778
+    "shape\u003d90": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=14": {
-      "sable:mass": 1.777777778
+    "shape\u003d91": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=15": {
-      "sable:mass": 1.777777778
+    "shape\u003d92": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=16": {
-      "sable:mass": 1.777777778
+    "shape\u003d93": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=17": {
-      "sable:mass": 1.777777778
+    "shape\u003d94": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=5,part=18": {
-      "sable:mass": 1.777777778
+    "shape\u003d95": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=0": {
-      "sable:mass": 1.391304348
+    "shape\u003d96": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=1": {
-      "sable:mass": 1.391304348
+    "shape\u003d97": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=2": {
-      "sable:mass": 1.391304348
+    "shape\u003d98": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=3": {
-      "sable:mass": 1.391304348
+    "shape\u003d99": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=4": {
-      "sable:mass": 1.391304348
+    "shape\u003d100": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=5": {
-      "sable:mass": 1.391304348
+    "shape\u003d101": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=6": {
-      "sable:mass": 1.391304348
+    "shape\u003d102": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=7": {
-      "sable:mass": 1.391304348
+    "shape\u003d103": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=8": {
-      "sable:mass": 1.391304348
+    "shape\u003d104": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=9": {
-      "sable:mass": 1.391304348
+    "shape\u003d105": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=10": {
-      "sable:mass": 1.391304348
+    "shape\u003d106": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=11": {
-      "sable:mass": 1.391304348
+    "shape\u003d107": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=12": {
-      "sable:mass": 1.391304348
+    "shape\u003d108": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=14": {
-      "sable:mass": 1.391304348
+    "shape\u003d109": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=15": {
-      "sable:mass": 1.391304348
+    "shape\u003d110": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=16": {
-      "sable:mass": 1.391304348
+    "shape\u003d111": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=17": {
-      "sable:mass": 1.391304348
+    "shape\u003d112": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=18": {
-      "sable:mass": 1.391304348
+    "shape\u003d113": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=19": {
-      "sable:mass": 1.391304348
+    "shape\u003d114": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=20": {
-      "sable:mass": 1.391304348
+    "shape\u003d115": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=21": {
-      "sable:mass": 1.391304348
+    "shape\u003d116": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=22": {
-      "sable:mass": 1.391304348
+    "shape\u003d117": {
+      "sable:mass": 1.391304347826087
     },
-    "style=6,part=23": {
-      "sable:mass": 1.391304348
+    "shape\u003d118": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=0": {
-      "sable:mass": 1.882352941
+    "shape\u003d119": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=1": {
-      "sable:mass": 1.882352941
+    "shape\u003d120": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=2": {
-      "sable:mass": 1.882352941
+    "shape\u003d121": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=3": {
-      "sable:mass": 1.882352941
+    "shape\u003d122": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=4": {
-      "sable:mass": 1.882352941
+    "shape\u003d123": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=5": {
-      "sable:mass": 1.882352941
+    "shape\u003d124": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=6": {
-      "sable:mass": 1.882352941
+    "shape\u003d125": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=7": {
-      "sable:mass": 1.882352941
+    "shape\u003d126": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=8": {
-      "sable:mass": 1.882352941
+    "shape\u003d127": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=9": {
-      "sable:mass": 1.882352941
+    "shape\u003d128": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=10": {
-      "sable:mass": 1.882352941
+    "shape\u003d129": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=11": {
-      "sable:mass": 1.882352941
+    "shape\u003d130": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=12": {
-      "sable:mass": 1.882352941
+    "shape\u003d131": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=14": {
-      "sable:mass": 1.882352941
+    "shape\u003d132": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=15": {
-      "sable:mass": 1.882352941
+    "shape\u003d133": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=16": {
-      "sable:mass": 1.882352941
+    "shape\u003d134": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=7,part=17": {
-      "sable:mass": 1.882352941
+    "shape\u003d135": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=0": {
-      "sable:mass": 2.133333333
+    "shape\u003d136": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=1": {
-      "sable:mass": 2.133333333
+    "shape\u003d137": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=2": {
-      "sable:mass": 2.133333333
+    "shape\u003d138": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=3": {
-      "sable:mass": 2.133333333
+    "shape\u003d139": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=4": {
-      "sable:mass": 2.133333333
+    "shape\u003d140": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=5": {
-      "sable:mass": 2.133333333
+    "shape\u003d141": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=6": {
-      "sable:mass": 2.133333333
+    "shape\u003d142": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=7": {
-      "sable:mass": 2.133333333
+    "shape\u003d143": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=8": {
-      "sable:mass": 2.133333333
+    "shape\u003d144": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=9": {
-      "sable:mass": 2.133333333
+    "shape\u003d145": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=10": {
-      "sable:mass": 2.133333333
+    "shape\u003d146": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=11": {
-      "sable:mass": 2.133333333
+    "shape\u003d147": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=12": {
-      "sable:mass": 2.133333333
+    "shape\u003d148": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=14": {
-      "sable:mass": 2.133333333
+    "shape\u003d149": {
+      "sable:mass": 2.1333333333333333
     },
-    "style=8,part=15": {
-      "sable:mass": 2.133333333
+    "shape\u003d150": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=0": {
-      "sable:mass": 2.461538462
+    "shape\u003d151": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=1": {
-      "sable:mass": 2.461538462
+    "shape\u003d152": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=2": {
-      "sable:mass": 2.461538462
+    "shape\u003d153": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=3": {
-      "sable:mass": 2.461538462
+    "shape\u003d154": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=4": {
-      "sable:mass": 2.461538462
+    "shape\u003d155": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=5": {
-      "sable:mass": 2.461538462
+    "shape\u003d156": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=6": {
-      "sable:mass": 2.461538462
+    "shape\u003d157": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=7": {
-      "sable:mass": 2.461538462
+    "shape\u003d158": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=8": {
-      "sable:mass": 2.461538462
+    "shape\u003d159": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=9": {
-      "sable:mass": 2.461538462
+    "shape\u003d160": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=10": {
-      "sable:mass": 2.461538462
+    "shape\u003d161": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=11": {
-      "sable:mass": 2.461538462
+    "shape\u003d162": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=9,part=12": {
-      "sable:mass": 2.461538462
+    "shape\u003d163": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=0": {
-      "sable:mass": 1.230769231
+    "shape\u003d164": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=1": {
-      "sable:mass": 1.230769231
+    "shape\u003d165": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=2": {
-      "sable:mass": 1.230769231
+    "shape\u003d166": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=3": {
-      "sable:mass": 1.230769231
+    "shape\u003d167": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=4": {
-      "sable:mass": 1.230769231
+    "shape\u003d168": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=5": {
-      "sable:mass": 1.230769231
+    "shape\u003d169": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=6": {
-      "sable:mass": 1.230769231
+    "shape\u003d170": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=7": {
-      "sable:mass": 1.230769231
+    "shape\u003d171": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=8": {
-      "sable:mass": 1.230769231
+    "shape\u003d172": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=9": {
-      "sable:mass": 1.230769231
+    "shape\u003d173": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=10": {
-      "sable:mass": 1.230769231
+    "shape\u003d174": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=11": {
-      "sable:mass": 1.230769231
+    "shape\u003d175": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=12": {
-      "sable:mass": 1.230769231
+    "shape\u003d176": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=14": {
-      "sable:mass": 1.230769231
+    "shape\u003d177": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=15": {
-      "sable:mass": 1.230769231
+    "shape\u003d178": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=16": {
-      "sable:mass": 1.230769231
+    "shape\u003d179": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=17": {
-      "sable:mass": 1.230769231
+    "shape\u003d180": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=18": {
-      "sable:mass": 1.230769231
+    "shape\u003d181": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=19": {
-      "sable:mass": 1.230769231
+    "shape\u003d182": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=20": {
-      "sable:mass": 1.230769231
+    "shape\u003d183": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=21": {
-      "sable:mass": 1.230769231
+    "shape\u003d184": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=22": {
-      "sable:mass": 1.230769231
+    "shape\u003d185": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=23": {
-      "sable:mass": 1.230769231
+    "shape\u003d186": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=24": {
-      "sable:mass": 1.230769231
+    "shape\u003d187": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=25": {
-      "sable:mass": 1.230769231
+    "shape\u003d188": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=10,part=26": {
-      "sable:mass": 1.230769231
+    "shape\u003d189": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=0": {
-      "sable:mass": 1.066666667
+    "shape\u003d190": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=1": {
-      "sable:mass": 1.066666667
+    "shape\u003d191": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=2": {
-      "sable:mass": 1.066666667
+    "shape\u003d192": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=3": {
-      "sable:mass": 1.066666667
+    "shape\u003d193": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=4": {
-      "sable:mass": 1.066666667
+    "shape\u003d194": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=5": {
-      "sable:mass": 1.066666667
+    "shape\u003d195": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=6": {
-      "sable:mass": 1.066666667
+    "shape\u003d196": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=7": {
-      "sable:mass": 1.066666667
+    "shape\u003d197": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=8": {
-      "sable:mass": 1.066666667
+    "shape\u003d198": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=9": {
-      "sable:mass": 1.066666667
+    "shape\u003d199": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=10": {
-      "sable:mass": 1.066666667
+    "shape\u003d200": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=11": {
-      "sable:mass": 1.066666667
+    "shape\u003d201": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=12": {
-      "sable:mass": 1.066666667
+    "shape\u003d202": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=14": {
-      "sable:mass": 1.066666667
+    "shape\u003d203": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=15": {
-      "sable:mass": 1.066666667
+    "shape\u003d204": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=16": {
-      "sable:mass": 1.066666667
+    "shape\u003d205": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=17": {
-      "sable:mass": 1.066666667
+    "shape\u003d206": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=18": {
-      "sable:mass": 1.066666667
+    "shape\u003d207": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=19": {
-      "sable:mass": 1.066666667
+    "shape\u003d208": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=20": {
-      "sable:mass": 1.066666667
+    "shape\u003d209": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=21": {
-      "sable:mass": 1.066666667
+    "shape\u003d210": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=22": {
-      "sable:mass": 1.066666667
+    "shape\u003d211": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=23": {
-      "sable:mass": 1.066666667
+    "shape\u003d212": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=24": {
-      "sable:mass": 1.066666667
+    "shape\u003d213": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=25": {
-      "sable:mass": 1.066666667
+    "shape\u003d214": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=26": {
-      "sable:mass": 1.066666667
+    "shape\u003d215": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=27": {
-      "sable:mass": 1.066666667
+    "shape\u003d216": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=28": {
-      "sable:mass": 1.066666667
+    "shape\u003d217": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=29": {
-      "sable:mass": 1.066666667
+    "shape\u003d218": {
+      "sable:mass": 1.0666666666666667
     },
-    "style=11,part=30": {
-      "sable:mass": 1.066666667
+    "shape\u003d219": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=0": {
-      "sable:mass": 0.385542169
+    "shape\u003d220": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=1": {
-      "sable:mass": 0.385542169
+    "shape\u003d221": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=2": {
-      "sable:mass": 0.385542169
+    "shape\u003d222": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=3": {
-      "sable:mass": 0.385542169
+    "shape\u003d223": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=4": {
-      "sable:mass": 0.385542169
+    "shape\u003d224": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=5": {
-      "sable:mass": 0.385542169
+    "shape\u003d225": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=6": {
-      "sable:mass": 0.385542169
+    "shape\u003d226": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=7": {
-      "sable:mass": 0.385542169
+    "shape\u003d227": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=8": {
-      "sable:mass": 0.385542169
+    "shape\u003d228": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=9": {
-      "sable:mass": 0.385542169
+    "shape\u003d229": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=10": {
-      "sable:mass": 0.385542169
+    "shape\u003d230": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=11": {
-      "sable:mass": 0.385542169
+    "shape\u003d231": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=12": {
-      "sable:mass": 0.385542169
+    "shape\u003d232": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=14": {
-      "sable:mass": 0.385542169
+    "shape\u003d233": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=15": {
-      "sable:mass": 0.385542169
+    "shape\u003d234": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=16": {
-      "sable:mass": 0.385542169
+    "shape\u003d235": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=17": {
-      "sable:mass": 0.385542169
+    "shape\u003d236": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=18": {
-      "sable:mass": 0.385542169
+    "shape\u003d237": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=19": {
-      "sable:mass": 0.385542169
+    "shape\u003d238": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=20": {
-      "sable:mass": 0.385542169
+    "shape\u003d239": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=21": {
-      "sable:mass": 0.385542169
+    "shape\u003d240": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=22": {
-      "sable:mass": 0.385542169
+    "shape\u003d241": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=23": {
-      "sable:mass": 0.385542169
+    "shape\u003d242": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=24": {
-      "sable:mass": 0.385542169
+    "shape\u003d243": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=25": {
-      "sable:mass": 0.385542169
+    "shape\u003d244": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=26": {
-      "sable:mass": 0.385542169
+    "shape\u003d245": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=27": {
-      "sable:mass": 0.385542169
+    "shape\u003d246": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=28": {
-      "sable:mass": 0.385542169
+    "shape\u003d247": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=29": {
-      "sable:mass": 0.385542169
+    "shape\u003d248": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=30": {
-      "sable:mass": 0.385542169
+    "shape\u003d249": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=31": {
-      "sable:mass": 0.385542169
+    "shape\u003d250": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=32": {
-      "sable:mass": 0.385542169
+    "shape\u003d251": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=33": {
-      "sable:mass": 0.385542169
+    "shape\u003d252": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=34": {
-      "sable:mass": 0.385542169
+    "shape\u003d253": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=35": {
-      "sable:mass": 0.385542169
+    "shape\u003d254": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=36": {
-      "sable:mass": 0.385542169
+    "shape\u003d255": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=37": {
-      "sable:mass": 0.385542169
+    "shape\u003d256": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=38": {
-      "sable:mass": 0.385542169
+    "shape\u003d257": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=39": {
-      "sable:mass": 0.385542169
+    "shape\u003d258": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=40": {
-      "sable:mass": 0.385542169
+    "shape\u003d259": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=41": {
-      "sable:mass": 0.385542169
+    "shape\u003d260": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=42": {
-      "sable:mass": 0.385542169
+    "shape\u003d261": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=43": {
-      "sable:mass": 0.385542169
+    "shape\u003d262": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=44": {
-      "sable:mass": 0.385542169
+    "shape\u003d263": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=45": {
-      "sable:mass": 0.385542169
+    "shape\u003d264": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=46": {
-      "sable:mass": 0.385542169
+    "shape\u003d265": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=47": {
-      "sable:mass": 0.385542169
+    "shape\u003d266": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=48": {
-      "sable:mass": 0.385542169
+    "shape\u003d267": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=49": {
-      "sable:mass": 0.385542169
+    "shape\u003d268": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=50": {
-      "sable:mass": 0.385542169
+    "shape\u003d269": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=51": {
-      "sable:mass": 0.385542169
+    "shape\u003d270": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=52": {
-      "sable:mass": 0.385542169
+    "shape\u003d271": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=53": {
-      "sable:mass": 0.385542169
+    "shape\u003d272": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=54": {
-      "sable:mass": 0.385542169
+    "shape\u003d273": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=55": {
-      "sable:mass": 0.385542169
+    "shape\u003d274": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=56": {
-      "sable:mass": 0.385542169
+    "shape\u003d275": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=57": {
-      "sable:mass": 0.385542169
+    "shape\u003d276": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=58": {
-      "sable:mass": 0.385542169
+    "shape\u003d277": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=59": {
-      "sable:mass": 0.385542169
+    "shape\u003d278": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=60": {
-      "sable:mass": 0.385542169
+    "shape\u003d279": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=61": {
-      "sable:mass": 0.385542169
+    "shape\u003d280": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=62": {
-      "sable:mass": 0.385542169
+    "shape\u003d281": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=63": {
-      "sable:mass": 0.385542169
+    "shape\u003d282": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=64": {
-      "sable:mass": 0.385542169
+    "shape\u003d283": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=65": {
-      "sable:mass": 0.385542169
+    "shape\u003d284": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=66": {
-      "sable:mass": 0.385542169
+    "shape\u003d285": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=67": {
-      "sable:mass": 0.385542169
+    "shape\u003d286": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=68": {
-      "sable:mass": 0.385542169
+    "shape\u003d287": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=69": {
-      "sable:mass": 0.385542169
+    "shape\u003d288": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=70": {
-      "sable:mass": 0.385542169
+    "shape\u003d289": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=71": {
-      "sable:mass": 0.385542169
+    "shape\u003d290": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=72": {
-      "sable:mass": 0.385542169
+    "shape\u003d291": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=73": {
-      "sable:mass": 0.385542169
+    "shape\u003d292": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=74": {
-      "sable:mass": 0.385542169
+    "shape\u003d293": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=75": {
-      "sable:mass": 0.385542169
+    "shape\u003d294": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=76": {
-      "sable:mass": 0.385542169
+    "shape\u003d295": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=77": {
-      "sable:mass": 0.385542169
+    "shape\u003d296": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=78": {
-      "sable:mass": 0.385542169
+    "shape\u003d297": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=79": {
-      "sable:mass": 0.385542169
+    "shape\u003d298": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=80": {
-      "sable:mass": 0.385542169
+    "shape\u003d299": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=81": {
-      "sable:mass": 0.385542169
+    "shape\u003d300": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=82": {
-      "sable:mass": 0.385542169
+    "shape\u003d301": {
+      "sable:mass": 0.3855421686746988
     },
-    "style=14,part=83": {
-      "sable:mass": 0.385542169
+    "shape\u003d302": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=0": {
-      "sable:mass": 0.323232323
+    "shape\u003d303": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=1": {
-      "sable:mass": 0.323232323
+    "shape\u003d304": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=2": {
-      "sable:mass": 0.323232323
+    "shape\u003d305": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=3": {
-      "sable:mass": 0.323232323
+    "shape\u003d306": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=4": {
-      "sable:mass": 0.323232323
+    "shape\u003d307": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=5": {
-      "sable:mass": 0.323232323
+    "shape\u003d308": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=6": {
-      "sable:mass": 0.323232323
+    "shape\u003d309": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=7": {
-      "sable:mass": 0.323232323
+    "shape\u003d310": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=8": {
-      "sable:mass": 0.323232323
+    "shape\u003d311": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=9": {
-      "sable:mass": 0.323232323
+    "shape\u003d312": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=10": {
-      "sable:mass": 0.323232323
+    "shape\u003d313": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=11": {
-      "sable:mass": 0.323232323
+    "shape\u003d314": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=12": {
-      "sable:mass": 0.323232323
+    "shape\u003d315": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=14": {
-      "sable:mass": 0.323232323
+    "shape\u003d316": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=15": {
-      "sable:mass": 0.323232323
+    "shape\u003d317": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=16": {
-      "sable:mass": 0.323232323
+    "shape\u003d318": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=17": {
-      "sable:mass": 0.323232323
+    "shape\u003d319": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=18": {
-      "sable:mass": 0.323232323
+    "shape\u003d320": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=19": {
-      "sable:mass": 0.323232323
+    "shape\u003d321": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=20": {
-      "sable:mass": 0.323232323
+    "shape\u003d322": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=21": {
-      "sable:mass": 0.323232323
+    "shape\u003d323": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=22": {
-      "sable:mass": 0.323232323
+    "shape\u003d324": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=23": {
-      "sable:mass": 0.323232323
+    "shape\u003d325": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=24": {
-      "sable:mass": 0.323232323
+    "shape\u003d326": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=25": {
-      "sable:mass": 0.323232323
+    "shape\u003d327": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=26": {
-      "sable:mass": 0.323232323
+    "shape\u003d328": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=27": {
-      "sable:mass": 0.323232323
+    "shape\u003d329": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=28": {
-      "sable:mass": 0.323232323
+    "shape\u003d330": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=29": {
-      "sable:mass": 0.323232323
+    "shape\u003d331": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=30": {
-      "sable:mass": 0.323232323
+    "shape\u003d332": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=31": {
-      "sable:mass": 0.323232323
+    "shape\u003d333": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=32": {
-      "sable:mass": 0.323232323
+    "shape\u003d334": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=33": {
-      "sable:mass": 0.323232323
+    "shape\u003d335": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=34": {
-      "sable:mass": 0.323232323
+    "shape\u003d336": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=35": {
-      "sable:mass": 0.323232323
+    "shape\u003d337": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=36": {
-      "sable:mass": 0.323232323
+    "shape\u003d338": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=37": {
-      "sable:mass": 0.323232323
+    "shape\u003d339": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=38": {
-      "sable:mass": 0.323232323
+    "shape\u003d340": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=39": {
-      "sable:mass": 0.323232323
+    "shape\u003d341": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=40": {
-      "sable:mass": 0.323232323
+    "shape\u003d342": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=41": {
-      "sable:mass": 0.323232323
+    "shape\u003d343": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=42": {
-      "sable:mass": 0.323232323
+    "shape\u003d344": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=43": {
-      "sable:mass": 0.323232323
+    "shape\u003d345": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=44": {
-      "sable:mass": 0.323232323
+    "shape\u003d346": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=45": {
-      "sable:mass": 0.323232323
+    "shape\u003d347": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=46": {
-      "sable:mass": 0.323232323
+    "shape\u003d348": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=47": {
-      "sable:mass": 0.323232323
+    "shape\u003d349": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=48": {
-      "sable:mass": 0.323232323
+    "shape\u003d350": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=49": {
-      "sable:mass": 0.323232323
+    "shape\u003d351": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=50": {
-      "sable:mass": 0.323232323
+    "shape\u003d352": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=51": {
-      "sable:mass": 0.323232323
+    "shape\u003d353": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=52": {
-      "sable:mass": 0.323232323
+    "shape\u003d354": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=53": {
-      "sable:mass": 0.323232323
+    "shape\u003d355": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=54": {
-      "sable:mass": 0.323232323
+    "shape\u003d356": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=55": {
-      "sable:mass": 0.323232323
+    "shape\u003d357": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=56": {
-      "sable:mass": 0.323232323
+    "shape\u003d358": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=57": {
-      "sable:mass": 0.323232323
+    "shape\u003d359": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=58": {
-      "sable:mass": 0.323232323
+    "shape\u003d360": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=59": {
-      "sable:mass": 0.323232323
+    "shape\u003d361": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=60": {
-      "sable:mass": 0.323232323
+    "shape\u003d362": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=61": {
-      "sable:mass": 0.323232323
+    "shape\u003d363": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=62": {
-      "sable:mass": 0.323232323
+    "shape\u003d364": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=63": {
-      "sable:mass": 0.323232323
+    "shape\u003d365": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=64": {
-      "sable:mass": 0.323232323
+    "shape\u003d366": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=65": {
-      "sable:mass": 0.323232323
+    "shape\u003d367": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=66": {
-      "sable:mass": 0.323232323
+    "shape\u003d368": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=67": {
-      "sable:mass": 0.323232323
+    "shape\u003d369": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=68": {
-      "sable:mass": 0.323232323
+    "shape\u003d370": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=69": {
-      "sable:mass": 0.323232323
+    "shape\u003d371": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=70": {
-      "sable:mass": 0.323232323
+    "shape\u003d372": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=71": {
-      "sable:mass": 0.323232323
+    "shape\u003d373": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=72": {
-      "sable:mass": 0.323232323
+    "shape\u003d374": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=73": {
-      "sable:mass": 0.323232323
+    "shape\u003d375": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=74": {
-      "sable:mass": 0.323232323
+    "shape\u003d376": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=75": {
-      "sable:mass": 0.323232323
+    "shape\u003d377": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=76": {
-      "sable:mass": 0.323232323
+    "shape\u003d378": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=77": {
-      "sable:mass": 0.323232323
+    "shape\u003d379": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=78": {
-      "sable:mass": 0.323232323
+    "shape\u003d380": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=79": {
-      "sable:mass": 0.323232323
+    "shape\u003d381": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=80": {
-      "sable:mass": 0.323232323
+    "shape\u003d382": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=81": {
-      "sable:mass": 0.323232323
+    "shape\u003d383": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=82": {
-      "sable:mass": 0.323232323
+    "shape\u003d384": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=83": {
-      "sable:mass": 0.323232323
+    "shape\u003d385": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=84": {
-      "sable:mass": 0.323232323
+    "shape\u003d386": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=85": {
-      "sable:mass": 0.323232323
+    "shape\u003d387": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=86": {
-      "sable:mass": 0.323232323
+    "shape\u003d388": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=87": {
-      "sable:mass": 0.323232323
+    "shape\u003d389": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=88": {
-      "sable:mass": 0.323232323
+    "shape\u003d390": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=89": {
-      "sable:mass": 0.323232323
+    "shape\u003d391": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=90": {
-      "sable:mass": 0.323232323
+    "shape\u003d392": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=91": {
-      "sable:mass": 0.323232323
+    "shape\u003d393": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=92": {
-      "sable:mass": 0.323232323
+    "shape\u003d394": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=93": {
-      "sable:mass": 0.323232323
+    "shape\u003d395": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=94": {
-      "sable:mass": 0.323232323
+    "shape\u003d396": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=95": {
-      "sable:mass": 0.323232323
+    "shape\u003d397": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=96": {
-      "sable:mass": 0.323232323
+    "shape\u003d398": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=97": {
-      "sable:mass": 0.323232323
+    "shape\u003d399": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=98": {
-      "sable:mass": 0.323232323
+    "shape\u003d400": {
+      "sable:mass": 0.32323232323232326
     },
-    "style=15,part=99": {
-      "sable:mass": 0.323232323
+    "shape\u003d401": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=0": {
-      "sable:mass": 0.820512821
+    "shape\u003d402": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=1": {
-      "sable:mass": 0.820512821
+    "shape\u003d403": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=2": {
-      "sable:mass": 0.820512821
+    "shape\u003d404": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=3": {
-      "sable:mass": 0.820512821
+    "shape\u003d405": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=4": {
-      "sable:mass": 0.820512821
+    "shape\u003d406": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=5": {
-      "sable:mass": 0.820512821
+    "shape\u003d407": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=6": {
-      "sable:mass": 0.820512821
+    "shape\u003d408": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=7": {
-      "sable:mass": 0.820512821
+    "shape\u003d409": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=8": {
-      "sable:mass": 0.820512821
+    "shape\u003d410": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=9": {
-      "sable:mass": 0.820512821
+    "shape\u003d411": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=10": {
-      "sable:mass": 0.820512821
+    "shape\u003d412": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=11": {
-      "sable:mass": 0.820512821
+    "shape\u003d413": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=12": {
-      "sable:mass": 0.820512821
+    "shape\u003d414": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=14": {
-      "sable:mass": 0.820512821
+    "shape\u003d415": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=15": {
-      "sable:mass": 0.820512821
+    "shape\u003d416": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=16": {
-      "sable:mass": 0.820512821
+    "shape\u003d417": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=17": {
-      "sable:mass": 0.820512821
+    "shape\u003d418": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=18": {
-      "sable:mass": 0.820512821
+    "shape\u003d419": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=19": {
-      "sable:mass": 0.820512821
+    "shape\u003d420": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=20": {
-      "sable:mass": 0.820512821
+    "shape\u003d421": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=21": {
-      "sable:mass": 0.820512821
+    "shape\u003d422": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=22": {
-      "sable:mass": 0.820512821
+    "shape\u003d423": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=23": {
-      "sable:mass": 0.820512821
+    "shape\u003d424": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=24": {
-      "sable:mass": 0.820512821
+    "shape\u003d425": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=25": {
-      "sable:mass": 0.820512821
+    "shape\u003d426": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=26": {
-      "sable:mass": 0.820512821
+    "shape\u003d427": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=27": {
-      "sable:mass": 0.820512821
+    "shape\u003d428": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=28": {
-      "sable:mass": 0.820512821
+    "shape\u003d429": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=29": {
-      "sable:mass": 0.820512821
+    "shape\u003d430": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=30": {
-      "sable:mass": 0.820512821
+    "shape\u003d431": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=31": {
-      "sable:mass": 0.820512821
+    "shape\u003d432": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=32": {
-      "sable:mass": 0.820512821
+    "shape\u003d433": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=33": {
-      "sable:mass": 0.820512821
+    "shape\u003d434": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=34": {
-      "sable:mass": 0.820512821
+    "shape\u003d435": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=35": {
-      "sable:mass": 0.820512821
+    "shape\u003d436": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=36": {
-      "sable:mass": 0.820512821
+    "shape\u003d437": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=37": {
-      "sable:mass": 0.820512821
+    "shape\u003d438": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=38": {
-      "sable:mass": 0.820512821
+    "shape\u003d439": {
+      "sable:mass": 0.8205128205128205
     },
-    "style=16,part=39": {
-      "sable:mass": 0.820512821
+    "shape\u003d440": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=0": {
-      "sable:mass": 0.62745098
+    "shape\u003d441": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=1": {
-      "sable:mass": 0.62745098
+    "shape\u003d442": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=2": {
-      "sable:mass": 0.62745098
+    "shape\u003d443": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=3": {
-      "sable:mass": 0.62745098
+    "shape\u003d444": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=4": {
-      "sable:mass": 0.62745098
+    "shape\u003d445": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=5": {
-      "sable:mass": 0.62745098
+    "shape\u003d446": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=6": {
-      "sable:mass": 0.62745098
+    "shape\u003d447": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=7": {
-      "sable:mass": 0.62745098
+    "shape\u003d448": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=8": {
-      "sable:mass": 0.62745098
+    "shape\u003d449": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=9": {
-      "sable:mass": 0.62745098
+    "shape\u003d450": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=10": {
-      "sable:mass": 0.62745098
+    "shape\u003d451": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=11": {
-      "sable:mass": 0.62745098
+    "shape\u003d452": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=12": {
-      "sable:mass": 0.62745098
+    "shape\u003d453": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=14": {
-      "sable:mass": 0.62745098
+    "shape\u003d454": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=15": {
-      "sable:mass": 0.62745098
+    "shape\u003d455": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=16": {
-      "sable:mass": 0.62745098
+    "shape\u003d456": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=17": {
-      "sable:mass": 0.62745098
+    "shape\u003d457": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=18": {
-      "sable:mass": 0.62745098
+    "shape\u003d458": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=19": {
-      "sable:mass": 0.62745098
+    "shape\u003d459": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=20": {
-      "sable:mass": 0.62745098
+    "shape\u003d460": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=21": {
-      "sable:mass": 0.62745098
+    "shape\u003d461": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=22": {
-      "sable:mass": 0.62745098
+    "shape\u003d462": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=23": {
-      "sable:mass": 0.62745098
+    "shape\u003d463": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=24": {
-      "sable:mass": 0.62745098
+    "shape\u003d464": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=25": {
-      "sable:mass": 0.62745098
+    "shape\u003d465": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=26": {
-      "sable:mass": 0.62745098
+    "shape\u003d466": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=27": {
-      "sable:mass": 0.62745098
+    "shape\u003d467": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=28": {
-      "sable:mass": 0.62745098
+    "shape\u003d468": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=29": {
-      "sable:mass": 0.62745098
+    "shape\u003d469": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=30": {
-      "sable:mass": 0.62745098
+    "shape\u003d470": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=31": {
-      "sable:mass": 0.62745098
+    "shape\u003d471": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=32": {
-      "sable:mass": 0.62745098
+    "shape\u003d472": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=33": {
-      "sable:mass": 0.62745098
+    "shape\u003d473": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=34": {
-      "sable:mass": 0.62745098
+    "shape\u003d474": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=35": {
-      "sable:mass": 0.62745098
+    "shape\u003d475": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=36": {
-      "sable:mass": 0.62745098
+    "shape\u003d476": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=37": {
-      "sable:mass": 0.62745098
+    "shape\u003d477": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=38": {
-      "sable:mass": 0.62745098
+    "shape\u003d478": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=39": {
-      "sable:mass": 0.62745098
+    "shape\u003d479": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=40": {
-      "sable:mass": 0.62745098
+    "shape\u003d480": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=41": {
-      "sable:mass": 0.62745098
+    "shape\u003d481": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=42": {
-      "sable:mass": 0.62745098
+    "shape\u003d482": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=43": {
-      "sable:mass": 0.62745098
+    "shape\u003d483": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=44": {
-      "sable:mass": 0.62745098
+    "shape\u003d484": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=45": {
-      "sable:mass": 0.62745098
+    "shape\u003d485": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=46": {
-      "sable:mass": 0.62745098
+    "shape\u003d486": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=47": {
-      "sable:mass": 0.62745098
+    "shape\u003d487": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=48": {
-      "sable:mass": 0.62745098
+    "shape\u003d488": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=49": {
-      "sable:mass": 0.62745098
+    "shape\u003d489": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=50": {
-      "sable:mass": 0.62745098
+    "shape\u003d490": {
+      "sable:mass": 0.6274509803921569
     },
-    "style=17,part=51": {
-      "sable:mass": 0.62745098
+    "shape\u003d491": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=0": {
-      "sable:mass": 0.47761194
+    "shape\u003d492": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=1": {
-      "sable:mass": 0.47761194
+    "shape\u003d493": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=2": {
-      "sable:mass": 0.47761194
+    "shape\u003d494": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=3": {
-      "sable:mass": 0.47761194
+    "shape\u003d495": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=4": {
-      "sable:mass": 0.47761194
+    "shape\u003d496": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=5": {
-      "sable:mass": 0.47761194
+    "shape\u003d497": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=6": {
-      "sable:mass": 0.47761194
+    "shape\u003d498": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=7": {
-      "sable:mass": 0.47761194
+    "shape\u003d499": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=8": {
-      "sable:mass": 0.47761194
+    "shape\u003d500": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=9": {
-      "sable:mass": 0.47761194
+    "shape\u003d501": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=10": {
-      "sable:mass": 0.47761194
+    "shape\u003d502": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=11": {
-      "sable:mass": 0.47761194
+    "shape\u003d503": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=12": {
-      "sable:mass": 0.47761194
+    "shape\u003d504": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=14": {
-      "sable:mass": 0.47761194
+    "shape\u003d505": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=15": {
-      "sable:mass": 0.47761194
+    "shape\u003d506": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=16": {
-      "sable:mass": 0.47761194
+    "shape\u003d507": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=17": {
-      "sable:mass": 0.47761194
+    "shape\u003d508": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=18": {
-      "sable:mass": 0.47761194
+    "shape\u003d509": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=19": {
-      "sable:mass": 0.47761194
+    "shape\u003d510": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=20": {
-      "sable:mass": 0.47761194
+    "shape\u003d511": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=21": {
-      "sable:mass": 0.47761194
+    "shape\u003d512": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=22": {
-      "sable:mass": 0.47761194
+    "shape\u003d513": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=23": {
-      "sable:mass": 0.47761194
+    "shape\u003d514": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=24": {
-      "sable:mass": 0.47761194
+    "shape\u003d515": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=25": {
-      "sable:mass": 0.47761194
+    "shape\u003d516": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=26": {
-      "sable:mass": 0.47761194
+    "shape\u003d517": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=27": {
-      "sable:mass": 0.47761194
+    "shape\u003d518": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=28": {
-      "sable:mass": 0.47761194
+    "shape\u003d519": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=29": {
-      "sable:mass": 0.47761194
+    "shape\u003d520": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=30": {
-      "sable:mass": 0.47761194
+    "shape\u003d521": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=31": {
-      "sable:mass": 0.47761194
+    "shape\u003d522": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=32": {
-      "sable:mass": 0.47761194
+    "shape\u003d523": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=33": {
-      "sable:mass": 0.47761194
+    "shape\u003d524": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=34": {
-      "sable:mass": 0.47761194
+    "shape\u003d525": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=35": {
-      "sable:mass": 0.47761194
+    "shape\u003d526": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=36": {
-      "sable:mass": 0.47761194
+    "shape\u003d527": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=37": {
-      "sable:mass": 0.47761194
+    "shape\u003d528": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=38": {
-      "sable:mass": 0.47761194
+    "shape\u003d529": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=39": {
-      "sable:mass": 0.47761194
+    "shape\u003d530": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=40": {
-      "sable:mass": 0.47761194
+    "shape\u003d531": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=41": {
-      "sable:mass": 0.47761194
+    "shape\u003d532": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=42": {
-      "sable:mass": 0.47761194
+    "shape\u003d533": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=43": {
-      "sable:mass": 0.47761194
+    "shape\u003d534": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=44": {
-      "sable:mass": 0.47761194
+    "shape\u003d535": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=45": {
-      "sable:mass": 0.47761194
+    "shape\u003d536": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=46": {
-      "sable:mass": 0.47761194
+    "shape\u003d537": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=47": {
-      "sable:mass": 0.47761194
+    "shape\u003d538": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=48": {
-      "sable:mass": 0.47761194
+    "shape\u003d539": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=49": {
-      "sable:mass": 0.47761194
+    "shape\u003d540": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=50": {
-      "sable:mass": 0.47761194
+    "shape\u003d541": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=51": {
-      "sable:mass": 0.47761194
+    "shape\u003d542": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=52": {
-      "sable:mass": 0.47761194
+    "shape\u003d543": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=53": {
-      "sable:mass": 0.47761194
+    "shape\u003d544": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=54": {
-      "sable:mass": 0.47761194
+    "shape\u003d545": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=55": {
-      "sable:mass": 0.47761194
+    "shape\u003d546": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=56": {
-      "sable:mass": 0.47761194
+    "shape\u003d547": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=57": {
-      "sable:mass": 0.47761194
+    "shape\u003d548": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=58": {
-      "sable:mass": 0.47761194
+    "shape\u003d549": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=59": {
-      "sable:mass": 0.47761194
+    "shape\u003d550": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=60": {
-      "sable:mass": 0.47761194
+    "shape\u003d551": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=61": {
-      "sable:mass": 0.47761194
+    "shape\u003d552": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=62": {
-      "sable:mass": 0.47761194
+    "shape\u003d553": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=63": {
-      "sable:mass": 0.47761194
+    "shape\u003d554": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=64": {
-      "sable:mass": 0.47761194
+    "shape\u003d555": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=65": {
-      "sable:mass": 0.47761194
+    "shape\u003d556": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=66": {
-      "sable:mass": 0.47761194
+    "shape\u003d557": {
+      "sable:mass": 0.47761194029850745
     },
-    "style=18,part=67": {
-      "sable:mass": 0.47761194
+    "shape\u003d558": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=0": {
-      "sable:mass": 2.461538462
+    "shape\u003d559": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=1": {
-      "sable:mass": 2.461538462
+    "shape\u003d560": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=2": {
-      "sable:mass": 2.461538462
+    "shape\u003d561": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=3": {
-      "sable:mass": 2.461538462
+    "shape\u003d562": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=4": {
-      "sable:mass": 2.461538462
+    "shape\u003d563": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=5": {
-      "sable:mass": 2.461538462
+    "shape\u003d564": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=6": {
-      "sable:mass": 2.461538462
+    "shape\u003d565": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=7": {
-      "sable:mass": 2.461538462
+    "shape\u003d566": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=8": {
-      "sable:mass": 2.461538462
+    "shape\u003d567": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=9": {
-      "sable:mass": 2.461538462
+    "shape\u003d568": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=10": {
-      "sable:mass": 2.461538462
+    "shape\u003d569": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=11": {
-      "sable:mass": 2.461538462
+    "shape\u003d570": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=19,part=12": {
-      "sable:mass": 2.461538462
+    "shape\u003d571": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=0": {
-      "sable:mass": 0.653061224
+    "shape\u003d572": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=1": {
-      "sable:mass": 0.653061224
+    "shape\u003d573": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=2": {
-      "sable:mass": 0.653061224
+    "shape\u003d574": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=3": {
-      "sable:mass": 0.653061224
+    "shape\u003d575": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=4": {
-      "sable:mass": 0.653061224
+    "shape\u003d576": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=5": {
-      "sable:mass": 0.653061224
+    "shape\u003d577": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=6": {
-      "sable:mass": 0.653061224
+    "shape\u003d578": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=7": {
-      "sable:mass": 0.653061224
+    "shape\u003d579": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=8": {
-      "sable:mass": 0.653061224
+    "shape\u003d580": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=9": {
-      "sable:mass": 0.653061224
+    "shape\u003d581": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=10": {
-      "sable:mass": 0.653061224
+    "shape\u003d582": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=11": {
-      "sable:mass": 0.653061224
+    "shape\u003d583": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=12": {
-      "sable:mass": 0.653061224
+    "shape\u003d584": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=14": {
-      "sable:mass": 0.653061224
+    "shape\u003d585": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=15": {
-      "sable:mass": 0.653061224
+    "shape\u003d586": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=16": {
-      "sable:mass": 0.653061224
+    "shape\u003d587": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=17": {
-      "sable:mass": 0.653061224
+    "shape\u003d588": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=18": {
-      "sable:mass": 0.653061224
+    "shape\u003d589": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=19": {
-      "sable:mass": 0.653061224
+    "shape\u003d590": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=20": {
-      "sable:mass": 0.653061224
+    "shape\u003d591": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=21": {
-      "sable:mass": 0.653061224
+    "shape\u003d592": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=22": {
-      "sable:mass": 0.653061224
+    "shape\u003d593": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=23": {
-      "sable:mass": 0.653061224
+    "shape\u003d594": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=24": {
-      "sable:mass": 0.653061224
+    "shape\u003d595": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=25": {
-      "sable:mass": 0.653061224
+    "shape\u003d596": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=26": {
-      "sable:mass": 0.653061224
+    "shape\u003d597": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=27": {
-      "sable:mass": 0.653061224
+    "shape\u003d598": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=28": {
-      "sable:mass": 0.653061224
+    "shape\u003d599": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=29": {
-      "sable:mass": 0.653061224
+    "shape\u003d600": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=30": {
-      "sable:mass": 0.653061224
+    "shape\u003d601": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=31": {
-      "sable:mass": 0.653061224
+    "shape\u003d602": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=32": {
-      "sable:mass": 0.653061224
+    "shape\u003d603": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=33": {
-      "sable:mass": 0.653061224
+    "shape\u003d604": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=34": {
-      "sable:mass": 0.653061224
+    "shape\u003d605": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=35": {
-      "sable:mass": 0.653061224
+    "shape\u003d606": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=36": {
-      "sable:mass": 0.653061224
+    "shape\u003d607": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=37": {
-      "sable:mass": 0.653061224
+    "shape\u003d608": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=38": {
-      "sable:mass": 0.653061224
+    "shape\u003d609": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=39": {
-      "sable:mass": 0.653061224
+    "shape\u003d610": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=40": {
-      "sable:mass": 0.653061224
+    "shape\u003d611": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=41": {
-      "sable:mass": 0.653061224
+    "shape\u003d612": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=42": {
-      "sable:mass": 0.653061224
+    "shape\u003d613": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=43": {
-      "sable:mass": 0.653061224
+    "shape\u003d614": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=44": {
-      "sable:mass": 0.653061224
+    "shape\u003d615": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=45": {
-      "sable:mass": 0.653061224
+    "shape\u003d616": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=46": {
-      "sable:mass": 0.653061224
+    "shape\u003d617": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=47": {
-      "sable:mass": 0.653061224
+    "shape\u003d618": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=48": {
-      "sable:mass": 0.653061224
+    "shape\u003d619": {
+      "sable:mass": 0.6530612244897959
     },
-    "style=20,part=49": {
-      "sable:mass": 0.653061224
+    "shape\u003d620": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=0": {
-      "sable:mass": 1.777777778
+    "shape\u003d621": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=1": {
-      "sable:mass": 1.777777778
+    "shape\u003d622": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=2": {
-      "sable:mass": 1.777777778
+    "shape\u003d623": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=3": {
-      "sable:mass": 1.777777778
+    "shape\u003d624": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=4": {
-      "sable:mass": 1.777777778
+    "shape\u003d625": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=5": {
-      "sable:mass": 1.777777778
+    "shape\u003d626": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=6": {
-      "sable:mass": 1.777777778
+    "shape\u003d627": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=7": {
-      "sable:mass": 1.777777778
+    "shape\u003d628": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=8": {
-      "sable:mass": 1.777777778
+    "shape\u003d629": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=9": {
-      "sable:mass": 1.777777778
+    "shape\u003d630": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=10": {
-      "sable:mass": 1.777777778
+    "shape\u003d631": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=11": {
-      "sable:mass": 1.777777778
+    "shape\u003d632": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=12": {
-      "sable:mass": 1.777777778
+    "shape\u003d633": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=14": {
-      "sable:mass": 1.777777778
+    "shape\u003d634": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=15": {
-      "sable:mass": 1.777777778
+    "shape\u003d635": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=16": {
-      "sable:mass": 1.777777778
+    "shape\u003d636": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=17": {
-      "sable:mass": 1.777777778
+    "shape\u003d637": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=21,part=18": {
-      "sable:mass": 1.777777778
+    "shape\u003d638": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=0": {
-      "sable:mass": 1.333333333
+    "shape\u003d639": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=1": {
-      "sable:mass": 1.333333333
+    "shape\u003d640": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=2": {
-      "sable:mass": 1.333333333
+    "shape\u003d641": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=3": {
-      "sable:mass": 1.333333333
+    "shape\u003d642": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=4": {
-      "sable:mass": 1.333333333
+    "shape\u003d643": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=5": {
-      "sable:mass": 1.333333333
+    "shape\u003d644": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=6": {
-      "sable:mass": 1.333333333
+    "shape\u003d645": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=7": {
-      "sable:mass": 1.333333333
+    "shape\u003d646": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=8": {
-      "sable:mass": 1.333333333
+    "shape\u003d647": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=9": {
-      "sable:mass": 1.333333333
+    "shape\u003d648": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=10": {
-      "sable:mass": 1.333333333
+    "shape\u003d649": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=11": {
-      "sable:mass": 1.333333333
+    "shape\u003d650": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=12": {
-      "sable:mass": 1.333333333
+    "shape\u003d651": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=14": {
-      "sable:mass": 1.333333333
+    "shape\u003d652": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=15": {
-      "sable:mass": 1.333333333
+    "shape\u003d653": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=16": {
-      "sable:mass": 1.333333333
+    "shape\u003d654": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=17": {
-      "sable:mass": 1.333333333
+    "shape\u003d655": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=18": {
-      "sable:mass": 1.333333333
+    "shape\u003d656": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=19": {
-      "sable:mass": 1.333333333
+    "shape\u003d657": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=20": {
-      "sable:mass": 1.333333333
+    "shape\u003d658": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=21": {
-      "sable:mass": 1.333333333
+    "shape\u003d659": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=22": {
-      "sable:mass": 1.333333333
+    "shape\u003d660": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=23": {
-      "sable:mass": 1.333333333
+    "shape\u003d661": {
+      "sable:mass": 1.3333333333333333
     },
-    "style=22,part=24": {
-      "sable:mass": 1.333333333
+    "shape\u003d662": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=0": {
-      "sable:mass": 1.103448276
+    "shape\u003d663": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=1": {
-      "sable:mass": 1.103448276
+    "shape\u003d664": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=2": {
-      "sable:mass": 1.103448276
+    "shape\u003d665": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=3": {
-      "sable:mass": 1.103448276
+    "shape\u003d666": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=4": {
-      "sable:mass": 1.103448276
+    "shape\u003d667": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=5": {
-      "sable:mass": 1.103448276
+    "shape\u003d668": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=6": {
-      "sable:mass": 1.103448276
+    "shape\u003d669": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=7": {
-      "sable:mass": 1.103448276
+    "shape\u003d670": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=8": {
-      "sable:mass": 1.103448276
+    "shape\u003d671": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=9": {
-      "sable:mass": 1.103448276
+    "shape\u003d672": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=10": {
-      "sable:mass": 1.103448276
+    "shape\u003d673": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=11": {
-      "sable:mass": 1.103448276
+    "shape\u003d674": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=12": {
-      "sable:mass": 1.103448276
+    "shape\u003d675": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=14": {
-      "sable:mass": 1.103448276
+    "shape\u003d676": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=15": {
-      "sable:mass": 1.103448276
+    "shape\u003d677": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=16": {
-      "sable:mass": 1.103448276
+    "shape\u003d678": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=17": {
-      "sable:mass": 1.103448276
+    "shape\u003d679": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=18": {
-      "sable:mass": 1.103448276
+    "shape\u003d680": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=19": {
-      "sable:mass": 1.103448276
+    "shape\u003d681": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=20": {
-      "sable:mass": 1.103448276
+    "shape\u003d682": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=21": {
-      "sable:mass": 1.103448276
+    "shape\u003d683": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=22": {
-      "sable:mass": 1.103448276
+    "shape\u003d684": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=23": {
-      "sable:mass": 1.103448276
+    "shape\u003d685": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=24": {
-      "sable:mass": 1.103448276
+    "shape\u003d686": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=25": {
-      "sable:mass": 1.103448276
+    "shape\u003d687": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=26": {
-      "sable:mass": 1.103448276
+    "shape\u003d688": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=27": {
-      "sable:mass": 1.103448276
+    "shape\u003d689": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=28": {
-      "sable:mass": 1.103448276
+    "shape\u003d690": {
+      "sable:mass": 1.103448275862069
     },
-    "style=23,part=29": {
-      "sable:mass": 1.103448276
+    "shape\u003d691": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=0": {
-      "sable:mass": 1.103448276
+    "shape\u003d692": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=1": {
-      "sable:mass": 1.103448276
+    "shape\u003d693": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=2": {
-      "sable:mass": 1.103448276
+    "shape\u003d694": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=3": {
-      "sable:mass": 1.103448276
+    "shape\u003d695": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=4": {
-      "sable:mass": 1.103448276
+    "shape\u003d696": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=5": {
-      "sable:mass": 1.103448276
+    "shape\u003d697": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=6": {
-      "sable:mass": 1.103448276
+    "shape\u003d698": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=7": {
-      "sable:mass": 1.103448276
+    "shape\u003d699": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=8": {
-      "sable:mass": 1.103448276
+    "shape\u003d700": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=9": {
-      "sable:mass": 1.103448276
+    "shape\u003d701": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=10": {
-      "sable:mass": 1.103448276
+    "shape\u003d702": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=11": {
-      "sable:mass": 1.103448276
+    "shape\u003d703": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=12": {
-      "sable:mass": 1.103448276
+    "shape\u003d704": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=14": {
-      "sable:mass": 1.103448276
+    "shape\u003d705": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=15": {
-      "sable:mass": 1.103448276
+    "shape\u003d706": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=16": {
-      "sable:mass": 1.103448276
+    "shape\u003d707": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=17": {
-      "sable:mass": 1.103448276
+    "shape\u003d708": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=18": {
-      "sable:mass": 1.103448276
+    "shape\u003d709": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=19": {
-      "sable:mass": 1.103448276
+    "shape\u003d710": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=20": {
-      "sable:mass": 1.103448276
+    "shape\u003d711": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=21": {
-      "sable:mass": 1.103448276
+    "shape\u003d712": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=22": {
-      "sable:mass": 1.103448276
+    "shape\u003d713": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=23": {
-      "sable:mass": 1.103448276
+    "shape\u003d714": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=24": {
-      "sable:mass": 1.103448276
+    "shape\u003d715": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=25": {
-      "sable:mass": 1.103448276
+    "shape\u003d716": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=26": {
-      "sable:mass": 1.103448276
+    "shape\u003d717": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=27": {
-      "sable:mass": 1.103448276
+    "shape\u003d718": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=28": {
-      "sable:mass": 1.103448276
+    "shape\u003d719": {
+      "sable:mass": 1.103448275862069
     },
-    "style=24,part=29": {
-      "sable:mass": 1.103448276
+    "shape\u003d720": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=0": {
-      "sable:mass": 0.842105263
+    "shape\u003d721": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=1": {
-      "sable:mass": 0.842105263
+    "shape\u003d722": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=2": {
-      "sable:mass": 0.842105263
+    "shape\u003d723": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=3": {
-      "sable:mass": 0.842105263
+    "shape\u003d724": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=4": {
-      "sable:mass": 0.842105263
+    "shape\u003d725": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=5": {
-      "sable:mass": 0.842105263
+    "shape\u003d726": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=6": {
-      "sable:mass": 0.842105263
+    "shape\u003d727": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=7": {
-      "sable:mass": 0.842105263
+    "shape\u003d728": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=8": {
-      "sable:mass": 0.842105263
+    "shape\u003d729": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=9": {
-      "sable:mass": 0.842105263
+    "shape\u003d730": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=10": {
-      "sable:mass": 0.842105263
+    "shape\u003d731": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=11": {
-      "sable:mass": 0.842105263
+    "shape\u003d732": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=12": {
-      "sable:mass": 0.842105263
+    "shape\u003d733": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=14": {
-      "sable:mass": 0.842105263
+    "shape\u003d734": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=15": {
-      "sable:mass": 0.842105263
+    "shape\u003d735": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=16": {
-      "sable:mass": 0.842105263
+    "shape\u003d736": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=17": {
-      "sable:mass": 0.842105263
+    "shape\u003d737": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=18": {
-      "sable:mass": 0.842105263
+    "shape\u003d738": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=19": {
-      "sable:mass": 0.842105263
+    "shape\u003d739": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=20": {
-      "sable:mass": 0.842105263
+    "shape\u003d740": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=21": {
-      "sable:mass": 0.842105263
+    "shape\u003d741": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=22": {
-      "sable:mass": 0.842105263
+    "shape\u003d742": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=23": {
-      "sable:mass": 0.842105263
+    "shape\u003d743": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=24": {
-      "sable:mass": 0.842105263
+    "shape\u003d744": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=25": {
-      "sable:mass": 0.842105263
+    "shape\u003d745": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=26": {
-      "sable:mass": 0.842105263
+    "shape\u003d746": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=27": {
-      "sable:mass": 0.842105263
+    "shape\u003d747": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=28": {
-      "sable:mass": 0.842105263
+    "shape\u003d748": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=29": {
-      "sable:mass": 0.842105263
+    "shape\u003d749": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=30": {
-      "sable:mass": 0.842105263
+    "shape\u003d750": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=31": {
-      "sable:mass": 0.842105263
+    "shape\u003d751": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=32": {
-      "sable:mass": 0.842105263
+    "shape\u003d752": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=33": {
-      "sable:mass": 0.842105263
+    "shape\u003d753": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=34": {
-      "sable:mass": 0.842105263
+    "shape\u003d754": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=35": {
-      "sable:mass": 0.842105263
+    "shape\u003d755": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=36": {
-      "sable:mass": 0.842105263
+    "shape\u003d756": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=37": {
-      "sable:mass": 0.842105263
+    "shape\u003d757": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=25,part=38": {
-      "sable:mass": 0.842105263
+    "shape\u003d758": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=0": {
-      "sable:mass": 0.842105263
+    "shape\u003d759": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=1": {
-      "sable:mass": 0.842105263
+    "shape\u003d760": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=2": {
-      "sable:mass": 0.842105263
+    "shape\u003d761": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=3": {
-      "sable:mass": 0.842105263
+    "shape\u003d762": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=4": {
-      "sable:mass": 0.842105263
+    "shape\u003d763": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=5": {
-      "sable:mass": 0.842105263
+    "shape\u003d764": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=6": {
-      "sable:mass": 0.842105263
+    "shape\u003d765": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=7": {
-      "sable:mass": 0.842105263
+    "shape\u003d766": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=8": {
-      "sable:mass": 0.842105263
+    "shape\u003d767": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=9": {
-      "sable:mass": 0.842105263
+    "shape\u003d768": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=10": {
-      "sable:mass": 0.842105263
+    "shape\u003d769": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=11": {
-      "sable:mass": 0.842105263
+    "shape\u003d770": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=12": {
-      "sable:mass": 0.842105263
+    "shape\u003d771": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=14": {
-      "sable:mass": 0.842105263
+    "shape\u003d772": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=15": {
-      "sable:mass": 0.842105263
+    "shape\u003d773": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=16": {
-      "sable:mass": 0.842105263
+    "shape\u003d774": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=17": {
-      "sable:mass": 0.842105263
+    "shape\u003d775": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=18": {
-      "sable:mass": 0.842105263
+    "shape\u003d776": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=19": {
-      "sable:mass": 0.842105263
+    "shape\u003d777": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=20": {
-      "sable:mass": 0.842105263
+    "shape\u003d778": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=21": {
-      "sable:mass": 0.842105263
+    "shape\u003d779": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=22": {
-      "sable:mass": 0.842105263
+    "shape\u003d780": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=23": {
-      "sable:mass": 0.842105263
+    "shape\u003d781": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=24": {
-      "sable:mass": 0.842105263
+    "shape\u003d782": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=25": {
-      "sable:mass": 0.842105263
+    "shape\u003d783": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=26": {
-      "sable:mass": 0.842105263
+    "shape\u003d784": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=27": {
-      "sable:mass": 0.842105263
+    "shape\u003d785": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=28": {
-      "sable:mass": 0.842105263
+    "shape\u003d786": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=29": {
-      "sable:mass": 0.842105263
+    "shape\u003d787": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=30": {
-      "sable:mass": 0.842105263
+    "shape\u003d788": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=31": {
-      "sable:mass": 0.842105263
+    "shape\u003d789": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=32": {
-      "sable:mass": 0.842105263
+    "shape\u003d790": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=33": {
-      "sable:mass": 0.842105263
+    "shape\u003d791": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=34": {
-      "sable:mass": 0.842105263
+    "shape\u003d792": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=35": {
-      "sable:mass": 0.842105263
+    "shape\u003d793": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=36": {
-      "sable:mass": 0.842105263
+    "shape\u003d794": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=37": {
-      "sable:mass": 0.842105263
+    "shape\u003d795": {
+      "sable:mass": 0.8421052631578947
     },
-    "style=26,part=38": {
-      "sable:mass": 0.842105263
+    "shape\u003d796": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=0": {
-      "sable:mass": 0.680851064
+    "shape\u003d797": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=1": {
-      "sable:mass": 0.680851064
+    "shape\u003d798": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=2": {
-      "sable:mass": 0.680851064
+    "shape\u003d799": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=3": {
-      "sable:mass": 0.680851064
+    "shape\u003d800": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=4": {
-      "sable:mass": 0.680851064
+    "shape\u003d801": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=5": {
-      "sable:mass": 0.680851064
+    "shape\u003d802": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=6": {
-      "sable:mass": 0.680851064
+    "shape\u003d803": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=7": {
-      "sable:mass": 0.680851064
+    "shape\u003d804": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=8": {
-      "sable:mass": 0.680851064
+    "shape\u003d805": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=9": {
-      "sable:mass": 0.680851064
+    "shape\u003d806": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=10": {
-      "sable:mass": 0.680851064
+    "shape\u003d807": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=11": {
-      "sable:mass": 0.680851064
+    "shape\u003d808": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=12": {
-      "sable:mass": 0.680851064
+    "shape\u003d809": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=14": {
-      "sable:mass": 0.680851064
+    "shape\u003d810": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=15": {
-      "sable:mass": 0.680851064
+    "shape\u003d811": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=16": {
-      "sable:mass": 0.680851064
+    "shape\u003d812": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=17": {
-      "sable:mass": 0.680851064
+    "shape\u003d813": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=18": {
-      "sable:mass": 0.680851064
+    "shape\u003d814": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=19": {
-      "sable:mass": 0.680851064
+    "shape\u003d815": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=20": {
-      "sable:mass": 0.680851064
+    "shape\u003d816": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=21": {
-      "sable:mass": 0.680851064
+    "shape\u003d817": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=22": {
-      "sable:mass": 0.680851064
+    "shape\u003d818": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=23": {
-      "sable:mass": 0.680851064
+    "shape\u003d819": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=24": {
-      "sable:mass": 0.680851064
+    "shape\u003d820": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=25": {
-      "sable:mass": 0.680851064
+    "shape\u003d821": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=26": {
-      "sable:mass": 0.680851064
+    "shape\u003d822": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=27": {
-      "sable:mass": 0.680851064
+    "shape\u003d823": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=28": {
-      "sable:mass": 0.680851064
+    "shape\u003d824": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=29": {
-      "sable:mass": 0.680851064
+    "shape\u003d825": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=30": {
-      "sable:mass": 0.680851064
+    "shape\u003d826": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=31": {
-      "sable:mass": 0.680851064
+    "shape\u003d827": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=32": {
-      "sable:mass": 0.680851064
+    "shape\u003d828": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=33": {
-      "sable:mass": 0.680851064
+    "shape\u003d829": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=34": {
-      "sable:mass": 0.680851064
+    "shape\u003d830": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=35": {
-      "sable:mass": 0.680851064
+    "shape\u003d831": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=36": {
-      "sable:mass": 0.680851064
+    "shape\u003d832": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=37": {
-      "sable:mass": 0.680851064
+    "shape\u003d833": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=38": {
-      "sable:mass": 0.680851064
+    "shape\u003d834": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=39": {
-      "sable:mass": 0.680851064
+    "shape\u003d835": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=40": {
-      "sable:mass": 0.680851064
+    "shape\u003d836": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=41": {
-      "sable:mass": 0.680851064
+    "shape\u003d837": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=42": {
-      "sable:mass": 0.680851064
+    "shape\u003d838": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=43": {
-      "sable:mass": 0.680851064
+    "shape\u003d839": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=44": {
-      "sable:mass": 0.680851064
+    "shape\u003d840": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=45": {
-      "sable:mass": 0.680851064
+    "shape\u003d841": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=46": {
-      "sable:mass": 0.680851064
+    "shape\u003d842": {
+      "sable:mass": 0.6808510638297872
     },
-    "style=27,part=47": {
-      "sable:mass": 0.680851064
+    "shape\u003d843": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=0": {
-      "sable:mass": 1.777777778
+    "shape\u003d844": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=1": {
-      "sable:mass": 1.777777778
+    "shape\u003d845": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=2": {
-      "sable:mass": 1.777777778
+    "shape\u003d846": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=3": {
-      "sable:mass": 1.777777778
+    "shape\u003d847": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=4": {
-      "sable:mass": 1.777777778
+    "shape\u003d848": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=5": {
-      "sable:mass": 1.777777778
+    "shape\u003d849": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=6": {
-      "sable:mass": 1.777777778
+    "shape\u003d850": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=7": {
-      "sable:mass": 1.777777778
+    "shape\u003d851": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=8": {
-      "sable:mass": 1.777777778
+    "shape\u003d852": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=9": {
-      "sable:mass": 1.777777778
+    "shape\u003d853": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=10": {
-      "sable:mass": 1.777777778
+    "shape\u003d854": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=11": {
-      "sable:mass": 1.777777778
+    "shape\u003d855": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=12": {
-      "sable:mass": 1.777777778
+    "shape\u003d856": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=14": {
-      "sable:mass": 1.777777778
+    "shape\u003d857": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=15": {
-      "sable:mass": 1.777777778
+    "shape\u003d858": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=16": {
-      "sable:mass": 1.777777778
+    "shape\u003d859": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=17": {
-      "sable:mass": 1.777777778
+    "shape\u003d860": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=28,part=18": {
-      "sable:mass": 1.777777778
-    },
-    "style=29,part=0": {
+    "shape\u003d861": {
       "sable:mass": 1.28
     },
-    "style=29,part=1": {
+    "shape\u003d862": {
       "sable:mass": 1.28
     },
-    "style=29,part=2": {
+    "shape\u003d863": {
       "sable:mass": 1.28
     },
-    "style=29,part=3": {
+    "shape\u003d864": {
       "sable:mass": 1.28
     },
-    "style=29,part=4": {
+    "shape\u003d865": {
       "sable:mass": 1.28
     },
-    "style=29,part=5": {
+    "shape\u003d866": {
       "sable:mass": 1.28
     },
-    "style=29,part=6": {
+    "shape\u003d867": {
       "sable:mass": 1.28
     },
-    "style=29,part=7": {
+    "shape\u003d868": {
       "sable:mass": 1.28
     },
-    "style=29,part=8": {
+    "shape\u003d869": {
       "sable:mass": 1.28
     },
-    "style=29,part=9": {
+    "shape\u003d870": {
       "sable:mass": 1.28
     },
-    "style=29,part=10": {
+    "shape\u003d871": {
       "sable:mass": 1.28
     },
-    "style=29,part=11": {
+    "shape\u003d872": {
       "sable:mass": 1.28
     },
-    "style=29,part=12": {
+    "shape\u003d873": {
       "sable:mass": 1.28
     },
-    "style=29,part=14": {
+    "shape\u003d874": {
       "sable:mass": 1.28
     },
-    "style=29,part=15": {
+    "shape\u003d875": {
       "sable:mass": 1.28
     },
-    "style=29,part=16": {
+    "shape\u003d876": {
       "sable:mass": 1.28
     },
-    "style=29,part=17": {
+    "shape\u003d877": {
       "sable:mass": 1.28
     },
-    "style=29,part=18": {
+    "shape\u003d878": {
       "sable:mass": 1.28
     },
-    "style=29,part=19": {
+    "shape\u003d879": {
       "sable:mass": 1.28
     },
-    "style=29,part=20": {
+    "shape\u003d880": {
       "sable:mass": 1.28
     },
-    "style=29,part=21": {
+    "shape\u003d881": {
       "sable:mass": 1.28
     },
-    "style=29,part=22": {
+    "shape\u003d882": {
       "sable:mass": 1.28
     },
-    "style=29,part=23": {
+    "shape\u003d883": {
       "sable:mass": 1.28
     },
-    "style=29,part=24": {
+    "shape\u003d884": {
       "sable:mass": 1.28
     },
-    "style=29,part=25": {
+    "shape\u003d885": {
       "sable:mass": 1.28
     },
-    "style=30,part=0": {
-      "sable:mass": 1.103448276
+    "shape\u003d886": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=1": {
-      "sable:mass": 1.103448276
+    "shape\u003d887": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=2": {
-      "sable:mass": 1.103448276
+    "shape\u003d888": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=3": {
-      "sable:mass": 1.103448276
+    "shape\u003d889": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=4": {
-      "sable:mass": 1.103448276
+    "shape\u003d890": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=5": {
-      "sable:mass": 1.103448276
+    "shape\u003d891": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=6": {
-      "sable:mass": 1.103448276
+    "shape\u003d892": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=7": {
-      "sable:mass": 1.103448276
+    "shape\u003d893": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=8": {
-      "sable:mass": 1.103448276
+    "shape\u003d894": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=9": {
-      "sable:mass": 1.103448276
+    "shape\u003d895": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=10": {
-      "sable:mass": 1.103448276
+    "shape\u003d896": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=11": {
-      "sable:mass": 1.103448276
+    "shape\u003d897": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=12": {
-      "sable:mass": 1.103448276
+    "shape\u003d898": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=14": {
-      "sable:mass": 1.103448276
+    "shape\u003d899": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=15": {
-      "sable:mass": 1.103448276
+    "shape\u003d900": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=16": {
-      "sable:mass": 1.103448276
+    "shape\u003d901": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=17": {
-      "sable:mass": 1.103448276
+    "shape\u003d902": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=18": {
-      "sable:mass": 1.103448276
+    "shape\u003d903": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=19": {
-      "sable:mass": 1.103448276
+    "shape\u003d904": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=20": {
-      "sable:mass": 1.103448276
+    "shape\u003d905": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=21": {
-      "sable:mass": 1.103448276
+    "shape\u003d906": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=22": {
-      "sable:mass": 1.103448276
+    "shape\u003d907": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=23": {
-      "sable:mass": 1.103448276
+    "shape\u003d908": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=24": {
-      "sable:mass": 1.103448276
+    "shape\u003d909": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=25": {
-      "sable:mass": 1.103448276
+    "shape\u003d910": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=26": {
-      "sable:mass": 1.103448276
+    "shape\u003d911": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=27": {
-      "sable:mass": 1.103448276
+    "shape\u003d912": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=28": {
-      "sable:mass": 1.103448276
+    "shape\u003d913": {
+      "sable:mass": 1.103448275862069
     },
-    "style=30,part=29": {
-      "sable:mass": 1.103448276
+    "shape\u003d914": {
+      "sable:mass": 1.103448275862069
     },
-    "style=31,part=0": {
-      "sable:mass": 1.882352941
+    "shape\u003d915": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=1": {
-      "sable:mass": 1.882352941
+    "shape\u003d916": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=2": {
-      "sable:mass": 1.882352941
+    "shape\u003d917": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=3": {
-      "sable:mass": 1.882352941
+    "shape\u003d918": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=4": {
-      "sable:mass": 1.882352941
+    "shape\u003d919": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=5": {
-      "sable:mass": 1.882352941
+    "shape\u003d920": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=6": {
-      "sable:mass": 1.882352941
+    "shape\u003d921": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=7": {
-      "sable:mass": 1.882352941
+    "shape\u003d922": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=8": {
-      "sable:mass": 1.882352941
+    "shape\u003d923": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=9": {
-      "sable:mass": 1.882352941
+    "shape\u003d924": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=10": {
-      "sable:mass": 1.882352941
+    "shape\u003d925": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=11": {
-      "sable:mass": 1.882352941
+    "shape\u003d926": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=12": {
-      "sable:mass": 1.882352941
+    "shape\u003d927": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=14": {
-      "sable:mass": 1.882352941
+    "shape\u003d928": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=15": {
-      "sable:mass": 1.882352941
+    "shape\u003d929": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=16": {
-      "sable:mass": 1.882352941
+    "shape\u003d930": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=31,part=17": {
-      "sable:mass": 1.882352941
+    "shape\u003d931": {
+      "sable:mass": 1.8823529411764706
     },
-    "style=32,part=0": {
-      "sable:mass": 1.777777778
+    "shape\u003d932": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=1": {
-      "sable:mass": 1.777777778
+    "shape\u003d933": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=2": {
-      "sable:mass": 1.777777778
+    "shape\u003d934": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=3": {
-      "sable:mass": 1.777777778
+    "shape\u003d935": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=4": {
-      "sable:mass": 1.777777778
+    "shape\u003d936": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=5": {
-      "sable:mass": 1.777777778
+    "shape\u003d937": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=6": {
-      "sable:mass": 1.777777778
+    "shape\u003d938": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=7": {
-      "sable:mass": 1.777777778
+    "shape\u003d939": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=8": {
-      "sable:mass": 1.777777778
+    "shape\u003d940": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=9": {
-      "sable:mass": 1.777777778
+    "shape\u003d941": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=10": {
-      "sable:mass": 1.777777778
+    "shape\u003d942": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=11": {
-      "sable:mass": 1.777777778
+    "shape\u003d943": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=12": {
-      "sable:mass": 1.777777778
+    "shape\u003d944": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=14": {
-      "sable:mass": 1.777777778
+    "shape\u003d945": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=15": {
-      "sable:mass": 1.777777778
+    "shape\u003d946": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=16": {
-      "sable:mass": 1.777777778
+    "shape\u003d947": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=17": {
-      "sable:mass": 1.777777778
+    "shape\u003d948": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=32,part=18": {
-      "sable:mass": 1.777777778
+    "shape\u003d949": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=0": {
-      "sable:mass": 1.777777778
+    "shape\u003d950": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=1": {
-      "sable:mass": 1.777777778
+    "shape\u003d951": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=2": {
-      "sable:mass": 1.777777778
+    "shape\u003d952": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=3": {
-      "sable:mass": 1.777777778
+    "shape\u003d953": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=4": {
-      "sable:mass": 1.777777778
+    "shape\u003d954": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=5": {
-      "sable:mass": 1.777777778
+    "shape\u003d955": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=6": {
-      "sable:mass": 1.777777778
+    "shape\u003d956": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=7": {
-      "sable:mass": 1.777777778
+    "shape\u003d957": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=8": {
-      "sable:mass": 1.777777778
+    "shape\u003d958": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=9": {
-      "sable:mass": 1.777777778
+    "shape\u003d959": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=10": {
-      "sable:mass": 1.777777778
+    "shape\u003d960": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=11": {
-      "sable:mass": 1.777777778
+    "shape\u003d961": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=12": {
-      "sable:mass": 1.777777778
+    "shape\u003d962": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=14": {
-      "sable:mass": 1.777777778
+    "shape\u003d963": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=15": {
-      "sable:mass": 1.777777778
+    "shape\u003d964": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=16": {
-      "sable:mass": 1.777777778
+    "shape\u003d965": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=17": {
-      "sable:mass": 1.777777778
+    "shape\u003d966": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=33,part=18": {
-      "sable:mass": 1.777777778
+    "shape\u003d967": {
+      "sable:mass": 1.7777777777777777
     },
-    "style=34,part=0": {
-      "sable:mass": 1.230769231
+    "shape\u003d968": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=1": {
-      "sable:mass": 1.230769231
+    "shape\u003d969": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=2": {
-      "sable:mass": 1.230769231
+    "shape\u003d970": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=3": {
-      "sable:mass": 1.230769231
+    "shape\u003d971": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=4": {
-      "sable:mass": 1.230769231
+    "shape\u003d972": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=5": {
-      "sable:mass": 1.230769231
+    "shape\u003d973": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=6": {
-      "sable:mass": 1.230769231
+    "shape\u003d974": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=7": {
-      "sable:mass": 1.230769231
+    "shape\u003d975": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=8": {
-      "sable:mass": 1.230769231
+    "shape\u003d976": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=9": {
-      "sable:mass": 1.230769231
+    "shape\u003d977": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=10": {
-      "sable:mass": 1.230769231
+    "shape\u003d978": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=11": {
-      "sable:mass": 1.230769231
+    "shape\u003d979": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=12": {
-      "sable:mass": 1.230769231
+    "shape\u003d980": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=14": {
-      "sable:mass": 1.230769231
+    "shape\u003d981": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=15": {
-      "sable:mass": 1.230769231
+    "shape\u003d982": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=16": {
-      "sable:mass": 1.230769231
+    "shape\u003d983": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=17": {
-      "sable:mass": 1.230769231
+    "shape\u003d984": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=18": {
-      "sable:mass": 1.230769231
+    "shape\u003d985": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=19": {
-      "sable:mass": 1.230769231
+    "shape\u003d986": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=20": {
-      "sable:mass": 1.230769231
+    "shape\u003d987": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=21": {
-      "sable:mass": 1.230769231
+    "shape\u003d988": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=22": {
-      "sable:mass": 1.230769231
+    "shape\u003d989": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=23": {
-      "sable:mass": 1.230769231
+    "shape\u003d990": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=24": {
-      "sable:mass": 1.230769231
+    "shape\u003d991": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=25": {
-      "sable:mass": 1.230769231
+    "shape\u003d992": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=34,part=26": {
-      "sable:mass": 1.230769231
+    "shape\u003d993": {
+      "sable:mass": 1.2307692307692308
     },
-    "style=35,part=0": {
-      "sable:mass": 1.103448276
+    "shape\u003d994": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=1": {
-      "sable:mass": 1.103448276
+    "shape\u003d995": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=2": {
-      "sable:mass": 1.103448276
+    "shape\u003d996": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=3": {
-      "sable:mass": 1.103448276
+    "shape\u003d997": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=4": {
-      "sable:mass": 1.103448276
+    "shape\u003d998": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=5": {
-      "sable:mass": 1.103448276
+    "shape\u003d999": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=6": {
-      "sable:mass": 1.103448276
+    "shape\u003d1000": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=7": {
-      "sable:mass": 1.103448276
+    "shape\u003d1001": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=8": {
-      "sable:mass": 1.103448276
+    "shape\u003d1002": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=9": {
-      "sable:mass": 1.103448276
+    "shape\u003d1003": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=10": {
-      "sable:mass": 1.103448276
+    "shape\u003d1004": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=11": {
-      "sable:mass": 1.103448276
+    "shape\u003d1005": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=12": {
-      "sable:mass": 1.103448276
+    "shape\u003d1006": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=14": {
-      "sable:mass": 1.103448276
+    "shape\u003d1007": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=15": {
-      "sable:mass": 1.103448276
+    "shape\u003d1008": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=16": {
-      "sable:mass": 1.103448276
+    "shape\u003d1009": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=17": {
-      "sable:mass": 1.103448276
+    "shape\u003d1010": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=18": {
-      "sable:mass": 1.103448276
+    "shape\u003d1011": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=19": {
-      "sable:mass": 1.103448276
+    "shape\u003d1012": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=20": {
-      "sable:mass": 1.103448276
+    "shape\u003d1013": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=21": {
-      "sable:mass": 1.103448276
+    "shape\u003d1014": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=22": {
-      "sable:mass": 1.103448276
+    "shape\u003d1015": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=23": {
-      "sable:mass": 1.103448276
+    "shape\u003d1016": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=24": {
-      "sable:mass": 1.103448276
+    "shape\u003d1017": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=25": {
-      "sable:mass": 1.103448276
+    "shape\u003d1018": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=26": {
-      "sable:mass": 1.103448276
+    "shape\u003d1019": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=27": {
-      "sable:mass": 1.103448276
+    "shape\u003d1020": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=28": {
-      "sable:mass": 1.103448276
+    "shape\u003d1021": {
+      "sable:mass": 1.103448275862069
     },
-    "style=35,part=29": {
-      "sable:mass": 1.103448276
+    "shape\u003d1022": {
+      "sable:mass": 1.103448275862069
     },
-    "style=36,part=0": {
-      "sable:mass": 2.461538462
+    "shape\u003d1023": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=1": {
-      "sable:mass": 2.461538462
+    "shape\u003d1024": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=2": {
-      "sable:mass": 2.461538462
+    "shape\u003d1025": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=3": {
-      "sable:mass": 2.461538462
+    "shape\u003d1026": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=4": {
-      "sable:mass": 2.461538462
+    "shape\u003d1027": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=5": {
-      "sable:mass": 2.461538462
+    "shape\u003d1028": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=6": {
-      "sable:mass": 2.461538462
+    "shape\u003d1029": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=7": {
-      "sable:mass": 2.461538462
+    "shape\u003d1030": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=8": {
-      "sable:mass": 2.461538462
+    "shape\u003d1031": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=9": {
-      "sable:mass": 2.461538462
+    "shape\u003d1032": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=10": {
-      "sable:mass": 2.461538462
+    "shape\u003d1033": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=11": {
-      "sable:mass": 2.461538462
+    "shape\u003d1034": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=36,part=12": {
-      "sable:mass": 2.461538462
+    "shape\u003d1035": {
+      "sable:mass": 2.4615384615384617
     },
-    "style=37,part=0": {
-      "sable:mass": 0.340425532
+    "shape\u003d1036": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=1": {
-      "sable:mass": 0.340425532
+    "shape\u003d1037": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=2": {
-      "sable:mass": 0.340425532
+    "shape\u003d1038": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=3": {
-      "sable:mass": 0.340425532
+    "shape\u003d1039": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=4": {
-      "sable:mass": 0.340425532
+    "shape\u003d1040": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=5": {
-      "sable:mass": 0.340425532
+    "shape\u003d1041": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=6": {
-      "sable:mass": 0.340425532
+    "shape\u003d1042": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=7": {
-      "sable:mass": 0.340425532
+    "shape\u003d1043": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=8": {
-      "sable:mass": 0.340425532
+    "shape\u003d1044": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=9": {
-      "sable:mass": 0.340425532
+    "shape\u003d1045": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=10": {
-      "sable:mass": 0.340425532
+    "shape\u003d1046": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=11": {
-      "sable:mass": 0.340425532
+    "shape\u003d1047": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=12": {
-      "sable:mass": 0.340425532
+    "shape\u003d1048": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=14": {
-      "sable:mass": 0.340425532
+    "shape\u003d1049": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=15": {
-      "sable:mass": 0.340425532
+    "shape\u003d1050": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=16": {
-      "sable:mass": 0.340425532
+    "shape\u003d1051": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=17": {
-      "sable:mass": 0.340425532
+    "shape\u003d1052": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=18": {
-      "sable:mass": 0.340425532
+    "shape\u003d1053": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=19": {
-      "sable:mass": 0.340425532
+    "shape\u003d1054": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=20": {
-      "sable:mass": 0.340425532
+    "shape\u003d1055": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=21": {
-      "sable:mass": 0.340425532
+    "shape\u003d1056": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=22": {
-      "sable:mass": 0.340425532
+    "shape\u003d1057": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=23": {
-      "sable:mass": 0.340425532
+    "shape\u003d1058": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=24": {
-      "sable:mass": 0.340425532
+    "shape\u003d1059": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=25": {
-      "sable:mass": 0.340425532
+    "shape\u003d1060": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=26": {
-      "sable:mass": 0.340425532
+    "shape\u003d1061": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=27": {
-      "sable:mass": 0.340425532
+    "shape\u003d1062": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=28": {
-      "sable:mass": 0.340425532
+    "shape\u003d1063": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=29": {
-      "sable:mass": 0.340425532
+    "shape\u003d1064": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=30": {
-      "sable:mass": 0.340425532
+    "shape\u003d1065": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=31": {
-      "sable:mass": 0.340425532
+    "shape\u003d1066": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=32": {
-      "sable:mass": 0.340425532
+    "shape\u003d1067": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=33": {
-      "sable:mass": 0.340425532
+    "shape\u003d1068": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=34": {
-      "sable:mass": 0.340425532
+    "shape\u003d1069": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=35": {
-      "sable:mass": 0.340425532
+    "shape\u003d1070": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=36": {
-      "sable:mass": 0.340425532
+    "shape\u003d1071": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=37": {
-      "sable:mass": 0.340425532
+    "shape\u003d1072": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=38": {
-      "sable:mass": 0.340425532
+    "shape\u003d1073": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=39": {
-      "sable:mass": 0.340425532
+    "shape\u003d1074": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=40": {
-      "sable:mass": 0.340425532
+    "shape\u003d1075": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=41": {
-      "sable:mass": 0.340425532
+    "shape\u003d1076": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=42": {
-      "sable:mass": 0.340425532
+    "shape\u003d1077": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=43": {
-      "sable:mass": 0.340425532
+    "shape\u003d1078": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=44": {
-      "sable:mass": 0.340425532
+    "shape\u003d1079": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=45": {
-      "sable:mass": 0.340425532
+    "shape\u003d1080": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=46": {
-      "sable:mass": 0.340425532
+    "shape\u003d1081": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=47": {
-      "sable:mass": 0.340425532
+    "shape\u003d1082": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=48": {
-      "sable:mass": 0.340425532
+    "shape\u003d1083": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=49": {
-      "sable:mass": 0.340425532
+    "shape\u003d1084": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=50": {
-      "sable:mass": 0.340425532
+    "shape\u003d1085": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=51": {
-      "sable:mass": 0.340425532
+    "shape\u003d1086": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=52": {
-      "sable:mass": 0.340425532
+    "shape\u003d1087": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=53": {
-      "sable:mass": 0.340425532
+    "shape\u003d1088": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=54": {
-      "sable:mass": 0.340425532
+    "shape\u003d1089": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=55": {
-      "sable:mass": 0.340425532
+    "shape\u003d1090": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=56": {
-      "sable:mass": 0.340425532
+    "shape\u003d1091": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=57": {
-      "sable:mass": 0.340425532
+    "shape\u003d1092": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=58": {
-      "sable:mass": 0.340425532
+    "shape\u003d1093": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=59": {
-      "sable:mass": 0.340425532
+    "shape\u003d1094": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=60": {
-      "sable:mass": 0.340425532
+    "shape\u003d1095": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=61": {
-      "sable:mass": 0.340425532
+    "shape\u003d1096": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=62": {
-      "sable:mass": 0.340425532
+    "shape\u003d1097": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=63": {
-      "sable:mass": 0.340425532
+    "shape\u003d1098": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=64": {
-      "sable:mass": 0.340425532
+    "shape\u003d1099": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=65": {
-      "sable:mass": 0.340425532
+    "shape\u003d1100": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=66": {
-      "sable:mass": 0.340425532
+    "shape\u003d1101": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=67": {
-      "sable:mass": 0.340425532
+    "shape\u003d1102": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=68": {
-      "sable:mass": 0.340425532
+    "shape\u003d1103": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=69": {
-      "sable:mass": 0.340425532
+    "shape\u003d1104": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=70": {
-      "sable:mass": 0.340425532
+    "shape\u003d1105": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=71": {
-      "sable:mass": 0.340425532
+    "shape\u003d1106": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=72": {
-      "sable:mass": 0.340425532
+    "shape\u003d1107": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=73": {
-      "sable:mass": 0.340425532
+    "shape\u003d1108": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=74": {
-      "sable:mass": 0.340425532
+    "shape\u003d1109": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=75": {
-      "sable:mass": 0.340425532
+    "shape\u003d1110": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=76": {
-      "sable:mass": 0.340425532
+    "shape\u003d1111": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=77": {
-      "sable:mass": 0.340425532
+    "shape\u003d1112": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=78": {
-      "sable:mass": 0.340425532
+    "shape\u003d1113": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=79": {
-      "sable:mass": 0.340425532
+    "shape\u003d1114": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=80": {
-      "sable:mass": 0.340425532
+    "shape\u003d1115": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=81": {
-      "sable:mass": 0.340425532
+    "shape\u003d1116": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=82": {
-      "sable:mass": 0.340425532
+    "shape\u003d1117": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=83": {
-      "sable:mass": 0.340425532
+    "shape\u003d1118": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=84": {
-      "sable:mass": 0.340425532
+    "shape\u003d1119": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=85": {
-      "sable:mass": 0.340425532
+    "shape\u003d1120": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=86": {
-      "sable:mass": 0.340425532
+    "shape\u003d1121": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=87": {
-      "sable:mass": 0.340425532
+    "shape\u003d1122": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=88": {
-      "sable:mass": 0.340425532
+    "shape\u003d1123": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=89": {
-      "sable:mass": 0.340425532
+    "shape\u003d1124": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=90": {
-      "sable:mass": 0.340425532
+    "shape\u003d1125": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=91": {
-      "sable:mass": 0.340425532
+    "shape\u003d1126": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=92": {
-      "sable:mass": 0.340425532
+    "shape\u003d1127": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=93": {
-      "sable:mass": 0.340425532
+    "shape\u003d1128": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=37,part=94": {
-      "sable:mass": 0.340425532
+    "shape\u003d1129": {
+      "sable:mass": 0.3404255319148936
     },
-    "style=38,part=0": {
-      "sable:mass": 0.727272727
+    "shape\u003d1130": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=1": {
-      "sable:mass": 0.727272727
+    "shape\u003d1131": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=2": {
-      "sable:mass": 0.727272727
+    "shape\u003d1132": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=3": {
-      "sable:mass": 0.727272727
+    "shape\u003d1133": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=4": {
-      "sable:mass": 0.727272727
+    "shape\u003d1134": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=5": {
-      "sable:mass": 0.727272727
+    "shape\u003d1135": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=6": {
-      "sable:mass": 0.727272727
+    "shape\u003d1136": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=7": {
-      "sable:mass": 0.727272727
+    "shape\u003d1137": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=8": {
-      "sable:mass": 0.727272727
+    "shape\u003d1138": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=9": {
-      "sable:mass": 0.727272727
+    "shape\u003d1139": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=10": {
-      "sable:mass": 0.727272727
+    "shape\u003d1140": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=11": {
-      "sable:mass": 0.727272727
+    "shape\u003d1141": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=12": {
-      "sable:mass": 0.727272727
+    "shape\u003d1142": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=14": {
-      "sable:mass": 0.727272727
+    "shape\u003d1143": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=15": {
-      "sable:mass": 0.727272727
+    "shape\u003d1144": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=16": {
-      "sable:mass": 0.727272727
+    "shape\u003d1145": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=17": {
-      "sable:mass": 0.727272727
+    "shape\u003d1146": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=18": {
-      "sable:mass": 0.727272727
+    "shape\u003d1147": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=19": {
-      "sable:mass": 0.727272727
+    "shape\u003d1148": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=20": {
-      "sable:mass": 0.727272727
+    "shape\u003d1149": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=21": {
-      "sable:mass": 0.727272727
+    "shape\u003d1150": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=22": {
-      "sable:mass": 0.727272727
+    "shape\u003d1151": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=23": {
-      "sable:mass": 0.727272727
+    "shape\u003d1152": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=24": {
-      "sable:mass": 0.727272727
+    "shape\u003d1153": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=25": {
-      "sable:mass": 0.727272727
+    "shape\u003d1154": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=26": {
-      "sable:mass": 0.727272727
+    "shape\u003d1155": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=27": {
-      "sable:mass": 0.727272727
+    "shape\u003d1156": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=28": {
-      "sable:mass": 0.727272727
+    "shape\u003d1157": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=29": {
-      "sable:mass": 0.727272727
+    "shape\u003d1158": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=30": {
-      "sable:mass": 0.727272727
+    "shape\u003d1159": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=31": {
-      "sable:mass": 0.727272727
+    "shape\u003d1160": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=32": {
-      "sable:mass": 0.727272727
+    "shape\u003d1161": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=33": {
-      "sable:mass": 0.727272727
+    "shape\u003d1162": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=34": {
-      "sable:mass": 0.727272727
+    "shape\u003d1163": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=35": {
-      "sable:mass": 0.727272727
+    "shape\u003d1164": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=36": {
-      "sable:mass": 0.727272727
+    "shape\u003d1165": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=37": {
-      "sable:mass": 0.727272727
+    "shape\u003d1166": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=38": {
-      "sable:mass": 0.727272727
+    "shape\u003d1167": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=39": {
-      "sable:mass": 0.727272727
+    "shape\u003d1168": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=40": {
-      "sable:mass": 0.727272727
+    "shape\u003d1169": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=41": {
-      "sable:mass": 0.727272727
+    "shape\u003d1170": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=42": {
-      "sable:mass": 0.727272727
+    "shape\u003d1171": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=43": {
-      "sable:mass": 0.727272727
+    "shape\u003d1172": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=38,part=44": {
-      "sable:mass": 0.727272727
+    "shape\u003d1173": {
+      "sable:mass": 0.7272727272727273
     },
-    "style=39,part=0": {
-      "sable:mass": 0.695652174
+    "shape\u003d1174": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=1": {
-      "sable:mass": 0.695652174
+    "shape\u003d1175": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=2": {
-      "sable:mass": 0.695652174
+    "shape\u003d1176": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=3": {
-      "sable:mass": 0.695652174
+    "shape\u003d1177": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=4": {
-      "sable:mass": 0.695652174
+    "shape\u003d1178": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=5": {
-      "sable:mass": 0.695652174
+    "shape\u003d1179": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=6": {
-      "sable:mass": 0.695652174
+    "shape\u003d1180": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=7": {
-      "sable:mass": 0.695652174
+    "shape\u003d1181": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=8": {
-      "sable:mass": 0.695652174
+    "shape\u003d1182": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=9": {
-      "sable:mass": 0.695652174
+    "shape\u003d1183": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=10": {
-      "sable:mass": 0.695652174
+    "shape\u003d1184": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=11": {
-      "sable:mass": 0.695652174
+    "shape\u003d1185": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=12": {
-      "sable:mass": 0.695652174
+    "shape\u003d1186": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=14": {
-      "sable:mass": 0.695652174
+    "shape\u003d1187": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=15": {
-      "sable:mass": 0.695652174
+    "shape\u003d1188": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=16": {
-      "sable:mass": 0.695652174
+    "shape\u003d1189": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=17": {
-      "sable:mass": 0.695652174
+    "shape\u003d1190": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=18": {
-      "sable:mass": 0.695652174
+    "shape\u003d1191": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=19": {
-      "sable:mass": 0.695652174
+    "shape\u003d1192": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=20": {
-      "sable:mass": 0.695652174
+    "shape\u003d1193": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=21": {
-      "sable:mass": 0.695652174
+    "shape\u003d1194": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=22": {
-      "sable:mass": 0.695652174
+    "shape\u003d1195": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=23": {
-      "sable:mass": 0.695652174
+    "shape\u003d1196": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=24": {
-      "sable:mass": 0.695652174
+    "shape\u003d1197": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=25": {
-      "sable:mass": 0.695652174
+    "shape\u003d1198": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=26": {
-      "sable:mass": 0.695652174
+    "shape\u003d1199": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=27": {
-      "sable:mass": 0.695652174
+    "shape\u003d1200": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=28": {
-      "sable:mass": 0.695652174
+    "shape\u003d1201": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=29": {
-      "sable:mass": 0.695652174
+    "shape\u003d1202": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=30": {
-      "sable:mass": 0.695652174
+    "shape\u003d1203": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=31": {
-      "sable:mass": 0.695652174
+    "shape\u003d1204": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=32": {
-      "sable:mass": 0.695652174
+    "shape\u003d1205": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=33": {
-      "sable:mass": 0.695652174
+    "shape\u003d1206": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=34": {
-      "sable:mass": 0.695652174
+    "shape\u003d1207": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=35": {
-      "sable:mass": 0.695652174
+    "shape\u003d1208": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=36": {
-      "sable:mass": 0.695652174
+    "shape\u003d1209": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=37": {
-      "sable:mass": 0.695652174
+    "shape\u003d1210": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=38": {
-      "sable:mass": 0.695652174
+    "shape\u003d1211": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=39": {
-      "sable:mass": 0.695652174
+    "shape\u003d1212": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=40": {
-      "sable:mass": 0.695652174
+    "shape\u003d1213": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=41": {
-      "sable:mass": 0.695652174
+    "shape\u003d1214": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=42": {
-      "sable:mass": 0.695652174
+    "shape\u003d1215": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=43": {
-      "sable:mass": 0.695652174
+    "shape\u003d1216": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=44": {
-      "sable:mass": 0.695652174
+    "shape\u003d1217": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=45": {
-      "sable:mass": 0.695652174
+    "shape\u003d1218": {
+      "sable:mass": 0.6956521739130435
     },
-    "style=39,part=46": {
-      "sable:mass": 0.695652174
+    "shape\u003d1219": {
+      "sable:mass": 0.6956521739130435
     }
   }
 }

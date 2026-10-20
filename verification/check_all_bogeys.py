@@ -5,7 +5,6 @@ p=argparse.ArgumentParser();p.add_argument('--capture');a=p.parse_args()
 rows=json.loads(Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json').read_text())
 sha=hashlib.sha256(Path('libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar').read_bytes()).hexdigest()
 assert len(rows)==39
-assert [r['id'] for r in rows[:5]]==['railways:freight','railways:passenger','railways:modern','railways:blomberg','railways:y25']
 keys=set()
 for index,r in enumerate(rows,1):
     assert r['index']==index and r['sourceJarSha256']==sha
@@ -14,7 +13,7 @@ for index,r in enumerate(rows,1):
     for b in r['boxes']:assert all(math.isfinite(v)for v in b)and all(b[i+3]>b[i]for i in range(3))
     assert len({tuple(math.floor(v)for v in b[:3])for b in r['boxes']})<127
     assert r['renderY']==1.0078125,'native BogeyStyle render origin compensation missing'
-    assert isinstance(r['mountTop'],int) and r['mountTop']<=r['legacyMountTop']
+    assert isinstance(r['mountTop'],int)
     assert abs(r['ride']+(r['mountTop']-.5-r['ride'])+.5-r['mountTop'])<1e-8
 assert next(r for r in rows if r['id']=='railways:handcar')['animationRatio']==2
 if a.capture:

@@ -1,5 +1,4 @@
 package com.guidedrailways;
-import com.railwayteam.railways.registry.CRBogeyStyles;
 import com.simibubi.create.content.trains.bogey.BogeySizes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -51,8 +50,4 @@ public final class SteamRailwaysClient {
         if(style!=null&&size!=null)style.render(size,partial,pose,buffers,light,overlay,angle,data,false);
     }
 
-    static void mono(CompoundTag data,float angle,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
-        pose.translate(0,1.5078125,0);
-        CRBogeyStyles.MONOBOGEY.render(BogeySizes.SMALL,partial,pose,buffers,light,overlay,angle,data,false);
-    }
 }

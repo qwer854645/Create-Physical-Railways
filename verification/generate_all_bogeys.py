@@ -5,8 +5,8 @@ import numpy as np
 from fit_bogey_mounts import fit_mount, write_models, measure_bearing
 p=argparse.ArgumentParser();p.add_argument('--input',default='build/bogey-capture.json');a=p.parse_args()
 rows=json.loads(Path(a.input).read_text());out=[]
-legacy=['railways:freight','railways:passenger','railways:modern','railways:blomberg','railways:y25']
-rows.sort(key=lambda r:(0,legacy.index(r['id'])) if r['id'] in legacy else (1,r['id']+'|'+r['size']))
+catalog_priority=['railways:freight','railways:passenger','railways:modern','railways:blomberg','railways:y25']
+rows.sort(key=lambda r:(0,catalog_priority.index(r['id'])) if r['id'] in catalog_priority else (1,r['id']+'|'+r['size']))
 S=16;RENDER_Y=1.0078125
 for index,row in enumerate(rows,1):
     frames=np.array(row.pop('frames'));vertices=frames[0] if frames.size else np.empty((0,3));circles=[]
@@ -75,12 +75,4 @@ for index,row in enumerate(rows,1):
 dest=Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json');dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')
 print('Wrote',len(out),'native style/size profiles',dest)
 write_models(out)
-mass_path=Path('src/main/resources/data/guidedrailways/physics_block_properties/bogie_collision.json')
-mass=json.loads(mass_path.read_text());mass['overrides']={('style=0,'+k if not k.startswith('style=') else k):v for k,v in mass['overrides'].items() if not k.startswith('style=') or k.startswith('style=0,')}
-for row in out:
-    cells=sorted({tuple(math.floor(v)for v in b[:3])for b in row['boxes']},key=lambda c:(c[1],c[0],c[2]));part=0
-    for cell in cells:
-        if cell==(0,0,0):continue
-        while part==13:part+=1
-        mass['overrides'][f'style={row["index"]},part={part}']={'sable:mass':round(32/max(1,len(cells)-1),9)};part+=1
-mass_path.write_text(json.dumps(mass,indent=2)+'\n')
+print('Regenerate mass selectors with gradlew generateCollisionMetadata after compiling the catalog')

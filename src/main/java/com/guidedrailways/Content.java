@@ -21,16 +21,13 @@ public final class Content {
     });
     static BlockBehaviour.Properties metal(){return BlockBehaviour.Properties.of().strength(3).sound(SoundType.METAL).noOcclusion();}
     public static final DeferredBlock<MountBlock> MOUNT=BLOCKS.register("bogie_mount",()->new MountBlock(metal()));
-    public static final DeferredBlock<CollisionPartBlock> COLLISION=BLOCKS.register("bogie_collision",()->new CollisionPartBlock(metal()));
-    public static final DeferredBlock<BogieBlock> BOGIE=BLOCKS.register("bogie_frame",()->new BogieBlock(metal()));
+    public static final DeferredBlock<CollisionPartBlock> COLLISION=BLOCKS.register("bogie_collision",()->new CollisionPartBlock(metal().dynamicShape()));
+    public static final DeferredBlock<BogieBlock> BOGIE=BLOCKS.register("bogie_frame",()->new BogieBlock(metal().dynamicShape()));
     public static final DeferredBlock<CouplerBlock> COUPLER=BLOCKS.register("coupler",()->new CouplerBlock(metal().dynamicShape()));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<MountEntity>> MOUNT_ENTITY=ENTITIES.register("bogie_mount",()->BlockEntityType.Builder.of(MountEntity::new,MOUNT.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<BogieEntity>> BOGIE_ENTITY=ENTITIES.register("bogie_frame",()->BlockEntityType.Builder.of(BogieEntity::new,BOGIE.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CouplerEntity>> COUPLER_ENTITY=ENTITIES.register("coupler",()->BlockEntityType.Builder.of(CouplerEntity::new,COUPLER.get()).build(null));
     public static final DeferredItem<BogieItem> BOGIE_ITEM=ITEMS.register("bogie",()->new BogieItem(new Item.Properties()));
-    public static final DeferredItem<BogieItem> NARROW_BOGIE=ITEMS.register("narrow_bogie",()->new BogieItem(new Item.Properties()));
-    public static final DeferredItem<BogieItem> WIDE_BOGIE=ITEMS.register("wide_bogie",()->new BogieItem(new Item.Properties()));
-    public static final DeferredItem<BogieItem> MONO_BOGIE=ITEMS.register("monorail_bogie",()->new BogieItem(new Item.Properties()));
     static ItemStack bogieItem(){return new ItemStack(BOGIE_ITEM.get());}
     public static final DeferredItem<CouplerLinkItem> COUPLER_LINK=ITEMS.register("coupler_link",()->new CouplerLinkItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<BlockItem> COUPLER_ITEM=ITEMS.register("coupler",()->new BlockItem(COUPLER.get(),new Item.Properties()){

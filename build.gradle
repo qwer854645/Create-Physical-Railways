@@ -450,3 +450,17 @@ tasks.register('checkCouplerPersistence', JavaExec) {
     mainClass = 'com.guidedrailways.CouplerPersistenceCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerPersistence' }
+
+
+tasks.register('generateCollisionMetadata', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.CollisionCatalogCheck'
+    args '--write'
+}
+tasks.register('checkCollisionCatalog', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.CollisionCatalogCheck'
+}
+tasks.named('check') { dependsOn 'checkCollisionCatalog' }

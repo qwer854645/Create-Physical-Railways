@@ -1,0 +1,99 @@
+package com.guidedrailways;
+
+import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;
+import dev.ryanhcode.sable.companion.math.Pose3d;
+import dev.ryanhcode.sable.sublevel.ServerSubLevel;
+import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
+import java.util.ArrayList;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Vector3d;
+
+/** Preflight the entire current layout and roll back every attempted block edit on failure. */
+final class CollisionAssembler {
+    private static final String CATALOG = "shape_catalog_v1";
+    private record Edit(BlockPos pos, BlockState before, BlockState after) {}
+    private record Motion(Pose3d pose, Vector3d reference, Vector3d velocity, Vector3d angular) {}
+
+    private CollisionAssembler() {}
+
+    static boolean populate(ServerSubLevel body, boolean refreshMass) {
+        var level = body.getLevel();
+        var centre = body.getPlot().getCenterBlock();
+        var variant = BogieBlock.variant(level.getBlockState(centre));
+        var saved = body.getUserDataTag();
+        var tag = saved == null ? new CompoundTag() : saved.copy();
+        if (CATALOG.equals(tag.getString("CollisionCatalog"))
+                && tag.getInt("CollisionProfile") == variant.ordinal()) return true;
+
+        var edits = new ArrayList<Edit>();
+        for (var cell : BogieCollision.cells(variant.gauge, variant)) {
+            if (cell.part() == BogieCollision.CENTRE_PART) continue;
+            var pos = centre.offset(cell.x(), cell.y(), cell.z()).immutable();
+            var before = level.getBlockState(pos);
+            if (!before.isAir() && !before.is(Content.COLLISION.get())) return false;
+            var after = Content.COLLISION.get().defaultBlockState().setValue(
+                CollisionPartBlock.SHAPE, BogieCollision.shapeId(variant, cell.part()));
+            if (!before.equals(after)) edits.add(new Edit(pos, before, after));
+        }
+
+        var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
+        var motion = refreshMass ? new Motion(pipe.readPose(body, new Pose3d()),
+            new Vector3d(body.logicalPose().rotationPoint()), pipe.getLinearVelocity(body, new Vector3d()),
+            pipe.getAngularVelocity(body, new Vector3d())) : null;
+        // Include mass refresh in the transaction, even for a central-only invisible bogey.
+        edits.add(new Edit(null, null, null));
+        try {
+            MoveBatch.commit(edits, edit -> {
+                if (edit.pos() != null && !level.getBlockState(edit.pos()).equals(edit.before()))
+                    throw new IllegalStateException("Collision target changed during assembly");
+            }, edit -> {
+                if (edit.pos() == null) {
+                    if (motion != null) rebuild(body, motion);
+                } else put(body, edit.pos(), edit.after());
+            }, edit -> {
+                if (edit.pos() != null) put(body, edit.pos(), edit.before());
+            });
+        } catch (RuntimeException failure) {
+            if (motion != null) {
+                try { rebuild(body, motion); }
+                catch (RuntimeException restoreFailure) { failure.addSuppressed(restoreFailure); }
+            }
+            throw failure;
+        }
+        tag.putString("CollisionCatalog", CATALOG);
+        tag.putInt("CollisionProfile", variant.ordinal());
+        body.setUserDataTag(tag);
+        if (refreshMass) {
+            org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info(
+                "[BogieMass] body={} mass={} layout={}", body.getUniqueId(),
+                body.getMassTracker().getMass(), CATALOG);
+        }
+        return true;
+    }
+
+    private static void put(ServerSubLevel body, BlockPos pos, BlockState state) {
+        var level = body.getLevel();
+        var chunk = level.getChunkAt(pos);
+        var before = chunk.getBlockState(pos);
+        chunk.setBlockState(pos, state, true);
+        SubLevelAssemblyHelper.markAndNotifyBlock(level, pos, chunk, before, state, 3, 512);
+    }
+
+    private static void rebuild(ServerSubLevel body, Motion before) {
+        var pipe = SubLevelPhysicsSystem.get(body.getLevel()).getPipeline();
+        body.buildMassTracker();
+        body.updateMergedMassData(1);
+        var com = new Vector3d(body.getMassTracker().getCenterOfMass());
+        var shift = new Vector3d(com).sub(before.reference()).rotate(before.pose().orientation());
+        body.logicalPose().rotationPoint().set(com);
+        pipe.onStatsChanged(body);
+        pipe.teleport(body, new Vector3d(before.pose().position()).add(shift), before.pose().orientation());
+        pipe.resetVelocity(body);
+        pipe.addLinearAndAngularVelocity(body,
+            new Vector3d(before.angular()).cross(shift).add(before.velocity()), before.angular());
+        body.updateLastPose();
+        body.updateBoundingBox();
+    }
+}

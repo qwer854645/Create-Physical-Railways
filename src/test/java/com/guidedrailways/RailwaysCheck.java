@@ -3,19 +3,12 @@ public final class RailwaysCheck {
     private static int checks;
     private static void check(boolean value,String why){checks++;if(!value)throw new AssertionError(why);}
     public static void main(String[] args)throws Exception{
-        if(args.length>0&&args[0].equals("ballast")){
-            for(var gauge:RailGauge.values()){
-                var cells=BogieCollision.cells(gauge);int width=cells.stream().mapToInt(c->Math.abs(c.x())).max().orElse(1);
-                for(var c:cells)if(c.y()==0&&Math.abs(c.x())==width&&Math.abs(c.z())==1)System.out.println("gauge="+gauge.ordinal()+",part="+c.part());
-            }
-            return;
-        }
         for(var gauge:RailGauge.values()){
             check(RailGauge.read(gauge.name())==gauge,"profile round trip");
             check(gauge.accepts("railways:universal")== (gauge!=RailGauge.MONORAIL),"universal rail does not turn into a monorail beam");
             check(!gauge.accepts("other:unknown"),"unknown track types are not silently standard gauge");
         }
-        check(RailGauge.read("")==RailGauge.STANDARD,"old saves retain standard gauge");
+        check(RailGauge.read("")==RailGauge.STANDARD,"invalid gauge input has a deterministic default");
         check(RailGauge.STANDARD.accepts("create:standard"),"all materials of the native standard type are supported");
         check(!RailGauge.STANDARD.accepts("railways:narrow_gauge"),"standard bogie cannot enter narrow rail");
         check(!RailGauge.STANDARD.accepts("railways:wide_gauge"),"standard bogie cannot enter wide rail");
@@ -52,11 +45,11 @@ public final class RailwaysCheck {
             }
         }
         RailPlacement.Route beam=d->new RailPlacement.Point(new org.joml.Vector3d(0,0,d),new org.joml.Vector3d(0,0,1),new org.joml.Vector3d(0,1,0));
-        double monoRide=BogieGeometry.ride(RailGauge.MONORAIL),monoPivot=BogieGeometry.pivotHeight(BogieGeometry.MOUNT_HEIGHT_VERSION,RailGauge.MONORAIL);
+        var profile=BogeyVariant.defaultFor(RailGauge.MONORAIL);double monoRide=profile.ride,monoPivot=profile.pivotHeight();
         var mono=RailPlacement.bogie(beam,0,monoRide,1,monoPivot);
-        check(Math.abs(mono.origin().y-1)<1e-8,"mono model origin aligns horizontal side rollers with the one-block beam");
-        check(Math.abs(mono.origin().y+BogieGeometry.plateOffset(RailGauge.MONORAIL)+.5-2)<1e-8,"monorail keeps the mounting platform on the same integral grid");
-        check(Math.abs(mono.pivot().y-1.75)<1e-8,"monorail bearing agrees with the mounting plate underside");
+        check(Math.abs(mono.origin().y-profile.ride)<1e-8,"mono model origin aligns horizontal side rollers with the one-block beam");
+        check(Math.abs(mono.origin().y+profile.plateOffset()+.5-profile.mountTop)<1e-8,"monorail keeps the mounting platform on the same integral grid");
+        check(Math.abs(mono.pivot().y-(profile.mountTop-.25))<1e-8,"monorail bearing agrees with the mounting plate underside");
         check(RailCouplerMode.choose(false,false,true,true,true,true)==1,"two stopped free ends can couple");
         check(RailCouplerMode.choose(true,true,true,true,true,true)==2,"an existing direct link can uncouple");
         check(RailCouplerMode.choose(false,true,true,true,true,true)==0,"trackside coupling cannot close a loop in the same train");
@@ -64,14 +57,6 @@ public final class RailwaysCheck {
         check(RailCouplerMode.choose(false,false,true,false,true,true)==0,"missing or occupied sockets cannot be joined");
         check(RailCouplerMode.choose(true,true,true,true,true,false)==0,"coupling-only setting never uncouples");
         check(RailCouplerMode.choose(false,false,true,true,false,true)==0,"uncoupling-only setting never couples");
-        var mass=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/data/guidedrailways/physics_block_properties/bogie_collision.json"))).getAsJsonObject().getAsJsonObject("overrides");
-        for(var gauge:RailGauge.values()){
-            var cells=BogieCollision.cells(gauge);int outer=cells.stream().mapToInt(c->Math.abs(c.x())).max().orElse(1);int count=0;
-            for(var c:cells)if(c.y()==0&&Math.abs(c.x())==outer&&Math.abs(c.z())==1){
-                String massKey="style=0,gauge="+gauge.ordinal()+",part="+c.part();check(mass.has(massKey)&&mass.getAsJsonObject(massKey).get("sable:mass").getAsDouble()==8,"ballast remains symmetric at the four outer corners for every geometry profile");count++;
-            }
-            check(count==4,"every bogie retains four equal ballast cells");
-        }
         CargoHookStatus.disable("railways");check(CargoHookStatus.ready("logistics")&&CargoHookStatus.ready("dock"),"an absent railways adapter cannot disable unrelated cargo compatibility");
         check(RailGauge.forTrack("create:standard")==RailGauge.STANDARD,"unified standard item resolves ordinary rails");
         check(RailGauge.forTrack("railways:narrow_gauge")==RailGauge.NARROW,"unified standard item resolves narrow rails");
@@ -79,11 +64,6 @@ public final class RailwaysCheck {
         check(RailGauge.forTrack("railways:monorail")==RailGauge.MONORAIL,"unified standard item resolves monorail beams");
         check(RailGauge.forTrack("railways:universal")==RailGauge.STANDARD,"universal rails choose one deterministic default geometry");
         check(RailGauge.forTrack("other:unknown")==null,"unknown rails cannot silently acquire an incompatible bogey");
-        for(String legacy:java.util.List.of("narrow_bogie","wide_bogie","monorail_bogie")){
-            var recipe=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/data/guidedrailways/recipe/"+legacy+".json"))).getAsJsonObject();
-            check(recipe.getAsJsonArray("ingredients").size()==1&&recipe.getAsJsonArray("ingredients").get(0).getAsJsonObject().get("item").getAsString().equals("guidedrailways:"+legacy),"legacy conversion consumes exactly one old bogey, without new material cost");
-            check(recipe.getAsJsonObject("result").get("id").getAsString().equals("guidedrailways:bogie")&&recipe.getAsJsonObject("result").get("count").getAsInt()==1,"all legacy recipes return the same unified item without duplication");
-        }
         System.out.println("RailwaysCheck: "+checks+" assertions passed");
     }
 }

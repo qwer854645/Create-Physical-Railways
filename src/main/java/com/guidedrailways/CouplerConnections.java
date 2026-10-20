@@ -215,14 +215,6 @@ public final class CouplerConnections {
             return;
         }
         var pipe=SubLevelPhysicsSystem.get(level).getPipeline();
-        // Migrate older anchors/engagement-dependent lengths to standard drawbars.
-        if(a.restLength<0||b.restLength<0||kind!=CouplerKind.STANDARD&&(a.mechanismVersion<2||b.mechanismVersion<2)){
-            var pa=socket(a);var pb=socket(b);var wa=VehiclePhysics.world(ba,pa);var wb=VehiclePhysics.world(bb,pb);
-            double length=CouplerMechanism.nominalLength(kind,CouplerGeometry.nominalLength(RailwayHardware.pivot(a).distance(RailwayHardware.tip(a)),RailwayHardware.pivot(b).distance(RailwayHardware.tip(b))));var frame=CouplerGeometry.distanceFrame(wa,wb);
-            try{length=CouplerBufferSpacing.length(level,a,b,ba,bb,length);}catch(IllegalArgumentException impossible){disconnect(level,a.endpointId,"buffer_spacing_changed");return;}
-            a.geometry(pa.sub(blockOrigin(a)),localFrame(ba,frame),length);b.geometry(pb.sub(blockOrigin(b)),localFrame(bb,frame),length);
-            if(old!=null){close(s,link.id());old=null;}
-        }
         var anchorA=blockOrigin(a).add(a.anchor);var anchorB=blockOrigin(b).add(b.anchor);
         var worldA=VehiclePhysics.world(ba,anchorA);var worldB=VehiclePhysics.world(bb,anchorB);
         var frame=CouplerGeometry.distanceFrame(worldA,worldB);var frameA=localFrame(ba,frame);var frameB=localFrame(bb,frame);

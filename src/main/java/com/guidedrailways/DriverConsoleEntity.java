@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
     final ScheduleController schedule=new ScheduleController(this);
-    java.util.UUID consoleId=java.util.UUID.randomUUID();long placementOrder;boolean identitySaved;
+    java.util.UUID consoleId=java.util.UUID.randomUUID();long placementOrder;
     java.util.UUID operator;int steer;long steerAt;
     boolean active,enabled,emergency,observing;int direction=1,notch=-4;
     private int[] gearSpeeds;
@@ -31,7 +31,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     @Override public void onLoad(){super.onLoad();if(level instanceof ServerLevel server)DriverControls.register(server,this);}
     @Override public Component getDisplayName(){return Component.translatable("block.guidedrailways.driver_console");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return new DriverMenu(id,inventory,this);}
-    void placed(ServerLevel server){consoleId=java.util.UUID.randomUUID();placementOrder=ConsoleOrderData.place(server);identitySaved=true;setChanged();DriverControls.register(server,this);}
+    void placed(ServerLevel server){consoleId=java.util.UUID.randomUUID();placementOrder=ConsoleOrderData.place(server);setChanged();DriverControls.register(server,this);}
     void clientTick(){previousLever=lever;lever+=((float)DriverModel.lever(notch)-lever)*.5f;previousReverser=reverser;reverser+=(direction-reverser)*.5f;}
     void updateVisual(){
         setChanged();if(level!=null&&!level.isClientSide&&!isRemoved()){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);DriverNetwork.sync(this,active);}
@@ -84,7 +84,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=saveWithoutMetadata(registries);tag.putBoolean("VisualActive",active);tag.putInt("VisualNotch",notch);tag.putBoolean("VisualEmergency",emergency);return tag;}
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){super.saveAdditional(tag,registries);tag.putInt("Direction",direction);tag.putIntArray("GearSpeeds",gearSpeeds());tag.putUUID("ConsoleId",consoleId);tag.putLong("PlacementOrder",placementOrder);tag.putBoolean("Emergency",emergency);schedule.save(tag,registries);}
     @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
-        super.loadAdditional(tag,registries);identitySaved=tag.hasUUID("ConsoleId");if(identitySaved)consoleId=tag.getUUID("ConsoleId");placementOrder=Math.max(0,tag.getLong("PlacementOrder"));schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
+        super.loadAdditional(tag,registries);if(tag.hasUUID("ConsoleId"))consoleId=tag.getUUID("ConsoleId");placementOrder=Math.max(0,tag.getLong("PlacementOrder"));schedule.load(tag,registries);direction=tag.contains("Direction")?Math.clamp(tag.getInt("Direction"),-1,1):1;
         int[] gears=tag.getIntArray("GearSpeeds");gearSpeeds=SpeedSetting.validGears(SpeedSetting.MAX,gears)?gears:null;
         if(tag.contains("VisualNotch")){active=tag.getBoolean("VisualActive");notch=Math.clamp(tag.getInt("VisualNotch"),-DriverModel.BRAKE_NOTCHES,DriverModel.MAX_NOTCH);emergency=tag.getBoolean("VisualEmergency");}
         else{active=false;enabled=false;notch=-4;emergency=tag.getBoolean("Emergency");} // Manual takeover is never restored from disk.

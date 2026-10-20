@@ -16,13 +16,9 @@ public final class TrainClient {
         @Override public void render(BogieEntity entity,float partial,PoseStack pose,MultiBufferSource buffers,int light,int overlay){
             double distance=entity.distance+entity.speed*partial/20;
             pose.pushPose();pose.translate(.5,BogieBlock.variant(entity.getBlockState()).renderY,.5);
-            if(BogieBlock.variant(entity.getBlockState())==BogeyVariant.DEFAULT&&BogieBlock.gauge(entity.getBlockState())==RailGauge.MONORAIL&&net.neoforged.fml.ModList.get().isLoaded("railways")){
-                SteamRailwaysClient.mono(data,(float)(distance/.375*180/Math.PI),partial,pose,buffers,light,overlay);pose.popPose();return;
-            }
             if(BogieBlock.variant(entity.getBlockState())!=BogeyVariant.DEFAULT&&net.neoforged.fml.ModList.get().isLoaded("railways")){
                 SteamRailwaysClient.render(BogieBlock.variant(entity.getBlockState()),entity.bogeyData,(float)(distance/BogieBlock.variant(entity.getBlockState()).tread/BogieBlock.variant(entity.getBlockState()).animationRatio*180/Math.PI),partial,pose,buffers,light,overlay);pose.popPose();return;
             }
-            pose.scale((float)BogieBlock.gauge(entity.getBlockState()).widthScale(),1,1);
             renderer.render(data,(float)(distance/BogieGeometry.TREAD_RADIUS*180/Math.PI),partial,pose,buffers,light,overlay,false);
             pose.popPose();
         }

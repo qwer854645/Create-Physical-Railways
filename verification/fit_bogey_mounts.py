@@ -3,7 +3,7 @@ import json, math, copy
 from pathlib import Path
 
 ROOT = Path('src/main/resources/assets/guidedrailways')
-LEGACY_STEM = 5.742566 / 16
+HIDDEN_STEM = 5.742566 / 16
 
 def measure_bearing(frames):
     import numpy as np
@@ -18,9 +18,8 @@ def measure_bearing(frames):
     return round(float(hi[central, 1].max()) + 1.0078125, 7)
 
 def fit_mount(row):
-    row.setdefault('legacyMountTop', row['mountTop'])
     if 'invisible' in row['id']:
-        row['supportBottom'] = LEGACY_STEM
+        row['supportBottom'] = HIDDEN_STEM
         return
     boxes = row['boxes']
     def distance(lo, hi):
@@ -59,7 +58,5 @@ if __name__ == '__main__':
             row['bearingTop'] = measure_bearing(captured[row['id'], row['size']]['frames'])
     for row in rows:
         fit_mount(row)
-        if row['mountTop'] != row['legacyMountTop']:
-            print(row['id'], row['size'], row['legacyMountTop'], '->', row['mountTop'])
     path.write_text(json.dumps(rows, separators=(',', ':'))+'\n', encoding='utf-8')
     write_models(rows)
