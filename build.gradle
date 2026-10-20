@@ -471,3 +471,10 @@ tasks.register('checkCollisionShapes', JavaExec) {
     mainClass = 'com.guidedrailways.CollisionShapeCheck'
 }
 tasks.named('check') { dependsOn 'checkCollisionShapes' }
+
+tasks.register('checkNativeCouplerAnimation', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.NativeCouplerAnimationCheck'
+}
+tasks.named('check') { dependsOn 'checkNativeCouplerAnimation' }
