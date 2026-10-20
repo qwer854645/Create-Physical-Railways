@@ -12,3 +12,9 @@ Explicit user instructions override these defaults. For a lasting style change, 
 These conventions govern product content; they do not require developer logs, code identifiers, or conversation prose to imitate in-game text. Do not alter working gameplay just to make it fit a wording example.
 
 For text/UI changes, run `gradlew.bat checkLanguage --offline` and the relevant build checks. Report visual verification separately from automated checks. Follow the user's testing workflow: list scenarios, launch the client when requested, inspect logs, collect observations, then plan the next change. Do not run a server for autonomous gameplay testing.
+
+# GitHub synchronization
+
+The user has authorized uploading this project and subsequent work to `https://github.com/qwer854645/Create-Physical-Railways.git`. Keep `origin` pointed at this repository and use `main` as the published branch.
+
+Commit completed, verified steps separately. At the end of a work step, check `git rev-list --count origin/main..HEAD`; when at least 3 commits are ahead, push with `git push origin main`. An explicit user request to upload means push immediately regardless of the count. Gameplay acceptance may still be pending; report that accurately rather than implying it passed. Do not force-push or overwrite remote work; fetch and reconcile changes first if a normal push is rejected. Preserve unrelated local files and keep ignored dependencies, worlds, logs, credentials, and build outputs out of commits.

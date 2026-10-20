@@ -1,0 +1,11 @@
+---
+description: Synchronize Physical Railways to its authorized GitHub repository after every three commits
+alwaysApply: true
+---
+
+Follow the GitHub synchronization section of the repository-root `AGENTS.md`.
+
+- Remote: `https://github.com/qwer854645/Create-Physical-Railways.git`
+- Published branch: `main`
+- Push after at least 3 local commits ahead of `origin/main`, or immediately when the user asks to upload
+- Use normal pushes, preserve remote work, and distinguish build verification from pending gameplay acceptance
