@@ -25,7 +25,6 @@ import java.util.*;
 
 /** Independently written guided-body prototype. No per-wheel bodies or patched native library. */
 public final class VehiclePhysics {
-    static final double RIDE_HEIGHT=BogieGeometry.RIDE_HEIGHT,HALF_WHEELBASE=1.0,PLATE_OFFSET=BogieGeometry.PLATE_OFFSET;
     /** Mount plate underside, flush with the top of its block so blocks above sit on it. */
     private static final double PLATE_BOTTOM=BogieGeometry.MOUNT_UNDERSIDE;
     private static final Quaterniond ANCHOR_ROT=new Quaterniond().rotateY(-Math.PI/2);
@@ -33,9 +32,8 @@ public final class VehiclePhysics {
     private static final Map<ServerLevel,Map<UUID,Unit>> ACTIVE=new WeakHashMap<>();
     static final class Unit {
         final MountEntity mount;final ServerSubLevel carrier,bogie;final Vector3d localCenter;
-        DriverConsoleEntity driver;AutomaticTrains.Control automatic;
+        DriverConsoleEntity driver;TrainCommand command;
         GenericConstraintHandle pivot;final GenericConstraintHandle[] guides=new GenericConstraintHandle[2];
-        final TrackNetwork.Path[] routes=new TrackNetwork.Path[2];
         final TrackNetwork.Sample[] samples=new TrackNetwork.Sample[2];
         final DerailmentModel.Exposure exposure=new DerailmentModel.Exposure();
         double mass,tractionMass,commandedForce,speed,curveRisk,lateralSpeed;long lastSeen,nextLog,derailGraceUntil;boolean detached,reverseTravel,trainPowered;int supports=1;
@@ -68,6 +66,8 @@ public final class VehiclePhysics {
             unit.lastSeen=level.getGameTime();
         }
         units.entrySet().removeIf(e->{var u=e.getValue();if(u.carrier.isRemoved()||u.bogie.isRemoved()||level.getGameTime()-u.lastSeen>40){u.close();return true;}return false;});
+        TrainConsists.refresh(level,units.values());
+        TrainConsists.applyChanges(level);
         DriverControls.refresh(level,units.values());
         PerfCounters.report(level,units.size());
         var counts=new HashMap<UUID,Integer>();for(var u:units.values())counts.merge(u.carrier.getUniqueId(),1,Integer::sum);
@@ -76,37 +76,16 @@ public final class VehiclePhysics {
             if(u.supports!=supports){if(u.pivot!=null&&u.pivot.isValid())u.pivot.remove();u.supports=supports;connectPivot(u);}
             u.mass=u.carrier.getMassTracker().getMass()/supports+u.bogie.getMassTracker().getMass();u.mount.setLoad(u.mass);
         }
-        allocateTraction(level,units.values());
+        VehicleTraction.allocate(level);
         for(var u:units.values()){
             if(level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual){visual.speed=u.speed;visual.distance+=u.speed/20;if(level.getGameTime()%2==0)visual.sendData();}
             if(level.getGameTime()>=u.nextLog){u.nextLog=level.getGameTime()+20;
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
                     var pipeline=system.getPipeline();
                     double verticalSpeed=pipeline.getLinearVelocity(u.bogie,new Vector3d()).y,angularSpeed=pipeline.getAngularVelocity(u.bogie,new Vector3d()).length();
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} tractionMass={} commandedForce={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.speedPerRpm():driverRpm(u,new Vector3d(0,0,1).rotate(system.getPipeline().readPose(u.bogie,new Pose3d()).orientation())),u.mount.getSpeed(),u.mass,u.tractionMass,u.commandedForce,u.mount.braking||(u.automatic!=null?u.automatic.hold()||u.automatic.emergency()||u.automatic.notch()<0:u.driver!=null&&(!u.driver.enabled||u.driver.emergency||u.driver.notch<0||u.driver.powered==0)),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} tractionMass={} commandedForce={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.speedPerRpm():VehicleTraction.requestedSpeed(u),u.mount.getSpeed(),u.mass,u.tractionMass,u.commandedForce,u.mount.braking||(u.command!=null?u.command.hold()||u.command.emergency()||u.command.notch()<0:u.driver!=null&&(!u.driver.enabled||u.driver.emergency||u.driver.notch<0||u.driver.powered==0)),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
                 }
             }
-        }
-    }
-    private static void allocateTraction(ServerLevel level,Collection<Unit> units){
-        var bodies=new HashMap<UUID,ServerSubLevel>();var graph=new HashMap<UUID,Set<UUID>>();var byCarrier=new HashMap<UUID,List<Unit>>();
-        for(var u:units){var id=u.carrier.getUniqueId();bodies.put(id,u.carrier);byCarrier.computeIfAbsent(id,k->new ArrayList<>()).add(u);}
-        for(var link:CouplerConnections.bodyLinks(level)){
-            var a=link.a().getUniqueId();var b=link.b().getUniqueId();bodies.put(a,link.a());bodies.put(b,link.b());
-            graph.computeIfAbsent(a,k->new HashSet<>()).add(b);graph.computeIfAbsent(b,k->new HashSet<>()).add(a);
-        }
-        var visited=new HashSet<UUID>();
-        for(var seed:units){
-            var root=seed.carrier.getUniqueId();if(visited.contains(root))continue;
-            var members=new HashSet<UUID>();var queue=new ArrayDeque<UUID>();members.add(root);queue.add(root);
-            while(!queue.isEmpty())for(var id:graph.getOrDefault(queue.remove(),Set.of()))if(members.add(id))queue.add(id);
-            visited.addAll(members);
-            var group=new ArrayList<Unit>();for(var id:members)group.addAll(byCarrier.getOrDefault(id,List.of()));
-            double mass=members.stream().map(bodies::get).filter(Objects::nonNull).mapToDouble(b->b.getMassTracker().getMass()).sum();
-            for(var u:group)mass+=u.bogie.getMassTracker().getMass();
-            var rpm=new double[group.size()];for(int i=0;i<rpm.length;i++){var u=group.get(i);rpm[i]=u.detached||u.mount.braking?0:u.mount.getSpeed();}
-            var shares=TractionBudget.shares(mass,rpm);boolean powered=java.util.Arrays.stream(shares).anyMatch(m->m>0);
-            for(int i=0;i<shares.length;i++){var u=group.get(i);u.tractionMass=shares[i];u.trainPowered=powered;}
         }
     }
     private static String pivotSummary(Unit u){
@@ -169,7 +148,7 @@ public final class VehiclePhysics {
             var pose=pipe.readPose(u.bogie,new Pose3d());var heading=new Vector3d(0,0,1).rotate(pose.orientation());
             if(u.detached){u.speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading);continue;}
             // Leading axle steers at junctions (Create TravellingPoint.steer); trailing axle follows it.
-            u.reverseTravel=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading),driverRpm(u,heading),u.reverseTravel);
+            u.reverseTravel=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading),VehicleTraction.requestedSpeed(u),u.reverseTravel);
             boolean reverse=u.reverseTravel;
             int lead=reverse?1:0,trail=1-lead;
             double approachSpeed=Math.abs(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading));
@@ -186,7 +165,7 @@ public final class VehiclePhysics {
             if(TrainConfig.DERAILMENT.get()&&level.getGameTime()>=u.derailGraceUntil&&checkDerailment(u,physics,dt))continue;
             u.speed=0;u.commandedForce=0;
             for(int i=0;i<2;i++){
-                var sample=u.samples[i];u.routes[i]=sample.path();var q=sample.orientation();
+                var sample=u.samples[i];var q=sample.orientation();
                 if(u.guides[i]==null||!u.guides[i].isValid()){
                     // Two point guides already constrain pitch/yaw. A single roll lock is sufficient.
                     var locks=EnumSet.of(ConstraintJointAxis.LINEAR_Y,ConstraintJointAxis.LINEAR_Z);
@@ -196,24 +175,7 @@ public final class VehiclePhysics {
                 }else u.guides[i].setFrame1(sample.position(),q);
                 // Longitudinal translation is not locked: the solver never sets the vehicle's forward position.
                 double speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(sample.tangent());u.speed+=speed*.5;
-                double force;
-                if(u.automatic!=null){
-                    var control=u.automatic;double ceiling=control.sign()*control.ceiling();
-                    boolean hold=control.hold()||control.owner().isRemoved()||u.mount.braking||control.navigation()!=null&&control.navigation().routeRetry;
-                    if(control.navigation()==null){
-                        ceiling=Math.copySign(control.owner().manualCeiling(control.notch(),Math.abs(ceiling)),ceiling);
-                        force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt,u.tractionMass,u.trainPowered);
-                    }else force=DriverModel.force(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt,u.tractionMass,u.trainPowered);
-                }else if(u.driver!=null){
-                    var driver=u.driver;
-                    boolean safe=driver.enabled&&!driver.isRemoved()&&DriverControls.body(driver)==u.carrier;
-                    boolean hold=!safe||u.mount.braking||driver.powered==0;
-                    double ceiling=driver.direction*driver.manualCeiling(driver.notch,driver.available)*driverSign(u,sample.tangent());
-                    force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,driver.notch,driver.emergency,hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt,u.tractionMass,u.trainPowered);
-                }else{
-                    force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.speedPerRpm(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),u.tractionMass);
-                    if(!u.mount.braking&&!u.trainPowered&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
-                }
+                double force=VehicleTraction.force(u,speed,dt);
                 force=RailwayStopModel.force(speed,force,switchRoom,u.mass,TrainConfig.BRAKING.get(),dt);
                 u.commandedForce+=force*.5;
                 var impulse=new Vector3d(sample.tangent()).mul(force*dt*.5).rotate(new Quaterniond(pose.orientation()).conjugate());
@@ -223,21 +185,12 @@ public final class VehiclePhysics {
             }
         }
     }
-    private static double driverSign(Unit u,Vector3dc heading){
-        var f=u.driver.getBlockState().getValue(DriverConsoleBlock.FACING);
-        var q=SubLevelPhysicsSystem.get(u.carrier.getLevel()).getPipeline().readPose(u.carrier,new Pose3d()).orientation();
-        return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(q).dot(heading)<0?-1:1;
-    }
-    static double driverRpm(Unit u,Vector3dc heading){
-        if(u.automatic!=null){var c=u.automatic;return !c.hold()&&!c.emergency()&&c.notch()>0?c.sign()*(c.navigation()==null?c.owner().manualCeiling(c.notch(),c.ceiling()):c.ceiling()):0;}
-        return u.driver==null?u.mount.getSpeed():u.driver.enabled&&!u.driver.emergency&&u.driver.notch>0?u.driver.direction*u.driver.manualCeiling(u.driver.notch,u.driver.available)*driverSign(u,heading):0;
-    }
     static void consoleRemoved(DriverConsoleEntity console){
         for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console&&!u.carrier.isRemoved()&&!u.mount.isRemoved()
                 &&console.getLevel().hasChunkAt(u.mount.getBlockPos())&&console.getLevel().getBlockEntity(u.mount.getBlockPos())==u.mount){u.mount.braking=true;u.mount.setChanged();u.mount.sendData();}
     }
     static void releaseMountBrakes(DriverConsoleEntity console){
-        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console||u.automatic!=null&&u.automatic.owner()==console){u.mount.braking=false;u.mount.setChanged();u.mount.sendData();}
+        for(var u:ACTIVE.getOrDefault(console.getLevel(),Map.of()).values())if(u.driver==console||u.command!=null&&u.command.owner()==console){u.mount.braking=false;u.mount.setChanged();u.mount.sendData();}
     }
     private static void release(Unit u,String reason){
         // Keep current velocity and the carrier bearing; remove only world-to-track constraints.
@@ -337,7 +290,7 @@ public final class VehiclePhysics {
     }
     private static void finishReraile(Unit u){
         u.clearGuides();u.detached=false;u.exposure.curveSeconds=0;u.exposure.impactSeconds=0;
-        u.samples[0]=null;u.samples[1]=null;u.routes[0]=null;u.routes[1]=null;
+        u.samples[0]=null;u.samples[1]=null;
         u.speed=0;u.curveRisk=0;u.lateralSpeed=0;u.reverseTravel=u.mount.getSpeed()<0;
         u.derailGraceUntil=u.bogie.getLevel().getGameTime()+40;
         var tag=u.bogie.getUserDataTag();if(tag==null)tag=new net.minecraft.nbt.CompoundTag();

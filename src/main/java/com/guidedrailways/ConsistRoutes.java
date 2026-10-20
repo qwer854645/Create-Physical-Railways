@@ -64,36 +64,34 @@ final class ConsistRoutes {
         for(var u:input)if(!u.carrier.isRemoved()&&!u.bogie.isRemoved()&&!u.mount.isRemoved()&&u.lastSeen+2>=level.getGameTime())units.add(u);
         var graph=new HashMap<UUID,Set<UUID>>();var sockets=new HashMap<UUID,Vector3d>();
         for(var u:units)graph.computeIfAbsent(u.carrier.getUniqueId(),k->new HashSet<>());
-        for(var link:CouplerConnections.bodyLinks(level)){
+        for(var link:TrainConsists.get(level).links()){
             UUID a=link.a().getUniqueId(),b=link.b().getUniqueId();graph.computeIfAbsent(a,k->new HashSet<>()).add(b);graph.computeIfAbsent(b,k->new HashSet<>()).add(a);
             sockets.put(a,VehiclePhysics.world(link.a(),link.anchorA()));sockets.put(b,VehiclePhysics.world(link.b(),link.anchorB()));
         }
-        var old=STATES.getOrDefault(level,Map.of());var next=new HashMap<UUID,Context>();var visited=new HashSet<UUID>();var output=new ArrayList<Plan>();
-        units.sort(Comparator.comparing(u->u.carrier.getUniqueId()));
-        for(var seed:units){
-            UUID seedId=seed.carrier.getUniqueId();if(!visited.add(seedId))continue;
-            var members=new HashSet<UUID>();var queue=new ArrayDeque<UUID>();queue.add(seedId);members.add(seedId);
-            while(!queue.isEmpty())for(var id:graph.getOrDefault(queue.remove(),Set.of()))if(members.add(id)){visited.add(id);queue.add(id);}
-            var group=new ArrayList<VehiclePhysics.Unit>();for(var u:units)if(members.contains(u.carrier.getUniqueId()))group.add(u);
+        var old=STATES.getOrDefault(level,Map.of());var next=new HashMap<UUID,Context>();var output=new ArrayList<Plan>();
+        for(var component:TrainConsists.get(level).groups()){
+            var members=component.members();var group=new ArrayList<>(component.units());if(group.isEmpty())continue;
+            group.sort(Comparator.comparing(u->u.carrier.getUniqueId()));
+            UUID seedId=group.getFirst().carrier.getUniqueId();var queue=new ArrayDeque<UUID>();
             var axleIds=new HashSet<RouteMemory.Axle>();for(var u:group)if(!u.detached)for(int i=0;i<2;i++)axleIds.add(new RouteMemory.Axle(u.bogie.getUniqueId(),i));
             UUID head=seedId;double best=-Double.MAX_VALUE;
             for(var u:group){
                 UUID id=u.carrier.getUniqueId();if(graph.getOrDefault(id,Set.of()).size()>1||u.detached)continue;
                 var centre=VehiclePhysics.world(u.bogie,u.localCenter);var heading=new Vector3d(0,0,1).rotate(pipe.readPose(u.bogie,new Pose3d()).orientation());
                 double speed=pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(heading);
-                boolean reverse=BranchSelect.reverseTravel(speed,VehiclePhysics.driverRpm(u,heading),u.reverseTravel);
+                boolean reverse=BranchSelect.reverseTravel(speed,VehicleTraction.requestedSpeed(u),u.reverseTravel);
                 var travel=new Vector3d(heading).mul(reverse?-1:1);var socket=sockets.get(id);
                 double rank=socket==null?0:new Vector3d(centre).sub(socket).normalize().dot(travel);
                 if(Double.isFinite(rank)&&rank>best){best=rank;head=id;}
             }
             VehiclePhysics.Unit automaticHead=null;int automaticEnd=0;
-            for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null&&u.automatic.navigation().plan!=null){var plan=u.automatic.navigation().plan;automaticHead=plan.head;automaticEnd=plan.end;head=automaticHead.carrier.getUniqueId();break;}
+            for(var u:group)if(u.command!=null&&u.command.navigation()!=null&&u.command.navigation().plan!=null){var plan=u.command.navigation().plan;automaticHead=plan.head;automaticEnd=plan.end;head=automaticHead.carrier.getUniqueId();break;}
             var distance=new HashMap<UUID,Integer>();distance.put(head,0);queue.add(head);
             while(!queue.isEmpty()){var id=queue.remove();for(var n:graph.getOrDefault(id,Set.of()))if(!distance.containsKey(n)){distance.put(n,distance.get(id)+1);queue.add(n);}}
             var travels=new HashMap<UUID,Vector3d>();
             for(var u:group)travels.computeIfAbsent(u.carrier.getUniqueId(),id->{
                 var h=new Vector3d(0,0,1).rotate(pipe.readPose(u.bogie,new Pose3d()).orientation());
-                boolean back=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(h),VehiclePhysics.driverRpm(u,h),u.reverseTravel);return h.mul(back?-1:1);
+                boolean back=BranchSelect.reverseTravel(pipe.getLinearVelocity(u.bogie,new Vector3d()).dot(h),VehicleTraction.requestedSpeed(u),u.reverseTravel);return h.mul(back?-1:1);
             });
             group.sort((a,b)->{int cmp=Integer.compare(distance.getOrDefault(a.carrier.getUniqueId(),9999),distance.getOrDefault(b.carrier.getUniqueId(),9999));if(cmp!=0)return cmp;
                 if(a.carrier!=b.carrier)return a.carrier.getUniqueId().compareTo(b.carrier.getUniqueId());
@@ -105,12 +103,12 @@ final class ConsistRoutes {
             if(previous!=null&&previous.memory.members().equals(axleIds))context=previous;
             else{context=new Context(previous==null?new RouteMemory(axleIds):previous.memory.copyFor(axleIds),level,seedId);if(previous!=null)for(var a:axleIds)if(previous.anchors.containsKey(a))context.anchors.put(a,previous.anchors.get(a));}
             for(var passage:context.memory.active())RailwaysCompat.hold(level,passage,context.identity);
-            context.automatic=null;for(var u:group)if(u.automatic!=null&&u.automatic.navigation()!=null){context.automatic=u.automatic.navigation();break;}
+            context.automatic=null;for(var u:group)if(u.command!=null&&u.command.navigation()!=null){context.automatic=u.command.navigation();break;}
             context.intent=0;for(var u:group)if(u.driver!=null&&u.driver.active&&!u.driver.observing){context.intent=level.getGameTime()-u.driver.steerAt<=30?u.driver.steer:0;break;}
             for(var id:members)next.put(id,context);
             if(automaticHead!=null&&group.remove(automaticHead))group.addFirst(automaticHead);
             VehiclePhysics.Unit first=null;for(var u:group)if(!u.detached){first=u;break;}
-            int leading=0;if(first!=null){var h=new Vector3d(0,0,1).rotate(pipe.readPose(first.bogie,new Pose3d()).orientation());leading=BranchSelect.reverseTravel(pipe.getLinearVelocity(first.bogie,new Vector3d()).dot(h),VehiclePhysics.driverRpm(first,h),first.reverseTravel)?1:0;if(automaticHead==first)leading=automaticEnd;context.head=first.samples[leading];}
+            int leading=0;if(first!=null){var h=new Vector3d(0,0,1).rotate(pipe.readPose(first.bogie,new Pose3d()).orientation());leading=BranchSelect.reverseTravel(pipe.getLinearVelocity(first.bogie,new Vector3d()).dot(h),VehicleTraction.requestedSpeed(first),first.reverseTravel)?1:0;if(automaticHead==first)leading=automaticEnd;context.head=first.samples[leading];}
             for(var u:group)output.add(new Plan(u,new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),0),u==first&&leading==0,u.mount.gauge),new Cursor(context,new RouteMemory.Axle(u.bogie.getUniqueId(),1),u==first&&leading==1,u.mount.gauge)));
         }
         STATES.put(level,next);CACHE.put(level,new Cached(level.getGameTime(),output));return output;

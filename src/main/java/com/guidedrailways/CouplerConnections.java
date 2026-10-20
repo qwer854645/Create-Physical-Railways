@@ -82,13 +82,13 @@ public final class CouplerConnections {
         var s=STATES.get(level);if(s==null)return;s.endpoints.remove(endpoint);
         // Unloading a plot must not send block updates into a holder being removed.
         // Keep saved links; endpoint registration will rebuild the joint and visuals.
-        var link=CouplerSavedData.get(level).links.forEndpoint(endpoint);if(link!=null){var old=s.live.remove(link.id());if(old!=null)old.close(false);}
+        var link=CouplerSavedData.get(level).links.forEndpoint(endpoint);if(link!=null){var old=s.live.remove(link.id());if(old!=null){old.close(false);TrainConsists.invalidate(level);}}
     }
-    private static void close(State s,UUID id){var old=s.live.remove(id);if(old!=null)old.close();}
+    private static void close(State s,UUID id){var old=s.live.remove(id);if(old!=null){old.close();TrainConsists.invalidate(old.a.getLevel());}}
     private static void disconnect(ServerLevel level,UUID endpoint,String reason){
         var data=CouplerSavedData.get(level);var link=data.links.forEndpoint(endpoint);if(link==null)return;
         var s=state(level);close(s,link.id());data.remove(link.id());s.warned.remove(link.id());s.waiting.remove(link.id());
-        for(var id:List.of(link.a(),link.b())){var e=s.endpoints.get(id);if(e!=null){e.hasGeometry=false;e.setChanged();e.visualPeer(null);}}
+        for(var id:List.of(link.a(),link.b())){var e=s.endpoints.get(id);if(e!=null){e.hasGeometry=false;e.setChanged();e.visualPeer(null);var carrier=body(level,e);if(carrier!=null)TrainConsists.changed(level,carrier.getUniqueId());}}
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] disconnected link={} reason={}",link.id(),reason);
     }
     private static boolean moving(ServerLevel level,CouplerEndpoint e){var moving=MOVING.get(GlobalPos.of(level.dimension(),e.getBlockPos()));return moving!=null&&moving.expires>=level.getGameTime()&&moving.endpoint.equals(e.endpointId);}
@@ -129,6 +129,7 @@ public final class CouplerConnections {
         var link=new CouplingLinks.Link(UUID.randomUUID(),a.endpointId,b.endpointId);data.add(link);
         try{reconcile(level,link);if(CouplerMechanism.carries(kind,a.hardwareProgress(0))&&!state(level).live.containsKey(link.id()))throw new IllegalStateException("message.guidedrailways.coupler.failed");}
         catch(RuntimeException error){disconnect(level,a.endpointId,"creation_failed");throw error;}
+        TrainConsists.changed(level,ba.getUniqueId(),bb.getUniqueId());
     }
     private static CouplerGeometry.Engagement engagement(ServerLevel level,CouplerEndpoint a,CouplerEndpoint b,ServerSubLevel ba,ServerSubLevel bb){
         var geometry=CouplerGeometry.engage(VehiclePhysics.world(ba,head(a)),facing(ba,a),up(ba),VehiclePhysics.world(bb,head(b)),facing(bb,b),up(bb));
@@ -161,9 +162,7 @@ public final class CouplerConnections {
             if(distance<best){best=distance;first=a;second=b;mode=candidate;}
         }
         if(mode==0||!execute)return mode;
-        var affected=new HashSet<>(CargoStorage.consist(level,ba).bodies().keySet());affected.addAll(CargoStorage.consist(level,bb).bodies().keySet());
         if(mode==2)disconnect(level,first.endpointId,"trackside");else connect(level,first,second);
-        CargoStorage.topologyChanged(level);ConsistRoutes.topologyChanged(level);DriverControls.topologyChanged(level,affected);
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[RailwayCoupler] mode={} bodies={}/{} endpoints={}/{}",mode,ba.getUniqueId(),bb.getUniqueId(),first.endpointId,second.endpointId);
         return mode;
     }
@@ -236,7 +235,7 @@ public final class CouplerConnections {
                 // The capped spring first takes up a loose coupling gap without teleporting.
                 joint.setContactsEnabled(true);
                 old=new Live(joint,ba,bb,a,b);tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
-                s.waiting.remove(link.id());
+                s.waiting.remove(link.id());TrainConsists.invalidate(level);
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} nominalStroke={} savedAnchorError={} mode=standard_length_buffer",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
             }catch(RuntimeException errorCreating){if(joint!=null&&joint.isValid())joint.remove();throw errorCreating;}
         }else{

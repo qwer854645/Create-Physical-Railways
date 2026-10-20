@@ -36,17 +36,9 @@ public final class PhysicalSignals {
         var s=STATES.computeIfAbsent(level,k->new State());s.networks.clear();s.owners.clear();
         var units=new ArrayList<VehiclePhysics.Unit>();
         for(var u:input)if(!u.carrier.isRemoved()&&!u.bogie.isRemoved()&&!u.mount.isRemoved())units.add(u);
-        var adjacency=new HashMap<UUID,Set<UUID>>();
-        for(var u:units)adjacency.computeIfAbsent(u.carrier.getUniqueId(),k->new HashSet<>());
-        for(var link:CouplerConnections.bodyLinks(level)){
-            var a=link.a().getUniqueId();var b=link.b().getUniqueId();
-            adjacency.computeIfAbsent(a,k->new HashSet<>()).add(b);adjacency.computeIfAbsent(b,k->new HashSet<>()).add(a);
-        }
-        for(var seed:adjacency.keySet()){
-            if(s.owners.containsKey(seed))continue;
-            var members=new HashSet<UUID>();var queue=new ArrayDeque<UUID>();members.add(seed);queue.add(seed);
-            while(!queue.isEmpty())for(var next:adjacency.getOrDefault(queue.remove(),Set.of()))if(members.add(next))queue.add(next);
-            var owner=members.stream().min(UUID::compareTo).orElseThrow();for(var id:members)s.owners.put(id,owner);
+        for(var group:TrainConsists.get(level).groups()){
+            var owner=group.members().stream().min(UUID::compareTo).orElseThrow();
+            for(var id:group.members())s.owners.put(id,owner);
         }
         var occupied=new HashMap<UUID,Set<UUID>>();var running=new HashSet<UUID>();var liveBodies=new HashSet<UUID>();
         var anchors=new HashMap<UUID,List<TrackNetwork.Sample>>();

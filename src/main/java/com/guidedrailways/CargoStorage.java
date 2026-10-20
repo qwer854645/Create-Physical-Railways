@@ -29,11 +29,8 @@ public final class CargoStorage {
     private CargoStorage(){}
     static Consist consist(ServerLevel level,ServerSubLevel root){
         var bodies=new HashMap<UUID,ServerSubLevel>();if(root==null||root.isRemoved())return new Consist(bodies,false);
-        bodies.put(root.getUniqueId(),root);var links=CouplerConnections.bodyLinks(level);boolean changed;
-        do{changed=false;for(var l:links)if(bodies.containsKey(l.a().getUniqueId())||bodies.containsKey(l.b().getUniqueId())){
-            if(bodies.putIfAbsent(l.a().getUniqueId(),l.a())==null)changed=true;
-            if(bodies.putIfAbsent(l.b().getUniqueId(),l.b())==null)changed=true;
-        }}while(changed);
+        bodies.put(root.getUniqueId(),root);
+        var group=TrainConsists.get(level).group(root.getUniqueId());if(group!=null)bodies.putAll(group.bodies());
         return new Consist(bodies,CouplerConnections.cargoComplete(level,bodies.keySet()));
     }
     public static Snapshot snapshot(ServerLevel level,ServerSubLevel root){

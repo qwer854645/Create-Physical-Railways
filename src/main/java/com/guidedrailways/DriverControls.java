@@ -17,7 +17,6 @@ public final class DriverControls {
             var body=body(console);if(body==null||!affected.contains(body.getUniqueId()))continue;
             var c=console.schedule;RailDocks.release(c);c.members=null;c.cargoBodies=null;c.plan=null;c.nextPlan=0;c.routeRetry=false;c.waiting=false;c.station=null;c.stableTicks=0;c.resetConditions();console.setChanged();
         }
-        refresh(level,VehiclePhysics.cargoUnits(level));
     }
     static void register(ServerLevel level,DriverConsoleEntity e){if(!e.identitySaved){e.identitySaved=true;e.setChanged();}CONSOLES.computeIfAbsent(level,l->new HashMap<>()).put(e.getBlockPos().immutable(),e);}
     static ServerSubLevel body(DriverConsoleEntity e){return e.getLevel()!=null&&SableCompanion.INSTANCE.getContaining(e.getLevel(),e.getBlockPos()) instanceof ServerSubLevel b&&!b.isRemoved()?b:null;}
@@ -26,8 +25,9 @@ public final class DriverControls {
         for(var e:CONSOLES.getOrDefault(level,Map.of()).values())if(!e.isRemoved()&&level.hasChunkAt(e.getBlockPos())&&level.getBlockEntity(e.getBlockPos())==e){
             var b=body(e);if(b!=null){records.add(new ConsoleElection.Console(e.consoleId,b.getUniqueId(),e.placementOrder));byId.put(e.consoleId,e);}
         }
-        var links=new ArrayList<ConsoleElection.Link>();for(var link:CouplerConnections.bodyLinks(level))links.add(new ConsoleElection.Link(link.a().getUniqueId(),link.b().getUniqueId()));
-        var result=new HashMap<UUID,DriverConsoleEntity>();ConsoleElection.elect(records,links).forEach((carrier,id)->result.put(carrier,byId.get(id)));return result;
+        var snapshot=TrainConsists.get(level);var components=new ArrayList<>(snapshot.groups().stream().map(TrainConsists.Group::members).toList());
+        for(var record:records)if(snapshot.group(record.carrier())==null)components.add(Set.of(record.carrier()));
+        var result=new HashMap<UUID,DriverConsoleEntity>();ConsoleElection.electGroups(records,components).forEach((carrier,id)->result.put(carrier,byId.get(id)));return result;
     }
     static boolean isPrimary(DriverConsoleEntity e){
         if(!(e.getLevel() instanceof ServerLevel level)||e.isRemoved())return false;
@@ -104,11 +104,7 @@ public final class DriverControls {
         var body=body(e);if(body==null)return true;
         var pipe=dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(body.getLevel()).getPipeline();
         var members=new HashMap<UUID,ServerSubLevel>();members.put(body.getUniqueId(),body);
-        var links=CouplerConnections.bodyLinks(body.getLevel());boolean changed;
-        do{changed=false;for(var link:links)if(members.containsKey(link.a().getUniqueId())||members.containsKey(link.b().getUniqueId())){
-            changed|=members.putIfAbsent(link.a().getUniqueId(),link.a())==null;
-            changed|=members.putIfAbsent(link.b().getUniqueId(),link.b())==null;
-        }}while(changed);
+        var group=TrainConsists.get(body.getLevel()).group(body.getUniqueId());if(group!=null)members.putAll(group.bodies());
         for(var u:DRIVEN.getOrDefault(body.getLevel(),List.of()))if(members.containsKey(u.carrier.getUniqueId())&&!u.bogie.isRemoved())members.put(u.bogie.getUniqueId(),u.bogie);
         for(var member:members.values()){
             double speed=pipe.getLinearVelocity(member,new Vector3d()).length();
