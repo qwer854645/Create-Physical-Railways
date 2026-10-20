@@ -46,7 +46,7 @@ public final class TrainClient {
         MultiBufferSource buffers,
         int light,
         int overlay) {
-      double distance = entity.distance + entity.speed * partial / 20;
+      double distance = entity.animationDistance(partial);
       pose.pushPose();
       pose.translate(.5, BogieBlock.variant(entity.getBlockState()).renderY, .5);
       if (BogieBlock.variant(entity.getBlockState()) != BogeyVariant.DEFAULT

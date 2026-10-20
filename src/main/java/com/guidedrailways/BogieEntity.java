@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class BogieEntity extends SmartBlockEntity {
   public double distance, speed;
   final MotionSync motionSync = new MotionSync();
+  private final WheelAnimation wheelAnimation = new WheelAnimation();
   public CompoundTag bogeyData = new CompoundTag();
 
   public BogieEntity(BlockPos p, BlockState s) {
@@ -17,6 +18,12 @@ public final class BogieEntity extends SmartBlockEntity {
 
   @Override
   public void addBehaviours(java.util.List<BlockEntityBehaviour> list) {}
+
+  double animationDistance(float partial) {
+    if (level == null) return distance;
+    if (!wheelAnimation.ready()) wheelAnimation.accept(distance, speed, level.getGameTime());
+    return wheelAnimation.sample(level.getGameTime(), partial);
+  }
 
   @Override
   protected net.minecraft.world.phys.AABB createRenderBoundingBox() {
@@ -40,6 +47,8 @@ public final class BogieEntity extends SmartBlockEntity {
     super.read(tag, registries, client);
     distance = tag.getDouble("WheelDistance");
     speed = tag.getDouble("LinearSpeed");
+    if (level != null && level.isClientSide)
+      wheelAnimation.accept(distance, speed, level.getGameTime());
     bogeyData = tag.getCompound("BogeyData").copy();
   }
 }
