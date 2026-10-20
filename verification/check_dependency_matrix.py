@@ -131,6 +131,8 @@ def mixin_contracts(mod, own):
                 'prePhysicsTicks()V', 'processCollisionEffects()V'],
             p+'RapierPhysicsPipeline$TrackedKinematicContraption': ['idI'],
             p+'Rapier3D': ['clearCollisions(J)[D'],
+            'dev/ryanhcode/sable/mixin/block_placement/BlockPlaceContextMixin': [
+                'sable$intersectBlocks(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;Ldev/ryanhcode/sable/sublevel/SubLevel;Ldev/ryanhcode/sable/companion/math/BoundingBox3dc;Ldev/ryanhcode/sable/api/math/LevelReusedVectors;Lorg/joml/Vector3d;Lorg/joml/Quaterniond;)Z'],
         }
     # Read required Mixin fields/methods from the pinned baseline declarations.
     source = ROOT / 'src/main/java/com/guidedrailways/mixin'
@@ -274,6 +276,11 @@ def main():
             checked += 2
             if not (all(f in config_members for f in power) or all(f in config_members for f in resistance)):
                 missing.add('CEE train load configuration pair')
+        if mod == 'sable':
+            hook = 'dev/ryanhcode/sable/mixin/block_placement/BlockPlaceContextMixin.class'
+            checked += 1
+            if current.archives[0].read(hook) != latest.archives[0].read(hook):
+                missing.add('Sable placement helper bytecode changed; review injection and locals')
         base_models, models = geometry(latest, mod), geometry(current, mod)
         changed_models = [n for n, data in base_models.items() if models.get(n) != data]
         result = dict(mod=mod, version=row['version'], checks=checked,

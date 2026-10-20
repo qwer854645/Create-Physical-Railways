@@ -79,15 +79,17 @@ public final class MountBlock extends ComponentBlock
       boolean survives = placed != null && placed.canSurvive(level, target);
       boolean clear =
           placed != null && level.isUnobstructed(placed, target, CollisionContext.of(player));
-      if (!context.canPlace() || !replaceable || !survives || !clear)
+      boolean permitted = context.canPlace();
+      if (!permitted || !replaceable || !survives || !clear)
         org.slf4j.LoggerFactory.getLogger("guidedrailways")
             .info(
-                "[MountPlacement] style={} compact={} face={} item={} target={} replaceable={} survives={} unobstructed={}",
+                "[MountPlacement] style={} compact={} face={} item={} target={} canPlace={} replaceable={} survives={} unobstructed={}",
                 BogieBlock.variant(state).id,
                 state.getValue(COMPACT),
                 hit.getDirection(),
                 net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item),
                 target,
+                permitted,
                 replaceable,
                 survives,
                 clear);

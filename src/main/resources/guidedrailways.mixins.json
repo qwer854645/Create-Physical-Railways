@@ -9,6 +9,7 @@
     "MonorailTrackContactMixin",
     "CouplerRemovalMixin",
     "NativeTrainContactMixin",
+    "PlatformBuildingMixin",
     "StationBlockMixin",
     "StationBlockEntityMixin",
     "SignalEdgeGroupMixin",
