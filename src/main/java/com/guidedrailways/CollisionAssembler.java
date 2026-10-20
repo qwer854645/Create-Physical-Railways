@@ -13,7 +13,6 @@ import org.joml.Vector3d;
 /** Preflight the entire current layout and roll back every attempted block edit on failure. */
 final class CollisionAssembler {
     private static final String CATALOG = "shape_catalog_v1";
-    private record Edit(BlockPos pos, BlockState before, BlockState after) {}
     private record Motion(Pose3d pose, Vector3d reference, Vector3d velocity, Vector3d angular) {}
 
     private CollisionAssembler() {}
@@ -27,33 +26,35 @@ final class CollisionAssembler {
         if (CATALOG.equals(tag.getString("CollisionCatalog"))
                 && tag.getInt("CollisionProfile") == variant.ordinal()) return true;
 
-        var edits = new ArrayList<Edit>();
-        for (var cell : BogieCollision.cells(variant.gauge, variant)) {
+        var targets = new ArrayList<BlockAssembly.Target<BlockPos, BlockState>>();
+        for (var cell : BogieCollision.cells( variant)) {
             if (cell.part() == BogieCollision.CENTRE_PART) continue;
             var pos = centre.offset(cell.x(), cell.y(), cell.z()).immutable();
-            var before = level.getBlockState(pos);
-            if (!before.isAir() && !before.is(Content.COLLISION.get())) return false;
             var after = Content.COLLISION.get().defaultBlockState().setValue(
                 CollisionPartBlock.SHAPE, BogieCollision.shapeId(variant, cell.part()));
-            if (!before.equals(after)) edits.add(new Edit(pos, before, after));
+            targets.add(new BlockAssembly.Target<>(pos, after));
         }
 
+        var plan = BlockAssembly.plan(targets, level::getBlockState,
+            state -> state.isAir() || state.is(Content.COLLISION.get()));
+        if (plan.isEmpty()) return false;
+        var edits = new ArrayList<>(plan.get());
         var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
         var motion = refreshMass ? new Motion(pipe.readPose(body, new Pose3d()),
             new Vector3d(body.logicalPose().rotationPoint()), pipe.getLinearVelocity(body, new Vector3d()),
             pipe.getAngularVelocity(body, new Vector3d())) : null;
         // Include mass refresh in the transaction, even for a central-only invisible bogey.
-        edits.add(new Edit(null, null, null));
+        edits.add(new BlockAssembly.Edit<>(null, null, null));
         try {
             MoveBatch.commit(edits, edit -> {
-                if (edit.pos() != null && !level.getBlockState(edit.pos()).equals(edit.before()))
+                if (edit.key() != null && !level.getBlockState(edit.key()).equals(edit.before()))
                     throw new IllegalStateException("Collision target changed during assembly");
             }, edit -> {
-                if (edit.pos() == null) {
+                if (edit.key() == null) {
                     if (motion != null) rebuild(body, motion);
-                } else put(body, edit.pos(), edit.after());
+                } else if (!edit.before().equals(edit.after())) put(body, edit.key(), edit.after());
             }, edit -> {
-                if (edit.pos() != null) put(body, edit.pos(), edit.before());
+                if (edit.key() != null) put(body, edit.key(), edit.before());
             });
         } catch (RuntimeException failure) {
             if (motion != null) {

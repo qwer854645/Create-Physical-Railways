@@ -20,16 +20,16 @@ public final class BogieCollision {
             NATIVE_BOXES.put(variant,boxes);NATIVE_CELLS.put(variant,partition(boxes));
         }
     }
-    public static List<Box> boxes(RailGauge gauge,BogeyVariant variant){return variant==BogeyVariant.DEFAULT?BOXES:NATIVE_BOXES.get(variant);}
-    public static List<Cell> cells(RailGauge gauge,BogeyVariant variant){return variant==BogeyVariant.DEFAULT?CELLS:NATIVE_CELLS.get(variant);}
-    public static List<Box> boxes(RailGauge gauge){return boxes(gauge,gauge==RailGauge.STANDARD?BogeyVariant.DEFAULT:BogeyVariant.defaultFor(gauge));}
-    public static List<Cell> cells(RailGauge gauge){return cells(gauge,gauge==RailGauge.STANDARD?BogeyVariant.DEFAULT:BogeyVariant.defaultFor(gauge));}
+    public static List<Box> boxes(BogeyVariant variant){return variant==BogeyVariant.DEFAULT?BOXES:NATIVE_BOXES.get(variant);}
+    public static List<Cell> cells(BogeyVariant variant){return variant==BogeyVariant.DEFAULT?CELLS:NATIVE_CELLS.get(variant);}
+    public static List<Box> boxes(RailGauge gauge){return boxes(gauge==RailGauge.STANDARD?BogeyVariant.DEFAULT:BogeyVariant.defaultFor(gauge));}
+    public static List<Cell> cells(RailGauge gauge){return cells(gauge==RailGauge.STANDARD?BogeyVariant.DEFAULT:BogeyVariant.defaultFor(gauge));}
     public record Shape(int id,BogeyVariant variant,Cell cell,double mass){}
     private static final List<Shape> SHAPES=new ArrayList<>();
     private static final java.util.Map<BogeyVariant,java.util.Map<Integer,Integer>> SHAPE_IDS=new java.util.HashMap<>();
     static{
         for(var variant:BogeyVariant.values()){
-            var cells=cells(variant.gauge,variant);var ids=new java.util.HashMap<Integer,Integer>();
+            var cells=cells(variant);var ids=new java.util.HashMap<Integer,Integer>();
             for(var cell:cells)if(cell.part()!=CENTRE_PART){
                 double mass=variant==BogeyVariant.DEFAULT?(cell.part()==9||cell.part()==11||cell.part()==15||cell.part()==17?8:0):32.0/(cells.size()-1);
                 int id=SHAPES.size();ids.put(cell.part(),id);SHAPES.add(new Shape(id,variant,cell,mass));

@@ -26,11 +26,11 @@ public final class BogiePairContact {
     private static final Map<BogeyVariant,Bounds> NATIVE=new HashMap<>();
     static{for(var v:BogeyVariant.values())if(v!=BogeyVariant.DEFAULT){
         var lo=new Vector3d(Double.POSITIVE_INFINITY);var hi=new Vector3d(Double.NEGATIVE_INFINITY);
-        for(var b:BogieCollision.boxes(RailGauge.STANDARD,v)){lo.min(new Vector3d(b.x0(),b.y0(),b.z0()));hi.max(new Vector3d(b.x1(),b.y1(),b.z1()));}
+        for(var b:BogieCollision.boxes(v)){lo.min(new Vector3d(b.x0(),b.y0(),b.z0()));hi.max(new Vector3d(b.x1(),b.y1(),b.z1()));}
         NATIVE.put(v,new Bounds(new Vector3d(lo).add(hi).mul(.5).sub(.5,.5,.5),new Vector3d(hi).sub(lo).mul(.5)));
     }}
-    public static Vector3dc offset(RailGauge gauge,BogeyVariant variant){return variant==BogeyVariant.DEFAULT?OFFSET:NATIVE.get(variant).offset;}
-    public static Vector3dc half(RailGauge gauge,BogeyVariant variant){return variant==BogeyVariant.DEFAULT?HALF:NATIVE.get(variant).half;}
+    public static Vector3dc offset(BogeyVariant variant){return variant==BogeyVariant.DEFAULT?OFFSET:NATIVE.get(variant).offset;}
+    public static Vector3dc half(BogeyVariant variant){return variant==BogeyVariant.DEFAULT?HALF:NATIVE.get(variant).half;}
     private static Vector3d[] axes(Quaterniond q){return new Vector3d[]{new Vector3d(1,0,0).rotate(q),new Vector3d(0,1,0).rotate(q),new Vector3d(0,0,1).rotate(q)};}
     private static double radius(Vector3d n,Vector3d[] axes,Vector3dc half){return Math.abs(n.dot(axes[0]))*half.x()+Math.abs(n.dot(axes[1]))*half.y()+Math.abs(n.dot(axes[2]))*half.z();}
     public static Contact find(Pose a,Pose b,Vector3dc previous){

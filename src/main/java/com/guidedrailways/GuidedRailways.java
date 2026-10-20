@@ -45,16 +45,16 @@ public final class GuidedRailways {
         });
         NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock e)->{
             if(!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;
-            if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePhysics.hasRelocation(player))return;
+            if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePlacement.hasRelocation(player))return;
             if(VehiclePhysics.owner(level,e.getPos())!=null)return;
             var hit=e.getHitVec();if(hit==null)return;
-            if(!VehiclePhysics.relocateClick(player))return;
+            if(!VehiclePlacement.relocateClick(player))return;
             player.swing(e.getHand(),true);e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
         });
         NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickItem e)->{
             if(!(e.getEntity() instanceof ServerPlayer player)||!(e.getLevel() instanceof ServerLevel level))return;
-            if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePhysics.hasRelocation(player))return;
-            if(!VehiclePhysics.relocateClick(player))return;
+            if(!AllItems.WRENCH.isIn(player.getItemInHand(e.getHand()))||!VehiclePlacement.hasRelocation(player))return;
+            if(!VehiclePlacement.relocateClick(player))return;
             player.swing(e.getHand(),true);e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
         });
     }

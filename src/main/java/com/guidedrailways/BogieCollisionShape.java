@@ -17,10 +17,9 @@ final class BogieCollisionShape {
         return CACHE.computeIfAbsent(id, key -> bake(BogieCollision.shape(key).cell().boxes()));
     }
 
-    static VoxelShape get(int part, RailGauge gauge, BogeyVariant variant) {
-        if (part != BogieCollision.CENTRE_PART) return shape(BogieCollision.shapeId(variant, part));
+    static VoxelShape centre(BogeyVariant variant) {
         return CACHE.computeIfAbsent(-1 - variant.ordinal(), key -> bake(
-            BogieCollision.cells(gauge, variant).stream()
+            BogieCollision.cells( variant).stream()
                 .filter(cell -> cell.part() == BogieCollision.CENTRE_PART).findFirst().orElseThrow().boxes()));
     }
 

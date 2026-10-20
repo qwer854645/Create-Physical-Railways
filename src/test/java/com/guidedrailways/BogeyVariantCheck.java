@@ -11,12 +11,12 @@ public final class BogeyVariantCheck {
         for(var v:BogeyVariant.values()){
             check(ids.add(v.id+"/"+v.size)&&BogeyVariant.read(v.ordinal())==v&&BogeyVariant.find(v.id,v.size)==v,"saved indices and style IDs are unambiguous");
             if(v==BogeyVariant.DEFAULT)continue;
-            var boxes=BogieCollision.boxes(RailGauge.STANDARD,v);var cells=BogieCollision.cells(RailGauge.STANDARD,v);var parts=new HashSet<Integer>();
+            var boxes=BogieCollision.boxes(v);var cells=BogieCollision.cells(v);var parts=new HashSet<Integer>();
             check(cells.stream().anyMatch(c->c.part()==BogieCollision.CENTRE_PART&&c.x()==0&&c.y()==0&&c.z()==0),"native frame retains the central block entity");
             for(var cell:cells){check(parts.add(cell.part())&&cell.part()<=127,"every occupied native collision cell has a unique encodable part");
                 for(var b:cell.boxes())check(b.x0()>=0&&b.y0()>=0&&b.z0()>=0&&b.x1()<=1&&b.y1()<=1&&b.z1()<=1,"physics shape remains inside its owning voxel cell");
             }
-            var offset=BogiePairContact.offset(RailGauge.STANDARD,v);var half=BogiePairContact.half(RailGauge.STANDARD,v);
+            var offset=BogiePairContact.offset(v);var half=BogiePairContact.half(v);
             for(var b:boxes)for(double x:new double[]{b.x0(),b.x1()})for(double y:new double[]{b.y0(),b.y1()})for(double z:new double[]{b.z0(),b.z1()}){
                 check(cells.stream().anyMatch(c->c.boxes().stream().anyMatch(q->q.contains(x-c.x(),y-c.y(),z-c.z()))),"partitioning never cuts away frame or wheel collision at a cell boundary");
                 var point=new Vector3d(x-.5,y-.5,z-.5).sub(offset);

@@ -14,13 +14,13 @@ public final class CollisionCatalogCheck {
         var ids=new HashSet<Integer>();
         for(var variant:BogeyVariant.values()) {
             double mass=48;
-            for(var cell:BogieCollision.cells(variant.gauge,variant)) {
+            for(var cell:BogieCollision.cells(variant)) {
                 if(cell.part()==BogieCollision.CENTRE_PART)continue;
                 int id=BogieCollision.shapeId(variant,cell.part());var shape=BogieCollision.shape(id);
                 if(!ids.add(id)||shape.id()!=id||shape.variant()!=variant||!shape.cell().equals(cell))throw new AssertionError("catalog identity mismatch");
                 var entry=new JsonObject();entry.addProperty("sable:mass",shape.mass());overrides.add("shape="+id,entry);mass+=shape.mass();
             }
-            double target=BogieCollision.cells(variant.gauge,variant).size()>1?80:48;
+            double target=BogieCollision.cells(variant).size()>1?80:48;
             if(Math.abs(mass-target)>1e-7)throw new AssertionError("mass changed: "+variant+" "+mass);
         }
         if(ids.size()!=BogieCollision.shapeCount()||!ids.contains(0)||!ids.contains(ids.size()-1))throw new AssertionError("catalog is not contiguous");

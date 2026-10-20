@@ -22,7 +22,7 @@ public class ComponentBlock extends Block implements IWrenchable {
         var unit=VehiclePhysics.owner(c.getLevel(),c.getClickedPos());if(unit==null)return InteractionResult.PASS;
         if(unit.detached){
             if(!(c.getPlayer() instanceof net.minecraft.server.level.ServerPlayer player))return InteractionResult.FAIL;
-            VehiclePhysics.beginRelocate(player,unit);
+            VehiclePlacement.beginRelocate(player,unit);
             c.getPlayer().swing(c.getHand(),true);return InteractionResult.CONSUME;
         }
         unit.mount.braking=!unit.mount.braking;unit.mount.setChanged();unit.mount.sendData();

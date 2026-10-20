@@ -30,6 +30,21 @@ public final class MoveBatchCheck {
             throw new AssertionError("must preserve original failure");
         }catch(IllegalStateException e){check(e.getSuppressed().length==1,"rollback error is attached to original failure");}
         check(restored[0]==3,"one rollback error must not prevent restoring remaining bodies");
+        var blocks=new java.util.HashMap<Integer,String>();blocks.put(1,"air");blocks.put(2,"player block");
+        var targets=List.of(new BlockAssembly.Target<>(1,"collision"),new BlockAssembly.Target<>(2,"collision"));
+        check(BlockAssembly.plan(targets,blocks::get,"air"::equals).isEmpty(),"last occupied collision target rejects the complete layout without writes");
+        check(blocks.get(1).equals("air")&&blocks.get(2).equals("player block"),"preflight preserves unrelated blocks");
+        blocks.put(2,"collision");var plan=BlockAssembly.plan(targets,blocks::get,"air"::equals).orElseThrow();
+        check(plan.size()==2,"unchanged targets remain in validation set");
+        blocks.put(2,"changed after planning");int[] writes={0};
+        try {MoveBatch.commit(plan,e->{if(!blocks.get(e.key()).equals(e.before()))throw new IllegalStateException("target changed");},e->{writes[0]++;blocks.put(e.key(),e.after());},e->blocks.put(e.key(),e.before()));throw new AssertionError("must reject changed target");}
+        catch(IllegalStateException expected){}
+        check(writes[0]==0&&blocks.get(1).equals("air"),"a stale unchanged target rejects before the first collision write");
+        blocks.put(2,"collision");int[] completed={0};
+        var transaction=new java.util.ArrayList<>(plan);transaction.add(new BlockAssembly.Edit<>(null,null,null));
+        try {MoveBatch.commit(transaction,e->{},e->{if(e.key()==null)throw new IllegalStateException("mass refresh failed");blocks.put(e.key(),e.after());},e->{if(e.key()!=null)blocks.put(e.key(),e.before());});completed[0]++;throw new AssertionError("must roll back refresh failure");}
+        catch(IllegalStateException expected){}
+        check(completed[0]==0&&blocks.get(1).equals("air")&&blocks.get(2).equals("collision"),"mass refresh failure restores the layout and cannot mark assembly complete");
         System.out.println("MoveBatchCheck: "+checks+" assertions passed");
     }
 }

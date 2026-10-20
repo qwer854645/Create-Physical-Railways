@@ -20,8 +20,8 @@ final class AutomaticTrains {
     private static Vector3d heading(VehiclePhysics.Unit u){return new Vector3d(0,0,1).rotate(SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline().readPose(u.bogie,new Pose3d()).orientation());}
     private static Vector3d consoleHeading(DriverConsoleEntity e){var f=e.getBlockState().getValue(DriverConsoleBlock.FACING);var body=DriverControls.body(e);return new Vector3d(f.getStepX(),0,f.getStepZ()).rotate(SubLevelPhysicsSystem.get(body.getLevel()).getPipeline().readPose(body,new Pose3d()).orientation());}
     static void tick(ServerLevel level,Collection<VehiclePhysics.Unit> input,Collection<DriverConsoleEntity> consoles){
-        var previous=new HashSet<VehiclePhysics.Unit>();var units=new ArrayList<VehiclePhysics.Unit>();
-        for(var u:input){if(u.command!=null)previous.add(u);u.command=null;if(!u.bogie.isRemoved()&&!u.carrier.isRemoved()&&!u.mount.isRemoved()&&u.lastSeen+2>=level.getGameTime())units.add(u);}
+        var previous=new HashSet<VehiclePhysics.Unit>();
+        for(var u:input){if(u.command!=null)previous.add(u);u.command=null;}
         var processed=new HashSet<ScheduleController>();
         for(var component:TrainConsists.get(level).groups()){
             var group=new ArrayList<>(component.units());if(group.isEmpty())continue;
@@ -74,7 +74,7 @@ final class AutomaticTrains {
     }
     private static void brake(VehiclePhysics.Unit u,boolean value){if(u.mount.braking!=value){u.mount.braking=value;u.mount.setChanged();u.mount.sendData();}}
     private static double available(List<VehiclePhysics.Unit> group,DriverConsoleEntity console){double cap=Double.POSITIVE_INFINITY;for(var u:group)if(Math.abs(u.mount.getSpeed())>.001)cap=Math.min(cap,console.targetSpeed(u.mount.getSpeed()));return Double.isFinite(cap)?cap:0;}
-    private static double brakeFraction(List<VehiclePhysics.Unit> group,List<CouplerConnections.BodyLink> links){
+    private static double brakeFraction(List<VehiclePhysics.Unit> group){
         double supportedMass=0;var carriers=new HashSet<UUID>();
         for(var u:group){supportedMass+=u.bogie.getMassTracker().getMass();if(carriers.add(u.carrier.getUniqueId()))supportedMass+=u.carrier.getMassTracker().getMass();}
         var consist=TrainConsists.get(group.getFirst().carrier.getLevel()).group(group.getFirst().carrier.getUniqueId());
@@ -190,7 +190,7 @@ final class AutomaticTrains {
         if(CargoStorage.blockedByDock(level,group.getFirst().carrier)){c.state(ScheduleController.DOCK_WAIT);hold(group,c,false);return;}
         if(remaining<-AutomaticDriveModel.STOP_TOLERANCE){c.pause(ScheduleController.OVERSHOOT);hold(group,c,false);return;}
         double speed=SubLevelPhysicsSystem.get(level).getPipeline().getLinearVelocity(p.head.bogie,new Vector3d()).dot(sample.tangent())*p.signs.get(p.head.bogie.getUniqueId());
-        double braking=TrainConfig.BRAKING.get()*brakeFraction(group,links);
+        double braking=TrainConfig.BRAKING.get()*brakeFraction(group);
         double nose=PhysicalSignals.nose(p.head,sample.position(),new Vector3d(sample.tangent()).mul(p.signs.get(p.head.bogie.getUniqueId())));
         double horizon=nose+cap*cap/Math.max(.01,braking)+cap*.3+8;
         double signal=PhysicalSignals.limit(level,c.owner,p,offset,horizon);

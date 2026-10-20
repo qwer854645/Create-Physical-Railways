@@ -464,3 +464,10 @@ tasks.register('checkCollisionCatalog', JavaExec) {
     mainClass = 'com.guidedrailways.CollisionCatalogCheck'
 }
 tasks.named('check') { dependsOn 'checkCollisionCatalog' }
+
+tasks.register('checkCollisionShapes', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.CollisionShapeCheck'
+}
+tasks.named('check') { dependsOn 'checkCollisionShapes' }
