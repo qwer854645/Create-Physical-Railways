@@ -14,6 +14,23 @@ public final class CargoTransfers {
 
   private CargoTransfers() {}
 
+  static void observe(dev.ryanhcode.sable.api.sublevel.SubLevelContainer container) {
+    container.addObserver(
+        new dev.ryanhcode.sable.api.sublevel.SubLevelObserver() {
+          @Override
+          public void onSubLevelRemoved(
+              dev.ryanhcode.sable.sublevel.SubLevel body,
+              dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason reason) {
+            // Unloading is not deletion: waiting schedules still need their transfer history.
+            if (reason != dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason.REMOVED
+                || !(body.getLevel() instanceof ServerLevel level)) return;
+            var clocks = CLOCKS.get(level);
+            if (clocks != null) clocks.remove(body.getUniqueId());
+            CargoStorage.removed(level, body.getUniqueId());
+          }
+        });
+  }
+
   public static boolean tracked(Object storage) {
     return OWNERS.containsKey(storage);
   }

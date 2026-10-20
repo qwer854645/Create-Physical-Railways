@@ -45,7 +45,25 @@ public final class CargoStorage {
     }
   }
 
-  private static final Map<ServerLevel, Map<UUID, Snapshot>> CACHE = new WeakHashMap<>();
+  private static final class Cached {
+    final Map<UUID, Snapshot> snapshots = new HashMap<>();
+    long nextCleanup;
+  }
+
+  private static final Map<ServerLevel, Cached> CACHE = new WeakHashMap<>();
+
+  static void tick(ServerLevel level) {
+    var cached = CACHE.get(level);
+    if (cached == null || level.getGameTime() < cached.nextCleanup) return;
+    long tick = level.getGameTime();
+    cached.nextCleanup = tick + 20;
+    cached.snapshots.values().removeIf(s -> tick - s.captured > 200);
+  }
+
+  static void removed(ServerLevel level, UUID body) {
+    var cached = CACHE.get(level);
+    if (cached != null) cached.snapshots.values().removeIf(s -> s.bodies.contains(body));
+  }
 
   private CargoStorage() {}
 
@@ -64,7 +82,7 @@ public final class CargoStorage {
     long tick = level.getGameTime();
     if (!group.complete)
       return new Snapshot(ids, false, false, List.of(), List.of(), List.of(), tick);
-    var cache = CACHE.computeIfAbsent(level, k -> new HashMap<>());
+    var cache = CACHE.computeIfAbsent(level, k -> new Cached()).snapshots;
     var old = root == null ? null : cache.get(root.getUniqueId());
     if (old != null
         && old.complete
@@ -176,8 +194,6 @@ public final class CargoStorage {
         && !sameContents(old, result))
       for (var id : ids) CargoTransfers.clock(level, id).exchanged(tick, false, 1);
     for (var id : ids) cache.put(id, result);
-    // Drop references to removed vehicles without scanning or loading any world chunks.
-    cache.entrySet().removeIf(e -> tick - e.getValue().captured > 200);
     return result;
   }
 
@@ -227,7 +243,7 @@ public final class CargoStorage {
 
   static void invalidate(ServerLevel level, Set<UUID> bodies) {
     var cache = CACHE.get(level);
-    if (cache != null) for (var id : bodies) cache.remove(id);
+    if (cache != null) for (var id : bodies) cache.snapshots.remove(id);
   }
 
   static boolean blockedByDock(ServerLevel level, ServerSubLevel root) {

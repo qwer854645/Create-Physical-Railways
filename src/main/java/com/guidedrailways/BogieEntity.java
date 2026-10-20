@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class BogieEntity extends SmartBlockEntity {
   public double distance, speed;
+  final MotionSync motionSync = new MotionSync();
   public CompoundTag bogeyData = new CompoundTag();
 
   public BogieEntity(BlockPos p, BlockState s) {

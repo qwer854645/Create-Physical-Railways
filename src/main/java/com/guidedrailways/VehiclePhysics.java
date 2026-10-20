@@ -184,7 +184,8 @@ public final class VehiclePhysics {
       if (level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual) {
         visual.speed = u.speed;
         visual.distance += u.speed / 20;
-        if (level.getGameTime() % 2 == 0) visual.sendData();
+        if (visual.motionSync.update(level.getGameTime(), visual.speed, visual.distance))
+          visual.sendData();
       }
       if (level.getGameTime() >= u.nextLog) {
         u.nextLog = level.getGameTime() + 20;

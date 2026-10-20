@@ -499,3 +499,11 @@ tasks.register('checkBogieVisibility', JavaExec) {
     mainClass = 'com.guidedrailways.BogieVisibilityCheck'
 }
 tasks.named('check') { dependsOn 'checkBogieVisibility' }
+
+
+tasks.register('checkMotionSync', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.MotionSyncCheck'
+}
+tasks.named('check') { dependsOn 'checkMotionSync' }

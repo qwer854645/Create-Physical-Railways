@@ -22,8 +22,13 @@ public final class GuidedRailways {
     if (net.neoforged.fml.ModList.get().isLoaded("railways")) SteamRailways.register();
     if (net.neoforged.fml.ModList.get().isLoaded("simulated")) RailDockContent.register(bus);
     NeoForge.EVENT_BUS.addListener(
+        (dev.ryanhcode.sable.neoforge.event.ForgeSableSubLevelContainerReadyEvent e) -> {
+          if (e.getLevel() instanceof ServerLevel) CargoTransfers.observe(e.getContainer());
+        });
+    NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Pre e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
+            CargoStorage.tick(level);
             CouplerConnections.restoreLoaded(level);
             if (VehiclePhysics.hasVehicles(level)) TrackNetwork.refresh(level);
             VehiclePhysics.tick(level);
