@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:guidedrailways:project-style:schema:1",
-  "title": "Guided Railways Language and UI Style Specification",
+  "title": "Physical Railways Language and UI Style Specification",
   "type": "object",
   "additionalProperties": false,
   "required": [

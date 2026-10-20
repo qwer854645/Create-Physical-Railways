@@ -1,7 +1,7 @@
 {
   "$schema": "./project-style.schema.json",
   "id": "guidedrailways.create-style",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "status": "default",
   "scope": [
     "item_names",
@@ -31,6 +31,16 @@
     "changePolicy": "临时例外遵循用户明确指示；长期变更同步更新规范、说明、规则入口和相关检查"
   },
   "terminology": [
+    {
+      "id": "project",
+      "zh_cn": "物理铁路",
+      "en_us": "Create: Physical Railways",
+      "avoid": [
+        "机械动力：导向铁路",
+        "Create: Guided Railways",
+        "导向铁路原型"
+      ]
+    },
     {
       "id": "bogey",
       "zh_cn": "物理转向架",
