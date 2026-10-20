@@ -1,40 +1,132 @@
 package com.guidedrailways;
-import net.neoforged.neoforge.registries.*;
-import net.neoforged.bus.api.IEventBus;
+
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.item.*;
-import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.*;
+
 public final class Content {
-    static final DeferredRegister.Blocks BLOCKS=DeferredRegister.createBlocks(GuidedRailways.ID);
-    static final DeferredRegister.Items ITEMS=DeferredRegister.createItems(GuidedRailways.ID);
-    static final DeferredRegister<BlockEntityType<?>> ENTITIES=DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE,GuidedRailways.ID);
-    static final DeferredRegister<CreativeModeTab> TABS=DeferredRegister.create(Registries.CREATIVE_MODE_TAB,GuidedRailways.ID);
-    static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENUS=DeferredRegister.create(Registries.MENU,GuidedRailways.ID);
-    public static final DeferredHolder<net.minecraft.world.inventory.MenuType<?>,net.minecraft.world.inventory.MenuType<DriverMenu>> DRIVER_MENU=MENUS.register("driver_console",()->new net.minecraft.world.inventory.MenuType<>((id,inventory)->new DriverMenu(id,inventory,null),net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS));
-    public static final DeferredBlock<DriverConsoleBlock> DRIVER=BLOCKS.register("driver_console",()->new DriverConsoleBlock(metal()));
-    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<DriverConsoleEntity>> DRIVER_ENTITY=ENTITIES.register("driver_console",()->BlockEntityType.Builder.of(DriverConsoleEntity::new,DRIVER.get()).build(null));
-    public static final DeferredItem<BlockItem> DRIVER_ITEM=ITEMS.register("driver_console",()->new BlockItem(DRIVER.get(),new Item.Properties()){
-        @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.driver_console");}
-    });
-    static BlockBehaviour.Properties metal(){return BlockBehaviour.Properties.of().strength(3).sound(SoundType.METAL).noOcclusion();}
-    public static final DeferredBlock<MountBlock> MOUNT=BLOCKS.register("bogie_mount",()->new MountBlock(metal()));
-    public static final DeferredBlock<CollisionPartBlock> COLLISION=BLOCKS.register("bogie_collision",()->new CollisionPartBlock(metal().dynamicShape()));
-    public static final DeferredBlock<BogieBlock> BOGIE=BLOCKS.register("bogie_frame",()->new BogieBlock(metal().dynamicShape()));
-    public static final DeferredBlock<CouplerBlock> COUPLER=BLOCKS.register("coupler",()->new CouplerBlock(metal().dynamicShape()));
-    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<MountEntity>> MOUNT_ENTITY=ENTITIES.register("bogie_mount",()->BlockEntityType.Builder.of(MountEntity::new,MOUNT.get()).build(null));
-    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<BogieEntity>> BOGIE_ENTITY=ENTITIES.register("bogie_frame",()->BlockEntityType.Builder.of(BogieEntity::new,BOGIE.get()).build(null));
-    public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<CouplerEntity>> COUPLER_ENTITY=ENTITIES.register("coupler",()->BlockEntityType.Builder.of(CouplerEntity::new,COUPLER.get()).build(null));
-    public static final DeferredItem<BogieItem> BOGIE_ITEM=ITEMS.register("bogie",()->new BogieItem(new Item.Properties()));
-    static ItemStack bogieItem(){return new ItemStack(BOGIE_ITEM.get());}
-    public static final DeferredItem<CouplerLinkItem> COUPLER_LINK=ITEMS.register("coupler_link",()->new CouplerLinkItem(new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<BlockItem> COUPLER_ITEM=ITEMS.register("coupler",()->new BlockItem(COUPLER.get(),new Item.Properties()){
-        @Override public void appendHoverText(ItemStack s,TooltipContext c,java.util.List<Component> text,net.minecraft.world.item.TooltipFlag f){UserText.tooltip(text,"tooltip.guidedrailways.coupler");}
-    });
-    static {TABS.register("main",()->CreativeModeTab.builder().title(Component.translatable("itemGroup.guidedrailways")).icon(()->new ItemStack(BOGIE_ITEM.get())).displayItems((p,o)->{o.accept(BOGIE_ITEM.get());o.accept(COUPLER_ITEM.get());o.accept(COUPLER_LINK.get());o.accept(DRIVER_ITEM.get());if(RailDocks.available())o.accept(RailDocks.bridge.item());}).build());}
-    static void register(IEventBus bus){bus.addListener(DriverNetwork::register);BLOCKS.register(bus);MENUS.register(bus);ITEMS.register(bus);ENTITIES.register(bus);TABS.register(bus);
-        if(net.neoforged.fml.loading.FMLEnvironment.dist==net.neoforged.api.distmarker.Dist.CLIENT)TrainClient.register(bus);
-    }
+  static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(GuidedRailways.ID);
+  static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(GuidedRailways.ID);
+  static final DeferredRegister<BlockEntityType<?>> ENTITIES =
+      DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, GuidedRailways.ID);
+  static final DeferredRegister<CreativeModeTab> TABS =
+      DeferredRegister.create(Registries.CREATIVE_MODE_TAB, GuidedRailways.ID);
+  static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENUS =
+      DeferredRegister.create(Registries.MENU, GuidedRailways.ID);
+  public static final DeferredHolder<
+          net.minecraft.world.inventory.MenuType<?>,
+          net.minecraft.world.inventory.MenuType<DriverMenu>>
+      DRIVER_MENU =
+          MENUS.register(
+              "driver_console",
+              () ->
+                  new net.minecraft.world.inventory.MenuType<>(
+                      (id, inventory) -> new DriverMenu(id, inventory, null),
+                      net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS));
+  public static final DeferredBlock<DriverConsoleBlock> DRIVER =
+      BLOCKS.register("driver_console", () -> new DriverConsoleBlock(metal()));
+  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DriverConsoleEntity>>
+      DRIVER_ENTITY =
+          ENTITIES.register(
+              "driver_console",
+              () -> BlockEntityType.Builder.of(DriverConsoleEntity::new, DRIVER.get()).build(null));
+  public static final DeferredItem<BlockItem> DRIVER_ITEM =
+      ITEMS.register(
+          "driver_console",
+          () ->
+              new BlockItem(DRIVER.get(), new Item.Properties()) {
+                @Override
+                public void appendHoverText(
+                    ItemStack s,
+                    TooltipContext c,
+                    java.util.List<Component> text,
+                    net.minecraft.world.item.TooltipFlag f) {
+                  UserText.tooltip(text, "tooltip.guidedrailways.driver_console");
+                }
+              });
+
+  static BlockBehaviour.Properties metal() {
+    return BlockBehaviour.Properties.of().strength(3).sound(SoundType.METAL).noOcclusion();
+  }
+
+  public static final DeferredBlock<MountBlock> MOUNT =
+      BLOCKS.register("bogie_mount", () -> new MountBlock(metal()));
+  public static final DeferredBlock<CollisionPartBlock> COLLISION =
+      BLOCKS.register("bogie_collision", () -> new CollisionPartBlock(metal().dynamicShape()));
+  public static final DeferredBlock<BogieBlock> BOGIE =
+      BLOCKS.register("bogie_frame", () -> new BogieBlock(metal().dynamicShape()));
+  public static final DeferredBlock<CouplerBlock> COUPLER =
+      BLOCKS.register("coupler", () -> new CouplerBlock(metal().dynamicShape()));
+  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MountEntity>>
+      MOUNT_ENTITY =
+          ENTITIES.register(
+              "bogie_mount",
+              () -> BlockEntityType.Builder.of(MountEntity::new, MOUNT.get()).build(null));
+  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BogieEntity>>
+      BOGIE_ENTITY =
+          ENTITIES.register(
+              "bogie_frame",
+              () -> BlockEntityType.Builder.of(BogieEntity::new, BOGIE.get()).build(null));
+  public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CouplerEntity>>
+      COUPLER_ENTITY =
+          ENTITIES.register(
+              "coupler",
+              () -> BlockEntityType.Builder.of(CouplerEntity::new, COUPLER.get()).build(null));
+  public static final DeferredItem<BogieItem> BOGIE_ITEM =
+      ITEMS.register("bogie", () -> new BogieItem(new Item.Properties()));
+
+  static ItemStack bogieItem() {
+    return new ItemStack(BOGIE_ITEM.get());
+  }
+
+  public static final DeferredItem<CouplerLinkItem> COUPLER_LINK =
+      ITEMS.register("coupler_link", () -> new CouplerLinkItem(new Item.Properties().stacksTo(1)));
+  public static final DeferredItem<BlockItem> COUPLER_ITEM =
+      ITEMS.register(
+          "coupler",
+          () ->
+              new BlockItem(COUPLER.get(), new Item.Properties()) {
+                @Override
+                public void appendHoverText(
+                    ItemStack s,
+                    TooltipContext c,
+                    java.util.List<Component> text,
+                    net.minecraft.world.item.TooltipFlag f) {
+                  UserText.tooltip(text, "tooltip.guidedrailways.coupler");
+                }
+              });
+
+  static {
+    TABS.register(
+        "main",
+        () ->
+            CreativeModeTab.builder()
+                .title(Component.translatable("itemGroup.guidedrailways"))
+                .icon(() -> new ItemStack(BOGIE_ITEM.get()))
+                .displayItems(
+                    (p, o) -> {
+                      o.accept(BOGIE_ITEM.get());
+                      o.accept(COUPLER_ITEM.get());
+                      o.accept(COUPLER_LINK.get());
+                      o.accept(DRIVER_ITEM.get());
+                      if (RailDocks.available()) o.accept(RailDocks.bridge.item());
+                    })
+                .build());
+  }
+
+  static void register(IEventBus bus) {
+    bus.addListener(DriverNetwork::register);
+    BLOCKS.register(bus);
+    MENUS.register(bus);
+    ITEMS.register(bus);
+    ENTITIES.register(bus);
+    TABS.register(bus);
+    if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT)
+      TrainClient.register(bus);
+  }
 }
