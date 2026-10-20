@@ -22,8 +22,8 @@ final class AutomaticNavigation implements ScheduleRoute.Network {
   AutomaticNavigation(ServerLevel level, UUID graph, Set<RailGauge> gauges) {
     this.level = level;
     this.graph = graph;
-    for (var p : TrackNetwork.paths(level))
-      if (p.graph().equals(graph) && gauges.stream().allMatch(p::supports)) {
+    for (var p : TrackNetwork.paths(level, graph))
+      if (gauges.stream().allMatch(p::supports)) {
         paths.put(new ScheduleRoute.Edge(p.a(), p.b()), p);
         paths.put(new ScheduleRoute.Edge(p.b(), p.a()), p);
       }

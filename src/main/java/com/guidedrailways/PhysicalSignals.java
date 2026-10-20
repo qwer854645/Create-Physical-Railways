@@ -20,6 +20,7 @@ public final class PhysicalSignals {
   private record Previous(TrackNetwork.Sample sample, long tick) {}
 
   private static final class State {
+    long networkGeneration = Long.MIN_VALUE;
     final SignalOccupancy ledger = new SignalOccupancy();
     final Map<UUID, UUID> owners = new HashMap<>();
     final Map<TraceKey, Bridge> traces = new HashMap<>();
@@ -49,7 +50,12 @@ public final class PhysicalSignals {
 
   static void tick(ServerLevel level, Collection<VehiclePhysics.Unit> input) {
     var s = STATES.computeIfAbsent(level, k -> new State());
-    s.networks.clear();
+    long generation = TrackNetwork.generation(level);
+    if (s.networkGeneration != generation) {
+      s.networkGeneration = generation;
+      s.networks.clear();
+      s.traces.clear();
+    }
     s.owners.clear();
     var units = new ArrayList<VehiclePhysics.Unit>();
     for (var u : input)

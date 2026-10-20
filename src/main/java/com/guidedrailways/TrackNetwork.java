@@ -73,7 +73,8 @@ public final class TrackNetwork {
   private record PathKey(UUID graph, int a, int b) {}
 
   private static final class Index {
-    long next, revision = Long.MIN_VALUE;
+    long next, generation, revision = Long.MIN_VALUE;
+    final Map<UUID, List<Path>> byGraph = new HashMap<>();
     final Map<UUID, TrackGraph> sources = new HashMap<>();
     final Map<Long, Set<Path>> cells = new HashMap<>();
     final Map<PathKey, Path> paths = new HashMap<>();
@@ -141,6 +142,11 @@ public final class TrackNetwork {
     idx.paths.clear();
     idx.paths.putAll(next);
     idx.cells.clear();
+    idx.byGraph.clear();
+    idx.generation++;
+    for (var path : idx.paths.values())
+      idx.byGraph.computeIfAbsent(path.graph(), key -> new ArrayList<>()).add(path);
+    idx.byGraph.replaceAll((key, paths) -> List.copyOf(paths));
     for (var path : idx.paths.values()) {
       int n = Math.max(1, (int) Math.ceil(path.edge.getLength() / 4));
       for (int i = 0; i <= n; i++) {
@@ -177,6 +183,20 @@ public final class TrackNetwork {
     return index == null
         ? List.of()
         : index.paths.values().stream().filter(p -> live(level, p)).toList();
+  }
+
+  static long generation(ServerLevel level) {
+    var index = INDEX.get(level);
+    return index == null ? 0 : index.generation;
+  }
+
+  static Collection<Path> paths(ServerLevel level, UUID graph) {
+    var index = INDEX.get(level);
+    return index == null
+        ? List.of()
+        : index.byGraph.getOrDefault(graph, List.of()).stream()
+            .filter(p -> live(level, p))
+            .toList();
   }
 
   private static Sample project(Path path, Vector3dc query, Vector3dc heading, Double hint) {
