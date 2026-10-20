@@ -38,7 +38,10 @@ final class BogiePairContacts {
     var live = STATES.computeIfAbsent(level, k -> new HashMap<>());
     var bodies = new ArrayList<Body>();
     for (var u : units)
-      if (!u.bogie.isRemoved() && !u.mount.isRemoved() && u.lastSeen + 2 >= level.getGameTime()) {
+      if (!u.carrier.isRemoved()
+          && !u.bogie.isRemoved()
+          && !u.mount.isRemoved()
+          && u.lastSeen + 2 >= level.getGameTime()) {
         var pose = pipe.readPose(u.bogie, new Pose3d());
         var anchor =
             new Vector3d(u.localCenter)

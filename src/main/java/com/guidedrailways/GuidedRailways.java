@@ -23,7 +23,10 @@ public final class GuidedRailways {
     if (net.neoforged.fml.ModList.get().isLoaded("simulated")) RailDockContent.register(bus);
     NeoForge.EVENT_BUS.addListener(
         (dev.ryanhcode.sable.neoforge.event.ForgeSableSubLevelContainerReadyEvent e) -> {
-          if (e.getLevel() instanceof ServerLevel) CargoTransfers.observe(e.getContainer());
+          if (e.getLevel() instanceof ServerLevel) {
+            CargoTransfers.observe(e.getContainer());
+            TrainConsists.observe(e.getContainer());
+          }
         });
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Pre e) -> {

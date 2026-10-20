@@ -190,10 +190,12 @@ final class ConsistRoutes {
           && !u.bogie.isRemoved()
           && !u.mount.isRemoved()
           && u.lastSeen + 2 >= level.getGameTime()) units.add(u);
+    var liveUnits = new HashSet<>(units);
     var graph = new HashMap<UUID, Set<UUID>>();
     var sockets = new HashMap<UUID, Vector3d>();
     for (var u : units) graph.computeIfAbsent(u.carrier.getUniqueId(), k -> new HashSet<>());
     for (var link : TrainConsists.get(level).links()) {
+      if (link.a().isRemoved() || link.b().isRemoved()) continue;
       UUID a = link.a().getUniqueId(), b = link.b().getUniqueId();
       graph.computeIfAbsent(a, k -> new HashSet<>()).add(b);
       graph.computeIfAbsent(b, k -> new HashSet<>()).add(a);
@@ -205,7 +207,9 @@ final class ConsistRoutes {
     var output = new ArrayList<Plan>();
     for (var component : TrainConsists.get(level).groups()) {
       var members = component.members();
-      var group = new ArrayList<>(component.units());
+      // A shared tick snapshot may outlive a body removed between physics substeps.
+      var group = new ArrayList<VehiclePhysics.Unit>();
+      for (var unit : component.units()) if (liveUnits.contains(unit)) group.add(unit);
       if (group.isEmpty()) continue;
       group.sort(Comparator.comparing(u -> u.carrier.getUniqueId()));
       UUID seedId = group.getFirst().carrier.getUniqueId();
@@ -238,7 +242,8 @@ final class ConsistRoutes {
       for (var u : group)
         if (u.command != null
             && u.command.navigation() != null
-            && u.command.navigation().plan != null) {
+            && u.command.navigation().plan != null
+            && group.contains(u.command.navigation().plan.head)) {
           var plan = u.command.navigation().plan;
           automaticHead = plan.head;
           automaticEnd = plan.end;

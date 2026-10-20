@@ -33,6 +33,20 @@ final class TrainConsists {
 
   private TrainConsists() {}
 
+  static void observe(dev.ryanhcode.sable.api.sublevel.SubLevelContainer container) {
+    container.addObserver(
+        new dev.ryanhcode.sable.api.sublevel.SubLevelObserver() {
+          @Override
+          public void onSubLevelRemoved(
+              dev.ryanhcode.sable.sublevel.SubLevel body,
+              dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason reason) {
+            // Both unloading and deletion invalidate runtime references, without resetting
+            // schedules.
+            if (body.getLevel() instanceof ServerLevel level) invalidate(level);
+          }
+        });
+  }
+
   static Snapshot get(ServerLevel level) {
     var snapshot = CACHE.get(level);
     return snapshot != null && snapshot.tick() == level.getGameTime()
@@ -50,7 +64,10 @@ final class TrainConsists {
                         && !u.mount.isRemoved()
                         && u.lastSeen + 2 >= level.getGameTime())
             .toList();
-    var links = List.copyOf(CouplerConnections.bodyLinks(level));
+    var links =
+        CouplerConnections.bodyLinks(level).stream()
+            .filter(link -> !link.a().isRemoved() && !link.b().isRemoved())
+            .toList();
     var bodies = new HashMap<UUID, ServerSubLevel>();
     for (var unit : units) bodies.put(unit.carrier.getUniqueId(), unit.carrier);
     var edges = new ArrayList<ConsistGraph.Link>();
