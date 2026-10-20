@@ -19,17 +19,8 @@ public final class BogieEntity extends SmartBlockEntity {
 
   @Override
   protected net.minecraft.world.phys.AABB createRenderBoundingBox() {
-    double x0 = 0, y0 = 0, z0 = 0, x1 = 1, y1 = 1, z1 = 1;
-    for (var b : BogieCollision.boxes(BogieBlock.variant(getBlockState()))) {
-      x0 = Math.min(x0, b.x0());
-      y0 = Math.min(y0, b.y0());
-      z0 = Math.min(z0, b.z0());
-      x1 = Math.max(x1, b.x1());
-      y1 = Math.max(y1, b.y1());
-      z1 = Math.max(z1, b.z1());
-    }
-    return new net.minecraft.world.phys.AABB(x0, y0, z0, x1, y1, z1)
-        .inflate(1.0 / 16)
+    var b = BogieRenderEnvelope.get(BogieBlock.variant(getBlockState()));
+    return new net.minecraft.world.phys.AABB(b.x0(), b.y0(), b.z0(), b.x1(), b.y1(), b.z1())
         .move(worldPosition);
   }
 

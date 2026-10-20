@@ -80,7 +80,31 @@ public final class TrainClient {
 
     @Override
     public boolean shouldRenderOffScreen(BogieEntity entity) {
-      return true;
+      return false;
+    }
+
+    @Override
+    public int getViewDistance() {
+      return Math.max(
+          64,
+          net.minecraft.client.Minecraft.getInstance().options.getEffectiveRenderDistance() * 16);
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox(BogieEntity entity) {
+      // NeoForge's renderer default ignores CachedRenderBBBlockEntity and supplies one block.
+      // A one-tick travel margin covers the logical/render pose difference used by Sable's frustum
+      // hook.
+      return entity.getRenderBoundingBox().inflate(.125 + Math.abs(entity.speed) / 20);
+    }
+
+    @Override
+    public boolean shouldRender(BogieEntity entity, net.minecraft.world.phys.Vec3 camera) {
+      var box = getRenderBoundingBox(entity);
+      double range = getViewDistance();
+      return RenderVisibility.within(
+          box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, camera.x, camera.y, camera.z,
+          range);
     }
   }
 }

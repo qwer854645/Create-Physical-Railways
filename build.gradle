@@ -492,3 +492,10 @@ tasks.register('checkBoxUnion', JavaExec) {
     mainClass = 'com.guidedrailways.BoxUnionCheck'
 }
 tasks.named('check') { dependsOn 'checkBoxUnion' }
+
+tasks.register('checkBogieVisibility', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.BogieVisibilityCheck'
+}
+tasks.named('check') { dependsOn 'checkBogieVisibility' }
