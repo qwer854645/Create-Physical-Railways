@@ -1,0 +1,650 @@
+[
+  {
+    "mod": "create",
+    "version": "6.0.10+mc1.21.1",
+    "file": "create-1.21.1-6.0.10.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/UjX6dr61/create-1.21.1-6.0.10.jar",
+    "sha256": "ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a",
+    "sha512": "11cc8fc049d2f67f6548c7abfada6b82a3adb5c7ca410a742de04bbca76e03862c518721b88d806f6e6d768a4d68531fdb903a85859b25d1484d550cc7bafd4b"
+  },
+  {
+    "mod": "create",
+    "version": "mc1.21.1-6.0.9",
+    "file": "create-1.21.1-6.0.9.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/n7NADxiG/create-1.21.1-6.0.9.jar",
+    "sha256": "c3030f79894ba7410d51e99dd5e5b8a4f4cc9de6cb63c5906dc8f909000a4f55",
+    "sha512": "8b3b3d9b6874f31a538add81390dff26b5f9475da6349dc52fc20dbde802edfc32ead511e12291198591574d42605f916f1acbadc2437056eea615d8586bf7cf"
+  },
+  {
+    "mod": "create",
+    "version": "mc1.21.1-6.0.8",
+    "file": "create-1.21.1-6.0.8.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/88L641Un/create-1.21.1-6.0.8.jar",
+    "sha256": "5f2d593a9cee2403f0c5bde06c59df8378f57e5d2314fed9fffd32d0281a6de1",
+    "sha512": "cb3ffee35ee2b2ab212fb4649e75ccfcb8e99ae954cf0b0251591062e3f200e5e639e8f40d7af7c79b7dc71164a027b0e6fbcd5c0bafe2da88f888fc3ffd254c"
+  },
+  {
+    "mod": "create",
+    "version": "mc1.21.1-6.0.7",
+    "file": "create-1.21.1-6.0.7.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/Q66bMLkk/create-1.21.1-6.0.7.jar",
+    "sha256": "fcacc9fbd317930b756484167d4c5ad2855c69bdcaa8159a822f523e9f1ab098",
+    "sha512": "3a78f1ee7a5d3f003dfef8cd78326fba616fc4298243fded07f886663622732b6eeec15489d3e5196db14bf01ee63bd36fc47bb4ad274865144a00079a05dc6f"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.6",
+    "file": "create-1.21.1-6.0.6.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/tS7ygzAE/create-1.21.1-6.0.6.jar",
+    "sha256": "2d403500cd550db452a975ec3d4ba21b6097360d4dd575311112fe322055b1ee",
+    "sha512": "a65723abb0439ab5bb9dfae0b66db33a7c41422d015be7524912033b6cb39a1ef3a247b4b842981131cd541d141cc257d761b6de4e8837960a98b43054049228"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.5",
+    "file": "create-1.21.1-6.0.5.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/jwSLN3Lu/create-1.21.1-6.0.5.jar",
+    "sha256": "2aa5bba4bdfc4de3bf99606a86b6299482e9302c42ac6d8035e67065420c4224",
+    "sha512": "5e89df7debd1da02f45d4cd5f0dd964e3ebb7b865eee2137848f6aced4c50c3750713075f2b9623c4cfd3ffb87ea9a7a378d072bfbc86c24ca1d6594d7feddad"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.4",
+    "file": "create-1.21.1-6.0.4.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/5LpL274U/create-1.21.1-6.0.4.jar",
+    "sha256": "eaed81a941a27565c8f43d808f3c393516cbc1027ddf569ec7923d9dd552b2f7",
+    "sha512": "1f237647ad48c8d9b09a7dab84ac16fc52bb2b70eec5c0f836b21658e60af8cdcbc541c57ac43ffa80fbecad8c08d7bdc13fbd387aaa38f8a25df20a095d5412"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.3",
+    "file": "create-1.21.1-6.0.3.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/s3Pltpiv/create-1.21.1-6.0.3.jar",
+    "sha256": "180680bd89bc56f730ac5b2a9549fe38c472a917f5a791e807b727d6dff960ee",
+    "sha512": "99f50d0cd192c53637acc5ca8c19e61568fecd5cea3e56e666afb39751f9efd7705276e8ad3f45cc321d82614caa2be1933ee48ba8874e3922ab2627c58e814f"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.2",
+    "file": "create-1.21.1-6.0.2.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/N367NzaZ/create-1.21.1-6.0.2.jar",
+    "sha256": "c33e0ad1925949ad39681d8687d53b5344beb6c43cb7b7cc638c60a379d5e7b8",
+    "sha512": "28e17ada25a918da61146c61e307605a09bd82be94b689e7b686ecccc36c45259cf6742dd181a6c7d2ae92315aabe74a0cd32c81f8753f97b49a83ed272a8a49"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.1",
+    "file": "create-1.21.1-6.0.1.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/IJpm7znS/create-1.21.1-6.0.1.jar",
+    "sha256": "c40d9d9a69c88ebb926aaa834a76d4e0a23c86e5d91fc32782dd69b69886fbfb",
+    "sha512": "3b5ab94758d434281fe8cf6a31d99e9810210b9d8945c080e8aaf451118003bb46d2c38c5a08f73de1b9e74836b9c0497c29de883911dd208eea3f2e2e103271"
+  },
+  {
+    "mod": "create",
+    "version": "1.21.1-6.0.0",
+    "file": "create-1.21.1-6.0.0.jar",
+    "url": "https://cdn.modrinth.com/data/LNytGWDc/versions/NEb0yK69/create-1.21.1-6.0.0.jar",
+    "sha256": "d3dbb5ba60c6a2397f5669e1614e75b29c427f1f7355bc94074e0dd4575fe363",
+    "sha512": "be04d2987b7b6affd6b6e07d68a54be2e6a4d2e04eba5a4fcf18723cc726f70d89588d6d03bcac2c508c8fed64e5264858ebe66918ebe9101af58401bc1f5be7"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.6+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.6.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/fg9dTRz9/sable-neoforge-1.21.1-2.0.6.jar",
+    "sha256": "9c199157843bf953a47dff625fc5bb41c01a90538d35ad18e6996bbcb8a617c2",
+    "sha512": "76d293ce751a01cb9c095a3659b0a41e03e005480bc9d76dfdc73ec7c2eabf7923740c7b077921d42616673c496cd5143569f2085ddcebe174fd91d81e2a04b8"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.5+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.5.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/U678xqle/sable-neoforge-1.21.1-2.0.5.jar",
+    "sha256": "c8710f85bc780bbf523e6726ceaaf76dd0b8c61479db497b382c6bb34317e7ab",
+    "sha512": "bf3d8c87bcc5efb99afffd50305fc978086ed48a63e106816e3a8a3901f8052f4480ea527dbd7d4003f7775ed4d020529098034f4e307aefac9cc42df2b4c19a"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.4+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.4.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/bMSNCogw/sable-neoforge-1.21.1-2.0.4.jar",
+    "sha256": "06f34fe28749de185b318b8ed2e046e8a5ffad20c20bdf433a06e0267af6870b",
+    "sha512": "1536c676531f59d4658f994c698a8f649f3b21b0f7ff754644be5ff4154c88aba5f933686359198519bbe7d295e8d53f7d9148cfe0e93b09fe168f52ef4a33ed"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.3+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.3.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/1L6XJqnY/sable-neoforge-1.21.1-2.0.3.jar",
+    "sha256": "da6c3b66238586603d1dcaa2afb012d36815fbce0a2d5938fbb2936701d42279",
+    "sha512": "c13c4da086001c205361905cd3a6c59a76e3c7d4c082265aaf3baf2fd30c79808f6634bca89aba29db5c096aa7da4066f76454093c306c3ae91c6c0d4d63ae0d"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.2+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.2.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/6PfAtJN1/sable-neoforge-1.21.1-2.0.2.jar",
+    "sha256": "adb4bd51e5602188d3383ff99ac1f2bbf02cc95532788744b90620563ca04a25",
+    "sha512": "ac6f8a06dcc8aa112c2260195ada36664c9ffef95af92496fff4f0b29fa210d68fefe0741802ad998bdc073ef6ea9786b57bfc7eed1ac35d0deaeb0eb64c7b2f"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.1+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.1.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/znvYZcVX/sable-neoforge-1.21.1-2.0.1.jar",
+    "sha256": "f0513d490dc099a7271b5e29b5040a1ff556219dee1007df3fe29355fd7ff68d",
+    "sha512": "c7ee2724afac4c7c03253ce020677db6a8e398612d069e1c53c408cf013b808273ab16db311d77198435746e47f6f2d7b8b36b0dec871da025ea25f9351deb97"
+  },
+  {
+    "mod": "sable",
+    "version": "2.0.0+mc1.21.1",
+    "file": "sable-neoforge-1.21.1-2.0.0.jar",
+    "url": "https://cdn.modrinth.com/data/T9PomCSv/versions/NGuyFOeE/sable-neoforge-1.21.1-2.0.0.jar",
+    "sha256": "0eff61c2f6eda6386f63fb14bc38e930687c0f30e36d10fd360f2bec5f02f687",
+    "sha512": "c911f179e7d3c4abf97982ca861dc4c4486c036bc985f5684c4df8f846346ca8eb46e15399eebe41a3c98269b7c117ba7d1b6247e3bbfec41b3b510cff4e9a9a"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.8-1.21.1",
+    "file": "create_bb-1.0.8-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/nC19ZMKK/create_bb-1.0.8-1.21.1.jar",
+    "sha256": "36a1cf8eaef08254085f9190b6a3130dd787747ee30fb8eeb606d6a6e0f9bf4f",
+    "sha512": "9f40b8c13f3acad65c479ae763c9cb1d27edf8c391746719409b72f01b1d7396a0d39db907fb7e5c3d97b57b24a27b6b5e2f16cc454c3d73e874dd30ec548e1b"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.7-1.21.1",
+    "file": "create_bb-1.0.7-1.21.1-Neoforge.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/rUu97B0K/create_bb-1.0.7-1.21.1-Neoforge.jar",
+    "sha256": "68833088a56a2e160df7b23ce9703cde0da974b35ba41f5d86bbb758acd1ec79",
+    "sha512": "77741f2b77426bb24607221ea98e544280a81ba74cadb77334c3d0911f8ffbf63d3d3f268d435c1c1e0e5794cfc33f7fbb5fc0e43ba7a89098b4a97aa4396987"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.6-1.21.1",
+    "file": "create_bb-1.0.6-1.21.1-neoforge.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/pYKBpa97/create_bb-1.0.6-1.21.1-neoforge.jar",
+    "sha256": "b29ee91772bc76f21e95eed6c75aeef0c33fef7e1565d87351e0c832ab163fc5",
+    "sha512": "4bbdad77b5ba5fdda35a69bb90ad6a3e32a5da23d519ea9a64d1fb96d13b0e6f783363de388c7da75ece1d8e104edf5e28d681f4ce2554e06d944851049bf19f"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.5-1.21.1",
+    "file": "create_bb-1.0.5-1.21.1-neoforge.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/3Ygyimsf/create_bb-1.0.5-1.21.1-neoforge.jar",
+    "sha256": "62b8906141a21c304d1bda88d065016d6506a76b26067207804d9e2790d4991c",
+    "sha512": "9525bdde8b188f564925be153031b7904806ba18a7a17f1e51cc34d4737c54606be4544e16e54102e6e87ab8b92e2a939c17b6276667d0e8b651760e37bdbab5"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.4-1.21.1",
+    "file": "create_bb-1.0.4-1.21.1-neoforge.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/xLZSJ1Le/create_bb-1.0.4-1.21.1-neoforge.jar",
+    "sha256": "72c2b492313b484ca2395d5b5028b118178629a7d2d4d06883928a88b53d6baa",
+    "sha512": "b106caff4e32a777a245a8ee9e87526beda16e0631c771d33e247d7ad50ee70dcf323288ac81c66b40672d3a4893dbf37a5be28f7661422a39e2d9ce0314d098"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.3",
+    "file": "create_bb-1.0.3.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/GU4TaEuv/create_bb-1.0.3.jar",
+    "sha256": "814c5031e25467a3a556778a56a898b8cba96e30754066a677f69bcedcbb42db",
+    "sha512": "a08204a5406cc96a335b25bb9841270d60168041ce680cf709270ec014eebded4098c9b2ba796503d8d6053a7b7b4e844b40f4f4bec6213cedb5ca6dc346720c"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.2",
+    "file": "create_bb-1.0.2.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/GXnZH6K8/create_bb-1.0.2.jar",
+    "sha256": "56d54baae71d274f364e543cbf4019c589eb2946c1580bbc8d9d98b825a978d6",
+    "sha512": "61dfaea1b17ea6ed59551d3a647ac715b5d3336b6749d702766f744d93f89a04e4548274db9641fa740fd2f30140658858d90369036cb2fac813405d72801e53"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.1",
+    "file": "create_bb-1.0.1.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/xzMQYNlI/create_bb-1.0.1.jar",
+    "sha256": "29a32e04ab6a55266dadb135687ee074efcca9726915a8759295f9eddc8ad1d4",
+    "sha512": "ffaea2b7dc417139ba6dd36d89c79944397f12b7c72c85b61f6502f75065ba0fa7915343efb3e92a5e5f5abde4c62f918a3c1830330321bc9027b4cfe62a23c5"
+  },
+  {
+    "mod": "bnb",
+    "version": "1.0.0",
+    "file": "create_bb-1.0.0.jar",
+    "url": "https://cdn.modrinth.com/data/j4ARnQwY/versions/KoDuEqLR/create_bb-1.0.0.jar",
+    "sha256": "033a33674325426b5a0458ded68c7845876ead7e65d335cefae6ad066ea3622e",
+    "sha512": "bff3f12d1064575069cf259125cba99fa1185c11161b7d5fe3c2d6535efded024e57f36068c85ffb11d9e3d063445e1731180bdb953b43029ac13adffbb3baf3"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.1.4",
+    "file": "electroenergetics-1.21.1-1.1.4.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/ZMfRgLy5/electroenergetics-1.21.1-1.1.4.jar",
+    "sha256": "2362decf60ace66037eb2ae79f34fed57b5f152e0435164f5f91912ea837052f",
+    "sha512": "022ba387a614954942f45e613807d8416692dc91f808ab6420fd36981d547747b6b8d38802e40161991fd95ebe2502e91197b57fdc629fe2fbb50c4fb7375de0"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.1.3",
+    "file": "electroenergetics-1.21.1-1.1.3.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/KWxEmmON/electroenergetics-1.21.1-1.1.3.jar",
+    "sha256": "ae7ea74b7b00f175daa5a60a953a6d57f7f775aed0b642a1e9f80c3865cf8be7",
+    "sha512": "080f4ed9cafe27b897cf14236ee92798a1c29fb08c0456208cf4a2bcc4164934a3ef40e202aeb25c9f5ae58f3f1739fcf0ab21f5f3c7e241f602a79f53a1cf00"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.1.2",
+    "file": "electroenergetics-1.21.1-1.1.2.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/hVjeqOy6/electroenergetics-1.21.1-1.1.2.jar",
+    "sha256": "6789d11eb8e6bb00aa24c192a5ea471d3b710fffc9c45a03e79bc1979f48c233",
+    "sha512": "6b9b298a6ed6994c5b99dbbcb28ce40b1c33f4627db559b241b5866a19f62039441bbb513e9f19475c75026fa520bc07f5d84e004f3d7df88a947e5943c5bfc2"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.1.1",
+    "file": "electroenergetics-1.21.1-1.1.1.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/11zlqCk5/electroenergetics-1.21.1-1.1.1.jar",
+    "sha256": "ea5df2c5100a4aa178bd0054779015d85c63da221a782915240656601b51aefd",
+    "sha512": "962ce12b3b755eea9c50f16f685a03f82268c5c6250dbcf3f25a11b62e01e39c8668571c2093703178736031e43139953fcb510e151a1950c638503b3eda1993"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.1.0",
+    "file": "electroenergetics-1.21.1-1.1.0.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/NKczAflT/electroenergetics-1.21.1-1.1.0.jar",
+    "sha256": "93f6a2f265ac158490b44b6c7ea2deb9645635bc49cf346de2f972af4be11704",
+    "sha512": "42293080ffcdf60a1ea122d534c1cfed362a627492a373b268aac4f63e773b683cea1fde86efaec7a1d1e21731df153634aceecbb855a58c6c016498383b17cb"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.0.1",
+    "file": "electroenergetics-1.21.1-1.0.1.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/wg7VdaNo/electroenergetics-1.21.1-1.0.1.jar",
+    "sha256": "155c8e304e4d6accb900a897368cbdbcd18c5be421517739d25563e030a8cbff",
+    "sha512": "aa907eadcf3d9fb8f4c445a0646b06d72df91690c81ca3889a949a4c9600e4b221b32e1c10209a9eefcb2b647abace8b70fcde675a9e66e9948d8e6828eead71"
+  },
+  {
+    "mod": "cee",
+    "version": "1.21.1-1.0.0",
+    "file": "electroenergetics-1.21.1-1.0.0.jar",
+    "url": "https://cdn.modrinth.com/data/qYJdIoAx/versions/4yGHMZ9V/electroenergetics-1.21.1-1.0.0.jar",
+    "sha256": "c8c28dbf11632603afe90fd828cbe0e11e0527985200eb48162bfc4c47dd8202",
+    "sha512": "a072d7add2f568d00459bd33502c60bc0ad3b0225453f4366d3ead93effcb7b68aaa2f29e9aff3f736d9b17f514493cd8f84455233729d088d76e0207bb94eac"
+  },
+  {
+    "mod": "railways",
+    "version": "0.3.0-beta.2+neoforge-mc1.21.1",
+    "file": "railways-0.3.0-beta.2+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/czVeSmZo/railways-0.3.0-beta.2%2Bneoforge-mc1.21.1.jar",
+    "sha256": "64b74ddad661deae1cfe7e8334cfa3d39bb8ef7b761f83595ba0476c4a9bb1d5",
+    "sha512": "def5c767467bf7863e2efc1a8cc3bf3442e1090ee1504e447c4120b9ff4ff6780de93d2a7d1bf696cd19407010d465b99f00bbf780776b0a9648804fa1b45f75"
+  },
+  {
+    "mod": "railways",
+    "version": "0.3.0-beta+neoforge-mc1.21.1",
+    "file": "railways-0.3.0-beta+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/mvE5W1r2/railways-0.3.0-beta%2Bneoforge-mc1.21.1.jar",
+    "sha256": "5bd164270c4e5b42739dc7da731037cc51a97867d2d0016e652af4345a7157ee",
+    "sha512": "0abf3fde91d9dcb10d253e7b8b2a20188e939194c547f9f023262d74c34884ff42f873f960291e55340f77767d7bfcc601efdd9d71fe25acc6395a5031a9b9ef"
+  },
+  {
+    "mod": "railways",
+    "version": "0.2.1+neoforge-mc1.21.1",
+    "file": "railways-0.2.1+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/HOPX5oro/railways-0.2.1%2Bneoforge-mc1.21.1.jar",
+    "sha256": "b7636c8b1b0352ed1a130dfe67f8bb574e2fc08803ed1cda4d3ea00505193914",
+    "sha512": "dac8efb7c8b4b525114c2548bd2a8254d3b1e9e44664ba84b0f4e8467e1584029f8a219dd1ddf4389ab0a94e525183ee7753d33babdf319926cd63d2fc9cdffd"
+  },
+  {
+    "mod": "railways",
+    "version": "0.2.0+neoforge-mc1.21.1",
+    "file": "railways-0.2.0+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/oQKsMKfj/railways-0.2.0%2Bneoforge-mc1.21.1.jar",
+    "sha256": "1bd19694cfc746f261afc2f00b87d1083e734e778d65b1481094931100fca1a9",
+    "sha512": "e91c7db3fabf9d891981e9af545b39acd74eb8c824338bd58bb677cfbf7fa296a1d5ba5275b84cb025512eaf46e4c85b6fc3f46772c3bbbf4793989c1f4fafd8"
+  },
+  {
+    "mod": "railways",
+    "version": "0.2.0-beta.2+neoforge-mc1.21.1",
+    "file": "railways-0.2.0-beta.2+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/dZa50kut/railways-0.2.0-beta.2%2Bneoforge-mc1.21.1.jar",
+    "sha256": "8dd9e285da0bd01c24f2cddc14182c01b570197dc2a9c9d5aa85e0b6bae47570",
+    "sha512": "e5ee20903fed9894a5d7d197fd0c1c8aabc3ff024f13e24a71777257ec20b2703ee2a7c1e091bd88f0878f3821afb6e08e0094d74208e3bd74d244d0401e4095"
+  },
+  {
+    "mod": "railways",
+    "version": "0.2.0-beta+neoforge-mc1.21.1",
+    "file": "railways-0.2.0-beta+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/sG8TppGl/railways-0.2.0-beta%2Bneoforge-mc1.21.1.jar",
+    "sha256": "6e565c8a7ad3db15094d6fe39ce8687afbfc0cc3c0f3ac0be1f67ebbda313368",
+    "sha512": "87238622d1bff58e4ac31275498e2b520555f741062cf2dd9705fa2448acf9b373e939923773b1205fa8b073afeab5078658e39ad68dad8fbe4fba2da8167567"
+  },
+  {
+    "mod": "railways",
+    "version": "0.1.0+neoforge-mc1.21.1",
+    "file": "railways-0.1.0+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/vpLvW4Yz/railways-0.1.0%2Bneoforge-mc1.21.1.jar",
+    "sha256": "da0f0ba8d00252027914db7afce6a1115bac1244ef3ca4ff04c35f77ae9606ac",
+    "sha512": "52c641635a63276ed93b40d9d61be2579ecc41333709ebe8cdd9c7f6baab43b7471ad8c0fbe247f5a9ed66fd3701c5d083c341a0031138cc08e55ce797d470f1"
+  },
+  {
+    "mod": "railways",
+    "version": "0.1.0-beta+neoforge-mc1.21.1",
+    "file": "railways-0.1.0-beta+neoforge-mc1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/L3Jv0QZI/versions/A2r76Sbx/railways-0.1.0-beta%2Bneoforge-mc1.21.1.jar",
+    "sha256": "894a7f93ec3ea9c1f987038d49f4e9d4d368395f863380be198892e803019c49",
+    "sha512": "c4205db49693a2f1d82c79f639164fb58516279151ed0033985f7b97fdac4f496636b35ad237c2483d01bc816279aad818b79287e6645196105d91bb02432ab7"
+  },
+  {
+    "mod": "hose",
+    "version": "0.2.2",
+    "file": "VS-Sable-HoseConnectors-0.2.2-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/2UHpqeLs/VS-Sable-HoseConnectors-0.2.2-1.21.1.jar",
+    "sha256": "3c856ad8357157749e9ac3f2a3ae9c75113db146af3c510eef5794a17239b758",
+    "sha512": "601e1ba5f4d25cba01bf1cfce3e55cf5ecae0f14f7b1a072742a30f59af769636edf83c49ec0eb1a4ea67a5478687df69400bfe96f48ad136c92f09923b8f9ea"
+  },
+  {
+    "mod": "hose",
+    "version": "0.2.1",
+    "file": "VS-Sable-HoseConnectors-0.2.1-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/CEzKCDA0/VS-Sable-HoseConnectors-0.2.1-1.21.1.jar",
+    "sha256": "a1024c292ec8abba0e42acab5ff14257ae9471e92c52930ed00450802bc12b5a",
+    "sha512": "5412c346ece7d0912cd657c78b86059db882d5cfc46028beb6bcbecd6bdcd8d84eb9ed28baffce0917fc9f909c5420d186baae72fd86b779fe62a6db957d86de"
+  },
+  {
+    "mod": "hose",
+    "version": "0.2.0",
+    "file": "VS-Sable-HoseConnectors-0.2.0-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/VPK6yukm/VS-Sable-HoseConnectors-0.2.0-1.21.1.jar",
+    "sha256": "3d9edab16b8347905dba79656ee7e802440d992ad35e1c1fabe47771af6172e9",
+    "sha512": "302324073ca6923731b7c9c0322fe2ee2b2036b934ed5ebfed0d1d289bf32e9a82a86b94e0ba2ea48ef96d1bdc2a1512241aae996699dd8b7fbd0447889f53d4"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.9",
+    "file": "VS-Sable-HoseConnectors-0.1.9-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/MXkbKYIF/VS-Sable-HoseConnectors-0.1.9-1.21.1.jar",
+    "sha256": "1db6851b738397f170987ba6b2e7f9730dfeede8eab7354ce99082e550f53f6a",
+    "sha512": "c790ec176508af6aeca85d87b560e78637bebf4647f4b522c29759e9b86f7d23b0f73c7f6f6eb54fb8b054a928197491256c33acc018e52223ec4edf78dbc1f2"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.8",
+    "file": "VS-Sable-HoseConnectors-0.1.8-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/vz6TdXa7/VS-Sable-HoseConnectors-0.1.8-1.21.1.jar",
+    "sha256": "32bc4b03b086646185548925b4f4044054031df99d1368546186de64e5a71a63",
+    "sha512": "a7cf414277588a47df870681d5e978fe703c1b9170b7c8e9be2646123fee14ed381c6336fa1ddcc073bd6f8542f7d4cc014dda9992bdac20aabd82f25eafbfee"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.7",
+    "file": "VS-Sable-HoseConnectors-0.1.7-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/MCVX5oYb/VS-Sable-HoseConnectors-0.1.7-1.21.1.jar",
+    "sha256": "1499be55ab75cfc0006ba03796c8ccf92a9af1d3b6398712364805eb3f6daffe",
+    "sha512": "ded17b28f3e123ffe102244c726e3888515e043dfe1bec7d16c76d2bb23792c595002a54d3aa5e516625d15638fe2d5ae73ed9e1a5e775588f36495fd9268a99"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.6",
+    "file": "VS-Sable-HoseConnectors-0.1.6-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/AJSmuGAV/VS-Sable-HoseConnectors-0.1.6-1.21.1.jar",
+    "sha256": "1cc8953b1aa239a11a4a4e329f886a1d7e00cbc5e8ada5d546527bbd9d46abd4",
+    "sha512": "10409eb82233e0b88f3e70ae5daf9491d02291fe20cdcf4f44963e55f9788ba7483af1d4a23fa8fa9f157c5cc99aad7ab9046811f102033c11ce79755e9bb48e"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.5",
+    "file": "VS-Sable-HoseConnectors-0.1.5-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/YKvKW7mI/VS-Sable-HoseConnectors-0.1.5-1.21.1.jar",
+    "sha256": "882db1966f178237e544d2f808500370ff3965f92245e67e08adac27aca02938",
+    "sha512": "8ce6d474f31f2c63a9028123e7c9e303b401d12a099528cd5787d3bf85e2bfef3b016b698ea09df472cab61cc83ee29f7d2a423feaa564b82a617d415c6668bb"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.4",
+    "file": "VS-Sable-HoseConnectors-0.1.4-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/wDlANfLj/VS-Sable-HoseConnectors-0.1.4-1.21.1.jar",
+    "sha256": "88a701d36311fe00db51071ec2a32d61d7ebc155dbbe9f667c8204dd556aad6a",
+    "sha512": "639dba6285b8e85792487082d565c1a739844fb90e32ad0105f7b029e77bf72176f2140a98a7a1f011745142286d761f05f161b78e92c55154d205c01bbe24f0"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.3",
+    "file": "VS-Sable-HoseConnectors-0.1.3-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/iybemmYe/VS-Sable-HoseConnectors-0.1.3-1.21.1.jar",
+    "sha256": "392878671739781cb6f58f902f5bd29844d2ec3feba6b2ed42f20e8ddfd6e4e4",
+    "sha512": "abfb8d6fb309b3f2a6dd19e1404f0e879aa5464181d101f81cb5efa3560687d53a1667c61c10f4523017b5fd3ce3935b53f187808305ae69c293a771b89f1305"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.2",
+    "file": "VS-Sable-HoseConnectors-0.1.2-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/B8Lm69aX/VS-Sable-HoseConnectors-0.1.2-1.21.1.jar",
+    "sha256": "6a7710a797627bdce08e5f2caa843fc2af032aa1debc7a312fb6fc6234893eb8",
+    "sha512": "4e517dea1555e8ce2b35390713b4cb4fdc7cb673a48a038b13fd274871f2e7d9acd09f0bffc20388f55abf4af21adc668a0073d5371a9cc82069a1d902b82d4a"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.1",
+    "file": "VS-Sable-HoseConnectors-0.1.1-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/lpaQ5s7q/VS-Sable-HoseConnectors-0.1.1-1.21.1.jar",
+    "sha256": "819e4773bbd0c50eeb81f027ab4b5504797995d96c5553085507cbc042cdf403",
+    "sha512": "d10fc693721f3b71437f2bfd32f2cd8126fcddbef8713fbdd6b481d3f987384fc5443ff74c07c0695e35e56eeed2d69c49a4e8c399a6fb367c266ccd8c368804"
+  },
+  {
+    "mod": "hose",
+    "version": "0.1.0",
+    "file": "vsHoseConnectors-0.1.0-neoforge-1.21.1.jar",
+    "url": "https://cdn.modrinth.com/data/YaZEkFmd/versions/u62ly3ez/vsHoseConnectors-0.1.0-neoforge-1.21.1.jar",
+    "sha256": "4e51cf8a3d1129d635e6e89562dcfe5c17595d9d9c374fbe63ca361ecd39a445",
+    "sha512": "805d4077df70926b11f92f596fdf4e103cafc66dac22d7944fc2d21494bbd6b70a1fb1adf92b8061bba692b6c1d3a3f3d627b234a43e13a63174d5f841c73ec4"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.7.0",
+    "file": "create_aeronautics_automated_logistics-0.7.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/ESwTkggq/create_aeronautics_automated_logistics-0.7.0.jar",
+    "sha256": "a7f1519f19b54363de387381e0e37192e0a5929c5f72d8e778425c1a39496956",
+    "sha512": "7a3e7e2942bf076e545dc7abf258b0e014244bf14aae84134f31d4e27b8d50da525ff41d23eaebcd24483c6f1206f269931038b18e7be04606fccc6c752ef103"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.6.2",
+    "file": "create_aeronautics_automated_logistics-0.6.2.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/EgPi4wq9/create_aeronautics_automated_logistics-0.6.2.jar",
+    "sha256": "b966fe666212da694ef19b292516643081b402c0af18549f94152dd387cc268e",
+    "sha512": "153f19bb6a8d1e7f78fbe2a9fbc825a30935c66ab0f0b15bda835071ec03c7f6b1f45d82edff75e431b3718f67712e4555c0af75057fca126dfe7afc84807299"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.6.1",
+    "file": "create_aeronautics_automated_logistics-0.6.1.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/OwMoQnML/create_aeronautics_automated_logistics-0.6.1.jar",
+    "sha256": "dbc1653827e882811dabf30c592eeff73f19d96f1b47a26f9f20f97e6bb71b30",
+    "sha512": "917cd9752182d607e93ba800b654c59f8bbd91bc5c3913babba8f72338beb2ebe628fd1243dbd9ea9025c6277201da82270dd3397d5660a5b6903fbf2004e009"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.6.0",
+    "file": "create_aeronautics_automated_logistics-0.6.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/b9UZAqAR/create_aeronautics_automated_logistics-0.6.0.jar",
+    "sha256": "a8de816009a5b4774b77465c17be5c8c5f3edf119ef6075521038d401bba90b3",
+    "sha512": "e0842c544093301f98ca8a1b98488e6d9e1d73e9b7e3e2b40fee00c51b9624a421a9053b78c02bec483915b8ebfeec6604bc537c1775b1d09281ffe3e2aec6de"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.5.2",
+    "file": "create_aeronautics_automated_logistics-0.5.2.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/mu6DXA7H/create_aeronautics_automated_logistics-0.5.2.jar",
+    "sha256": "1218d44f3fd65c1dc2fe59603704bfbb8806d3024978e28c69421802e40865ad",
+    "sha512": "7114dc961ff1fb20f19358721e32184eee20a5aad8123a2199152204745688bcaeabdfcf05aba016bf844caba90860ad7ac22c2c4e4ea71e9de3f80e2d3a7416"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.5.1",
+    "file": "create_aeronautics_automated_logistics-0.5.1.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/2EE3fjFn/create_aeronautics_automated_logistics-0.5.1.jar",
+    "sha256": "0ccbab22b6d2214ff2cd95dec3e8657ff8290ebc858b819797e4865d67c9214a",
+    "sha512": "f7a408ac9a15f8deb9a4ef34c5c50344701ec371d985731d9162c350f3f418295212b133988c60ce46373047664e62860345e3d718c16d44c534945beae1b196"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.5.0",
+    "file": "create_aeronautics_automated_logistics-0.5.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/DTSkhHT5/create_aeronautics_automated_logistics-0.5.0.jar",
+    "sha256": "8177485f1c1cb7392997961b0b70f99ab02a3e9fb7ef87451d5e0fafe89d7a50",
+    "sha512": "81cda50af12221078e0d5acaa44bca81651e160444e7405ce11fcfcb87ce828c1afae2446d4dc99b4f4a834b2e321350fee650014f2f1868b440fe6bf52455d6"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.4.5",
+    "file": "create_aeronautics_automated_logistics-0.4.5.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/GtQ3rltF/create_aeronautics_automated_logistics-0.4.5.jar",
+    "sha256": "2cfa78ec67ce7b66807dee46105e8da10c51d3b758c7a285337d114c766e7414",
+    "sha512": "3b81586b7fb2f0764cba50d4ceb4e35e50678c25d884ed60aefb909c203f308dad935bdac211a8c1d5c63fc0b55bb4a4567546ba9bd2cfe33a14ad0a8321aaca"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.4.4",
+    "file": "create_aeronautics_automated_logistics-0.4.4.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/zOV3xVbU/create_aeronautics_automated_logistics-0.4.4.jar",
+    "sha256": "8dcb325f24dcd382bc87f8a00a10b879fa536936943e9d5b2da19be41487e01a",
+    "sha512": "cc1e9909b101e4798ee911887f9d20f1cb530fbeba7722eeccc814ff17b535e4dc275b3194ccff074d810f14f5587bff71669095596a742fbcb7b4e4f0fc8479"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.4.3",
+    "file": "create_aeronautics_automated_logistics-0.4.3.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/RxXBelwR/create_aeronautics_automated_logistics-0.4.3.jar",
+    "sha256": "e5453cb936414c93836c8069d423f493c678bb31462370d4b53f423f66470ec4",
+    "sha512": "04e772e69f9369d1d113f2d0a20f6639bf1b5bce7310f736aeb23a785d0d4088be2548f340c449ff423a92bb4ddb357a07d9a6b12598601233721a2d1a927f02"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.4.2",
+    "file": "create_aeronautics_automated_logistics-0.4.2.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/zULOtmfn/create_aeronautics_automated_logistics-0.4.2.jar",
+    "sha256": "fa8a2363f6da9674fae97aac1fff7002747e13ed921c1c7a3dcc763184402898",
+    "sha512": "bf6b1f4159b33312657c8783dc09fc10819d86ede3af646e1002c4ce17eb2e5a4ae4a3c15c541147d24fe091cb52c57fd43aaa2554646852362e4a6237c7a81b"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.4.1",
+    "file": "create_aeronautics_automated_logistics-0.4.1.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/UTD5sbzG/create_aeronautics_automated_logistics-0.4.1.jar",
+    "sha256": "f1108cff1ee1f726867b184d3db5bb62ddc154cdcb952079ab2c908ccf5fcdc5",
+    "sha512": "91d28e8804b6701b9c7acf93b4b6041dfe296ff357b2d8263230b1b62f8a6008b340a48e1c2fc1ef258a13ecd0ce6bc4e492d0dd511c88fff14be89909b11784"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.4.0",
+    "file": "create_aeronautics_automated_logistics-0.4.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/BngGFM0a/create_aeronautics_automated_logistics-0.4.0.jar",
+    "sha256": "5d9ebc3859561523b170022ccd36f0b02f03ffd002d257320bb3a7cb08c705d0",
+    "sha512": "6b1155de508af51de8d4c1ff51310f840ce2b45a7f9d531e9e05b766060127ac6dfc445518a4efe715b929c624f36b6b820267284255c8769ac653e75c4036a2"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.3.0",
+    "file": "create_aeronautics_automated_logistics-0.3.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/Lr07X5oA/create_aeronautics_automated_logistics-0.3.0.jar",
+    "sha256": "d82198d1d9e3fe2ecb8de65b3da088d8ce3115df1e1442d6c08ad1e10cb9edaf",
+    "sha512": "a478c9296c006530032d48f02c347b1992b08e4e9d9bfda462accde33730e8622b861d5f22302f21d3cc295ca259b7f58dce99fa35e227682951a921274c8e95"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.2.0",
+    "file": "create_aeronautics_automated_logistics-0.2.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/48KFGAwo/create_aeronautics_automated_logistics-0.2.0.jar",
+    "sha256": "32782d80469d39648ec1a4d24aa65b2087aa5b25cd76b087607285998f260ca1",
+    "sha512": "5a106644255b7cee34210d8b7647155bdf3df6434812b5de00613e8cf301c5e1c88f8c94fdae0eeb1b5dbd418651796136f268c035e9634b70dc6454eda735c1"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.1.2",
+    "file": "create_aeronautics_automated_logistics-0.1.2.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/kRgEnabX/create_aeronautics_automated_logistics-0.1.2.jar",
+    "sha256": "2d57eb222b3740b45604b080ab14b0de71dca8880e70be54f6c31d4dc9a574e2",
+    "sha512": "eeaa883a39ba990d8332021f00d7db1881795f70da0ac7e2d04f3b5f65b58ce56fa8ac5a9eece5b8d3d1cc9828f1d0ba2c9f2f2e7d999c693c61ff16da289cdd"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.1.1",
+    "file": "create_aeronautics_logistics-0.1.1.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/3Fnw1I57/create_aeronautics_logistics-0.1.1.jar",
+    "sha256": "9a70692e1a2baa097a077464075decfde9f30a5e91b302d8aa2ec35d052a756d",
+    "sha512": "c076f7fbe97e745b145e99d39861e361eab75d62514222fbf764c69da79d2a69b946ed11b26045d7d01c51e4af958546ea15802b2ef1fc1dfb05310ca412d60a"
+  },
+  {
+    "mod": "logistics",
+    "version": "0.1.0",
+    "file": "create_aeronautics_logistics-0.1.0.jar",
+    "url": "https://cdn.modrinth.com/data/73ZXeRfx/versions/EvhgHyVq/create_aeronautics_logistics-0.1.0.jar",
+    "sha256": "eeee837eb04c1ca8083f6b1e57e488e966907cd6cd3e02604da13144acf26232",
+    "sha512": "42d0ace76963f5e79f8d9787fc8005f634ce9cf794502dcf6038bf696dfd392c18baa61cbdf0fc3139e875f09b6471349b7feca38a6ad7f34a0c7d9650bcf1e3"
+  },
+  {
+    "mod": "aero",
+    "version": "1.3.2+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.3.2.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/44pLdPGg/create-aeronautics-bundled-1.21.1-1.3.2.jar",
+    "sha256": "a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e",
+    "sha512": "dc7e8e1148fa442243889ba29412207137e1bb86206e6c92bc0a589f1374a466e93de22bdbf14f753984d86c29308fbbdc0f14a4b9618b14c0ac1666a36b46f5"
+  },
+  {
+    "mod": "aero",
+    "version": "1.3.1+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.3.1.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/Vzp221Un/create-aeronautics-bundled-1.21.1-1.3.1.jar",
+    "sha256": "b531dbe1081ee354f6e47ba4e0443b9caa648dfb8c82013a591a20836245bd84",
+    "sha512": "16ba7a2c8335443bdf6ad4777737b762f09452be2dd364f801fd20b35eb581473161763699ec37eb12d1aeaf8c18cf8299b2152e24334eedcc9fe662af5bbb27"
+  },
+  {
+    "mod": "aero",
+    "version": "1.3.0+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.3.0.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/w7zlLnea/create-aeronautics-bundled-1.21.1-1.3.0.jar",
+    "sha256": "482c90e0e6fe72f33fe7abb079e5fda581cd660ee53c38c44448a64283e1044c",
+    "sha512": "2abba2e166a0ec8d42ab06108b63070d61f985420ecca8739c5b2300561b31486b69b3ad13310b0c459edb9edebeffb55a4cdf4ce493805833d32f5bde9ce778"
+  },
+  {
+    "mod": "aero",
+    "version": "1.2.1+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.2.1.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/YhZLrAFC/create-aeronautics-bundled-1.21.1-1.2.1.jar",
+    "sha256": "5a8c6d168ec1b47ecee7f2e83a93accbca71544d2b14ca1ca1b1271855f26248",
+    "sha512": "c7899f8a693cf1b4c17a31faf64e631383f6df331b82b517ed6abe01b0464a9f10b226f0336fa8611c5af514375716c4d009d55c7f92640445c68239b63ebc03"
+  },
+  {
+    "mod": "aero",
+    "version": "1.1.3+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.1.3.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/1sv6OtSz/create-aeronautics-bundled-1.21.1-1.1.3.jar",
+    "sha256": "a182241a0254e22d32f537f397dd17c7d8729a027cda6915b698623bbacc1243",
+    "sha512": "94831bc4702b3864524258fa0a73a50ab3cd37e9c157b5c6688a6845b866ec5838452804050b55e490549d91dad909fc37f0d619f354c5676e2e2651b9c15ec6"
+  },
+  {
+    "mod": "aero",
+    "version": "1.1.0+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.1.0.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/trnVk44s/create-aeronautics-bundled-1.21.1-1.1.0.jar",
+    "sha256": "bb813d6fa1a52b1fef7b8d47a6fab16c6be063d9d7cf3fd41d9c948e4df93cbd",
+    "sha512": "6d6d84c4180d03885199ba6a0929c39f8321cb6f62ee4b33ff386237905dddf5db3e46563293f089c8f1b17d24446356f54be61d60390841144fd46f91951b2d"
+  },
+  {
+    "mod": "aero",
+    "version": "1.0.3+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.0.3.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/FIeWE7UC/create-aeronautics-bundled-1.21.1-1.0.3.jar",
+    "sha256": "b61744435b6b2d33019ac662526ee75e1deb1975511c3bd23774fda2d0dd8a9a",
+    "sha512": "3d7ef0e79b366567f2d5718806df16c8cb960b3ec0450c313b596b7262871d5b3f4f0635c8bce914b74908b5682c34235ada92792b1e288715aec7525193fb04"
+  },
+  {
+    "mod": "aero",
+    "version": "1.0.2+mc1.21.1",
+    "file": "create-aeronautics-bundled-1.21.1-1.0.2.jar",
+    "url": "https://cdn.modrinth.com/data/oWaK0Q19/versions/HY8u0JqC/create-aeronautics-bundled-1.21.1-1.0.2.jar",
+    "sha256": "509ddde6439d3d51e2227839c39510dbab9575cb16cbafaaf4d730704b84eed1",
+    "sha512": "d39a676c505b9f078bbfd55edf4b280edd4a8f1060e36c8a988e110933e685d08305994b9692688558b85ac6037acbd10b40f5457259a813446b89ed97a597f7"
+  }
+]

@@ -1,5 +1,7 @@
 # Blocks & Bogies 与 Electro Energetics（0.2.7）
 
+0.2.8 已扩大支持范围，并适配 CEE 旧版电阻配置，见 [依赖版本与兼容范围](DEPENDENCIES.md)。下面保留 0.2.7 首次适配时的实现说明和验证记录
+
 本次锁定 Minecraft 1.21.1 / NeoForge 下的发布版本：
 
 - [Blocks & Bogies 1.0.8](https://www.curseforge.com/minecraft/mc-mods/create-blocks-bogies/files/8723463)，文件 `create_bb-1.0.8-1.21.1.jar`

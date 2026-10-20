@@ -4,6 +4,12 @@ package com.guidedrailways;
 public final class ElectricDriveModel {
   private ElectricDriveModel() {}
 
+  public static double resistiveDemand(double voltage, double resistance) {
+    if (!Double.isFinite(resistance) || resistance <= 0) return .1;
+    double v = Double.isFinite(voltage) && Math.abs(voltage) >= 1 ? Math.abs(voltage) : 3000;
+    return Math.clamp(v * v / Math.max(.001, resistance), .1, 1e12);
+  }
+
   public static double resistance(double voltage, double watts) {
     double v = Double.isFinite(voltage) && Math.abs(voltage) >= 1 ? Math.abs(voltage) : 3000;
     double p = Double.isFinite(watts) ? Math.max(.1, watts) : .1;

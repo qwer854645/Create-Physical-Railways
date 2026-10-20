@@ -14,9 +14,9 @@
 
 ## 环境
 
-Minecraft **1.21.1** · NeoForge **21.1.233** · Create **6.0.10-280** · Sable **2.0.3** · Sable Companion **1.6.0**
+Minecraft **1.21.1** · NeoForge **21.1.264** · Create **6.0.10-280** · Sable **2.0.6** · Sable Companion **1.6.0**
 
-Steam ’n’ Rails 为可选兼容，当前锁定 **0.3.0-beta.2（NeoForge 1.21.1）**。
+Steam ’n’ Rails 为可选兼容，当前开发版本为 **0.3.0-beta.2（NeoForge 1.21.1）**。旧版支持范围与离线检查说明见 [依赖版本](docs/DEPENDENCIES.md)。
 
 项目仍在开发，尚不支持跨维度行驶，也未覆盖全部 Create 铁路功能。
 

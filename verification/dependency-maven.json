@@ -1,0 +1,17 @@
+[
+  {
+    "path": "net/createmod/ponder/ponder-neoforge/1.0.87+mc1.21.1/ponder-neoforge-1.0.87+mc1.21.1.jar",
+    "url": "https://maven.createmod.net/net/createmod/ponder/ponder-neoforge/1.0.87+mc1.21.1/ponder-neoforge-1.0.87+mc1.21.1.jar",
+    "sha256": "d6b7fdf94359f73dc1fee730eded898d51b3bf0d626710753253becd8e4e6bef"
+  },
+  {
+    "path": "net/createmod/ponder/ponder-neoforge/1.0.87+mc1.21.1/ponder-neoforge-1.0.87+mc1.21.1.module",
+    "url": "https://maven.createmod.net/net/createmod/ponder/ponder-neoforge/1.0.87+mc1.21.1/ponder-neoforge-1.0.87+mc1.21.1.module",
+    "sha256": "62531da9903df45e40efb582365f293c1ae50e5d39210a63ef36257672f88773"
+  },
+  {
+    "path": "net/createmod/ponder/ponder-neoforge/1.0.87+mc1.21.1/ponder-neoforge-1.0.87+mc1.21.1.pom",
+    "url": "https://maven.createmod.net/net/createmod/ponder/ponder-neoforge/1.0.87+mc1.21.1/ponder-neoforge-1.0.87+mc1.21.1.pom",
+    "sha256": "cd1548730c8895378de62490b60b1d0e106b68e2d71719105df5df0388eb4fc6"
+  }
+]

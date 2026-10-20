@@ -111,12 +111,8 @@ final class ElectroEnergetics implements TrainElectricity.Bridge {
           boolean accelerating =
               Math.abs(u.speed) + .1 < Math.abs(VehicleTraction.requestedSpeed(u));
           demand +=
-              accelerating
-                  ? CEEConfigs.server()
-                      .resistanceValues
-                      .electricTrainAccelerationPowerConsumption
-                      .get()
-                  : CEEConfigs.server().resistanceValues.electricTrainCruisePowerConsumption.get();
+              ElectroLoadConfig.watts(
+                  CEEConfigs.server().resistanceValues, accelerating, state.voltage);
         }
       }
       event.builder.ground(state.ground, 10);

@@ -13,6 +13,12 @@ public final class ElectricDriveCheck {
   public static void main(String[] args) {
     near(ElectricDriveModel.resistance(3000, 40000), 225);
     near(ElectricDriveModel.resistance(Double.NaN, 40000), 225);
+    near(ElectricDriveModel.resistiveDemand(3000, 225), 40000);
+    near(ElectricDriveModel.resistiveDemand(1500, 225), 10000);
+    near(ElectricDriveModel.resistiveDemand(-3000, 225), 40000);
+    near(ElectricDriveModel.resistiveDemand(0, 225), 40000);
+    near(ElectricDriveModel.resistiveDemand(3000, 0), .1);
+    near(ElectricDriveModel.resistiveDemand(3000, Double.NaN), .1);
     near(ElectricDriveModel.delivered(3000, 10, 1000), 25500);
     near(ElectricDriveModel.delivered(-3000, -10, 1000), 25500);
     near(ElectricDriveModel.delivered(999, 100, 1000), 0);

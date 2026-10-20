@@ -15,8 +15,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
     },
     remap = false)
 public abstract class HoseCargoBindingMixin {
-  @Inject(method = "onLoad", at = @At("RETURN"))
+  @Inject(method = "<init>", at = @At("RETURN"))
   private void guidedrailways$bind(CallbackInfo ci) {
+    CargoAdapters.bindConnector((BlockEntity) (Object) this);
+  }
+
+  // 0.2+ may resize or replace buffers while loading; older releases inherit onLoad.
+  @Inject(method = "onLoad", at = @At("RETURN"), require = 0)
+  private void guidedrailways$loaded(CallbackInfo ci) {
     CargoAdapters.bindConnector((BlockEntity) (Object) this);
   }
 }

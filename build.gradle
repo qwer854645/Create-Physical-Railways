@@ -81,9 +81,12 @@ neoForge {
 
 repositories {
     // Optional local mirror for development machines whose Gradle TLS requests reset.
-    // It contains only unmodified official NeoForge artifacts and is never packaged.
+    // It contains only unmodified official artifacts and is never packaged.
     if (file('libs/compat-maven').isDirectory()) {
-        maven { url = uri('libs/compat-maven'); content { includeModule 'net.neoforged', 'neoforge' } }
+        maven { url = uri('libs/compat-maven'); content {
+            includeModule 'net.neoforged', 'neoforge'
+            includeModule 'net.createmod.ponder', 'ponder-neoforge'
+        } }
     }
     mavenCentral()
     maven { url = 'https://maven.createmod.net' }
@@ -120,10 +123,11 @@ def extractSimulatedApi = tasks.register('extractSimulatedApi', Copy) {
 }
 
 dependencies {
-    def railwaysApi = file("libs/railways-${railways_version}.jar")
+    def railwaysApi = file(providers.gradleProperty('railways_api_jar').getOrElse("libs/railways-${railways_version}.jar"))
     if (!railwaysApi.exists()) throw new GradleException('Missing optional-mod compile API: run powershell -NoProfile -ExecutionPolicy Bypass -File verification/prepare_railways.ps1')
     compileOnly files(railwaysApi)
-    compileOnly files("libs/create_bb-1.0.8-1.21.1.jar", "libs/electroenergetics-1.21.1-1.1.4.jar")
+    compileOnly files(providers.gradleProperty('bnb_api_jar').getOrElse('libs/create_bb-1.0.8-1.21.1.jar'),
+                      providers.gradleProperty('cee_api_jar').getOrElse('libs/electroenergetics-1.21.1-1.1.4.jar'))
     if (simulatedApiFile.isPresent()) compileOnly files(simulatedApiFile.get())
     else if (simulatedBundle.exists()) compileOnly files(extractedSimulated).builtBy(extractSimulatedApi)
     else compileOnly('dev.simulated_team.simulated:simulated-neoforge-1.21.1:1.3.2') { transitive = false }
@@ -141,18 +145,18 @@ dependencies {
     compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}")
     jarJar(implementation("dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}"))
 
-    compileOnly("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") {
-        transitive = false
-    }
+    // The publisher release jar is also usable when the Sable Maven host is unavailable.
+    def sableRelease = file(providers.gradleProperty('sable_api_jar').getOrElse("libs/sable-neoforge-${minecraft_version}-${sable_version}.jar"))
+    if (sableRelease.exists()) compileOnly files(sableRelease)
+    else compileOnly("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") { transitive = false }
 
     devRuntimeMods("com.simibubi.create:create-${minecraft_version}:${create_version}") {
         transitive = false
     }
     devRuntimeMods("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
     devRuntimeMods("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
-    devRuntimeMods("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") {
-        transitive = false
-    }
+    if (sableRelease.exists()) devRuntimeMods files(sableRelease)
+    else devRuntimeMods("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") { transitive = false }
 }
 
 tasks.register('copyDevMods', Copy) {
@@ -163,6 +167,18 @@ tasks.register('copyDevMods', Copy) {
     }
     from configurations.devRuntimeMods
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    doFirst {
+        // Copy leaves old versions behind. Remove only superseded managed development jars.
+        def selected = (fileTree('libs') { include '*.jar' }.files + configurations.devRuntimeMods.files)*.name as Set
+        def managed = ['create-1.21.1-', 'sable-neoforge-1.21.1-', 'ponder-neoforge-', 'flywheel-neoforge-1.21.1-',
+                       'railways-', 'create_bb-', 'electroenergetics-', 'VS-Sable-HoseConnectors-',
+                       'create-aeronautics-bundled-', 'create_aeronautics_automated_logistics-']
+        file('run/mods').listFiles()?.findAll { f ->
+            f.isFile() && f.name.endsWith('.jar') && !selected.contains(f.name) && managed.any { f.name.startsWith(it) }
+        }?.each { f ->
+            if (!f.delete()) throw new GradleException("Cannot replace obsolete development mod: ${f.name}")
+        }
+    }
 }
 
 tasks.matching { it.name == 'runClient' || it.name == 'runServer' }.configureEach {
@@ -533,3 +549,11 @@ tasks.register('checkBogeySelectionCodec', JavaExec) {
     mainClass = 'com.guidedrailways.BogeySelectionCodecCheck'
 }
 tasks.named('check') { dependsOn 'checkBogeySelectionCodec' }
+
+tasks.register('checkDependencyRanges', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.DependencyRangeCheck'
+}
+
+tasks.named('check') { dependsOn 'checkDependencyRanges' }

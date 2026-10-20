@@ -37,7 +37,9 @@ public final class CargoCompatPlugin implements IMixinConfigPlugin {
               Set.of(
                   "updateShape(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/Direction;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/LevelAccessor;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;",
                   "playerWillDestroy(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/entity/player/Player;)Lnet/minecraft/world/level/block/state/BlockState;"),
-          "HoseCargoBindingMixin", Set.of("onLoad()V"),
+          "HoseCargoBindingMixin",
+              Set.of(
+                  "<init>(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V"),
           "LogisticsSnapshotMixin",
               Set.of(
                   "capture(Lnet/minecraft/world/level/Level;Ljava/util/List;)Lnet/sprocketgames/create_aeronautics_automated_logistics/cargo/LinkedCargoSnapshot;",

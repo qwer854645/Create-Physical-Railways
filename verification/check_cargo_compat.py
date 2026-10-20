@@ -73,10 +73,10 @@ def main():
         missing = set(expected) - actual
         assert not missing, f'{cls}: missing {sorted(missing)}'
         count += len(expected)
-    for name, body in re.findall(r'"(\w+Mixin)",Set\.of\((.*?)\)(?:,|\);)', plugin):
+    for name, body in re.findall(r'"(\w+Mixin)"\s*,\s*Set\.of\(((?:\s|,|"(?:[^"\\]|\\.)*")*)\)', plugin):
         expected = re.findall(r'"([^"]+)"', body)
         mixin = (source / (name + '.java')).read_text('utf-8')
-        target = re.search(r'@Mixin\(targets=("[^"]+"|\{[^}]+\})', mixin).group(1)
+        target = re.search(r'@Mixin\(\s*targets\s*=\s*("[^"]+"|\{[^}]+\})', mixin).group(1)
         for cls in re.findall(r'"([^"]+)"', target):
             check(cls, expected)
     check('dev.simulated_team.simulated.content.blocks.docking_connector.DockingConnectorBlockEntity', [
