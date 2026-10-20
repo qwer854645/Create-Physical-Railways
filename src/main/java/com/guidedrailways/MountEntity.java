@@ -14,7 +14,9 @@ public final class MountEntity extends KineticBlockEntity {
   BogeyVariant variant = BogeyVariant.DEFAULT;
 
   double pivotHeight() {
-    return variant.pivotHeight();
+    return getBlockState().getValue(MountBlock.COMPACT)
+        ? variant.compactPivotHeight()
+        : variant.pivotHeight();
   }
 
   org.joml.Quaterniond pivotReference = new org.joml.Quaterniond();

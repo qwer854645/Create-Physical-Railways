@@ -192,9 +192,7 @@ final class VehiclePlacement {
                 .map(
                     u ->
                         new RailPlacement.Dimensions(
-                            u.mount.variant.ride,
-                            u.mount.variant.half,
-                            u.mount.variant.pivotHeight()))
+                            u.mount.variant.ride, u.mount.variant.half, u.mount.pivotHeight()))
                 .toList());
     if (pipe.getLinearVelocity(selected.carrier, new Vector3d()).length() > .25)
       throw new IllegalArgumentException("message.guidedrailways.rail.stop");
@@ -332,7 +330,7 @@ final class VehiclePlacement {
             0,
             selection.variant().ride,
             selection.variant().half,
-            selection.variant().pivotHeight());
+            selection.variant().compactPivotHeight());
     checkPlacementSpace(level, fit.origin(), fit.rotation(), selection.variant(), gauge, List.of());
     ServerSubLevel bogie = null, carrier = null;
     try {
@@ -348,13 +346,16 @@ final class VehiclePlacement {
       applyBogeySelection(bogie, selection);
       var upperOrigin =
           new Vector3d(fit.origin())
-              .add(new Vector3d(0, selection.variant().plateOffset(), 0).rotate(fit.rotation()));
+              .add(
+                  new Vector3d(0, selection.variant().compactPlateOffset(), 0)
+                      .rotate(fit.rotation()));
       carrier =
           createBody(
               level,
               Content.MOUNT
                   .get()
                   .defaultBlockState()
+                  .setValue(MountBlock.COMPACT, true)
                   .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
               upperOrigin,
               fit.rotation());
@@ -404,7 +405,7 @@ final class VehiclePlacement {
     var gauge = selection.gauge() == null ? RailGauge.STANDARD : selection.gauge();
     var origin =
         new Vector3d(pivot)
-            .sub(new Vector3d(0, selection.variant().pivotHeight(), 0).rotate(rotation));
+            .sub(new Vector3d(0, selection.variant().compactPivotHeight(), 0).rotate(rotation));
     checkPlacementSpace(level, origin, rotation, selection.variant(), gauge, List.of());
     var bogie =
         createBody(
@@ -426,6 +427,7 @@ final class VehiclePlacement {
           Content.MOUNT
               .get()
               .defaultBlockState()
+              .setValue(MountBlock.COMPACT, true)
               .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
           3);
       if (!(level.getBlockEntity(pos) instanceof MountEntity mount))

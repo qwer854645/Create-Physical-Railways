@@ -55,7 +55,7 @@ public final class Content {
   }
 
   public static final DeferredBlock<MountBlock> MOUNT =
-      BLOCKS.register("bogie_mount", () -> new MountBlock(metal()));
+      BLOCKS.register("bogie_mount", () -> new MountBlock(metal().dynamicShape()));
   public static final DeferredBlock<CollisionPartBlock> COLLISION =
       BLOCKS.register("bogie_collision", () -> new CollisionPartBlock(metal().dynamicShape()));
   public static final DeferredBlock<BogieBlock> BOGIE =

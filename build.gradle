@@ -565,3 +565,11 @@ tasks.register('checkWheelAnimation', JavaExec) {
 }
 
 tasks.named('check') { dependsOn 'checkWheelAnimation' }
+
+tasks.register('checkMountSurface', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.MountSurfaceCheck'
+}
+
+tasks.named('check') { dependsOn 'checkMountSurface' }

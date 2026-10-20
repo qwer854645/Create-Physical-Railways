@@ -11,6 +11,8 @@ public final class BogeyVariant {
   public final RailGauge gauge;
   public final double renderY, tread, ride, half, animationRatio, supportBottom;
   public final int mountTop;
+  public final int compactMountTop;
+  final List<double[]> compactPlate;
   final List<double[]> boxes;
   private final int index;
 
@@ -24,6 +26,8 @@ public final class BogeyVariant {
     ride = BogieGeometry.RIDE_HEIGHT;
     half = 1;
     mountTop = 2;
+    compactMountTop = 2;
+    compactPlate = List.of(new double[] {0, .75, 0, 1, 1, 1});
     supportBottom = BogieGeometry.SUPPORT_BOTTOM;
     animationRatio = 1;
     boxes = List.of();
@@ -39,6 +43,14 @@ public final class BogeyVariant {
     ride = data.get("ride").getAsDouble();
     half = data.get("half").getAsDouble();
     mountTop = data.get("mountTop").getAsInt();
+    compactMountTop = data.get("compactMountTop").getAsInt();
+    var plate = new ArrayList<double[]>();
+    for (var value : data.getAsJsonArray("compactPlate")) {
+      double[] b = new double[6];
+      for (int i = 0; i < 6; i++) b[i] = value.getAsJsonArray().get(i).getAsDouble();
+      plate.add(b);
+    }
+    compactPlate = List.copyOf(plate);
     animationRatio = data.get("animationRatio").getAsDouble();
     supportBottom = data.get("supportBottom").getAsDouble();
     var list = new ArrayList<double[]>();
@@ -106,6 +118,14 @@ public final class BogeyVariant {
 
   public double plateOffset() {
     return mountTop - .5 - ride;
+  }
+
+  public double compactPlateOffset() {
+    return compactMountTop - .5 - ride;
+  }
+
+  public double compactPivotHeight() {
+    return compactPlateOffset() + BogieGeometry.MOUNT_UNDERSIDE - .5;
   }
 
   public double pivotHeight() {

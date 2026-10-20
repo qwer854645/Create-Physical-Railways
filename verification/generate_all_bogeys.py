@@ -79,4 +79,5 @@ for index,row in enumerate(rows,start):
 dest=Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json');dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')
 print('Wrote',len(out),'native style/size profiles',dest)
 write_models(out)
+dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')
 print('Regenerate mass selectors with gradlew generateCollisionMetadata after compiling the catalog')

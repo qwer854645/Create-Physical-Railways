@@ -13,6 +13,9 @@ import net.minecraft.world.phys.shapes.*;
 
 public final class MountBlock extends ComponentBlock
     implements IRotate, IBE<MountEntity>, BlockSubLevelAssemblyListener {
+  public static final net.minecraft.world.level.block.state.properties.BooleanProperty COMPACT =
+      net.minecraft.world.level.block.state.properties.BooleanProperty.create("compact");
+
   private record Transfer(
       UUID bogie,
       boolean brake,
@@ -25,7 +28,8 @@ public final class MountBlock extends ComponentBlock
 
   MountBlock(Properties p) {
     super(p);
-    registerDefaultState(stateDefinition.any().setValue(BogieBlock.STYLE, 0));
+    registerDefaultState(
+        stateDefinition.any().setValue(BogieBlock.STYLE, 0).setValue(COMPACT, false));
   }
 
   @Override
@@ -33,26 +37,62 @@ public final class MountBlock extends ComponentBlock
       net.minecraft.world.level.block.state.StateDefinition.Builder<
               net.minecraft.world.level.block.Block, BlockState>
           builder) {
-    builder.add(BogieBlock.STYLE);
+    builder.add(BogieBlock.STYLE, COMPACT);
   }
 
-  private static final VoxelShape SHAPE =
-      Shapes.or(
-          box(0, 12, 0, 16, 16, 16), box(5, BogieGeometry.SUPPORT_BOTTOM * 16, 5, 11, 12, 11));
-  private static final Map<BogeyVariant, VoxelShape> SHAPES = new HashMap<>();
-
-  static {
-    for (var v : BogeyVariant.values())
-      SHAPES.put(
-          v,
-          v == BogeyVariant.DEFAULT
-              ? SHAPE
-              : Shapes.or(box(0, 12, 0, 16, 16, 16), box(5, v.supportBottom * 16, 5, 11, 12, 11)));
-  }
+  private static final VoxelShape TOP = box(0, 15.75, 0, 16, 16, 16);
 
   @Override
   protected VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) {
-    return SHAPES.get(BogieBlock.variant(s));
+    return shape(BogieBlock.variant(s), s.getValue(COMPACT));
+  }
+
+  static VoxelShape shape(BogeyVariant variant, boolean compact) {
+    return MountShapes.get(variant, compact);
+  }
+
+  @Override
+  protected VoxelShape getBlockSupportShape(BlockState s, BlockGetter l, BlockPos p) {
+    return TOP;
+  }
+
+  @Override
+  protected VoxelShape getInteractionShape(BlockState s, BlockGetter l, BlockPos p) {
+    return TOP;
+  }
+
+  @Override
+  protected net.minecraft.world.ItemInteractionResult useItemOn(
+      net.minecraft.world.item.ItemStack stack,
+      BlockState state,
+      Level level,
+      BlockPos pos,
+      net.minecraft.world.entity.player.Player player,
+      net.minecraft.world.InteractionHand hand,
+      net.minecraft.world.phys.BlockHitResult hit) {
+    if (!level.isClientSide && stack.getItem() instanceof net.minecraft.world.item.BlockItem item) {
+      var context =
+          new net.minecraft.world.item.context.BlockPlaceContext(player, hand, stack, hit);
+      var target = context.getClickedPos();
+      var placed = item.getBlock().getStateForPlacement(context);
+      boolean replaceable = level.getBlockState(target).canBeReplaced(context);
+      boolean survives = placed != null && placed.canSurvive(level, target);
+      boolean clear =
+          placed != null && level.isUnobstructed(placed, target, CollisionContext.of(player));
+      if (!context.canPlace() || !replaceable || !survives || !clear)
+        org.slf4j.LoggerFactory.getLogger("guidedrailways")
+            .info(
+                "[MountPlacement] style={} compact={} face={} item={} target={} replaceable={} survives={} unobstructed={}",
+                BogieBlock.variant(state).id,
+                state.getValue(COMPACT),
+                hit.getDirection(),
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item),
+                target,
+                replaceable,
+                survives,
+                clear);
+    }
+    return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
   }
 
   static void updateStyle(MountEntity mount) {
