@@ -57,7 +57,7 @@ public final class BogieCollisionCheck {
             double mass;
             if(cell.part()==BogieCollision.CENTRE_PART)mass=core.getAsJsonObject("properties").get("sable:mass").getAsDouble();
             else{
-                var overrides=parts.getAsJsonObject("overrides");var override=overrides.getAsJsonObject("gauge=0,part="+cell.part());
+                var overrides=parts.getAsJsonObject("overrides");var override=overrides.getAsJsonObject("style=0,gauge=0,part="+cell.part());
                 mass=override==null?parts.getAsJsonObject("properties").get("sable:mass").getAsDouble():override.get("sable:mass").getAsDouble();
             }
             check(mass>=0,"mass may not be negative");

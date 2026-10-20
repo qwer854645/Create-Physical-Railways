@@ -62,8 +62,12 @@ public final class RailPlacement {
     public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,double ride,double halfWheelbase){
         return carriage(route,seats,selected,localForward,ride,halfWheelbase,BogieGeometry.PIVOT_HEIGHT);
     }
+    public record Dimensions(double ride,double halfWheelbase,double pivotHeight){}
     public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,double ride,double halfWheelbase,double pivotHeight){
-        if(seats.isEmpty()||selected<0||selected>=seats.size())throw new IllegalArgumentException("message.guidedrailways.rail.no_mount");
+        return carriage(route,seats,selected,localForward,java.util.Collections.nCopies(seats.size(),new Dimensions(ride,halfWheelbase,pivotHeight)));
+    }
+    public static Car carriage(Route route,List<Vector3d> seats,int selected,Vector3dc localForward,List<Dimensions> dimensions){
+        if(seats.isEmpty()||dimensions.size()!=seats.size()||selected<0||selected>=seats.size())throw new IllegalArgumentException("message.guidedrailways.rail.no_mount");
         var arcs=new double[seats.size()];var anchor=seats.get(selected);
         int pa=0,pb=0;double spread=0;
         for(int i=0;i<seats.size();i++)for(int j=i+1;j<seats.size();j++)if(seats.get(i).distanceSquared(seats.get(j))>spread){spread=seats.get(i).distanceSquared(seats.get(j));pa=i;pb=j;}
@@ -72,7 +76,7 @@ public final class RailPlacement {
         for(int i=0;i<arcs.length;i++)arcs[i]=new Vector3d(seats.get(i)).sub(anchor).dot(along);
         Quaterniond rotation=new Quaterniond();Vector3d position=new Vector3d();var bogies=new ArrayList<Bogie>();
         for(int iteration=0;iteration<40;iteration++){
-            bogies.clear();for(double arc:arcs)bogies.add(bogie(route,arc,ride,halfWheelbase,pivotHeight));
+            bogies.clear();for(int i=0;i<arcs.length;i++){var d=dimensions.get(i);bogies.add(bogie(route,arcs[i],d.ride,d.halfWheelbase,d.pivotHeight));}
             var worldUp=new Vector3d();for(var b:bogies)worldUp.add(new Vector3d(0,1,0).rotate(b.rotation));worldUp.normalize();
             if(spread>1e-8){
                 var localLine=new Vector3d(seats.get(pb)).sub(seats.get(pa));

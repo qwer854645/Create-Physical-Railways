@@ -220,5 +220,8 @@
   "tooltip.guidedrailways.bogey.menu": "Press %s to select a style before placing",
   "tooltip.guidedrailways.bogey.selected": "Selected style: %s",
   "message.guidedrailways.bogey.gauge": "Selected style does not fit this track",
-  "message.guidedrailways.bogey.unsupported": "This style or size is not yet supported by physical bogeys"
+  "message.guidedrailways.bogey.unsupported": "Selected style is not in the current bogey compatibility catalog",
+  "gui.guidedrailways.bogey.size": "Size: %s",
+  "gui.guidedrailways.bogey.small": "Small",
+  "gui.guidedrailways.bogey.large": "Large"
 }

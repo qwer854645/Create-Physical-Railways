@@ -1,37 +1,22 @@
 package com.guidedrailways;
 import com.railwayteam.railways.content.bogey_menu.handler.BogeyMenuHandlerServer;
-import com.railwayteam.railways.registry.CRBogeyStyles;
 import com.simibubi.create.AllBogeyStyles;
-import com.simibubi.create.content.trains.bogey.BogeySizes;
+import com.simibubi.create.content.trains.bogey.*;
 import net.minecraft.server.level.ServerPlayer;
-
 final class SteamRailwaysBogeys implements PhysicalBogeySelection.Bridge {
-    @Override public PhysicalBogeySelection.Selection selected(ServerPlayer player){
-        var selection=BogeyMenuHandlerServer.getStyle(player.getUUID());var style=selection.getFirst();var size=selection.getSecond();
-        return resolve(style,size);
-    }
-    private static PhysicalBogeySelection.Selection resolve(com.simibubi.create.content.trains.bogey.BogeyStyle style,BogeySizes.BogeySize size){
-        // Native packets explicitly allow an unspecified size. Resolve it from the style,
-        // and compare registered size IDs rather than requiring the very same Java object.
-        if(size==null&&style.validSizes().contains(BogeySizes.SMALL))size=BogeySizes.SMALL;
-        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeySelection] requested style={} size={}",style.id,size==null?"unspecified":size.id());
-        boolean small=size!=null&&size.id().equals(BogeySizes.SMALL.id());
-        if(style.id.equals(AllBogeyStyles.STANDARD.id)&&small)return new PhysicalBogeySelection.Selection(null,BogeyVariant.DEFAULT,style.defaultData.copy());
-        if(style.id.equals(CRBogeyStyles.MONOBOGEY.id)&&small){
-            return new PhysicalBogeySelection.Selection(RailGauge.MONORAIL,BogeyVariant.DEFAULT,style.defaultData.copy());
-        }
-        if(style.id.equals(CRBogeyStyles.WIDE_DEFAULT.id)&&small)return new PhysicalBogeySelection.Selection(RailGauge.WIDE,BogeyVariant.DEFAULT,style.defaultData.copy());
-        if(style.id.equals(CRBogeyStyles.NARROW_DEFAULT.id)&&small)return new PhysicalBogeySelection.Selection(RailGauge.NARROW,BogeyVariant.DEFAULT,style.defaultData.copy());
-        var variant=BogeyVariant.find(style.id.toString());
-        if(variant==null||variant==BogeyVariant.DEFAULT||!small)throw new IllegalArgumentException("message.guidedrailways.bogey.unsupported");
-        return new PhysicalBogeySelection.Selection(RailGauge.STANDARD,variant,style.defaultData.copy());
+    @Override public PhysicalBogeySelection.Selection selected(ServerPlayer player){var s=BogeyMenuHandlerServer.getStyle(player.getUUID());return resolve(s.getFirst(),s.getSecond());}
+    private static PhysicalBogeySelection.Selection resolve(BogeyStyle style,BogeySizes.BogeySize size){
+        if(size==null)size=style.validSizes().stream().sorted(java.util.Comparator.comparing(s->s.id().toString())).findFirst().orElse(null);
+        var variant=size==null?null:BogeyVariant.find(style.id.toString(),size.id().toString());
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeySelection] requested style={} size={} variant={}",style.id,size==null?"unspecified":size.id(),variant);
+        if(variant==null)throw new IllegalArgumentException("message.guidedrailways.bogey.unsupported");
+        boolean automatic=style.id.equals(AllBogeyStyles.STANDARD.id)&&size.id().equals(BogeySizes.SMALL.id());
+        return new PhysicalBogeySelection.Selection(automatic?null:variant.gauge,variant,style.defaultData.copy());
     }
     static void verifyRegisteredStyles(){
-        for(var style:java.util.List.of(AllBogeyStyles.STANDARD,CRBogeyStyles.FREIGHT,CRBogeyStyles.PASSENGER,CRBogeyStyles.MODERN,CRBogeyStyles.BLOMBERG,CRBogeyStyles.Y25,CRBogeyStyles.WIDE_DEFAULT,CRBogeyStyles.NARROW_DEFAULT,CRBogeyStyles.MONOBOGEY)){
-            var explicit=resolve(style,BogeySizes.SMALL);var unspecified=resolve(style,null);
-            if(explicit.variant()!=unspecified.variant()||explicit.gauge()!=unspecified.gauge())throw new IllegalStateException("Native bogey size resolution differs for "+style.id);
-        }
-        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeySelection] registered style checks passed: automatic default + five double-axle variants + wide/narrow/mono defaults");
+        int count=0;for(var style:AllBogeyStyles.BOGEY_STYLES.values())if(style.id.getNamespace().equals("railways")||style==AllBogeyStyles.STANDARD)for(var size:style.validSizes()){resolve(style,size);count++;}
+        if(count!=BogeyVariant.values().length-1)throw new IllegalStateException("Native bogey catalog mismatch: "+count);
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[BogeySelection] all {} installed native style/size profiles resolved",count);
     }
     private SteamRailwaysBogeys(){}
     static void register(){PhysicalBogeySelection.bridge=new SteamRailwaysBogeys();}

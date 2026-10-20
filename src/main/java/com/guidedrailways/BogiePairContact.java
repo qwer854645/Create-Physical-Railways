@@ -29,7 +29,7 @@ public final class BogiePairContact {
     }}
     public static Vector3dc offset(RailGauge gauge){return PROFILES.get(gauge).offset;}
     public static Vector3dc half(RailGauge gauge){return PROFILES.get(gauge).half;}
-    private static final Map<BogeyVariant,Bounds> NATIVE=new EnumMap<>(BogeyVariant.class);
+    private static final Map<BogeyVariant,Bounds> NATIVE=new HashMap<>();
     static{for(var v:BogeyVariant.values())if(v!=BogeyVariant.DEFAULT){
         var lo=new Vector3d(Double.POSITIVE_INFINITY);var hi=new Vector3d(Double.NEGATIVE_INFINITY);
         for(var b:BogieCollision.boxes(RailGauge.STANDARD,v)){lo.min(new Vector3d(b.x0(),b.y0(),b.z0()));hi.max(new Vector3d(b.x1(),b.y1(),b.z1()));}

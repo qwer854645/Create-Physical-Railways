@@ -68,7 +68,7 @@ public final class RailwaysCheck {
         for(var gauge:RailGauge.values()){
             var cells=BogieCollision.cells(gauge);int outer=cells.stream().mapToInt(c->Math.abs(c.x())).max().orElse(1);int count=0;
             for(var c:cells)if(c.y()==0&&Math.abs(c.x())==outer&&Math.abs(c.z())==1){
-                String massKey="gauge="+gauge.ordinal()+",part="+c.part();check(mass.has(massKey)&&mass.getAsJsonObject(massKey).get("sable:mass").getAsDouble()==8,"ballast remains symmetric at the four outer corners for every geometry profile");count++;
+                String massKey="style=0,gauge="+gauge.ordinal()+",part="+c.part();check(mass.has(massKey)&&mass.getAsJsonObject(massKey).get("sable:mass").getAsDouble()==8,"ballast remains symmetric at the four outer corners for every geometry profile");count++;
             }
             check(count==4,"every bogie retains four equal ballast cells");
         }

@@ -1,4 +1,6 @@
-# Create: Guided Railways 0.1.58
+# Create: Guided Railways 0.1.59
+
+0.1.59 覆盖安装 Beta 的全部 39 种转向架款式／尺寸组合，补齐尺寸选择、原生缺失图标回退与模型高度补偿，按款式生成碰撞和安装高度。构建检查通过，游戏内验收待完成。见 [适配范围与验收](docs/RAILWAY_BOGEYS.md)
 
 0.1.58 将转向架统一为一个物品，款式在放置前选择，标准小型款按目标铁路自动确定轨距；旧物品保留并可一比一转换。见 [选择、兼容范围与验收](docs/RAILWAY_BOGEYS.md)
 
@@ -29,7 +31,7 @@ Minecraft 1.21.1 / NeoForge 21.1.233 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
 
 ## Steam ’n’ Rails 可选兼容
 
-锁定 `0.3.0-beta.2+neoforge-mc1.21.1`，不是对其他 Beta 的兼容承诺。安装后可在创造物品栏找到窄轨、宽轨和单轨物理转向架；普通款用于标准轨，单轨款仅用于单轨梁，通用轨可承载三种普通轮轨款式
+锁定 `0.3.0-beta.2+neoforge-mc1.21.1`，不是对其他 Beta 的兼容承诺。安装后使用统一物理转向架物品，在 Railway 原生菜单选择款式和尺寸；标准小型款按目标轨道确定轨距，专用款需匹配目标轨距，单轨款用于单轨梁
 
 开发环境首次准备执行 `powershell -NoProfile -ExecutionPolicy Bypass -File verification/prepare_railways.ps1`，然后正常构建；发布包不包含 Steam ’n’ Rails。未安装时不加载对应适配器，保留原有标准轨功能
 

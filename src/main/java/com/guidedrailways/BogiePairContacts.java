@@ -25,7 +25,7 @@ final class BogiePairContacts {
         }
         bodies.sort(Comparator.comparing(b->b.unit.bogie.getUniqueId()));var seen=new HashSet<Pair>();
         for(int i=0;i<bodies.size();i++)for(int j=i+1;j<bodies.size();j++){
-            var a=bodies.get(i);var b=bodies.get(j);if(a.pose.center().distanceSquared(b.pose.center())>36)continue;
+            var a=bodies.get(i);var b=bodies.get(j);double reach=a.pose.half().length()+b.pose.half().length()+BogiePairContact.SKIN;if(a.pose.center().distanceSquared(b.pose.center())>reach*reach)continue;
             var key=new Pair(a.unit.bogie.getUniqueId(),b.unit.bogie.getUniqueId());var old=live.get(key);
             if(old!=null&&(old.a!=a.unit||old.b!=b.unit||!old.joint.isValid())){old.close();live.remove(key);old=null;}
             var contact=BogiePairContact.find(a.pose,b.pose,old==null?null:old.normal);if(contact==null)continue;

@@ -51,6 +51,10 @@ neoForge {
 
         client {
             client()
+            if (project.hasProperty('captureBogeys')) {
+                systemProperty 'guidedrailways.captureBogeys', 'true'
+                systemProperty 'guidedrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
+            }
             gameDirectory = file('run')
             taskBefore tasks.named('prepareDevClientConfig')
             if (project.hasProperty('srailDemoWorld')) {
