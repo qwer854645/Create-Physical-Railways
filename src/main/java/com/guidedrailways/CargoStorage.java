@@ -47,10 +47,6 @@ public final class CargoStorage {
 
   private static final Map<ServerLevel, Map<UUID, Snapshot>> CACHE = new WeakHashMap<>();
 
-  private record Membership(long tick, Map<UUID, ServerSubLevel> bodies) {}
-
-  private static final Map<ServerLevel, Membership> MEMBERSHIP = new WeakHashMap<>();
-
   private CargoStorage() {}
 
   static Consist consist(ServerLevel level, ServerSubLevel root) {
@@ -258,26 +254,16 @@ public final class CargoStorage {
   public static ServerSubLevel trainBody(ServerLevel level, BlockPos pos) {
     if (!(SableCompanion.INSTANCE.getContaining(level, pos) instanceof ServerSubLevel body))
       return null;
-    var membership = MEMBERSHIP.get(level);
-    if (membership == null || membership.tick != level.getGameTime()) {
-      var bodies = new HashMap<UUID, ServerSubLevel>();
-      for (var unit : VehiclePhysics.cargoUnits(level))
-        if (!unit.carrier.isRemoved() && !bodies.containsKey(unit.carrier.getUniqueId()))
-          bodies.putAll(consist(level, unit.carrier).bodies);
-      membership = new Membership(level.getGameTime(), bodies);
-      MEMBERSHIP.put(level, membership);
-    }
-    return membership.bodies.get(body.getUniqueId());
+    var group = TrainConsists.get(level).group(body.getUniqueId());
+    return group == null || group.units().isEmpty() ? null : group.bodies().get(body.getUniqueId());
   }
 
   static void topologyChanged(ServerLevel level) {
     CACHE.remove(level);
-    MEMBERSHIP.remove(level);
   }
 
   static void unload(ServerLevel level) {
     CACHE.remove(level);
-    MEMBERSHIP.remove(level);
     CargoTransfers.unload(level);
   }
 }

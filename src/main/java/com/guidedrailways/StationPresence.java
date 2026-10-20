@@ -27,23 +27,17 @@ public final class StationPresence {
         && STATES.get(server).present.contains(pos);
   }
 
-  static void tick(ServerLevel level, Collection<VehiclePhysics.Unit> units) {
+  static void tick(ServerLevel level) {
     var state = STATES.computeIfAbsent(level, k -> new State());
     var next = new HashSet<BlockPos>();
     var seen = new HashSet<Key>();
-    var groups = new HashMap<DriverConsoleEntity, List<VehiclePhysics.Unit>>();
-    for (var u : units)
-      if (u.driver != null
-          && !u.carrier.isRemoved()
-          && !u.bogie.isRemoved()
-          && !u.mount.isRemoved()
-          && u.lastSeen + 2 >= level.getGameTime())
-        groups.computeIfAbsent(u.driver, k -> new ArrayList<>()).add(u);
     var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
-    var links = CouplerConnections.bodyLinks(level);
-    for (var entry : groups.entrySet()) {
-      var owner = entry.getKey();
-      var group = entry.getValue();
+    for (var component : TrainConsists.get(level).groups()) {
+      var group = component.units();
+      if (group.isEmpty()) continue;
+      var owner = group.getFirst().driver;
+      if (owner == null) continue;
+      var links = component.links();
       if (group.stream().anyMatch(u -> u.detached)) continue;
       int direction =
           Math.abs(owner.actual) > .12

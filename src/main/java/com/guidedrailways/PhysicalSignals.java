@@ -156,7 +156,7 @@ public final class PhysicalSignals {
                 .addAll(samples));
     consistAnchors.forEach((owner, samples) -> connectTree(s, level, samples, occupied.get(owner)));
     var bareBodies = new HashSet<UUID>();
-    for (var link : CouplerConnections.bodyLinks(level))
+    for (var link : TrainConsists.get(level).links())
       for (var body : List.of(link.a(), link.b())) {
         if (anchors.containsKey(body.getUniqueId()) || !bareBodies.add(body.getUniqueId()))
           continue;
