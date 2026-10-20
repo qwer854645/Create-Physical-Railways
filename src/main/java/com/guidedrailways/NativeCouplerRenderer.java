@@ -1,6 +1,7 @@
 package com.guidedrailways;
 
 import com.google.gson.*;
+import com.guidedrailways.NativeCouplerAnimation.Part;
 import com.mojang.blaze3d.vertex.*;
 import com.railwayteam.railways.content.buffer.IDyedBuffer;
 import dev.ryanhcode.sable.companion.*;
@@ -30,16 +31,6 @@ import org.joml.Vector3d;
  * mechanical part.
  */
 final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityRenderer<T> {
-  private enum Part {
-    BODY,
-    MOUNT,
-    PIN,
-    LINK,
-    JAW,
-    RIGGING,
-    SCREW
-  }
-
   private static final Map<String, Mesh> MESHES = new HashMap<>();
 
   private record Element(BlockElement element, Part part) {}
@@ -130,24 +121,6 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
         : "headstock/" + mount + "_" + modelName(kind) + (flip ? "_upside_down" : "");
   }
 
-  private static void groups(JsonArray groups, Map<Integer, String> names) {
-    if (groups == null) return;
-    for (var value : groups) {
-      if (!value.isJsonObject()) continue;
-      var group = value.getAsJsonObject();
-      var children = group.getAsJsonArray("children");
-      if (children == null) continue;
-      for (var child : children)
-        if (child.isJsonPrimitive() && child.getAsJsonPrimitive().isNumber())
-          names.put(child.getAsInt(), group.get("name").getAsString());
-        else if (child.isJsonObject()) {
-          var nested = new JsonArray();
-          nested.add(child);
-          groups(nested, names);
-        }
-    }
-  }
-
   private static void reload(ResourceManager resources) {
     HardwareRenderData.ready = false;
     MESHES.clear();
@@ -165,7 +138,7 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
                 var json = JsonParser.parseReader(reader).getAsJsonObject();
                 var model = BlockModel.fromString(json.toString());
                 var names = new HashMap<Integer, String>();
-                groups(json.getAsJsonArray("groups"), names);
+                NativeCouplerAnimation.groups(json.getAsJsonArray("groups"), names);
                 var elements = new ArrayList<Element>();
                 for (int i = 0; i < model.getElements().size(); i++) {
                   var element = model.getElements().get(i);
@@ -180,21 +153,13 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
                                       .equals("railways"));
                   if (!attachment) continue;
                   String group = names.getOrDefault(i, "");
-                  Part part = Part.BODY;
-                  if (kind == CouplerKind.LINK || kind == CouplerKind.LINKLESS) {
-                    if (element.to.x - element.from.x < 1.1
-                        && element.to.z - element.from.z < 1.1
-                        && element.to.y - element.from.y >= 3) part = Part.PIN;
-                    else if (group.equals("link") || group.equals("pin")) part = Part.LINK;
-                  } else if (kind == CouplerKind.KNUCKLE || kind == CouplerKind.KNUCKLE_SPLIT) {
-                    if (group.equals("knuckle")) part = Part.JAW;
-                    else if (element.from.z >= (mount.equals("single_deco") ? 12 : 9))
-                      part = Part.MOUNT;
-                  } else if (kind == CouplerKind.SCREWLINK) {
-                    if (group.equals("screw")) part = Part.SCREW;
-                    else if (group.equals("flat_links") || group.equals("shackle"))
-                      part = Part.RIGGING;
-                  }
+                  Part part =
+                      NativeCouplerAnimation.classify(
+                          kind,
+                          group,
+                          new Vector3d(element.from),
+                          new Vector3d(element.to),
+                          mount.equals("single_deco"));
                   elements.add(new Element(element, part));
                 }
                 if (elements.isEmpty())
@@ -282,12 +247,6 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
       for (var quad : quads) consumer.putBulkData(pose.last(), quad, 1, 1, 1, 1, light, overlay);
   }
 
-  private static void at(PoseStack pose, Vector3d point, Quaterniond rotation) {
-    pose.translate(point.x, point.y, point.z);
-    pose.mulPose(new Quaternionf(rotation));
-    pose.translate(-point.x, -point.y, -point.z);
-  }
-
   private static Vector3d canonical(
       CouplerEndpoint e, float partial, Quaterniond facing, Vector3d world) {
     return body(e)
@@ -319,122 +278,66 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
             .rotationTo(
                 new Vector3d(0, 0, -1), new Vector3d(facing.getStepX(), 0, facing.getStepZ()));
     double p = e.hardwareProgress(partial);
-    var motion = CouplerMechanism.motion(kind, p);
     var peer =
         e.visualPeerPos != null && e.getLevel().hasChunkAt(e.visualPeerPos)
             ? CouplerEndpoint.get(e.getLevel().getBlockEntity(e.visualPeerPos))
             : null;
     boolean valid =
-        peer != null
+        e.visualConnected
+            && e.hasGeometry
+            && peer != null
+            && peer.visualConnected
+            && peer.hasGeometry
             && peer.endpointId.equals(e.visualPeerId)
             && e.endpointId.equals(peer.visualPeerId)
             && body(peer) != null;
     boolean active = valid && e.endpointId.compareTo(peer.endpointId) < 0;
     var target = valid ? world(peer, partial) : null;
     Vector3d toward = target == null ? null : canonical(e, partial, facingRotation, target);
+    var peerUp = new Vector3d(0, 1, 0);
+    if (valid) {
+      var origin =
+          new Vector3d(
+              peer.getBlockPos().getX(), peer.getBlockPos().getY(), peer.getBlockPos().getZ());
+      var base = body(peer).renderPose(partial).transformPosition(origin, new Vector3d());
+      var top =
+          body(peer)
+              .renderPose(partial)
+              .transformPosition(new Vector3d(origin).add(0, 1, 0), new Vector3d());
+      peerUp =
+          canonical(e, partial, facingRotation, top)
+              .sub(canonical(e, partial, facingRotation, base));
+    }
+    var transforms =
+        NativeCouplerAnimation.transforms(
+            kind,
+            p,
+            valid ? peer.hardwareProgress(partial) : 0,
+            mesh.shift,
+            valid,
+            active,
+            toward,
+            peerUp);
+    if (quads.get(Part.LINK) == null && active && p > 0) {
+      quads = new EnumMap<>(quads);
+      quads.put(
+          Part.LINK,
+          MESHES
+              .get(path(mounting, CouplerKind.LINK, flip(e.getBlockState())))
+              .quads(paint)
+              .get(Part.LINK));
+    }
     pose.pushPose();
     pose.translate(.5, .5, .5);
     pose.mulPose(new Quaternionf(facingRotation));
     pose.translate(-.5, -.5, -.5);
     var consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
-    part(pose, consumer, quads.get(Part.MOUNT), light, overlay);
-    pose.pushPose();
-    if ((kind == CouplerKind.KNUCKLE || kind == CouplerKind.KNUCKLE_SPLIT)
-        && valid
-        && p > 0
-        && toward != null) {
-      var bearing = new Vector3d(.5, .5, .875 + mesh.shift);
-      var peerOrigin =
-          new Vector3d(
-              peer.getBlockPos().getX(), peer.getBlockPos().getY(), peer.getBlockPos().getZ());
-      var peerBase = body(peer).renderPose(partial).transformPosition(peerOrigin, new Vector3d());
-      var peerTop =
-          body(peer)
-              .renderPose(partial)
-              .transformPosition(new Vector3d(peerOrigin).add(0, 1, 0), new Vector3d());
-      var peerUp =
-          canonical(e, partial, facingRotation, peerTop)
-              .sub(canonical(e, partial, facingRotation, peerBase));
-      var mating =
-          CouplerMating.head(
-              bearing,
-              toward,
-              new Vector3d(0, 1, 0),
-              peerUp,
-              CouplerMechanism.nominalLength(kind, 0));
-      double blend = Math.min(p, peer.hardwareProgress(partial));
-      var shift = new Vector3d(mating.bearing()).sub(bearing).mul(blend);
-      pose.translate(shift.x, shift.y, shift.z);
-      at(pose, bearing, new Quaterniond().slerp(mating.rotation(), blend));
-    }
-    part(pose, consumer, quads.get(Part.BODY), light, overlay);
-    if (kind == CouplerKind.KNUCKLE || kind == CouplerKind.KNUCKLE_SPLIT) {
+    for (var entry : quads.entrySet()) {
       pose.pushPose();
-      at(
-          pose,
-          new Vector3d(11 / 16.0, .5, 5 / 16.0 + mesh.shift),
-          new Quaterniond().rotateY(Math.toRadians(48) * motion.jawOpen()));
-      part(pose, consumer, quads.get(Part.JAW), light, overlay);
-      pose.popPose();
-    } else if (kind == CouplerKind.LINK || kind == CouplerKind.LINKLESS) {
-      pose.pushPose();
-      double lift = motion.pinLift();
-      pose.translate(0, .18 * Math.clamp(lift, 0, 1), 0);
-      part(pose, consumer, quads.get(Part.PIN), light, overlay);
-      pose.popPose();
-      var links = quads.get(Part.LINK);
-      if (links == null && active && p > 0)
-        links =
-            MESHES
-                .get(path(mounting, CouplerKind.LINK, flip(e.getBlockState())))
-                .quads(paint)
-                .get(Part.LINK);
-      pose.pushPose();
-      var pivot = new Vector3d(.5, .5, .5 + mesh.shift);
-      double insert = motion.linkInsertion();
-      if (active && toward != null && toward.distanceSquared(pivot) < 16) {
-        var centre = new Vector3d(.5, 7.653284439003997 / 16, 6.270598714406038 / 16 + mesh.shift);
-        var destination = new Vector3d(pivot).add(toward).mul(.5);
-        var delta = new Vector3d(toward).sub(pivot);
-        var rotation = new Quaterniond();
-        if (delta.lengthSquared() > .001)
-          rotation
-              .rotationTo(new Vector3d(0, 0, -1), delta.normalize())
-              .rotateX(Math.toRadians(22.5));
-        var animated = new Vector3d(centre).lerp(destination, insert);
-        pose.translate(animated.x, animated.y, animated.z);
-        pose.mulPose(new Quaternionf(new Quaterniond().slerp(rotation, insert)));
-        pose.translate(-centre.x, -centre.y, -centre.z);
-      } else if (valid) at(pose, pivot, new Quaterniond().rotateX(-Math.PI / 2 * insert));
-      part(pose, consumer, links, light, overlay);
-      pose.popPose();
-    } else if (kind == CouplerKind.SCREWLINK) {
-      pose.pushPose();
-      var pivot = new Vector3d(.5, .5, .75 + mesh.shift);
-      double hang = Math.clamp(p / .35, 0, 1);
-      if (active && toward != null && toward.distanceSquared(pivot) < 16) {
-        var delta = new Vector3d(toward).sub(pivot);
-        if (delta.lengthSquared() > .001)
-          at(
-              pose,
-              pivot,
-              new Quaterniond()
-                  .slerp(
-                      new Quaterniond().rotationTo(new Vector3d(0, -1, 0), delta.normalize()),
-                      hang));
-      }
-      part(pose, consumer, quads.get(Part.RIGGING), light, overlay);
-      pose.pushPose();
-      if (active)
-        at(
-            pose,
-            new Vector3d(.5, .22, .75 + mesh.shift),
-            new Quaterniond().rotateY(Math.PI * 2 * motion.screwTurns()));
-      part(pose, consumer, quads.get(Part.SCREW), light, overlay);
-      pose.popPose();
+      pose.mulPose(new org.joml.Matrix4f(transforms.get(entry.getKey())));
+      part(pose, consumer, entry.getValue(), light, overlay);
       pose.popPose();
     }
-    pose.popPose();
     pose.popPose();
   }
 

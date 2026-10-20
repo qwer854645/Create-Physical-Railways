@@ -28,6 +28,11 @@ public abstract class RailwayHardwareBlockMixin extends Block
   }
 
   @Override
+  public boolean hasDynamicShape() {
+    return true;
+  }
+
+  @Override
   public VoxelShape getSubLevelCollisionShape(BlockGetter level, BlockState state) {
     return NativeHardwareShape.get(
         state, true, state.getShape(level, BlockPos.ZERO, CollisionContext.empty()));
@@ -36,7 +41,13 @@ public abstract class RailwayHardwareBlockMixin extends Block
   @Override
   protected VoxelShape getCollisionShape(
       BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-    return NativeHardwareShape.get(state, false, state.getShape(level, pos, context));
+    var fallback = state.getShape(level, pos, context);
+    var endpoint = CouplerEndpoint.get(level.getBlockEntity(pos));
+    if (endpoint != null
+        && (!(context instanceof EntityCollisionContext entity)
+            || entity.getEntity() instanceof net.minecraft.world.entity.LivingEntity))
+      return NativeHardwareShape.living(endpoint, fallback);
+    return NativeHardwareShape.get(state, false, fallback);
   }
 
   @Override
