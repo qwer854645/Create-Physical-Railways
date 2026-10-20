@@ -73,7 +73,8 @@ public final class TrackNetwork {
   private record PathKey(UUID graph, int a, int b) {}
 
   private static final class Index {
-    long next;
+    long next, revision = Long.MIN_VALUE;
+    final Map<UUID, TrackGraph> sources = new HashMap<>();
     final Map<Long, Set<Path>> cells = new HashMap<>();
     final Map<PathKey, Path> paths = new HashMap<>();
   }
@@ -95,8 +96,22 @@ public final class TrackNetwork {
 
   public static void refresh(ServerLevel level) {
     var idx = INDEX.computeIfAbsent(level, l -> new Index());
-    if (level.getGameTime() < idx.next) return;
-    idx.next = level.getGameTime() + 10;
+    var graphs = Create.RAILWAYS.sided(level).trackNetworks;
+    long revision = TrackTopology.revision();
+    boolean same = graphs.size() == idx.sources.size();
+    if (same)
+      for (var entry : graphs.entrySet())
+        if (idx.sources.get(entry.getKey()) != entry.getValue()) {
+          same = false;
+          break;
+        }
+    if (same && idx.revision == revision && level.getGameTime() < idx.next) return;
+    // Interactive refreshNow still forces a full audit; unobserved third-party edits are audited
+    // every 10 seconds.
+    idx.next = level.getGameTime() + 200;
+    idx.revision = revision;
+    idx.sources.clear();
+    idx.sources.putAll(graphs);
     long start = TrainConfig.PERFORMANCE_LOGGING.get() ? System.nanoTime() : 0;
     var next = new HashMap<PathKey, Path>();
     boolean changed = false;
