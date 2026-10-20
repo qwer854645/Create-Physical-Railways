@@ -22,7 +22,7 @@ public final class GuidedRailways {
         if(net.neoforged.fml.ModList.get().isLoaded("railways"))SteamRailways.register();
         if(net.neoforged.fml.ModList.get().isLoaded("simulated"))RailDockContent.register(bus);
         NeoForge.EVENT_BUS.addListener((LevelTickEvent.Pre e)->{
-            if(e.getLevel() instanceof ServerLevel level){if(VehiclePhysics.hasVehicles(level))TrackNetwork.refresh(level);VehiclePhysics.tick(level);}
+            if(e.getLevel() instanceof ServerLevel level){CouplerConnections.restoreLoaded(level);if(VehiclePhysics.hasVehicles(level))TrackNetwork.refresh(level);VehiclePhysics.tick(level);}
         });
         NeoForge.EVENT_BUS.addListener((dev.ryanhcode.sable.neoforge.event.ForgeSablePrePhysicsTickEvent e)->{
             VehiclePhysics.step(e.getPhysicsSystem(),e.getTimeStep());

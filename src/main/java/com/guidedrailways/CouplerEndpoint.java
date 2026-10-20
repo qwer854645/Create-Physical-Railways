@@ -53,6 +53,7 @@ public final class CouplerEndpoint {
         tag.putInt("CouplerVersion",5);tag.putInt("MechanismVersion",mechanismVersion);tag.putBoolean("VisualConnected",visualConnected);tag.putLong("OperationStart",operationStart);tag.putInt("OperationTicks",operationTicks);tag.putDouble("OperationFrom",operationFrom);tag.putDouble("OperationTo",operationTo);tag.putUUID("Endpoint",endpointId);tag.putBoolean("HasGeometry",hasGeometry);
         tag.putDouble("RestLength",restLength);tag.putDouble("Ax",anchor.x);tag.putDouble("Ay",anchor.y);tag.putDouble("Az",anchor.z);
         tag.putDouble("Qx",frame.x);tag.putDouble("Qy",frame.y);tag.putDouble("Qz",frame.z);tag.putDouble("Qw",frame.w);
+        if(visualPeerId!=null&&visualPeerPos!=null){tag.putUUID("VisualPeer",visualPeerId);tag.putLong("VisualPeerPos",visualPeerPos.asLong());}
     }
     public void read(CompoundTag tag){
         livingShape=null;
@@ -68,5 +69,5 @@ public final class CouplerEndpoint {
         visualPeerPos=tag.contains("VisualPeerPos")?BlockPos.of(tag.getLong("VisualPeerPos")):null;
     }
 
-    public CompoundTag save(){var tag=new CompoundTag();write(tag);tag.putBoolean("VisualConnected",visualConnected);if(visualPeerId!=null&&visualPeerPos!=null){tag.putUUID("VisualPeer",visualPeerId);tag.putLong("VisualPeerPos",visualPeerPos.asLong());}return tag;}
+    public CompoundTag save(){var tag=new CompoundTag();write(tag);return tag;}
 }

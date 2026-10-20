@@ -436,3 +436,17 @@ tasks.register('checkBogeyVariant', JavaExec) {
     mainClass = 'com.guidedrailways.BogeyVariantCheck'
 }
 tasks.named('check') { dependsOn 'checkBogeyVariant' }
+
+// Isolated NBT round trips need Minecraft classes; the geometry checks remain plain Java.
+sourceSets {
+    persistenceCheck {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+tasks.register('checkCouplerPersistence', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.CouplerPersistenceCheck'
+}
+tasks.named('check') { dependsOn 'checkCouplerPersistence' }

@@ -29,6 +29,7 @@ public abstract class RailwayHardwareEntityMixin extends SmartBlockEntity implem
         if(endpoint!=null)endpoint.tick();
         else if(guidedrailways$coupler!=null){guidedrailways$coupler.destroyed();guidedrailways$coupler=null;}
     }
+    @Override public void onLoad(){super.onLoad();var endpoint=guidedrailways$endpoint();if(endpoint!=null&&getLevel() instanceof net.minecraft.server.level.ServerLevel)endpoint.tick();}
     @Override public void invalidate(){if(guidedrailways$coupler!=null)guidedrailways$coupler.unloaded();super.invalidate();}
     @Override public void destroy(){if(guidedrailways$coupler!=null)guidedrailways$coupler.destroyed();super.destroy();}
     @Inject(method="write",at=@At("TAIL"))

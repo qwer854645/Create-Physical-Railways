@@ -24,6 +24,7 @@ public final class CouplerConnections {
     private static final class State {
         final Map<UUID,CouplerEndpoint> endpoints=new HashMap<>();final Map<UUID,Live> live=new HashMap<>();
         final Map<UUID,Pending> pending=new HashMap<>();final Set<UUID> warned=new HashSet<>();
+        final Map<UUID,String> waiting=new HashMap<>();long nextDiscovery;
     }
     private record Transfer(UUID endpoint,Vector3d anchor,Quaterniond frame,boolean geometry,double length,GlobalPos source,long expires){}
     private static final Map<ServerLevel,State> STATES=new WeakHashMap<>();
@@ -53,6 +54,28 @@ public final class CouplerConnections {
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("Cloned coupler assigned a new endpoint ID at {}",e.getBlockPos());
         }
         s.endpoints.put(e.endpointId,e);
+        if(e.visualConnected&&CouplerSavedData.get(level).links.forEndpoint(e.endpointId)==null)e.visualPeer(null);
+    }
+    /** Materialise only coupler BEs in already-loaded plots while saved pairs are unresolved. */
+    static void restoreLoaded(ServerLevel level){
+        var data=CouplerSavedData.get(level);if(data.links.all().isEmpty())return;
+        var s=state(level);boolean unresolved=false;
+        for(var link:data.links.all())if(!loaded(level,s.endpoints.get(link.a()))||!loaded(level,s.endpoints.get(link.b()))){unresolved=true;break;}
+        if(!unresolved||level.getGameTime()<s.nextDiscovery)return;s.nextDiscovery=level.getGameTime()+20;
+        var container=dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level);if(container==null)return;
+        int discovered=0;
+        for(var body:List.copyOf(container.getAllSubLevels()))if(!body.isRemoved())for(var holder:List.copyOf(body.getPlot().getLoadedChunks())){
+            var chunk=holder.getChunk();
+            for(var pos:List.copyOf(chunk.getBlockEntitiesPos())){
+                var block=chunk.getBlockState(pos);if(!block.is(Content.COUPLER.get())&&!RailwayHardware.coupler(block))continue;
+                var endpoint=CouplerEndpoint.get(chunk.getBlockEntity(pos));if(endpoint==null||!loaded(level,endpoint))continue;
+                boolean known=s.endpoints.get(endpoint.endpointId)==endpoint;register(level,endpoint);if(!known)discovered++;
+            }
+        }
+        if(discovered>0)org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerRestore] discovered={} registered={} savedPairs={}",discovered,s.endpoints.size(),data.links.all().size());
+    }
+    private static void waiting(State s,CouplingLinks.Link link,String reason){
+        if(!reason.equals(s.waiting.put(link.id(),reason)))org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerRestore] waiting link={} reason={} endpoints={}/{}",link.id(),reason,link.a(),link.b());
     }
     static void unloaded(ServerLevel level,CouplerEndpoint e){var s=STATES.get(level);if(s!=null&&s.endpoints.get(e.endpointId)==e)suspend(level,e.endpointId);}
     static void suspend(ServerLevel level,UUID endpoint){
@@ -64,7 +87,7 @@ public final class CouplerConnections {
     private static void close(State s,UUID id){var old=s.live.remove(id);if(old!=null)old.close();}
     private static void disconnect(ServerLevel level,UUID endpoint,String reason){
         var data=CouplerSavedData.get(level);var link=data.links.forEndpoint(endpoint);if(link==null)return;
-        var s=state(level);close(s,link.id());data.remove(link.id());s.warned.remove(link.id());
+        var s=state(level);close(s,link.id());data.remove(link.id());s.warned.remove(link.id());s.waiting.remove(link.id());
         for(var id:List.of(link.a(),link.b())){var e=s.endpoints.get(id);if(e!=null){e.hasGeometry=false;e.setChanged();e.visualPeer(null);}}
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[Coupler] disconnected link={} reason={}",link.id(),reason);
     }
@@ -169,6 +192,7 @@ public final class CouplerConnections {
         var level=physics.getLevel();var s=STATES.get(level);if(s==null)return;
         s.endpoints.entrySet().removeIf(e->!loaded(level,e.getValue()));
         var data=CouplerSavedData.get(level);
+        s.waiting.keySet().removeIf(id->data.links.get(id)==null);
         for(var id:List.copyOf(s.live.keySet()))if(data.links.get(id)==null)close(s,id);
         for(var link:data.links.all())try{reconcile(level,link);}catch(RuntimeException error){close(s,link.id());if(s.warned.add(link.id()))org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[Coupler] joint rebuild failed link={}",link.id(),error);}
         s.pending.values().removeIf(p->p.expires<level.getGameTime());
@@ -177,9 +201,9 @@ public final class CouplerConnections {
     }
     private static void reconcile(ServerLevel level,CouplingLinks.Link link){
         var s=state(level);var a=s.endpoints.get(link.a());var b=s.endpoints.get(link.b());
-        if(!loaded(level,a)||!loaded(level,b)){close(s,link.id());return;}
+        if(!loaded(level,a)||!loaded(level,b)){close(s,link.id());waiting(s,link,"endpoint_not_registered_or_unloaded");return;}
         if(!CouplerKind.compatible(RailwayHardware.kind(a),RailwayHardware.kind(b))){disconnect(level,a.endpointId,"incompatible_hardware");return;}
-        var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null){close(s,link.id());return;}
+        var ba=body(level,a);var bb=body(level,b);if(ba==null||bb==null){close(s,link.id());waiting(s,link,"physical_body_not_ready");return;}
         if(ba==bb){disconnect(level,link.a(),"merged_into_same_body");return;}
         var old=s.live.get(link.id());
         if(old!=null&&(!old.joint.isValid()||old.a!=ba||old.b!=bb||!old.pa.equals(a.getBlockPos())||!old.pb.equals(b.getBlockPos()))){close(s,link.id());old=null;}
@@ -187,6 +211,7 @@ public final class CouplerConnections {
         a.visualPeer(b);b.visualPeer(a);
         var kind=RailwayHardware.kind(a);double progress=Math.min(a.hardwareProgress(0),b.hardwareProgress(0));
         if(!CouplerMechanism.carries(kind,progress)){
+            waiting(s,link,"mechanism_closing");
             if(VehiclePhysics.world(ba,head(a)).distance(VehiclePhysics.world(bb,head(b)))>CouplerMechanism.profile(kind).reach()+.1)disconnect(level,a.endpointId,"coupling_interrupted");
             return;
         }
@@ -211,6 +236,7 @@ public final class CouplerConnections {
                 // The capped spring first takes up a loose coupling gap without teleporting.
                 joint.setContactsEnabled(true);
                 old=new Live(joint,ba,bb,a,b);tune(old);s.live.put(link.id(),old);s.warned.remove(link.id());
+                s.waiting.remove(link.id());
                 org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[CouplerJoint] created link={} bodies={}/{} nominalStroke={} savedAnchorError={} mode=standard_length_buffer",link.id(),ba.getUniqueId(),bb.getUniqueId(),CouplerGeometry.HALF_STROKE*2,error);
             }catch(RuntimeException errorCreating){if(joint!=null&&joint.isValid())joint.remove();throw errorCreating;}
         }else{

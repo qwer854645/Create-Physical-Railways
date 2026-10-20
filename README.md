@@ -1,4 +1,6 @@
-# Create: Guided Railways 0.1.61
+# Create: Guided Railways 0.1.62
+
+0.1.62 补齐车钩读档注册与已加载物理体中的待恢复端点发现，本模组和 Railway 车钩加载后重建关节；统一磁盘与网络的对端信息保存。见 [车钩恢复与验收](docs/COUPLER_RESTORE.md)
 
 0.1.61 修正单动力架牵引多架／多车时的加速上限分配，无动力架在牵引档随行，空挡滑行和各档制动保留。见 [牵引分配与验收](docs/TRACTION.md)
 
