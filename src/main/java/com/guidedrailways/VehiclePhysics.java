@@ -38,7 +38,7 @@ public final class VehiclePhysics {
         final TrackNetwork.Path[] routes=new TrackNetwork.Path[2];
         final TrackNetwork.Sample[] samples=new TrackNetwork.Sample[2];
         final DerailmentModel.Exposure exposure=new DerailmentModel.Exposure();
-        double mass,speed,curveRisk,lateralSpeed;long lastSeen,nextLog,derailGraceUntil;boolean detached,reverseTravel;int supports=1;
+        double mass,tractionMass,commandedForce,speed,curveRisk,lateralSpeed;long lastSeen,nextLog,derailGraceUntil;boolean detached,reverseTravel,trainPowered;int supports=1;
         Unit(MountEntity mount,ServerSubLevel carrier,ServerSubLevel bogie){var variant=BogieBlock.variant(bogie.getLevel().getBlockState(bogie.getPlot().getCenterBlock()));if(mount.variant!=variant){mount.variant=variant;mount.setChanged();}MountBlock.updateStyle(mount);this.mount=mount;this.carrier=carrier;this.bogie=bogie;localCenter=center(bogie);var tag=bogie.getUserDataTag();detached=tag!=null&&tag.getBoolean("GuidedDerailed");}
         Vector3d axle(int i){return new Vector3d(localCenter).add(0,-mount.variant.ride(mount.gauge),i==0?mount.variant.half:-mount.variant.half);}
         void clearGuides(){for(int i=0;i<2;i++){if(guides[i]!=null&&guides[i].isValid())guides[i].remove();guides[i]=null;}}
@@ -75,14 +75,38 @@ public final class VehiclePhysics {
             int supports=counts.get(u.carrier.getUniqueId());
             if(u.supports!=supports){if(u.pivot!=null&&u.pivot.isValid())u.pivot.remove();u.supports=supports;connectPivot(u);}
             u.mass=u.carrier.getMassTracker().getMass()/supports+u.bogie.getMassTracker().getMass();u.mount.setLoad(u.mass);
+        }
+        allocateTraction(level,units.values());
+        for(var u:units.values()){
             if(level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual){visual.speed=u.speed;visual.distance+=u.speed/20;if(level.getGameTime()%2==0)visual.sendData();}
             if(level.getGameTime()>=u.nextLog){u.nextLog=level.getGameTime()+20;
                 var pos=world(u.bogie,u.localCenter);if(level.players().stream().anyMatch(p->p.distanceToSqr(pos.x,pos.y,pos.z)<4096)){
                     var pipeline=system.getPipeline();
                     double verticalSpeed=pipeline.getLinearVelocity(u.bogie,new Vector3d()).y,angularSpeed=pipeline.getAngularVelocity(u.bogie,new Vector3d()).length();
-                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.speedPerRpm():driverRpm(u,new Vector3d(0,0,1).rotate(system.getPipeline().readPose(u.bogie,new Pose3d()).orientation())),u.mount.getSpeed(),u.mass,u.mount.braking||(u.automatic!=null?u.automatic.hold()||u.automatic.emergency()||u.automatic.notch()<0:u.driver!=null&&(!u.driver.enabled||u.driver.emergency||u.driver.notch<0||u.driver.powered==0)),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
+                    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info("[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} tractionMass={} commandedForce={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",u.bogie.getUniqueId(),u.speed,u.driver==null?u.mount.getSpeed()*TrainConfig.speedPerRpm():driverRpm(u,new Vector3d(0,0,1).rotate(system.getPipeline().readPose(u.bogie,new Pose3d()).orientation())),u.mount.getSpeed(),u.mass,u.tractionMass,u.commandedForce,u.mount.braking||(u.automatic!=null?u.automatic.hold()||u.automatic.emergency()||u.automatic.notch()<0:u.driver!=null&&(!u.driver.enabled||u.driver.emergency||u.driver.notch<0||u.driver.powered==0)),!u.detached,u.reverseTravel?"reverse":"forward",verticalSpeed,angularSpeed,u.curveRisk,u.lateralSpeed,u.carrier.getUniqueId(),counts.get(u.carrier.getUniqueId()),TrainConfig.DETAILED_LOGGING.get()?pivotSummary(u):"off",TrainConfig.DETAILED_LOGGING.get()?anchorSummary(u):"off");
                 }
             }
+        }
+    }
+    private static void allocateTraction(ServerLevel level,Collection<Unit> units){
+        var bodies=new HashMap<UUID,ServerSubLevel>();var graph=new HashMap<UUID,Set<UUID>>();var byCarrier=new HashMap<UUID,List<Unit>>();
+        for(var u:units){var id=u.carrier.getUniqueId();bodies.put(id,u.carrier);byCarrier.computeIfAbsent(id,k->new ArrayList<>()).add(u);}
+        for(var link:CouplerConnections.bodyLinks(level)){
+            var a=link.a().getUniqueId();var b=link.b().getUniqueId();bodies.put(a,link.a());bodies.put(b,link.b());
+            graph.computeIfAbsent(a,k->new HashSet<>()).add(b);graph.computeIfAbsent(b,k->new HashSet<>()).add(a);
+        }
+        var visited=new HashSet<UUID>();
+        for(var seed:units){
+            var root=seed.carrier.getUniqueId();if(visited.contains(root))continue;
+            var members=new HashSet<UUID>();var queue=new ArrayDeque<UUID>();members.add(root);queue.add(root);
+            while(!queue.isEmpty())for(var id:graph.getOrDefault(queue.remove(),Set.of()))if(members.add(id))queue.add(id);
+            visited.addAll(members);
+            var group=new ArrayList<Unit>();for(var id:members)group.addAll(byCarrier.getOrDefault(id,List.of()));
+            double mass=members.stream().map(bodies::get).filter(Objects::nonNull).mapToDouble(b->b.getMassTracker().getMass()).sum();
+            for(var u:group)mass+=u.bogie.getMassTracker().getMass();
+            var rpm=new double[group.size()];for(int i=0;i<rpm.length;i++){var u=group.get(i);rpm[i]=u.detached||u.mount.braking?0:u.mount.getSpeed();}
+            var shares=TractionBudget.shares(mass,rpm);boolean powered=java.util.Arrays.stream(shares).anyMatch(m->m>0);
+            for(int i=0;i<shares.length;i++){var u=group.get(i);u.tractionMass=shares[i];u.trainPowered=powered;}
         }
     }
     private static String pivotSummary(Unit u){
@@ -160,7 +184,7 @@ public final class VehiclePhysics {
             u.samples[trail]=TrackNetwork.follow(level,atTrail,heading,u.samples[trail],u.samples[lead],.8,reverse,plan.axle(trail));
             if(u.samples[trail]==null){release(u,"track_missing_or_out_of_range");continue;}
             if(TrainConfig.DERAILMENT.get()&&level.getGameTime()>=u.derailGraceUntil&&checkDerailment(u,physics,dt))continue;
-            u.speed=0;
+            u.speed=0;u.commandedForce=0;
             for(int i=0;i<2;i++){
                 var sample=u.samples[i];u.routes[i]=sample.path();var q=sample.orientation();
                 if(u.guides[i]==null||!u.guides[i].isValid()){
@@ -178,19 +202,20 @@ public final class VehiclePhysics {
                     boolean hold=control.hold()||control.owner().isRemoved()||u.mount.braking||control.navigation()!=null&&control.navigation().routeRetry;
                     if(control.navigation()==null){
                         ceiling=Math.copySign(control.owner().manualCeiling(control.notch(),Math.abs(ceiling)),ceiling);
-                        force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);
-                    }else force=DriverModel.force(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);
+                        force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt,u.tractionMass,u.trainPowered);
+                    }else force=DriverModel.force(speed,ceiling,u.mount.getSpeed(),u.mass,control.notch(),control.emergency(),hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt,u.tractionMass,u.trainPowered);
                 }else if(u.driver!=null){
                     var driver=u.driver;
                     boolean safe=driver.enabled&&!driver.isRemoved()&&DriverControls.body(driver)==u.carrier;
                     boolean hold=!safe||u.mount.braking||driver.powered==0;
                     double ceiling=driver.direction*driver.manualCeiling(driver.notch,driver.available)*driverSign(u,sample.tangent());
-                    force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,driver.notch,driver.emergency,hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt);
+                    force=DriverModel.manualForce(speed,ceiling,u.mount.getSpeed(),u.mass,driver.notch,driver.emergency,hold,TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),TrainConfig.COASTING.get(),dt,u.tractionMass,u.trainPowered);
                 }else{
-                    force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.speedPerRpm(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get());
-                    if(!u.mount.braking&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
+                    force=DriveModel.force(speed,u.mount.getSpeed(),u.mass,u.mount.braking,TrainConfig.speedPerRpm(),TrainConfig.FORCE_PER_RPM.get(),TrainConfig.ACCELERATION.get(),TrainConfig.BRAKING.get(),u.tractionMass);
+                    if(!u.mount.braking&&!u.trainPowered&&Math.abs(u.mount.getSpeed())<.001)force+=DriveModel.coastForce(speed,u.mass,TrainConfig.COASTING.get(),dt);
                 }
                 force=RailwayStopModel.force(speed,force,switchRoom,u.mass,TrainConfig.BRAKING.get(),dt);
+                u.commandedForce+=force*.5;
                 var impulse=new Vector3d(sample.tangent()).mul(force*dt*.5).rotate(new Quaterniond(pose.orientation()).conjugate());
                 // Apply traction at the frame centre height, with front/rear positions distributed along its length.
                 var point=new Vector3d(u.localCenter).add(0,0,i==0?u.mount.variant.half:-u.mount.variant.half);
