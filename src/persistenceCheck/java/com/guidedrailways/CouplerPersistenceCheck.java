@@ -49,6 +49,20 @@ public final class CouplerPersistenceCheck {
             && restored.operationFrom == .2
             && restored.operationTo == 1,
         "an unfinished coupling operation retains its original timeline");
+    // Reusing a tag must also remove old peer references after an unlink.
+    saved.visualConnected = false;
+    saved.visualPeerId = null;
+    saved.visualPeerPos = null;
+    saved.hasGeometry = false;
+    saved.write(disk);
+    restored.read(disk);
+    check(
+        !disk.hasUUID("VisualPeer")
+            && !disk.contains("VisualPeerPos")
+            && !restored.visualConnected
+            && restored.visualPeerId == null
+            && restored.visualPeerPos == null,
+        "disconnected disk/update data cannot retain a reciprocal visual link");
     disk.putInt("CouplerVersion", 5);
     restored.read(disk);
     check(

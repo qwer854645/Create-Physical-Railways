@@ -130,10 +130,8 @@ public final class CouplerEndpoint {
     operation(connected);
     livingShape = null;
     visualConnected = connected;
-    if (peer != null) {
-      visualPeerId = id;
-      visualPeerPos = pos;
-    }
+    visualPeerId = id;
+    visualPeerPos = pos;
     setChanged();
     syncVisual();
   }
@@ -178,6 +176,9 @@ public final class CouplerEndpoint {
     if (visualPeerId != null && visualPeerPos != null) {
       tag.putUUID("VisualPeer", visualPeerId);
       tag.putLong("VisualPeerPos", visualPeerPos.asLong());
+    } else {
+      tag.remove("VisualPeer");
+      tag.remove("VisualPeerPos");
     }
   }
 
