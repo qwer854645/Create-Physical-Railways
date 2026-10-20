@@ -478,3 +478,17 @@ tasks.register('checkNativeCouplerAnimation', JavaExec) {
     mainClass = 'com.guidedrailways.NativeCouplerAnimationCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeCouplerAnimation' }
+
+tasks.register('checkNearbyPairs', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.NearbyPairsCheck'
+}
+tasks.named('check') { dependsOn 'checkNearbyPairs' }
+
+tasks.register('checkBoxUnion', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.BoxUnionCheck'
+}
+tasks.named('check') { dependsOn 'checkBoxUnion' }

@@ -54,9 +54,10 @@ final class CouplerLivingShape {
       up.set(0, 1, 0);
     }
     var layout = CouplerVisual.layout(pivot, tip, up, e.visualConnected ? 1 : 0, .73);
-    var shape = Shapes.empty();
+    var boxes = new java.util.ArrayList<net.minecraft.world.phys.AABB>();
     for (var b : CouplerLivingGeometry.boxes(layout))
-      shape = Shapes.or(shape, Shapes.box(b.x0(), b.y0(), b.z0(), b.x1(), b.y1(), b.z1()));
+      boxes.add(new net.minecraft.world.phys.AABB(b.x0(), b.y0(), b.z0(), b.x1(), b.y1(), b.z1()));
+    var shape = BoxUnionShape.of(boxes);
     e.livingShapeTick = tick;
     e.livingShape = shape;
     return shape;

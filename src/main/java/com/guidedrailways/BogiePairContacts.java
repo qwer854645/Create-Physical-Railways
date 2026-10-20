@@ -60,55 +60,62 @@ final class BogiePairContacts {
       }
     bodies.sort(Comparator.comparing(b -> b.unit.bogie.getUniqueId()));
     var seen = new HashSet<Pair>();
-    for (int i = 0; i < bodies.size(); i++)
-      for (int j = i + 1; j < bodies.size(); j++) {
-        var a = bodies.get(i);
-        var b = bodies.get(j);
-        double reach = a.pose.half().length() + b.pose.half().length() + BogiePairContact.SKIN;
-        if (a.pose.center().distanceSquared(b.pose.center()) > reach * reach) continue;
-        var key = new Pair(a.unit.bogie.getUniqueId(), b.unit.bogie.getUniqueId());
-        var old = live.get(key);
-        if (old != null && (old.a != a.unit || old.b != b.unit || !old.joint.isValid())) {
-          old.close();
-          live.remove(key);
-          old = null;
-        }
-        var contact = BogiePairContact.find(a.pose, b.pose, old == null ? null : old.normal);
-        if (contact == null) continue;
-        var frame = new Quaterniond().rotationTo(new Vector3d(1, 0, 0), contact.normal());
-        var qa = new Quaterniond(a.pose.rotation()).conjugate().mul(frame);
-        var qb = new Quaterniond(b.pose.rotation()).conjugate().mul(frame);
-        if (old == null) {
-          var joint =
-              pipe.addConstraint(
-                  a.unit.bogie,
-                  b.unit.bogie,
-                  new GenericConstraintConfiguration(
-                      a.anchor, b.anchor, qa, qb, EnumSet.noneOf(ConstraintJointAxis.class)));
-          try {
-            joint.setLimit(ConstraintJointAxis.LINEAR_X, contact.limit(dt), 1_000_000);
-            joint.setContactsEnabled(false);
-            old = new Live(a.unit, b.unit, joint);
-            live.put(key, old);
-          } catch (RuntimeException error) {
-            if (joint.isValid()) joint.remove();
-            throw error;
-          }
-          org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
-              .info(
-                  "[BogiePairContact] begin bodies={}/{} gap={} normal={} mode=unilateral_native",
-                  key.a,
-                  key.b,
-                  contact.gap(),
-                  contact.normal());
-        } else {
-          old.joint.setFrame1(a.anchor, qa);
-          old.joint.setFrame2(b.anchor, qb);
-          old.joint.setLimit(ConstraintJointAxis.LINEAR_X, contact.limit(dt), 1_000_000);
-        }
-        old.normal = new Vector3d(contact.normal());
-        seen.add(key);
+    var bounds =
+        bodies.stream()
+            .map(
+                b ->
+                    new NearbyPairs.Bounds(
+                        b.pose.center().x,
+                        b.pose.center().y,
+                        b.pose.center().z,
+                        b.pose.half().length()))
+            .toList();
+    for (var pair : NearbyPairs.find(bounds, BogiePairContact.SKIN).pairs()) {
+      var a = bodies.get(pair.a());
+      var b = bodies.get(pair.b());
+      var key = new Pair(a.unit.bogie.getUniqueId(), b.unit.bogie.getUniqueId());
+      var old = live.get(key);
+      if (old != null && (old.a != a.unit || old.b != b.unit || !old.joint.isValid())) {
+        old.close();
+        live.remove(key);
+        old = null;
       }
+      var contact = BogiePairContact.find(a.pose, b.pose, old == null ? null : old.normal);
+      if (contact == null) continue;
+      var frame = new Quaterniond().rotationTo(new Vector3d(1, 0, 0), contact.normal());
+      var qa = new Quaterniond(a.pose.rotation()).conjugate().mul(frame);
+      var qb = new Quaterniond(b.pose.rotation()).conjugate().mul(frame);
+      if (old == null) {
+        var joint =
+            pipe.addConstraint(
+                a.unit.bogie,
+                b.unit.bogie,
+                new GenericConstraintConfiguration(
+                    a.anchor, b.anchor, qa, qb, EnumSet.noneOf(ConstraintJointAxis.class)));
+        try {
+          joint.setLimit(ConstraintJointAxis.LINEAR_X, contact.limit(dt), 1_000_000);
+          joint.setContactsEnabled(false);
+          old = new Live(a.unit, b.unit, joint);
+          live.put(key, old);
+        } catch (RuntimeException error) {
+          if (joint.isValid()) joint.remove();
+          throw error;
+        }
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+            .info(
+                "[BogiePairContact] begin bodies={}/{} gap={} normal={} mode=unilateral_native",
+                key.a,
+                key.b,
+                contact.gap(),
+                contact.normal());
+      } else {
+        old.joint.setFrame1(a.anchor, qa);
+        old.joint.setFrame2(b.anchor, qb);
+        old.joint.setLimit(ConstraintJointAxis.LINEAR_X, contact.limit(dt), 1_000_000);
+      }
+      old.normal = new Vector3d(contact.normal());
+      seen.add(key);
+    }
     live.entrySet()
         .removeIf(
             entry -> {

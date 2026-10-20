@@ -23,9 +23,10 @@ final class CollisionAssembler {
     var centre = body.getPlot().getCenterBlock();
     var variant = BogieBlock.variant(level.getBlockState(centre));
     var saved = body.getUserDataTag();
+    if (saved != null
+        && CATALOG.equals(saved.getString("CollisionCatalog"))
+        && saved.getInt("CollisionProfile") == variant.ordinal()) return true;
     var tag = saved == null ? new CompoundTag() : saved.copy();
-    if (CATALOG.equals(tag.getString("CollisionCatalog"))
-        && tag.getInt("CollisionProfile") == variant.ordinal()) return true;
 
     var targets = new ArrayList<BlockAssembly.Target<BlockPos, BlockState>>();
     for (var cell : BogieCollision.cells(variant)) {

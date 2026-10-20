@@ -111,22 +111,10 @@ public final class NativeHardwareShape {
               active,
               toward,
               peerUp);
-      var shape = bake(mesh, false, transforms);
-      // The linkless casting borrows the same moving ring as its renderer when it is the active
-      // end.
-      if (kind == CouplerKind.LINKLESS && active && p > 0) {
-        var link = linkMesh(state);
-        shape =
-            Shapes.or(
-                shape,
-                bake(
-                    new Mesh(
-                        link.pieces().stream().filter(piece -> piece.part() == Part.LINK).toList(),
-                        mesh.facing(),
-                        mesh.shift()),
-                    false,
-                    transforms));
-      }
+      // A borrowed link is included in the same grid rather than merged into a second shape.
+      var collisionMesh =
+          kind == CouplerKind.LINKLESS && active && p > 0 ? linkedMesh(state) : mesh;
+      var shape = bake(collisionMesh, false, transforms);
       e.livingShape = shape;
       e.livingShapeTick = tick;
       return shape;
@@ -148,6 +136,20 @@ public final class NativeHardwareShape {
         });
   }
 
+  private static final Map<BlockState, Mesh> LINKED_MESHES = new ConcurrentHashMap<>();
+
+  private static Mesh linkedMesh(BlockState state) {
+    return LINKED_MESHES.computeIfAbsent(
+        state,
+        key -> {
+          var base = mesh(state);
+          var pieces = new ArrayList<>(base.pieces());
+          for (var piece : linkMesh(state).pieces())
+            if (piece.part() == Part.LINK) pieces.add(piece);
+          return new Mesh(List.copyOf(pieces), base.facing(), base.shift());
+        });
+  }
+
   private static final Map<BlockState, Mesh> LINK_MESHES = new ConcurrentHashMap<>();
 
   private static Mesh linkMesh(BlockState state) {
@@ -163,7 +165,7 @@ public final class NativeHardwareShape {
   }
 
   private static VoxelShape bake(Mesh mesh, boolean physics, Map<Part, Matrix4d> transforms) {
-    var result = Shapes.empty();
+    var boxes = new ArrayList<net.minecraft.world.phys.AABB>(mesh.pieces().size());
     for (var piece : mesh.pieces()) {
       if (physics && !piece.physics()) continue;
       var matrix = new Matrix4d(mesh.facing());
@@ -176,11 +178,9 @@ public final class NativeHardwareShape {
         max.max(p);
       }
       if (max.x - min.x > 1e-6 && max.y - min.y > 1e-6 && max.z - min.z > 1e-6)
-        result =
-            Shapes.joinUnoptimized(
-                result, Shapes.box(min.x, min.y, min.z, max.x, max.y, max.z), BooleanOp.OR);
+        boxes.add(new net.minecraft.world.phys.AABB(min.x, min.y, min.z, max.x, max.y, max.z));
     }
-    return result.optimize();
+    return BoxUnionShape.of(boxes);
   }
 
   private static JsonObject json(Class<?> owner, String namespace, String path) throws IOException {
