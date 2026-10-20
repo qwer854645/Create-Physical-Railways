@@ -31,6 +31,7 @@ import org.joml.Vector3d;
  * mechanical part.
  */
 final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityRenderer<T> {
+  private final NativeCouplerAnimation.Workspace animation = new NativeCouplerAnimation.Workspace();
   private static final Map<String, Mesh> MESHES = new HashMap<>();
 
   private record Element(BlockElement element, Part part) {}
@@ -230,17 +231,6 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
     return b instanceof ClientSubLevelAccess c ? c : null;
   }
 
-  private static Vector3d world(CouplerEndpoint e, float partial) {
-    var b = body(e);
-    return b == null
-        ? null
-        : b.renderPose(partial)
-            .transformPosition(
-                new Vector3d(e.anchor)
-                    .add(e.getBlockPos().getX(), e.getBlockPos().getY(), e.getBlockPos().getZ()),
-                new Vector3d());
-  }
-
   private static void part(
       PoseStack pose, VertexConsumer consumer, List<BakedQuad> quads, int light, int overlay) {
     if (quads != null)
@@ -248,9 +238,11 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
   }
 
   private static Vector3d canonical(
-      CouplerEndpoint e, float partial, Quaterniond facing, Vector3d world) {
-    return body(e)
-        .renderPose(partial)
+      CouplerEndpoint e,
+      dev.ryanhcode.sable.companion.math.Pose3dc ownPose,
+      Quaterniond facing,
+      Vector3d world) {
+    return ownPose
         .transformPositionInverse(world, new Vector3d())
         .sub(e.getBlockPos().getX() + .5, e.getBlockPos().getY() + .5, e.getBlockPos().getZ() + .5)
         .rotate(new Quaterniond(facing).conjugate())
@@ -261,7 +253,10 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
   public void render(
       T owner, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
     var e = CouplerEndpoint.get(owner);
-    if (e == null || !HardwareRenderData.ready || body(e) == null) return;
+    if (e == null || !HardwareRenderData.ready) return;
+    var own = body(e);
+    if (own == null) return;
+    var ownPose = own.renderPose(partial);
     var kind = RailwayHardware.kind(e);
     if (kind == null || kind == CouplerKind.STANDARD) return;
     String mounting = mount(e.getBlockState());
@@ -282,6 +277,7 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
         e.visualPeerPos != null && e.getLevel().hasChunkAt(e.visualPeerPos)
             ? CouplerEndpoint.get(e.getLevel().getBlockEntity(e.visualPeerPos))
             : null;
+    var other = peer == null ? null : body(peer);
     boolean valid =
         e.visualConnected
             && e.hasGeometry
@@ -290,23 +286,23 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
             && peer.hasGeometry
             && peer.endpointId.equals(e.visualPeerId)
             && e.endpointId.equals(peer.visualPeerId)
-            && body(peer) != null;
+            && other != null;
     boolean active = valid && e.endpointId.compareTo(peer.endpointId) < 0;
-    var target = valid ? world(peer, partial) : null;
-    Vector3d toward = target == null ? null : canonical(e, partial, facingRotation, target);
+    Vector3d toward = null;
     var peerUp = new Vector3d(0, 1, 0);
     if (valid) {
       var origin =
           new Vector3d(
               peer.getBlockPos().getX(), peer.getBlockPos().getY(), peer.getBlockPos().getZ());
-      var base = body(peer).renderPose(partial).transformPosition(origin, new Vector3d());
-      var top =
-          body(peer)
-              .renderPose(partial)
-              .transformPosition(new Vector3d(origin).add(0, 1, 0), new Vector3d());
+      var otherPose = other.renderPose(partial);
+      var target =
+          otherPose.transformPosition(new Vector3d(peer.anchor).add(origin), new Vector3d());
+      toward = canonical(e, ownPose, facingRotation, target);
+      var base = otherPose.transformPosition(origin, new Vector3d());
+      var top = otherPose.transformPosition(new Vector3d(origin).add(0, 1, 0), new Vector3d());
       peerUp =
-          canonical(e, partial, facingRotation, top)
-              .sub(canonical(e, partial, facingRotation, base));
+          canonical(e, ownPose, facingRotation, top)
+              .sub(canonical(e, ownPose, facingRotation, base));
     }
     var transforms =
         NativeCouplerAnimation.transforms(
@@ -317,7 +313,8 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
             valid,
             active,
             toward,
-            peerUp);
+            peerUp,
+            animation);
     if (quads.get(Part.LINK) == null && active && p > 0) {
       quads = new EnumMap<>(quads);
       quads.put(

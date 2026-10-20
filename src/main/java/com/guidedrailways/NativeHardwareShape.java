@@ -23,6 +23,8 @@ public final class NativeHardwareShape {
 
   private record Mesh(List<Piece> pieces, Matrix4d facing, double shift) {}
 
+  private static final ThreadLocal<NativeCouplerAnimation.Workspace> ANIMATION =
+      ThreadLocal.withInitial(NativeCouplerAnimation.Workspace::new);
   private static final Map<Key, VoxelShape> CACHE = new ConcurrentHashMap<>();
   private static final Map<BlockState, Mesh> MESHES = new ConcurrentHashMap<>();
 
@@ -110,7 +112,8 @@ public final class NativeHardwareShape {
               valid,
               active,
               toward,
-              peerUp);
+              peerUp,
+              ANIMATION.get());
       // A borrowed link is included in the same grid rather than merged into a second shape.
       var collisionMesh =
           kind == CouplerKind.LINKLESS && active && p > 0 ? linkedMesh(state) : mesh;
@@ -166,14 +169,18 @@ public final class NativeHardwareShape {
 
   private static VoxelShape bake(Mesh mesh, boolean physics, Map<Part, Matrix4d> transforms) {
     var boxes = new ArrayList<net.minecraft.world.phys.AABB>(mesh.pieces().size());
+    var matrix = new Matrix4d();
+    var min = new Vector3d();
+    var max = new Vector3d();
+    var point = new Vector3d();
     for (var piece : mesh.pieces()) {
       if (physics && !piece.physics()) continue;
-      var matrix = new Matrix4d(mesh.facing());
+      matrix.set(mesh.facing());
       if (transforms != null) matrix.mul(transforms.get(piece.part()));
-      var min = new Vector3d(Double.POSITIVE_INFINITY);
-      var max = new Vector3d(Double.NEGATIVE_INFINITY);
+      min.set(Double.POSITIVE_INFINITY);
+      max.set(Double.NEGATIVE_INFINITY);
       for (var corner : piece.corners()) {
-        var p = matrix.transformPosition(new Vector3d(corner));
+        var p = matrix.transformPosition(corner, point);
         min.min(p);
         max.max(p);
       }

@@ -19,6 +19,7 @@ public final class NativeCouplerAnimationCheck {
   }
 
   public static void main(String[] args) {
+    var workspace = new NativeCouplerAnimation.Workspace();
     for (var kind : CouplerKind.values())
       if (kind != CouplerKind.STANDARD)
         for (double shift : new double[] {0, -3 / 16.0})
@@ -29,7 +30,7 @@ public final class NativeCouplerAnimationCheck {
                 var peerUp = new Vector3d(.04, 1, .03).normalize();
                 var actual =
                     NativeCouplerAnimation.transforms(
-                        kind, p, .8, shift, valid, active, target, peerUp);
+                        kind, p, .8, shift, valid, active, target, peerUp, workspace);
                 var motion = CouplerMechanism.motion(kind, p);
                 for (var part : Part.values())
                   for (var input : List.of(new Vector3d(.3, .2, .1), new Vector3d(.7, .8, .9))) {

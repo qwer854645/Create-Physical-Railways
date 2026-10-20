@@ -68,12 +68,14 @@ public final class PhysicalSignals {
     var running = new HashSet<UUID>();
     var liveBodies = new HashSet<UUID>();
     var anchors = new HashMap<UUID, List<TrackNetwork.Sample>>();
+    var carriers = new HashMap<UUID, dev.ryanhcode.sable.sublevel.ServerSubLevel>();
     var liveAxles = new HashSet<Axle>();
     var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
     var consoles = new HashSet<UUID>();
     for (var u : units) {
       UUID body = u.carrier.getUniqueId(), owner = s.owners.get(body);
       liveBodies.add(body);
+      carriers.put(body, u.carrier);
       if (u.driver != null && u.driver.schedule.running) running.add(owner);
       if (u.driver != null) consoles.add(u.driver.consoleId);
       var groups = occupied.computeIfAbsent(owner, k -> new HashSet<>());
@@ -119,12 +121,7 @@ public final class PhysicalSignals {
       var samples = entry.getValue();
       connectTree(s, level, samples, groups);
       if (!samples.isEmpty()) {
-        var carrier =
-            units.stream()
-                .filter(u -> u.carrier.getUniqueId().equals(entry.getKey()))
-                .findFirst()
-                .orElseThrow()
-                .carrier;
+        var carrier = carriers.get(entry.getKey());
         var reference = samples.getFirst();
         var axis = new Vector3d(reference.tangent()).normalize();
         var bounds = carrier.boundingBox();
@@ -155,12 +152,19 @@ public final class PhysicalSignals {
       s.lastKnown.put(entry.getKey(), Set.copyOf(groups));
     }
     var consistAnchors = new HashMap<UUID, List<TrackNetwork.Sample>>();
+    var anchorBodies = new HashMap<UUID, Integer>();
     anchors.forEach(
-        (body, samples) ->
-            consistAnchors
-                .computeIfAbsent(s.owners.get(body), k -> new ArrayList<>())
-                .addAll(samples));
-    consistAnchors.forEach((owner, samples) -> connectTree(s, level, samples, occupied.get(owner)));
+        (body, samples) -> {
+          var owner = s.owners.get(body);
+          consistAnchors.computeIfAbsent(owner, k -> new ArrayList<>()).addAll(samples);
+          if (!samples.isEmpty()) anchorBodies.merge(owner, 1, Integer::sum);
+        });
+    consistAnchors.forEach(
+        (owner, samples) -> {
+          // The within-carriage pass already connected a single body's supports.
+          if (anchorBodies.getOrDefault(owner, 0) > 1)
+            connectTree(s, level, samples, occupied.get(owner));
+        });
     var bareBodies = new HashSet<UUID>();
     for (var link : TrainConsists.get(level).links())
       for (var body : List.of(link.a(), link.b())) {
@@ -231,7 +235,24 @@ public final class PhysicalSignals {
   private static void connectTree(
       State s, ServerLevel level, List<TrackNetwork.Sample> samples, Set<UUID> groups) {
     int size = samples.size();
-    if (size == 0) return;
+    if (size < 2) return;
+    var path = samples.getFirst().path();
+    boolean samePath = true;
+    double lo = Double.POSITIVE_INFINITY, hi = -lo;
+    for (var sample : samples) {
+      if (sample.path() != path) {
+        samePath = false;
+        break;
+      }
+      lo = Math.min(lo, sample.t());
+      hi = Math.max(hi, sample.t());
+    }
+    // On one edge, the union of a connected tree's intervals is exactly [min, max].
+    // This covers the same observers and signal sections in linear time.
+    if (samePath) {
+      mark(path, lo * path.edge().getLength(), hi * path.edge().getLength(), groups);
+      return;
+    }
     var joined = new boolean[size];
     var distance = new double[size];
     var parent = new int[size];
