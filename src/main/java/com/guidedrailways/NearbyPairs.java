@@ -18,7 +18,8 @@ final class NearbyPairs {
 
   static Result find(List<Bounds> bounds, double skin) {
     var cells = new HashMap<Cell, List<Integer>>();
-    var considered = new HashSet<Long>();
+    // A pair can recur in multiple cells, but only while inserting its later body.
+    var seen = new int[bounds.size()];
     var pairs = new ArrayList<Pair>();
     long checks = 0;
     for (int i = 0; i < bounds.size(); i++) {
@@ -34,8 +35,8 @@ final class NearbyPairs {
           for (long z = cell(b.z() - r); z <= cell(b.z() + r); z++) {
             var bucket = cells.computeIfAbsent(new Cell(x, y, z), key -> new ArrayList<>());
             for (int j : bucket) {
-              long key = ((long) j << 32) | (i & 0xffffffffL);
-              if (!considered.add(key)) continue;
+              if (seen[j] == i + 1) continue;
+              seen[j] = i + 1;
               checks++;
               var a = bounds.get(j);
               double reach = a.radius() + b.radius() + skin,

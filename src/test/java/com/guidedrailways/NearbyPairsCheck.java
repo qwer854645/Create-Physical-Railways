@@ -31,6 +31,18 @@ public final class NearbyPairsCheck {
         throw new AssertionError("broadphase missed or reordered a candidate");
       count++;
     }
+    // Every body overlaps eight cells: deduplication must reset for each later body.
+    var dense = new ArrayList<NearbyPairs.Bounds>();
+    for (int i = 0; i < 500; i++) dense.add(new NearbyPairs.Bounds(0, 0, 0, 2));
+    var packed = NearbyPairs.find(dense, BogiePairContact.SKIN);
+    if (packed.distanceChecks() != 124750 || packed.pairs().size() != 124750)
+      throw new AssertionError("dense multi-cell pairs lost or tested repeatedly");
+    for (int i = 1; i < packed.pairs().size(); i++) {
+      var a = packed.pairs().get(i - 1);
+      var b = packed.pairs().get(i);
+      if (a.a() > b.a() || a.a() == b.a() && a.b() >= b.b())
+        throw new AssertionError("dense contact order changed");
+    }
     var dispersed = new ArrayList<NearbyPairs.Bounds>();
     for (int i = 0; i < 1000; i++) dispersed.add(new NearbyPairs.Bounds(i * 100, 0, 0, 2));
     var result = NearbyPairs.find(dispersed, BogiePairContact.SKIN);
