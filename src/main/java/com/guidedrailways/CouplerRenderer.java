@@ -224,6 +224,11 @@ public final class CouplerRenderer implements BlockEntityRenderer<CouplerEntity>
 
   @Override
   public boolean shouldRenderOffScreen(CouplerEntity e) {
-    return true;
+    return false;
+  }
+
+  @Override
+  public net.minecraft.world.phys.AABB getRenderBoundingBox(CouplerEntity e) {
+    return CouplerRenderBounds.get(e.endpoint);
   }
 }

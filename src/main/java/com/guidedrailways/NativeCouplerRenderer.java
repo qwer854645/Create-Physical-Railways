@@ -343,6 +343,14 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
 
   @Override
   public boolean shouldRenderOffScreen(T owner) {
-    return true;
+    return false;
+  }
+
+  @Override
+  public net.minecraft.world.phys.AABB getRenderBoundingBox(T owner) {
+    var endpoint = CouplerEndpoint.get(owner);
+    return endpoint == null
+        ? new net.minecraft.world.phys.AABB(owner.getBlockPos())
+        : CouplerRenderBounds.get(endpoint);
   }
 }
