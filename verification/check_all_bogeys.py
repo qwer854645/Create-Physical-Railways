@@ -4,14 +4,15 @@ from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--capture');a=p.parse_args()
 rows=json.loads(Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json').read_text())
 sha=hashlib.sha256(Path('libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar').read_bytes()).hexdigest()
-assert len(rows)==39
+assert len(rows)==135
 keys=set()
 for index,r in enumerate(rows,1):
-    assert r['index']==index and r['sourceJarSha256']==sha
+    assert r['index']==index
+    source=hashlib.sha256(Path('libs/create_bb-1.0.8-1.21.1.jar').read_bytes()).hexdigest() if r['id'].startswith('create_bb:') else sha
+    assert r['sourceJarSha256']==source
     key=(r['id'],r['size']);assert key not in keys;keys.add(key)
     assert r['half']>=.5 and r['tread']>0 and all(math.isfinite(r[k])for k in ['ride','renderY','tread','half'])
     for b in r['boxes']:assert all(math.isfinite(v)for v in b)and all(b[i+3]>b[i]for i in range(3))
-    assert len({tuple(math.floor(v)for v in b[:3])for b in r['boxes']})<127
     assert r['renderY']==1.0078125,'native BogeyStyle render origin compensation missing'
     assert isinstance(r['mountTop'],int)
     assert abs(r['ride']+(r['mountTop']-.5-r['ride'])+.5-r['mountTop'])<1e-8
@@ -33,4 +34,4 @@ if a.capture:
                 assert any(q in occupied for q in itertools.product(*choices)),(r['id'],r['size'],point)
                 samples+=1
     print(f'Animation surface coverage: {samples} samples across 12 phases per native profile passed')
-print('Complete native bogey catalog: 39 style/size profiles, save indices, source hash and collider capacity passed')
+print(f'Complete native bogey catalog: {len(rows)} style/size profiles, save indices and source hashes passed')

@@ -49,12 +49,22 @@ final class SteamRailwaysBogeys implements PhysicalBogeySelection.Bridge {
         .info("[MonorailContact] selective guided-bogie callback registered");
     int count = 0;
     for (var style : AllBogeyStyles.BOGEY_STYLES.values())
-      if (style.id.getNamespace().equals("railways") || style == AllBogeyStyles.STANDARD)
+      if (style.id.getNamespace().equals("railways")
+          || style.id.getNamespace().equals("create_bb")
+          || style == AllBogeyStyles.STANDARD)
         for (var size : style.validSizes()) {
           resolve(style, size);
           count++;
         }
-    if (count != BogeyVariant.values().length - 1)
+    long available =
+        java.util.Arrays.stream(BogeyVariant.values())
+            .filter(
+                v ->
+                    v != BogeyVariant.DEFAULT
+                        && AllBogeyStyles.BOGEY_STYLES.containsKey(
+                            net.minecraft.resources.ResourceLocation.parse(v.id)))
+            .count();
+    if (count != available)
       throw new IllegalStateException("Native bogey catalog mismatch: " + count);
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info("[BogeySelection] all {} installed native style/size profiles resolved", count);

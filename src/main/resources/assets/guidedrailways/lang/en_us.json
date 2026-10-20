@@ -220,5 +220,6 @@
   "message.guidedrailways.bogey.unsupported": "Selected style is not in the current bogey compatibility catalog",
   "gui.guidedrailways.bogey.size": "Size: %s",
   "gui.guidedrailways.bogey.small": "Small",
-  "gui.guidedrailways.bogey.large": "Large"
+  "gui.guidedrailways.bogey.large": "Large",
+  "tooltip.guidedrailways.bogey.bnb": "Sneak-R-Click to choose a Blocks & Bogies style"
 }

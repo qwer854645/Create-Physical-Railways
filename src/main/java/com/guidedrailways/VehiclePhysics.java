@@ -37,9 +37,9 @@ public final class VehiclePhysics {
     final GenericConstraintHandle[] guides = new GenericConstraintHandle[2];
     final TrackNetwork.Sample[] samples = new TrackNetwork.Sample[2];
     final DerailmentModel.Exposure exposure = new DerailmentModel.Exposure();
-    double mass, tractionMass, commandedForce, speed, curveRisk, lateralSpeed;
+    double mass, tractionMass, commandedForce, speed, curveRisk, lateralSpeed, electricWatts;
     long lastSeen, nextLog, derailGraceUntil;
-    boolean detached, reverseTravel, trainPowered;
+    boolean detached, reverseTravel, trainPowered, electricEquipped;
     int supports = 1;
 
     Unit(MountEntity mount, ServerSubLevel carrier, ServerSubLevel bogie) {
@@ -165,6 +165,7 @@ public final class VehiclePhysics {
             });
     TrainConsists.refresh(level, units.values());
     TrainConsists.applyChanges(level);
+    TrainElectricity.refresh(level);
     DriverControls.refresh(level, units.values());
     PerfCounters.report(level, units.size());
     var counts = new HashMap<UUID, Integer>();

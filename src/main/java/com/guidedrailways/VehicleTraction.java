@@ -16,7 +16,7 @@ final class VehicleTraction {
       var rpm = new double[group.size()];
       for (int i = 0; i < rpm.length; i++) {
         var u = group.get(i);
-        rpm[i] = u.detached || u.mount.braking ? 0 : u.mount.getSpeed();
+        rpm[i] = u.detached || u.mount.braking ? 0 : inputRpm(u);
       }
       var shares = TractionBudget.shares(mass, rpm);
       boolean powered = java.util.Arrays.stream(shares).anyMatch(m -> m > 0);
@@ -46,7 +46,7 @@ final class VehicleTraction {
             DriverModel.manualForce(
                 speed,
                 ceiling,
-                u.mount.getSpeed(),
+                inputRpm(u),
                 u.mass,
                 control.notch(),
                 control.emergency(),
@@ -63,7 +63,7 @@ final class VehicleTraction {
             DriverModel.force(
                 speed,
                 ceiling,
-                u.mount.getSpeed(),
+                inputRpm(u),
                 u.mass,
                 control.notch(),
                 control.emergency(),
@@ -82,7 +82,7 @@ final class VehicleTraction {
       force =
           DriveModel.force(
               speed,
-              u.mount.getSpeed(),
+              inputRpm(u),
               u.mass,
               u.mount.braking,
               TrainConfig.speedPerRpm(),
@@ -90,10 +90,25 @@ final class VehicleTraction {
               TrainConfig.ACCELERATION.get(),
               TrainConfig.BRAKING.get(),
               u.tractionMass);
-      if (!u.mount.braking && !u.trainPowered && Math.abs(u.mount.getSpeed()) < .001)
+      if (!u.mount.braking && !u.trainPowered && Math.abs(inputRpm(u)) < .001)
         force += DriveModel.coastForce(speed, u.mass, TrainConfig.COASTING.get(), dt);
     }
+    // Mechanical inputs keep their original force budget. Electrical drive is limited by measured
+    // delivered power, while independent braking remains available without contact-wire supply.
+    if (u.electricEquipped
+        && Math.abs(u.mount.getSpeed()) < .001
+        && u.command != null
+        && u.command.notch() > 0
+        && !u.command.emergency()
+        && !u.command.hold())
+      force =
+          ElectricDriveModel.limit(force, speed, u.electricWatts, Math.signum(requestedSpeed(u)));
     return force;
+  }
+
+  static double inputRpm(VehiclePhysics.Unit u) {
+    double rpm = u.mount.getSpeed();
+    return Math.abs(rpm) > .001 ? rpm : u.driver != null && u.electricWatts > .001 ? 256 : 0;
   }
 
   static double requestedSpeed(VehiclePhysics.Unit u) {
@@ -105,6 +120,6 @@ final class VehicleTraction {
                   ? c.owner().manualCeiling(c.notch(), c.ceiling())
                   : c.ceiling())
           : 0;
-    return u.driver == null ? u.mount.getSpeed() : 0;
+    return u.driver == null ? inputRpm(u) : 0;
   }
 }

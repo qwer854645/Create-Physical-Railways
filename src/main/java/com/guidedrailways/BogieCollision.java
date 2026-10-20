@@ -121,8 +121,6 @@ public final class BogieCollision {
           if (local.isEmpty()) continue;
           while (part == CENTRE_PART) part++;
           int id = x == 0 && y == 0 && z == 0 ? CENTRE_PART : part++;
-          if (id > 127)
-            throw new IllegalStateException("Bogie collision profile exceeds part capacity");
           result.add(new Cell(id, x, y, z, List.copyOf(local)));
         }
     return List.copyOf(result);

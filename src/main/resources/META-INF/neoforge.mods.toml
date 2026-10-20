@@ -55,3 +55,18 @@ type = "optional"
 versionRange = "[1.3.2]"
 ordering = "AFTER"
 side = "BOTH"
+
+
+[[dependencies.${mod_id}]]
+modId = "create_bb"
+type = "optional"
+versionRange = "[1.0.8]"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "electroenergetics"
+type = "optional"
+versionRange = "[1.21.1-1.1.4]"
+ordering = "AFTER"
+side = "BOTH"

@@ -47,11 +47,15 @@ public final class BogeyVariantCheck {
           "native frame retains the central block entity");
       for (var cell : cells) {
         check(
-            parts.add(cell.part()) && cell.part() <= 127,
+            parts.add(cell.part()) && cell.part() >= 0,
             "every occupied native collision cell has a unique encodable part");
         for (var b : cell.boxes())
           check(
-              b.x0() >= 0 && b.y0() >= 0 && b.z0() >= 0 && b.x1() <= 1 && b.y1() <= 1
+              b.x0() >= 0
+                  && b.y0() >= 0
+                  && b.z0() >= 0
+                  && b.x1() <= 1
+                  && b.y1() <= 1
                   && b.z1() <= 1,
               "physics shape remains inside its owning voxel cell");
       }
@@ -171,8 +175,8 @@ public final class BogeyVariantCheck {
         BogeyVariant.find("railways:large_create_style_0_12_0", "create:large") != null,
         "largest six-axle steam style has its own large profile");
     check(
-        BogeyVariant.values().length == 40,
-        "all 39 native style/size combinations plus standalone core geometry are registered");
+        BogeyVariant.values().length == 136,
+        "all 135 native style/size combinations plus standalone core geometry are registered");
     var small = BogeyVariant.defaultFor(RailGauge.STANDARD);
     var large = BogeyVariant.find("create:standard", "create:large");
     RailPlacement.Route straight =

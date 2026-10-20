@@ -123,6 +123,7 @@ dependencies {
     def railwaysApi = file("libs/railways-${railways_version}.jar")
     if (!railwaysApi.exists()) throw new GradleException('Missing optional-mod compile API: run powershell -NoProfile -ExecutionPolicy Bypass -File verification/prepare_railways.ps1')
     compileOnly files(railwaysApi)
+    compileOnly files("libs/create_bb-1.0.8-1.21.1.jar", "libs/electroenergetics-1.21.1-1.1.4.jar")
     if (simulatedApiFile.isPresent()) compileOnly files(simulatedApiFile.get())
     else if (simulatedBundle.exists()) compileOnly files(extractedSimulated).builtBy(extractSimulatedApi)
     else compileOnly('dev.simulated_team.simulated:simulated-neoforge-1.21.1:1.3.2') { transitive = false }
@@ -158,6 +159,7 @@ tasks.register('copyDevMods', Copy) {
     into file('run/mods')
     from('libs') {
         include '*.jar'
+
     }
     from configurations.devRuntimeMods
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -507,3 +509,27 @@ tasks.register('checkMotionSync', JavaExec) {
     mainClass = 'com.guidedrailways.MotionSyncCheck'
 }
 tasks.named('check') { dependsOn 'checkMotionSync' }
+
+
+tasks.register('checkElectricDrive', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ElectricDriveCheck'
+}
+tasks.named('check') { dependsOn 'checkElectricDrive' }
+
+
+tasks.register('checkElectricCircuit', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + files('libs/electroenergetics-1.21.1-1.1.4.jar')
+    mainClass = 'com.guidedrailways.ElectricCircuitCheck'
+}
+tasks.named('check') { dependsOn 'checkElectricCircuit' }
+
+
+tasks.register('checkBogeySelectionCodec', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.BogeySelectionCodecCheck'
+}
+tasks.named('check') { dependsOn 'checkBogeySelectionCodec' }

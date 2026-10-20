@@ -1,13 +1,9 @@
 package com.guidedrailways;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.trains.bogey.BogeySizes;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.nbt.CompoundTag;
 
 /** Uses the installed mod's animated model and textures, without copying its assets. */
 public final class SteamRailwaysClient {
-  private static net.minecraft.network.chat.Component selectedName;
   private static final java.util.Map<net.minecraft.resources.ResourceLocation, BogeySizes.BogeySize>
       preferredSizes = new java.util.HashMap<>();
 
@@ -76,14 +72,23 @@ public final class SteamRailwaysClient {
   }
 
   public static void selection(com.simibubi.create.content.trains.bogey.BogeyStyle style) {
-    selectedName = style.displayName.copy();
+    var mc = net.minecraft.client.Minecraft.getInstance();
+    if (mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof BogieItem)) return;
+    PhysicalBogeySelection.selectedName = style.displayName.copy();
+    var selected =
+        size(
+            style,
+            com.railwayteam.railways.content.bogey_menu.handler.BogeyMenuHandlerClient.getSize(
+                style));
+    if (selected != null)
+      net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+          new BogeySelectionNetwork.Select(style.id, selected.id()));
   }
 
   static void register() {
-    NativeBogeyCapture.register();
     net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) ->
-            selectedName = null);
+            PhysicalBogeySelection.selectedName = null);
     net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.client.event.InputEvent.Key e) -> {
           if (e.getAction() == org.lwjgl.glfw.GLFW.GLFW_PRESS
@@ -107,10 +112,11 @@ public final class SteamRailwaysClient {
                           .getKeybind()
                           .getTranslatedKeyMessage())
                   .withStyle(net.minecraft.ChatFormatting.GRAY));
-          if (selectedName != null)
+          if (PhysicalBogeySelection.selectedName != null)
             lines.add(
                 net.minecraft.network.chat.Component.translatable(
-                        "tooltip.guidedrailways.bogey.selected", selectedName)
+                        "tooltip.guidedrailways.bogey.selected",
+                        PhysicalBogeySelection.selectedName)
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
         };
   }
@@ -123,24 +129,5 @@ public final class SteamRailwaysClient {
         || !(mc.player.getMainHandItem().getItem() instanceof BogieItem)) return;
     net.createmod.catnip.gui.ScreenOpener.open(
         new com.railwayteam.railways.content.bogey_menu.BogeyMenuScreen());
-  }
-
-  static void render(
-      BogeyVariant variant,
-      CompoundTag data,
-      float angle,
-      float partial,
-      PoseStack pose,
-      MultiBufferSource buffers,
-      int light,
-      int overlay) {
-    var style =
-        com.simibubi.create.AllBogeyStyles.BOGEY_STYLES.get(
-            net.minecraft.resources.ResourceLocation.parse(variant.id));
-    var size =
-        com.simibubi.create.content.trains.bogey.BogeySizes.all()
-            .get(net.minecraft.resources.ResourceLocation.parse(variant.size));
-    if (style != null && size != null)
-      style.render(size, partial, pose, buffers, light, overlay, angle, data, false);
   }
 }

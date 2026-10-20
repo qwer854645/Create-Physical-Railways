@@ -208,7 +208,7 @@ final class AutomaticTrains {
     e.guided = 0;
     e.mountBrakes = 0;
     for (var u : group) {
-      if (Math.abs(u.mount.getSpeed()) > .001) e.powered++;
+      if (Math.abs(VehicleTraction.inputRpm(u)) > .001) e.powered++;
       if (!u.detached) e.guided++;
       if (u.mount.braking) e.mountBrakes++;
     }
@@ -225,8 +225,8 @@ final class AutomaticTrains {
   private static double available(List<VehiclePhysics.Unit> group, DriverConsoleEntity console) {
     double cap = Double.POSITIVE_INFINITY;
     for (var u : group)
-      if (Math.abs(u.mount.getSpeed()) > .001)
-        cap = Math.min(cap, console.targetSpeed(u.mount.getSpeed()));
+      if (Math.abs(VehicleTraction.inputRpm(u)) > .001)
+        cap = Math.min(cap, console.targetSpeed(VehicleTraction.inputRpm(u)));
     return Double.isFinite(cap) ? cap : 0;
   }
 

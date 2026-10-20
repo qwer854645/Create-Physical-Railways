@@ -9,6 +9,7 @@
 - **车钩编组**：连接多节车厢，统一驾驶，并允许车厢在弯道中相对转向
 - **自动运行**：接入 Create 车站、道岔、信号，以及部分原版时刻表指令和等待条件
 - **运输适配**：支持整列货物与流体统计、乘客等待条件、包裹取送及部分物理连接器
+- **扩展兼容**：接入 Blocks & Bogies 的款式与动画，以及 Electro Energetics 接触网牵引（待游戏内验收）
 - **Steam ’n’ Rails 兼容**：支持宽轨、窄轨、单轨，以及当前适配 Beta 中的 39 种转向架款式／尺寸组合
 
 ## 环境
@@ -19,4 +20,4 @@ Steam ’n’ Rails 为可选兼容，当前锁定 **0.3.0-beta.2（NeoForge 1.2
 
 项目仍在开发，尚不支持跨维度行驶，也未覆盖全部 Create 铁路功能。
 
-详细用法、实现记录和历史测试见 [开发记录](DEVELOPMENT.md)；兼容范围见 [Create](docs/CREATE_COMPATIBILITY.md) 和 [Steam ’n’ Rails](docs/STEAM_RAILS_COMPATIBILITY.md)。
+详细用法、实现记录和历史测试见 [开发记录](DEVELOPMENT.md)；兼容范围见 [Create](docs/CREATE_COMPATIBILITY.md) 、[Steam ’n’ Rails](docs/STEAM_RAILS_COMPATIBILITY.md) 和 [BnB／CEE](docs/ADDON_COMPATIBILITY.md)。

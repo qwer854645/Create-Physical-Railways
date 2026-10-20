@@ -220,5 +220,6 @@
   "message.guidedrailways.bogey.unsupported": "所选款式不在当前转向架适配目录中",
   "gui.guidedrailways.bogey.size": "尺寸：%s",
   "gui.guidedrailways.bogey.small": "小型",
-  "gui.guidedrailways.bogey.large": "大型"
+  "gui.guidedrailways.bogey.large": "大型",
+  "tooltip.guidedrailways.bogey.bnb": "潜行右击：选择 Blocks & Bogies 款式"
 }

@@ -33,6 +33,7 @@
   "plugin": "com.guidedrailways.mixin.CargoCompatPlugin",
   "client": [
     "RailwayBogeyMenuMixin",
+    "BlocksBogiesMenuMixin",
     "RailwayBogeyIconMixin"
   ]
 }

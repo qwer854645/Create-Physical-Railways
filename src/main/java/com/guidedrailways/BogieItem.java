@@ -30,6 +30,11 @@ public final class BogieItem extends Item {
       net.minecraft.world.level.Level level,
       net.minecraft.world.entity.player.Player player,
       net.minecraft.world.InteractionHand hand) {
+    if (menu(player)) {
+      if (level.isClientSide && PhysicalBogeySelection.menu != null)
+        PhysicalBogeySelection.menu.run();
+      return net.minecraft.world.InteractionResultHolder.consume(player.getItemInHand(hand));
+    }
     if (level.isClientSide)
       return net.minecraft.world.InteractionResultHolder.success(player.getItemInHand(hand));
     try {
@@ -46,6 +51,11 @@ public final class BogieItem extends Item {
 
   @Override
   public InteractionResult useOn(UseOnContext c) {
+    if (c.getPlayer() != null && menu(c.getPlayer())) {
+      if (c.getLevel().isClientSide && PhysicalBogeySelection.menu != null)
+        PhysicalBogeySelection.menu.run();
+      return InteractionResult.SUCCESS;
+    }
     if (c.getPlayer() == null
         || !c.getPlayer().mayBuild()
         || !c.getLevel().mayInteract(c.getPlayer(), c.getClickedPos()))
@@ -61,6 +71,10 @@ public final class BogieItem extends Item {
       c.getPlayer().displayClientMessage(UserText.error(error), true);
       return InteractionResult.FAIL;
     }
+  }
+
+  private static boolean menu(net.minecraft.world.entity.player.Player player) {
+    return player.isShiftKeyDown() && net.neoforged.fml.ModList.get().isLoaded("create_bb");
   }
 
   private static void rejected(RuntimeException error) {

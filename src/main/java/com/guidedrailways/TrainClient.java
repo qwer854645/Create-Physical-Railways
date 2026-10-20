@@ -11,6 +11,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 public final class TrainClient {
   static void register(IEventBus bus) {
+    NativeBogeyCapture.register();
     if (net.neoforged.fml.ModList.get().isLoaded("railways")) {
       NativeCouplerRenderer.register(bus);
       SteamRailwaysClient.register();
@@ -18,6 +19,7 @@ public final class TrainClient {
           (net.neoforged.fml.event.lifecycle.FMLClientSetupEvent e) ->
               e.enqueueWork(SteamRailwaysBogeys::verifyRegisteredStyles));
     }
+    if (net.neoforged.fml.ModList.get().isLoaded("create_bb")) BlocksBogiesClient.register();
     DriverClient.register();
     bus.addListener(
         (net.neoforged.neoforge.client.event.RegisterMenuScreensEvent e) ->
@@ -48,21 +50,20 @@ public final class TrainClient {
       pose.pushPose();
       pose.translate(.5, BogieBlock.variant(entity.getBlockState()).renderY, .5);
       if (BogieBlock.variant(entity.getBlockState()) != BogeyVariant.DEFAULT
-          && net.neoforged.fml.ModList.get().isLoaded("railways")) {
-        SteamRailwaysClient.render(
-            BogieBlock.variant(entity.getBlockState()),
-            entity.bogeyData,
-            (float)
-                (distance
-                    / BogieBlock.variant(entity.getBlockState()).tread
-                    / BogieBlock.variant(entity.getBlockState()).animationRatio
-                    * 180
-                    / Math.PI),
-            partial,
-            pose,
-            buffers,
-            light,
-            overlay);
+          && NativeBogeyModels.render(
+              BogieBlock.variant(entity.getBlockState()),
+              entity.bogeyData,
+              (float)
+                  (distance
+                      / BogieBlock.variant(entity.getBlockState()).tread
+                      / BogieBlock.variant(entity.getBlockState()).animationRatio
+                      * 180
+                      / Math.PI),
+              partial,
+              pose,
+              buffers,
+              light,
+              overlay)) {
         pose.popPose();
         return;
       }

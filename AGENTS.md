@@ -13,6 +13,8 @@ These conventions govern product content; they do not require developer logs, co
 
 For text/UI changes, run `gradlew.bat checkLanguage --offline` and the relevant build checks. Report visual verification separately from automated checks. Follow the user's testing workflow: list scenarios, launch the client when requested, inspect logs, collect observations, then plan the next change. Do not run a server for autonomous gameplay testing.
 
+Do not launch or restart any Minecraft client, including main-menu capture or startup compatibility checks, unless the user explicitly asks to open the client. The user stopped automatic client launches after repeated interruptions; complete code, logs and offline checks first and wait for that explicit request.
+
 # GitHub synchronization
 
 The user has authorized uploading this project and subsequent work to `https://github.com/qwer854645/Create-Physical-Railways.git`. Keep `origin` pointed at this repository and use `main` as the published branch.

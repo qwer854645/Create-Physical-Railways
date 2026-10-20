@@ -19,6 +19,8 @@ public final class GuidedRailways {
   public GuidedRailways(IEventBus bus, ModContainer container) {
     container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER, TrainConfig.SPEC);
     Content.register(bus);
+    if (net.neoforged.fml.ModList.get().isLoaded("create_bb")) BlocksBogies.register();
+    if (net.neoforged.fml.ModList.get().isLoaded("electroenergetics")) ElectroEnergetics.register();
     if (net.neoforged.fml.ModList.get().isLoaded("railways")) SteamRailways.register();
     if (net.neoforged.fml.ModList.get().isLoaded("simulated")) RailDockContent.register(bus);
     NeoForge.EVENT_BUS.addListener(
@@ -64,6 +66,7 @@ public final class GuidedRailways {
             TrainConsists.unload(level);
             CargoStorage.unload(level);
             RailwaysCompat.unload(level);
+            TrainElectricity.unload(level);
           }
         });
     NeoForge.EVENT_BUS.addListener(

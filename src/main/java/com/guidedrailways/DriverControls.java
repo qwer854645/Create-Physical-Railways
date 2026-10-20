@@ -200,9 +200,9 @@ public final class DriverControls {
           e.supports++;
           if (!u.detached) e.guided++;
           if (u.mount.braking) e.mountBrakes++;
-          if (Math.abs(u.mount.getSpeed()) > .001) {
+          if (Math.abs(VehicleTraction.inputRpm(u)) > .001) {
             e.powered++;
-            double cap = e.targetSpeed(u.mount.getSpeed());
+            double cap = e.targetSpeed(VehicleTraction.inputRpm(u));
             e.available = e.powered == 1 ? cap : Math.min(e.available, cap);
           }
         }

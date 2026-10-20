@@ -31,7 +31,10 @@ final class NativeBogeyCapture {
               entries = new ArrayList<>();
               AllBogeyStyles.BOGEY_STYLES.values().stream()
                   .filter(
-                      s -> s.id.getNamespace().equals("railways") || s == AllBogeyStyles.STANDARD)
+                      s ->
+                          s.id.getNamespace().equals("railways")
+                              || s.id.getNamespace().equals("create_bb")
+                              || s == AllBogeyStyles.STANDARD)
                   .sorted(Comparator.comparing(s -> s.id.toString()))
                   .forEach(
                       s ->
