@@ -596,3 +596,18 @@ tasks.register('checkNativeTrainBridge', JavaExec) {
     mainClass = 'com.guidedrailways.NativeTrainBridgeCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeTrainBridge' }
+
+
+tasks.register('checkStationBinding', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.StationBindingCheck'
+}
+tasks.named('check') { dependsOn 'checkStationBinding' }
+
+tasks.register('checkNativeStationContract', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.NativeStationContractCheck'
+}
+tasks.named('check') { dependsOn 'checkNativeStationContract' }

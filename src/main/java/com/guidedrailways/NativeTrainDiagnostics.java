@@ -13,6 +13,11 @@ final class NativeTrainDiagnostics {
             .findFirst()
             .flatMap(train::getPositionInDimension)
             .orElse(net.minecraft.core.BlockPos.ZERO);
+    var station = train.getCurrentStation();
+    Object stoppedAt =
+        station != null && station.getPresentTrain() == train
+            ? station.name
+            : Component.translatable("message.guidedrailways.identity.not_at_station");
     return Component.translatable(
         "message.guidedrailways.identity.entry",
         train.name,
@@ -25,7 +30,8 @@ final class NativeTrainDiagnostics {
         Component.translatable(
             train.derailed
                 ? "message.guidedrailways.identity.off_track"
-                : "message.guidedrailways.identity.on_track"));
+                : "message.guidedrailways.identity.on_track"),
+        stoppedAt);
   }
 
   static void register(RegisterCommandsEvent event) {

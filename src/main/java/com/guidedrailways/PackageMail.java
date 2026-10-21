@@ -80,7 +80,13 @@ final class PackageMail {
     }
     if (stop == null || !level.dimension().equals(stop.getBlockEntityDimension()))
       return ScheduleController.UNLOADED;
-    if (stop.getPresentTrain() != null) return ScheduleController.PACKAGE_WAIT;
+    var present = stop.getPresentTrain();
+    if (present != null) {
+      var body = DriverControls.body(controller.owner);
+      var group = body == null ? null : TrainConsists.get(level).group(body.getUniqueId());
+      if (NativeTrainBridge.registered(level, group) != present)
+        return ScheduleController.PACKAGE_WAIT;
+    }
     var snapshot = CargoStorage.snapshot(level, DriverControls.body(controller.owner));
     if (!snapshot.complete()
         || controller.cargoBodies != null && !controller.cargoBodies.equals(snapshot.bodies()))

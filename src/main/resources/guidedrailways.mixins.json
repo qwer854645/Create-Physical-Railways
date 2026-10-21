@@ -10,7 +10,6 @@
     "CouplerRemovalMixin",
     "NativeTrainContactMixin",
     "PlatformBuildingMixin",
-    "StationBlockMixin",
     "StationBlockEntityMixin",
     "SignalEdgeGroupMixin",
     "TrackObserverMixin",

@@ -13,6 +13,9 @@ import org.joml.Vector3d;
 
 /** Maintains native query objects. Does not issue motion, schedule, station or signal commands. */
 public final class NativeTrainBridge {
+  private record Registration(PhysicalTrainProxy train, Set<UUID> members) {}
+
+  private static final Map<ServerLevel, Map<UUID, Registration>> BY_BOGEY = new WeakHashMap<>();
   private static final Map<ServerLevel, Set<UUID>> WARNED = new WeakHashMap<>();
   private static final Map<ServerLevel, Map<UUID, PhysicalTrainProxy>> LIVE = new WeakHashMap<>();
 
@@ -72,6 +75,7 @@ public final class NativeTrainBridge {
     if (!before.equals(data.ledger.records)) data.setDirty();
     var live = LIVE.computeIfAbsent(level, l -> new HashMap<>());
     var seen = new HashSet<UUID>();
+    var byBogie = new HashMap<UUID, Registration>();
     var warned = WARNED.computeIfAbsent(level, l -> new HashSet<>());
     warned.retainAll(identities.values());
     for (int i = 0; i < groups.size(); i++) {
@@ -95,7 +99,11 @@ public final class NativeTrainBridge {
         proxy = new PhysicalTrainProxy(id);
         live.put(id, proxy);
       }
+      if (proxy.currentStation != null && !snapshot.getBoolean("Derailed"))
+        snapshot.putUUID("Station", proxy.currentStation);
       proxy.apply(snapshot, Create.RAILWAYS.trackNetworks);
+      var registration = new Registration(proxy, memberships.get(i));
+      for (var member : registration.members()) byBogie.put(member, registration);
       var previous = Create.RAILWAYS.trains.get(id);
       if (previous != proxy) {
         if (previous != null)
@@ -111,7 +119,8 @@ public final class NativeTrainBridge {
       if (created || level.getGameTime() % 10 == 0)
         PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(snapshot));
     }
-    for (var id : List.copyOf(live.keySet())) if (!seen.contains(id)) remove(live, id);
+    for (var id : List.copyOf(live.keySet())) if (!seen.contains(id)) remove(level, live, id);
+    BY_BOGEY.put(level, Map.copyOf(byBogie));
   }
 
   private static boolean hasConsole(ServerLevel level, TrainConsists.Group group) {
@@ -128,8 +137,25 @@ public final class NativeTrainBridge {
     return false;
   }
 
-  private static void remove(Map<UUID, PhysicalTrainProxy> live, UUID id) {
+  static PhysicalTrainProxy registered(ServerLevel level, TrainConsists.Group group) {
+    if (group == null || group.units().isEmpty() || !hasConsole(level, group)) return null;
+    var record =
+        BY_BOGEY.getOrDefault(level, Map.of()).get(group.units().getFirst().bogie.getUniqueId());
+    if (record == null
+        || record.members().size() != group.units().size()
+        || LIVE.getOrDefault(level, Map.of()).get(record.train().id) != record.train()) return null;
+    for (var unit : group.units())
+      if (!record.members().contains(unit.bogie.getUniqueId())) return null;
+    return record.train();
+  }
+
+  static void sync(PhysicalTrainProxy proxy) {
+    PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(proxy.snapshot()));
+  }
+
+  private static void remove(ServerLevel level, Map<UUID, PhysicalTrainProxy> live, UUID id) {
     var proxy = live.remove(id);
+    StationPresence.releaseTrain(level, proxy);
     if (Create.RAILWAYS.trains.get(id) == proxy) Create.RAILWAYS.removeTrain(id);
     var removed = new CompoundTag();
     removed.putUUID("Id", id);
@@ -141,8 +167,9 @@ public final class NativeTrainBridge {
 
   static void unload(ServerLevel level) {
     WARNED.remove(level);
+    BY_BOGEY.remove(level);
     var live = LIVE.remove(level);
-    if (live != null) for (var id : List.copyOf(live.keySet())) remove(live, id);
+    if (live != null) for (var id : List.copyOf(live.keySet())) remove(level, live, id);
   }
 
   static void login(net.minecraft.server.level.ServerPlayer player) {

@@ -19,7 +19,12 @@ final class NativeTrainClient {
           var id = tag.getUUID("Id");
           var previous = manager.trains.get(id);
           if (tag.getBoolean("Removed")) {
-            if (previous instanceof PhysicalTrainProxy) manager.trains.remove(id);
+            if (previous instanceof PhysicalTrainProxy proxy) {
+              var station = proxy.getCurrentStation();
+              proxy.station(null);
+              PhysicalTrainProxy.syncStation(proxy, station);
+              manager.trains.remove(id);
+            }
             return;
           }
           if (previous != null && !(previous instanceof PhysicalTrainProxy)) {
@@ -28,7 +33,9 @@ final class NativeTrainClient {
             return;
           }
           var proxy = previous instanceof PhysicalTrainProxy p ? p : new PhysicalTrainProxy(id);
+          var oldStation = proxy.getCurrentStation();
           proxy.apply(tag, manager.trackNetworks);
+          PhysicalTrainProxy.syncStation(proxy, oldStation);
           manager.trains.put(id, proxy);
         };
     NeoForge.EVENT_BUS.addListener(

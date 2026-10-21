@@ -2,50 +2,29 @@ package com.guidedrailways.mixin;
 
 import com.guidedrailways.StationPresence;
 import com.simibubi.create.content.trains.station.StationBlockEntity;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.*;
 
 @Mixin(value = StationBlockEntity.class, remap = false)
 public abstract class StationBlockEntityMixin {
-  @Shadow boolean trainPresent;
-  @Unique private boolean guidedrailways$present;
-
-  @Inject(method = "write", at = @At("RETURN"), require = 1)
-  private void guidedrailways$writePresence(
-      CompoundTag tag, HolderLookup.Provider registries, boolean packet, CallbackInfo ci) {
-    var self = (StationBlockEntity) (Object) this;
-    tag.putBoolean(
-        "GuidedPhysicalPresent",
-        self.getLevel() != null && self.getLevel().isClientSide
-            ? guidedrailways$present
-            : StationPresence.present(self.getLevel(), self.getBlockPos()));
+  @Inject(method = "applyAutoSchedule", at = @At("HEAD"), cancellable = true, require = 1)
+  private void guidedrailways$keepScheduleInControls(CallbackInfo ci) {
+    var station = ((StationBlockEntity) (Object) this).getStation();
+    if (station != null
+        && station.getImminentTrain() instanceof com.guidedrailways.PhysicalTrainProxy) ci.cancel();
   }
 
-  @Inject(method = "read", at = @At("RETURN"), require = 1)
-  private void guidedrailways$readPresence(
-      CompoundTag tag, HolderLookup.Provider registries, boolean packet, CallbackInfo ci) {
-    guidedrailways$present = tag.getBoolean("GuidedPhysicalPresent");
-  }
-
-  @Redirect(
-      method = "tick",
-      at =
-          @At(
-              value = "FIELD",
-              target =
-                  "Lcom/simibubi/create/content/trains/station/StationBlockEntity;trainPresent:Z",
-              opcode = Opcodes.GETFIELD),
-      require = 1)
-  private boolean guidedrailways$clientFlag(StationBlockEntity station) {
-    // Only client flag animation sees the combined state. Never claim a native Train exists.
-    return trainPresent
-        || station.getLevel() != null && station.getLevel().isClientSide && guidedrailways$present;
+  @Inject(method = "dropSchedule", at = @At("HEAD"), cancellable = true, require = 1)
+  private void guidedrailways$physicalScheduleHint(
+      ServerPlayer player, com.simibubi.create.content.trains.entity.Train train, CallbackInfo ci) {
+    if (!(train instanceof com.guidedrailways.PhysicalTrainProxy)) return;
+    if (player != null)
+      player.displayClientMessage(
+          Component.translatable("gui.guidedrailways.auto.physical_station"), true);
+    ci.cancel();
   }
 
   @Inject(method = "enterAssemblyMode", at = @At("HEAD"), cancellable = true, require = 1)

@@ -51,6 +51,7 @@ public final class PhysicalTrainProxy extends Train {
     currentlyBackwards = speed < 0;
     derailed = data.getBoolean("Derailed") || graph == null;
     length = data.getInt("Length");
+    currentStation = data.hasUUID("Station") ? data.getUUID("Station") : null;
     var parts = data.getList("Carriages", Tag.TAG_COMPOUND);
     var ids = new ArrayList<String>();
     for (var value : parts) {
@@ -91,6 +92,23 @@ public final class PhysicalTrainProxy extends Train {
       }
     }
     invalid = false;
+  }
+
+  /** Actual station association only; never invokes the native runtime or mail transfer. */
+  void station(UUID station) {
+    currentStation = station;
+    if (station == null) snapshot.remove("Station");
+    else snapshot.putUUID("Station", station);
+  }
+
+  static void syncStation(
+      PhysicalTrainProxy train, com.simibubi.create.content.trains.station.GlobalStation previous) {
+    var current = train.getCurrentStation();
+    if (previous != null && previous != current) previous.cancelReservation(train);
+    if (current != null
+        && !current.assembling
+        && (current.getNearestTrain() == null || current.getNearestTrain() == train))
+      current.reserveFor(train);
   }
 
   static Vec3 vector(CompoundTag tag, String key) {
