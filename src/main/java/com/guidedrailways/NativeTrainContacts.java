@@ -23,13 +23,10 @@ public final class NativeTrainContacts {
   private record Contact(Physical body, Native carriage, Vector3d normal, double force) {}
 
   public static final class Frame {
-    private final ServerLevel level;
     private final Map<Integer, Physical> bodies = new HashMap<>();
     private final Map<Integer, Native> carriages = new HashMap<>();
 
-    private Frame(ServerLevel level) {
-      this.level = level;
-    }
+    private Frame() {}
 
     public void accept(double[] data) {
       // Sable 2.0.3: IDs, contact force, two local normals, two local points (15 doubles).
@@ -88,7 +85,7 @@ public final class NativeTrainContacts {
   }
 
   public static Frame capture(ServerLevel level, Map<Integer, KinematicContraption> contraptions) {
-    var frame = new Frame(level);
+    var frame = new Frame();
     var system = SubLevelPhysicsSystem.get(level);
     if (system == null) return frame;
     for (var unit : VehiclePhysics.cargoUnits(level))

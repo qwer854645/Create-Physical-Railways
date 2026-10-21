@@ -87,7 +87,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     return true;
   }
 
-  float lever = -1, previousLever = -1, reverser = 1, previousReverser = 1;
+  float lever = -1, previousLever = -1, reverser = 1;
   double actual, available;
   int supports, powered, guided, mountBrakes;
 
@@ -125,7 +125,6 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   void clientTick() {
     previousLever = lever;
     lever += ((float) DriverModel.lever(notch) - lever) * .5f;
-    previousReverser = reverser;
     reverser += (direction - reverser) * .5f;
   }
 
