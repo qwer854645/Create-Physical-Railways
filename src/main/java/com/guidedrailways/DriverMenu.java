@@ -11,7 +11,8 @@ public final class DriverMenu extends AbstractContainerMenu {
   private final Player viewer;
   private long nextDetails;
   private DriverNetwork.MenuState sentDetails;
-  DriverNetwork.MenuState details = new DriverNetwork.MenuState(-1, "", -1, "", 100, "");
+  DriverNetwork.MenuState details =
+      new DriverNetwork.MenuState(-1, "", -1, "", 100, "", TrainOwner.UNKNOWN);
   DriverNetwork.NameResult nameResult;
   ItemStack schedulePreview = ItemStack.EMPTY;
   private ItemStack sentSchedule;
@@ -86,7 +87,9 @@ public final class DriverMenu extends AbstractContainerMenu {
   void setName(net.minecraft.server.level.ServerPlayer player, String value) {
     boolean applied = console != null && stillValid(player) && console.setTrainName(player, value);
     String actual =
-        console == null ? "" : applied ? console.trainName() : DriverControls.trainName(console);
+        console == null
+            ? ""
+            : applied ? console.trainName() : DriverControls.primaryForView(console).trainName();
     nextDetails = 0;
     broadcastChanges();
     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
@@ -117,6 +120,7 @@ public final class DriverMenu extends AbstractContainerMenu {
             : -1;
     String title = console.schedule.currentTitle;
     if (title.length() > 256) title = title.substring(0, 256);
+    var primary = DriverControls.primaryForView(console);
     var next =
         new DriverNetwork.MenuState(
             containerId,
@@ -124,7 +128,8 @@ public final class DriverMenu extends AbstractContainerMenu {
             distance,
             title,
             (int) Math.round(console.schedule.throttle * 100),
-            DriverControls.trainName(console));
+            primary.trainName(),
+            primary.trainOwner());
     if (!next.equals(sentDetails)) {
       sentDetails = next;
       net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, next);

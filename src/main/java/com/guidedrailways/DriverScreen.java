@@ -272,6 +272,13 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       else if (nameSaved)
         g.drawString(
             font, text("name_saved"), leftPos + 12, topPos + 126, CreateGuiTheme.ACCENT, false);
+      g.drawString(
+          font,
+          CreateGuiTheme.fit(font, ownerHeading().getString(), 276),
+          leftPos + 12,
+          topPos + 150,
+          CreateGuiTheme.TEXT,
+          false);
       return;
     }
     if (gearTab) {
@@ -421,6 +428,12 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         : Component.translatable("gui.guidedrailways.auto.title", menu.details.title());
   }
 
+  private Component ownerHeading() {
+    var owner = menu.details.owner();
+    return text(
+        "train_owner", owner.known() ? UserText.userInput(owner.label()) : text("owner_unknown"));
+  }
+
   @Override
   public void render(GuiGraphics g, int x, int y, float partial) {
     for (var widget : mainWidgets) widget.visible = !gearTab && !nameTab;
@@ -454,6 +467,13 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     autoRemove.active = menu.value(12) != 0 && menu.value(18) != 0 && menu.value(20) != 0;
     super.render(g, x, y, partial);
     renderTooltip(g, x, y);
+    if (nameTab && menu.details.owner().known() && isHovering(12, 146, 276, 17, x, y))
+      g.renderTooltip(
+          font,
+          List.of(ownerHeading(), UserText.userInput(menu.details.owner().id().toString())),
+          Optional.empty(),
+          x,
+          y);
     if (nameTab
         && !trainName.isFocused()
         && font.width(trainName.getValue()) > 264

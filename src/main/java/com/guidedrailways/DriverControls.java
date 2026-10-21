@@ -86,12 +86,11 @@ public final class DriverControls {
         && (b == null || VIEW.getOrDefault(level, Map.of()).get(b.getUniqueId()) == e);
   }
 
-  static String trainName(DriverConsoleEntity console) {
+  static DriverConsoleEntity primaryForView(DriverConsoleEntity console) {
     var carrier = body(console);
-    if (!(console.getLevel() instanceof ServerLevel level) || carrier == null)
-      return console.trainName();
+    if (!(console.getLevel() instanceof ServerLevel level) || carrier == null) return console;
     var primary = VIEW.getOrDefault(level, Map.of()).get(carrier.getUniqueId());
-    return primary == null ? console.trainName() : primary.trainName();
+    return primary == null ? console : primary;
   }
 
   static void secondaryHint(Player player) {

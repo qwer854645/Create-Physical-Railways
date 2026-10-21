@@ -90,7 +90,8 @@ public final class DriverNetwork {
       int remainingTenths,
       String title,
       int throttlePercent,
-      String trainName)
+      String trainName,
+      TrainOwner owner)
       implements CustomPacketPayload {
     static final Type<MenuState> TYPE =
         new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "driver_menu_state"));
@@ -103,6 +104,11 @@ public final class DriverNetwork {
               b.writeUtf(v.title, 256);
               b.writeVarInt(v.throttlePercent);
               b.writeUtf(v.trainName, TrainName.MAX_LENGTH);
+              b.writeBoolean(v.owner.known());
+              if (v.owner.known()) {
+                b.writeUUID(v.owner.id());
+                b.writeUtf(v.owner.name(), TrainName.MAX_LENGTH);
+              }
             },
             b ->
                 new MenuState(
@@ -111,7 +117,10 @@ public final class DriverNetwork {
                     b.readVarInt(),
                     b.readUtf(256),
                     b.readVarInt(),
-                    b.readUtf(TrainName.MAX_LENGTH)));
+                    b.readUtf(TrainName.MAX_LENGTH),
+                    b.readBoolean()
+                        ? new TrainOwner(b.readUUID(), b.readUtf(TrainName.MAX_LENGTH))
+                        : TrainOwner.UNKNOWN));
 
     @Override
     public Type<MenuState> type() {
@@ -199,7 +208,7 @@ public final class DriverNetwork {
   }
 
   static void register(RegisterPayloadHandlersEvent event) {
-    var r = event.registrar("3");
+    var r = event.registrar("4");
     r.playToServer(
         SetName.TYPE,
         SetName.CODEC,

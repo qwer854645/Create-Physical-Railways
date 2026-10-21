@@ -22,12 +22,18 @@ public final class PhysicalTrainProxy extends Train {
   private List<String> bodyIds = List.of();
   private int length;
   private CompoundTag snapshot = new CompoundTag();
+  private TrainOwner trainOwner = TrainOwner.UNKNOWN;
+
+  TrainOwner trainOwner() {
+    return trainOwner;
+  }
+
   final NativeTrainJourney journey = new NativeTrainJourney();
 
   PhysicalTrainProxy(UUID id) {
     super(
         id,
-        new UUID(0, 0),
+        null,
         null,
         new ArrayList<>(),
         new ArrayList<>(),
@@ -48,6 +54,10 @@ public final class PhysicalTrainProxy extends Train {
       Map<UUID, TrackGraph> graphs,
       net.minecraft.core.HolderLookup.Provider registries) {
     snapshot = data.copy();
+    trainOwner =
+        new TrainOwner(
+            data.hasUUID("Owner") ? data.getUUID("Owner") : null, data.getString("OwnerName"));
+    owner = trainOwner.id();
     String customName = TrainName.normalize(data.getString("Name"));
     name =
         customName.isEmpty()

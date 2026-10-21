@@ -237,5 +237,8 @@
   "gui.guidedrailways.driver.apply_name": "应用名称",
   "gui.guidedrailways.driver.name_help": "留空使用默认名称\n名称适用于整个连挂编组",
   "gui.guidedrailways.driver.name_read_only": "请使用可操作的主驾驶台修改名称",
-  "gui.guidedrailways.driver.name_saved": "名称已保存"
+  "gui.guidedrailways.driver.name_saved": "名称已保存",
+  "gui.guidedrailways.driver.train_owner": "所有者：%s",
+  "gui.guidedrailways.driver.owner_unknown": "未记录",
+  "message.guidedrailways.identity.owner": "\n所有者：%s · UUID：%s"
 }

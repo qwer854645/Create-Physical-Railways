@@ -21,6 +21,11 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   int direction = 1, notch = -4;
   private int[] gearSpeeds;
   private String trainName = "";
+  private TrainOwner trainOwner = TrainOwner.UNKNOWN;
+
+  TrainOwner trainOwner() {
+    return trainOwner;
+  }
 
   String trainName() {
     return trainName;
@@ -106,8 +111,12 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     return new DriverMenu(id, inventory, this);
   }
 
-  void placed(ServerLevel server) {
+  void placed(ServerLevel server, Player player) {
     consoleId = java.util.UUID.randomUUID();
+    trainOwner =
+        player == null
+            ? TrainOwner.UNKNOWN
+            : new TrainOwner(player.getUUID(), player.getGameProfile().getName());
     placementOrder = ConsoleOrderData.place(server);
     setChanged();
     DriverControls.register(server, this);
@@ -286,6 +295,10 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     super.saveAdditional(tag, registries);
     tag.putInt("Direction", direction);
     tag.putString("TrainName", trainName);
+    if (trainOwner.known()) {
+      tag.putUUID("PlacedBy", trainOwner.id());
+      tag.putString("PlacedByName", trainOwner.name());
+    }
     tag.putIntArray("GearSpeeds", gearSpeeds());
     tag.putUUID("ConsoleId", consoleId);
     tag.putLong("PlacementOrder", placementOrder);
@@ -299,6 +312,10 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     if (tag.hasUUID("ConsoleId")) consoleId = tag.getUUID("ConsoleId");
     placementOrder = Math.max(0, tag.getLong("PlacementOrder"));
     trainName = TrainName.normalize(tag.getString("TrainName"));
+    trainOwner =
+        new TrainOwner(
+            tag.hasUUID("PlacedBy") ? tag.getUUID("PlacedBy") : null,
+            tag.getString("PlacedByName"));
     schedule.load(tag, registries);
     direction = tag.contains("Direction") ? Math.clamp(tag.getInt("Direction"), -1, 1) : 1;
     int[] gears = tag.getIntArray("GearSpeeds");

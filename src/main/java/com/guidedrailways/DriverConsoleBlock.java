@@ -47,7 +47,8 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
       net.minecraft.world.item.ItemStack stack) {
     super.setPlacedBy(level, pos, state, entity, stack);
     if (level instanceof net.minecraft.server.level.ServerLevel server
-        && level.getBlockEntity(pos) instanceof DriverConsoleEntity console) console.placed(server);
+        && level.getBlockEntity(pos) instanceof DriverConsoleEntity console)
+      console.placed(server, entity instanceof Player player ? player : null);
   }
 
   @Override

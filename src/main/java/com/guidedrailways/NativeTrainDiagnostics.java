@@ -34,6 +34,14 @@ final class NativeTrainDiagnostics {
                     : "message.guidedrailways.identity.on_track"),
             stoppedAt);
     if (train instanceof PhysicalTrainProxy proxy) {
+      var owner = proxy.trainOwner();
+      description.append(
+          Component.translatable(
+              "message.guidedrailways.identity.owner",
+              owner.known()
+                  ? UserText.userInput(owner.label())
+                  : Component.translatable("gui.guidedrailways.driver.owner_unknown"),
+              owner.known() ? owner.id().toString() : "—"));
       var journey = proxy.snapshot().getCompound("Journey");
       if (train.runtime.getSchedule() != null) {
         var nav = journey.getCompound("Navigation");

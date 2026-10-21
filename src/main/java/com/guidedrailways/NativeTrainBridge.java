@@ -216,6 +216,11 @@ public final class NativeTrainBridge {
     tag.putUUID("Id", id);
     var driver = group.units().getFirst().driver;
     tag.putString("Name", driver == null ? "" : driver.trainName());
+    var owner = driver == null ? TrainOwner.UNKNOWN : driver.trainOwner();
+    if (owner.known()) {
+      tag.putUUID("Owner", owner.id());
+      tag.putString("OwnerName", owner.name());
+    }
     tag.putString("Dimension", level.dimension().location().toString());
     var carriages = new ListTag();
     UUID graph = null;

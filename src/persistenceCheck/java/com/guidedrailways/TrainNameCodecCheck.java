@@ -57,7 +57,7 @@ public final class TrainNameCodecCheck {
       roundTrip(DriverNetwork.NameResult.CODEC, new DriverNetwork.NameResult(8, false, name));
       roundTrip(
           DriverNetwork.MenuState.CODEC,
-          new DriverNetwork.MenuState(8, "Target", 185, "Route", 75, name));
+          new DriverNetwork.MenuState(8, "Target", 185, "Route", 75, name, TrainOwner.UNKNOWN));
       var tag = new CompoundTag();
       tag.putString("TrainName", name);
       var bytes = new java.io.ByteArrayOutputStream();

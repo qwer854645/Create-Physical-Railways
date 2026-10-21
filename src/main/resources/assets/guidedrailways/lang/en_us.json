@@ -237,5 +237,8 @@
   "gui.guidedrailways.driver.apply_name": "Apply Name",
   "gui.guidedrailways.driver.name_help": "Leave blank to use the default name\nThe name applies to the entire coupled train",
   "gui.guidedrailways.driver.name_read_only": "Use the available primary controls to rename",
-  "gui.guidedrailways.driver.name_saved": "Name saved"
+  "gui.guidedrailways.driver.name_saved": "Name saved",
+  "gui.guidedrailways.driver.train_owner": "Owner: %s",
+  "gui.guidedrailways.driver.owner_unknown": "Not recorded",
+  "message.guidedrailways.identity.owner": "\nOwner: %s · UUID: %s"
 }
