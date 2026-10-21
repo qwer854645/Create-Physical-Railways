@@ -172,7 +172,6 @@ public final class DriverControls {
       e.supports = 0;
       e.powered = 0;
       e.guided = 0;
-      e.mountBrakes = 0;
       var b = body(e);
       if (b != null
           && chosen.get(b.getUniqueId()) != e
@@ -206,7 +205,6 @@ public final class DriverControls {
         if (u.carrier == body) {
           e.supports++;
           if (!u.detached) e.guided++;
-          if (u.mount.braking) e.mountBrakes++;
           if (Math.abs(VehicleTraction.inputRpm(u)) > .001) {
             e.powered++;
             double cap = e.targetSpeed(VehicleTraction.inputRpm(u));

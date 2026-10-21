@@ -6,6 +6,30 @@ import net.minecraft.world.item.ItemStack;
 
 /** Only sneak-right settings creates a menu. Driving is independent of menu lifetime. */
 public final class DriverMenu extends AbstractContainerMenu {
+  enum Field {
+    DIRECTION,
+    ACTUAL_SPEED,
+    AVAILABLE_SPEED,
+    SUPPORTS,
+    POWERED,
+    IS_OPERATOR,
+    HAS_SCHEDULE,
+    SCHEDULE_STATUS,
+    SCHEDULE_ENTRY,
+    SCHEDULE_TOTAL,
+    IS_PRIMARY,
+    SCHEDULE_RUNNING,
+    STOPPED,
+    OBSERVING,
+    OPERATOR_AVAILABLE,
+    MAX_SPEED,
+    CAN_CONFIGURE;
+  }
+
+  private static final Field[] FIELDS = Field.values();
+  private static final int GEAR_OFFSET = FIELDS.length;
+  private static final int DATA_COUNT = GEAR_OFFSET + DriverModel.MAX_NOTCH;
+
   private final DriverConsoleEntity console;
   private final ContainerData data;
   private final Player viewer;
@@ -23,44 +47,40 @@ public final class DriverMenu extends AbstractContainerMenu {
     viewer = inventory.player;
     data =
         console == null
-            ? new SimpleContainerData(31)
+            ? new SimpleContainerData(DATA_COUNT)
             : new ContainerData() {
               @Override
               public int get(int i) {
-                if (i >= 22 && i < 30) return console.gearSpeeds()[i - 22];
-                return switch (i) {
-                  case 0 -> console.active ? 1 : 0;
-                  case 1 -> console.direction;
-                  case 2 -> console.notch;
-                  case 3 -> console.emergency ? 1 : 0;
-                  case 4 -> (int) Math.clamp(console.actual * 100, -32000, 32000);
-                  case 5 -> (int) Math.clamp(console.available * 100, 0, 32000);
-                  case 6 -> console.supports;
-                  case 7 -> console.powered;
-                  case 8 -> console.guided;
-                  case 9 -> console.mountBrakes;
-                  case 10 -> 1;
-                  case 11 ->
+                if (i >= GEAR_OFFSET && i < DATA_COUNT)
+                  return console.gearSpeeds()[i - GEAR_OFFSET];
+                return switch (FIELDS[i]) {
+                  case DIRECTION -> console.direction;
+                  case ACTUAL_SPEED -> (int) Math.clamp(console.actual * 100, -32000, 32000);
+                  case AVAILABLE_SPEED -> (int) Math.clamp(console.available * 100, 0, 32000);
+                  case SUPPORTS -> console.supports;
+                  case POWERED -> console.powered;
+                  case IS_OPERATOR ->
                       inventory.player.getUUID().equals(console.operator)
                               && DriverControls.primaryView(console)
                           ? 1
                           : 0;
-                  case 12 -> console.schedule.present() ? 1 : 0;
-                  case 13 -> DriverControls.primaryView(console) ? console.schedule.status : 15;
-                  case 14 -> Math.min(console.schedule.total(), console.schedule.entry + 1);
-                  case 15 -> console.schedule.total();
-                  case 16 -> DriverControls.primaryView(console) ? 1 : 0;
-                  case 17 -> console.schedule.running ? 1 : 0;
-                  case 18 -> DriverControls.stopped(console) ? 1 : 0;
-                  case 19 -> console.observing ? 1 : 0;
-                  case 20 ->
+                  case HAS_SCHEDULE -> console.schedule.present() ? 1 : 0;
+                  case SCHEDULE_STATUS ->
+                      DriverControls.primaryView(console) ? console.schedule.status : 15;
+                  case SCHEDULE_ENTRY ->
+                      Math.min(console.schedule.total(), console.schedule.entry + 1);
+                  case SCHEDULE_TOTAL -> console.schedule.total();
+                  case IS_PRIMARY -> DriverControls.primaryView(console) ? 1 : 0;
+                  case SCHEDULE_RUNNING -> console.schedule.running ? 1 : 0;
+                  case STOPPED -> DriverControls.stopped(console) ? 1 : 0;
+                  case OBSERVING -> console.observing ? 1 : 0;
+                  case OPERATOR_AVAILABLE ->
                       console.operator == null
                               || inventory.player.getUUID().equals(console.operator)
                           ? 1
                           : 0;
-                  case 21 -> console.maxSpeedTenths();
-                  case 30 -> console.canConfigureView(inventory.player) ? 1 : 0;
-                  default -> 0;
+                  case MAX_SPEED -> console.maxSpeedTenths();
+                  case CAN_CONFIGURE -> console.canConfigureView(inventory.player) ? 1 : 0;
                 };
               }
 
@@ -69,14 +89,18 @@ public final class DriverMenu extends AbstractContainerMenu {
 
               @Override
               public int getCount() {
-                return 31;
+                return DATA_COUNT;
               }
             };
     addDataSlots(data);
   }
 
-  int value(int index) {
-    return data.get(index);
+  int value(Field field) {
+    return data.get(field.ordinal());
+  }
+
+  int gear(int index) {
+    return data.get(GEAR_OFFSET + index);
   }
 
   void setGears(Player player, int[] tenths) {

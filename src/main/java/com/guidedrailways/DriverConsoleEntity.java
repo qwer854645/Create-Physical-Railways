@@ -89,7 +89,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
 
   float lever = -1, previousLever = -1, reverser = 1;
   double actual, available;
-  int supports, powered, guided, mountBrakes;
+  int supports, powered, guided;
 
   DriverConsoleEntity(BlockPos p, BlockState s) {
     super(Content.DRIVER_ENTITY.get(), p, s);

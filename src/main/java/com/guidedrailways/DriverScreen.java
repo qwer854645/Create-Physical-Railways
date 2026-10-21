@@ -1,5 +1,7 @@
 package com.guidedrailways;
 
+import static com.guidedrailways.DriverMenu.Field.*;
+
 import com.simibubi.create.foundation.gui.AllIcons;
 import java.util.*;
 import net.minecraft.client.gui.GuiGraphics;
@@ -69,8 +71,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
   protected void init() {
     super.init();
     mainWidgets.clear();
-    forward = command(text("forward"), 12, 76, 133, 3).selected(() -> menu.value(1) == 1);
-    reverse = command(text("reverse"), 155, 76, 133, 5).selected(() -> menu.value(1) == -1);
+    forward = command(text("forward"), 12, 76, 133, 3).selected(() -> menu.value(DIRECTION) == 1);
+    reverse = command(text("reverse"), 155, 76, 133, 5).selected(() -> menu.value(DIRECTION) == -1);
     autoStart = command(Component.translatable("gui.guidedrailways.auto.start"), 12, 168, 86, 30);
     autoPause = command(Component.translatable("gui.guidedrailways.auto.pause"), 107, 168, 86, 31);
     autoSkip = command(Component.translatable("gui.guidedrailways.auto.skip"), 202, 168, 86, 33);
@@ -162,11 +164,11 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       if (SpeedSetting.valid(value)) return value;
     } catch (NumberFormatException ignored) {
     }
-    return Math.max(SpeedSetting.MIN, menu.value(22 + selectedGear));
+    return Math.max(SpeedSetting.MIN, menu.gear(selectedGear));
   }
 
   private int sliderMaximum() {
-    int maximum = Math.max(SpeedSetting.MIN, menu.value(21));
+    int maximum = Math.max(SpeedSetting.MIN, menu.value(MAX_SPEED));
     for (var box : gears)
       try {
         int value = (int) Math.round(Double.parseDouble(box.getValue()) * 10);
@@ -205,7 +207,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
   }
 
   private void applyName() {
-    if (!saveName.active || namePending || menu.value(30) == 0) return;
+    if (!saveName.active || namePending || menu.value(CAN_CONFIGURE) == 0) return;
     namePending = true;
     nameFailed = nameSaved = false;
     net.neoforged.neoforge.network.PacketDistributor.sendToServer(
@@ -239,7 +241,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       nameEdited = nameSaved = false;
     }
     for (int i = 0; i < gears.length; i++) {
-      int value = menu.value(22 + i);
+      int value = menu.gear(i);
       if (value > 0 && value != syncedGears[i] && !gearsEdited) {
         gears[i].setValue(String.format(Locale.ROOT, "%.1f", value / 10.0));
         gearsEdited = false;
@@ -266,7 +268,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         g.drawString(font, line, leftPos + 12, y, CreateGuiTheme.DIM, false);
         y += 12;
       }
-      if (nameFailed || menu.value(30) == 0)
+      if (nameFailed || menu.value(CAN_CONFIGURE) == 0)
         g.drawString(
             font, text("name_read_only"), leftPos + 12, topPos + 126, CreateGuiTheme.DIM, false);
       else if (nameSaved)
@@ -319,7 +321,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       return;
     }
     CreateGuiTheme.inset(g, leftPos + 12, topPos + 29, 276, 40);
-    if (menu.value(12) != 0)
+    if (menu.value(HAS_SCHEDULE) != 0)
       g.drawString(
           font,
           CreateGuiTheme.fit(font, scheduleHeading().getString(), 158),
@@ -330,7 +332,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     CreateGuiTheme.inset(g, leftPos + 12, topPos + 102, 276, 57);
     g.drawString(
         font,
-        text("actual", String.format(Locale.ROOT, "%+.2f", menu.value(4) / 100.0)),
+        text("actual", String.format(Locale.ROOT, "%+.2f", menu.value(ACTUAL_SPEED) / 100.0)),
         leftPos + 18,
         topPos + 35,
         CreateGuiTheme.ACCENT,
@@ -341,9 +343,9 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
             font,
             text(
                     "power",
-                    String.format(Locale.ROOT, "%.2f", menu.value(5) / 100.0),
-                    menu.value(7),
-                    menu.value(6))
+                    String.format(Locale.ROOT, "%.2f", menu.value(AVAILABLE_SPEED) / 100.0),
+                    menu.value(POWERED),
+                    menu.value(SUPPORTS))
                 .getString(),
             264),
         leftPos + 18,
@@ -386,19 +388,22 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         font,
         CreateGuiTheme.fit(
             font,
-            Component.translatable("gui.guidedrailways.auto.state." + menu.value(13)).getString(),
+            Component.translatable("gui.guidedrailways.auto.state." + menu.value(SCHEDULE_STATUS))
+                .getString(),
             264),
         leftPos + 18,
         topPos + 124,
         CreateGuiTheme.ACCENT,
         false);
-    if (menu.value(12) != 0)
+    if (menu.value(HAS_SCHEDULE) != 0)
       g.drawString(
           font,
           CreateGuiTheme.fit(
               font,
               Component.translatable(
-                      "gui.guidedrailways.auto.progress", menu.value(14), menu.value(15))
+                      "gui.guidedrailways.auto.progress",
+                      menu.value(SCHEDULE_ENTRY),
+                      menu.value(SCHEDULE_TOTAL))
                   .getString(),
               136),
           leftPos + 18,
@@ -409,7 +414,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         font,
         CreateGuiTheme.fit(
             font,
-            text("configured_max", String.format(Locale.ROOT, "%.1f", menu.value(21) / 10.0))
+            text("configured_max", String.format(Locale.ROOT, "%.1f", menu.value(MAX_SPEED) / 10.0))
                 .getString(),
             248),
         leftPos + 12,
@@ -440,31 +445,44 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     gearTabButton.setMessage(text(gearTab || nameTab ? "back_settings" : "gear_settings"));
     nameTabButton.visible = !gearTab;
     trainName.visible = saveName.visible = nameTab;
-    trainName.setEditable(menu.value(30) != 0 && !namePending);
+    trainName.setEditable(menu.value(CAN_CONFIGURE) != 0 && !namePending);
     saveName.active =
-        menu.value(30) != 0
+        menu.value(CAN_CONFIGURE) != 0
             && !namePending
             && menu.details.menu() == menu.containerId
             && !TrainName.normalize(trainName.getValue()).equals(menu.details.trainName());
     for (int i = 0; i < gears.length; i++) {
       gears[i].visible = gearTab && i == selectedGear;
-      gears[i].setEditable(menu.value(16) != 0 && menu.value(20) != 0);
+      gears[i].setEditable(menu.value(IS_PRIMARY) != 0 && menu.value(OPERATOR_AVAILABLE) != 0);
     }
     lever.visible = speedSlider.visible = gearTab;
-    speedSlider.active = menu.value(16) != 0 && menu.value(20) != 0 && enteredGears() != null;
+    speedSlider.active =
+        menu.value(IS_PRIMARY) != 0
+            && menu.value(OPERATOR_AVAILABLE) != 0
+            && enteredGears() != null;
     speedSlider.refresh();
     saveGears.visible = gearTab;
-    saveGears.active = menu.value(16) != 0 && menu.value(20) != 0 && enteredGears() != null;
-    forward.active = reverse.active = menu.value(11) != 0 && menu.value(19) == 0;
-    boolean schedule = menu.value(12) != 0 && menu.value(16) != 0;
-    autoStart.active = schedule && menu.value(17) == 0;
-    autoPause.active = schedule && menu.value(17) != 0;
+    saveGears.active =
+        menu.value(IS_PRIMARY) != 0
+            && menu.value(OPERATOR_AVAILABLE) != 0
+            && enteredGears() != null;
+    forward.active = reverse.active = menu.value(IS_OPERATOR) != 0 && menu.value(OBSERVING) == 0;
+    boolean schedule = menu.value(HAS_SCHEDULE) != 0 && menu.value(IS_PRIMARY) != 0;
+    autoStart.active = schedule && menu.value(SCHEDULE_RUNNING) == 0;
+    autoPause.active = schedule && menu.value(SCHEDULE_RUNNING) != 0;
     autoSkip.active =
-        schedule && menu.value(18) != 0 && menu.value(13) != ScheduleController.FINISHED;
-    autoRestart.active = schedule && menu.value(18) != 0;
+        schedule
+            && menu.value(STOPPED) != 0
+            && menu.value(SCHEDULE_STATUS) != ScheduleController.FINISHED;
+    autoRestart.active = schedule && menu.value(STOPPED) != 0;
     takeover.active =
-        menu.value(16) != 0 && menu.value(20) != 0 && (menu.value(11) == 0 || menu.value(19) != 0);
-    autoRemove.active = menu.value(12) != 0 && menu.value(18) != 0 && menu.value(20) != 0;
+        menu.value(IS_PRIMARY) != 0
+            && menu.value(OPERATOR_AVAILABLE) != 0
+            && (menu.value(IS_OPERATOR) == 0 || menu.value(OBSERVING) != 0);
+    autoRemove.active =
+        menu.value(HAS_SCHEDULE) != 0
+            && menu.value(STOPPED) != 0
+            && menu.value(OPERATOR_AVAILABLE) != 0;
     super.render(g, x, y, partial);
     renderTooltip(g, x, y);
     if (nameTab && menu.details.owner().known() && isHovering(12, 146, 276, 17, x, y))
@@ -480,7 +498,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         && isHovering(12, 58, 276, 24, x, y))
       g.renderTooltip(
           font, List.of(UserText.userInput(trainName.getValue())), Optional.empty(), x, y);
-    if (!gearTab && !nameTab && menu.value(12) != 0 && isHovering(12, 19, 158, 9, x, y))
+    if (!gearTab && !nameTab && menu.value(HAS_SCHEDULE) != 0 && isHovering(12, 19, 158, 9, x, y))
       g.renderTooltip(
           font,
           menu.details.title().isEmpty()
@@ -492,7 +510,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
           Optional.empty(),
           x,
           y);
-    Component status = Component.translatable("gui.guidedrailways.auto.state." + menu.value(13));
+    Component status =
+        Component.translatable("gui.guidedrailways.auto.state." + menu.value(SCHEDULE_STATUS));
     if (!gearTab && !nameTab && font.width(status) > 264 && isHovering(18, 124, 264, 10, x, y))
       g.renderTooltip(font, List.of(status), Optional.empty(), x, y);
     Component target =

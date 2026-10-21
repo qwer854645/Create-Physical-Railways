@@ -206,11 +206,9 @@ final class AutomaticTrains {
     e.supports = group.size();
     e.powered = 0;
     e.guided = 0;
-    e.mountBrakes = 0;
     for (var u : group) {
       if (Math.abs(VehicleTraction.inputRpm(u)) > .001) e.powered++;
       if (!u.detached) e.guided++;
-      if (u.mount.braking) e.mountBrakes++;
     }
   }
 
