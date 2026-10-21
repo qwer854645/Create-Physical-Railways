@@ -11,6 +11,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 public final class TrainClient {
   static void register(IEventBus bus) {
+    ItemDescriptions.register(bus);
     NativeBogeyCapture.register();
     NativeTrainClient.register();
     if (net.neoforged.fml.ModList.get().isLoaded("railways")) {

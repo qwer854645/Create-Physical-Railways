@@ -1,6 +1,5 @@
 package com.guidedrailways;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.UseOnContext;
@@ -8,12 +7,6 @@ import net.minecraft.world.item.context.UseOnContext;
 public final class CouplerLinkItem extends Item {
   CouplerLinkItem(Properties properties) {
     super(properties);
-  }
-
-  @Override
-  public void appendHoverText(
-      ItemStack stack, TooltipContext context, java.util.List<Component> text, TooltipFlag flag) {
-    UserText.tooltip(text, "tooltip.guidedrailways.coupler_link");
   }
 
   @Override

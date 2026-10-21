@@ -9,7 +9,6 @@ import dev.simulated_team.simulated.multiloader.tanks.neoforge.SingleTankWrapper
 import java.util.*;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -43,18 +42,7 @@ final class RailDockContent {
                       .build(null));
   static final DeferredItem<BlockItem> ITEM =
       ITEMS.register(
-          "rail_docking_connector",
-          () ->
-              new BlockItem(BLOCK.get(), new Item.Properties()) {
-                @Override
-                public void appendHoverText(
-                    ItemStack stack,
-                    TooltipContext context,
-                    List<Component> tooltip,
-                    TooltipFlag flag) {
-                  UserText.tooltip(tooltip, "tooltip.guidedrailways.rail_docking_connector");
-                }
-              });
+          "rail_docking_connector", () -> new BlockItem(BLOCK.get(), new Item.Properties()));
   private static final Map<ServerLevel, Map<BlockPos, RailDockEntity>> LIVE = new WeakHashMap<>();
   private static final Map<ServerLevel, Map<UUID, String>> TRACE = new WeakHashMap<>();
 

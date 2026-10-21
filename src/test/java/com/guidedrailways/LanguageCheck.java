@@ -142,10 +142,18 @@ public final class LanguageCheck {
       check(
           en.containsKey("gui.guidedrailways.driver." + key),
           "missing conditional driver text: " + key);
-    for (String key : List.of("bogie", "coupler", "driver_console"))
+    for (String key :
+        List.of(
+            "item.guidedrailways.bogie",
+            "block.guidedrailways.coupler",
+            "block.guidedrailways.driver_console",
+            "item.guidedrailways.coupler_link",
+            "block.guidedrailways.rail_docking_connector"))
       check(
-          zh.get("tooltip.guidedrailways." + key).contains("\n"),
-          "item tooltip has actual translated line breaks");
+          zh.containsKey(key + ".tooltip.summary")
+              && zh.containsKey(key + ".tooltip.condition1")
+              && zh.containsKey(key + ".tooltip.behaviour1"),
+          "native Create Shift description has a summary and paired action help: " + key);
     System.out.println(
         "LanguageCheck: " + checks + " assertions passed; " + en.size() + " keys per language");
   }

@@ -36,19 +36,7 @@ public final class Content {
               "driver_console",
               () -> BlockEntityType.Builder.of(DriverConsoleEntity::new, DRIVER.get()).build(null));
   public static final DeferredItem<BlockItem> DRIVER_ITEM =
-      ITEMS.register(
-          "driver_console",
-          () ->
-              new BlockItem(DRIVER.get(), new Item.Properties()) {
-                @Override
-                public void appendHoverText(
-                    ItemStack s,
-                    TooltipContext c,
-                    java.util.List<Component> text,
-                    net.minecraft.world.item.TooltipFlag f) {
-                  UserText.tooltip(text, "tooltip.guidedrailways.driver_console");
-                }
-              });
+      ITEMS.register("driver_console", () -> new BlockItem(DRIVER.get(), new Item.Properties()));
 
   static BlockBehaviour.Properties metal() {
     return BlockBehaviour.Properties.of().strength(3).sound(SoundType.METAL).noOcclusion();
@@ -87,19 +75,7 @@ public final class Content {
   public static final DeferredItem<CouplerLinkItem> COUPLER_LINK =
       ITEMS.register("coupler_link", () -> new CouplerLinkItem(new Item.Properties().stacksTo(1)));
   public static final DeferredItem<BlockItem> COUPLER_ITEM =
-      ITEMS.register(
-          "coupler",
-          () ->
-              new BlockItem(COUPLER.get(), new Item.Properties()) {
-                @Override
-                public void appendHoverText(
-                    ItemStack s,
-                    TooltipContext c,
-                    java.util.List<Component> text,
-                    net.minecraft.world.item.TooltipFlag f) {
-                  UserText.tooltip(text, "tooltip.guidedrailways.coupler");
-                }
-              });
+      ITEMS.register("coupler", () -> new BlockItem(COUPLER.get(), new Item.Properties()));
 
   static {
     TABS.register(

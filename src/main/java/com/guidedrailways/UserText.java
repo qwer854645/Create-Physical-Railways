@@ -1,7 +1,6 @@
 package com.guidedrailways;
 
 import java.util.*;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 /** Player-facing messages stay translatable; technical exceptions remain in the log. */
@@ -24,10 +23,5 @@ final class UserText {
     return Arrays.stream(component.getString().split("\n"))
         .map(line -> (Component) Component.literal(line))
         .toList();
-  }
-
-  static void tooltip(List<Component> tooltip, String key) {
-    for (var line : lines(Component.translatable(key)))
-      tooltip.add(line.copy().withStyle(ChatFormatting.GRAY));
   }
 }

@@ -1,11 +1,9 @@
 package com.guidedrailways;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 
 public final class BogieItem extends Item {
@@ -16,13 +14,6 @@ public final class BogieItem extends Item {
   @Override
   public String getDescriptionId() {
     return "item.guidedrailways.bogie";
-  }
-
-  @Override
-  public void appendHoverText(
-      ItemStack s, TooltipContext c, java.util.List<Component> text, TooltipFlag f) {
-    UserText.tooltip(text, "tooltip.guidedrailways.bogie");
-    if (PhysicalBogeySelection.tooltip != null) PhysicalBogeySelection.tooltip.accept(text);
   }
 
   @Override
