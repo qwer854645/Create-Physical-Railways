@@ -708,5 +708,17 @@ if (project.hasProperty('signalServerTests')) {
         from configurations.devRuntimeMods
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
-    tasks.named('runSignalValidation') { dependsOn 'copySignalValidationMods' }
+    tasks.register('prepareSignalValidationWorld') {
+        doLast {
+            // Real fixture trains are saved by GameTestServer. Never reuse them on another run.
+            def root = file('build/signal-validation-run').canonicalFile
+            def world = new File(root, 'world').canonicalFile
+            if (world.parentFile != root || root != file("${layout.buildDirectory.get().asFile}/signal-validation-run").canonicalFile)
+                throw new GradleException('Signal fixture world must stay inside the dedicated build directory')
+            delete world
+        }
+    }
+    tasks.named('runSignalValidation') {
+        dependsOn 'copySignalValidationMods', 'prepareSignalValidationWorld'
+    }
 }
