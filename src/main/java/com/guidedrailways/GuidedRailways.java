@@ -37,6 +37,11 @@ public final class GuidedRailways {
           if (e.getEntity() instanceof ServerPlayer player) NativeTrainBridge.login(player);
         });
     NeoForge.EVENT_BUS.addListener(
+        (net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent e) -> {
+          if (e.getEntity() instanceof ServerPlayer player)
+            VehiclePlacement.logout(player.getUUID());
+        });
+    NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Post e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
             NativeTrainBridge.tick(level);

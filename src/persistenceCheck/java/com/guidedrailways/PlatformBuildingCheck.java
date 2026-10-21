@@ -75,8 +75,45 @@ public final class PlatformBuildingCheck {
         "body and candidate pose locals match the release helper arguments");
   }
 
+  @SuppressWarnings("unchecked")
+  private static void relocationLogout() throws Exception {
+    var field = VehiclePlacement.class.getDeclaredField("RELOCATING");
+    field.setAccessible(true);
+    var choices = (java.util.Map<java.util.UUID, Object>) field.get(null);
+    var before = new java.util.HashMap<>(choices);
+    var first = java.util.UUID.randomUUID();
+    var second = java.util.UUID.randomUUID();
+    var type = Class.forName("com.guidedrailways.VehiclePlacement$Relocate");
+    var constructor =
+        type.getDeclaredConstructor(
+            net.minecraft.server.level.ServerLevel.class, java.util.UUID.class, long.class);
+    constructor.setAccessible(true);
+    try {
+      choices.put(first, constructor.newInstance(null, java.util.UUID.randomUUID(), 600L));
+      choices.put(second, constructor.newInstance(null, java.util.UUID.randomUUID(), 600L));
+      var other = choices.get(second);
+      VehiclePlacement.logout(first);
+      check(!choices.containsKey(first), "logout releases this player's pending rerail selection");
+      check(choices.get(second) == other, "logout preserves another player's pending selection");
+      VehiclePlacement.logout(first);
+      check(choices.get(second) == other, "repeated logout cleanup is safe");
+    } finally {
+      choices.clear();
+      choices.putAll(before);
+    }
+    boolean wired = false;
+    for (var method : bytecode("com/guidedrailways/GuidedRailways").methods)
+      if (method.desc.contains("PlayerLoggedOutEvent"))
+        for (var instruction : method.instructions)
+          if (instruction instanceof org.objectweb.asm.tree.MethodInsnNode call
+              && call.owner.equals("com/guidedrailways/VehiclePlacement")
+              && call.name.equals("logout")) wired = true;
+    check(wired, "actual player logout event invokes selection cleanup");
+  }
+
   public static void main(String[] args) throws Exception {
     hookContract();
+    relocationLogout();
     var pose = new Pose3d();
     pose.position().set(0, .4714599, 0);
     var rotation = new Quaterniond();

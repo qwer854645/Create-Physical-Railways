@@ -63,6 +63,10 @@ final class VehiclePlacement {
         true);
   }
 
+  static void logout(UUID player) {
+    RELOCATING.remove(player);
+  }
+
   static boolean hasRelocation(net.minecraft.server.level.ServerPlayer player) {
     return RELOCATING.containsKey(player.getUUID());
   }
