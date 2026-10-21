@@ -15,6 +15,8 @@ public final class PhysicalSignals {
 
   private record Bridge(List<ScheduleRoute.Edge> edges) {}
 
+  private record Coverage(Set<UUID> signals, PhysicalObservers.Context observers) {}
+
   private record Axle(UUID bogie, int end) {}
 
   private record Previous(TrackNetwork.Sample sample, long tick) {}
@@ -64,7 +66,7 @@ public final class PhysicalSignals {
       var owner = group.members().stream().min(UUID::compareTo).orElseThrow();
       for (var id : group.members()) s.owners.put(id, owner);
     }
-    var occupied = new HashMap<UUID, Set<UUID>>();
+    var occupied = new HashMap<UUID, Coverage>();
     var running = new HashSet<UUID>();
     var liveBodies = new HashSet<UUID>();
     var anchors = new HashMap<UUID, List<TrackNetwork.Sample>>();
@@ -78,7 +80,13 @@ public final class PhysicalSignals {
       carriers.put(body, u.carrier);
       if (u.driver != null && u.driver.schedule.running) running.add(owner);
       if (u.driver != null) consoles.add(u.driver.consoleId);
-      var groups = occupied.computeIfAbsent(owner, k -> new HashSet<>());
+      var groups =
+          occupied.computeIfAbsent(
+              owner,
+              k ->
+                  new Coverage(
+                      new HashSet<>(),
+                      new PhysicalObservers.Context(level, TrainConsists.get(level).group(body))));
       var samples = anchors.computeIfAbsent(body, k -> new ArrayList<>());
       var heading =
           new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
@@ -113,7 +121,7 @@ public final class PhysicalSignals {
               bridge(s, level, previous.sample, sample, groups);
           }
         }
-      if (samples.isEmpty()) groups.addAll(s.lastKnown.getOrDefault(body, Set.of()));
+      if (samples.isEmpty()) groups.signals.addAll(s.lastKnown.getOrDefault(body, Set.of()));
     }
     // Connect wheel supports within each carriage, then between physically linked carriages.
     for (var entry : anchors.entrySet()) {
@@ -149,7 +157,7 @@ public final class PhysicalSignals {
         reach(s, level, front, axis, Math.max(.5, hi - max) + .15, groups);
         reach(s, level, rear, new Vector3d(axis).negate(), Math.max(.5, min - lo) + .15, groups);
       }
-      s.lastKnown.put(entry.getKey(), Set.copyOf(groups));
+      s.lastKnown.put(entry.getKey(), Set.copyOf(groups.signals));
     }
     var consistAnchors = new HashMap<UUID, List<TrackNetwork.Sample>>();
     var anchorBodies = new HashMap<UUID, Integer>();
@@ -195,19 +203,21 @@ public final class PhysicalSignals {
     s.previous.keySet().retainAll(liveAxles);
     s.stops.keySet().retainAll(consoles);
     if (s.traces.size() > 2048) s.traces.clear();
-    s.ledger.refresh(occupied, running, level.getGameTime());
+    var signalGroups = new HashMap<UUID, Set<UUID>>();
+    occupied.forEach((owner, coverage) -> signalGroups.put(owner, coverage.signals));
+    s.ledger.refresh(signalGroups, running, level.getGameTime());
   }
 
-  private static void mark(TrackNetwork.Path path, double low, double high, Set<UUID> groups) {
+  private static void mark(TrackNetwork.Path path, double low, double high, Coverage groups) {
     mark(path, low, high, groups, true);
   }
 
   private static void mark(
-      TrackNetwork.Path path, double low, double high, Set<UUID> groups, boolean observers) {
+      TrackNetwork.Path path, double low, double high, Coverage groups, boolean observers) {
     double length = path.edge().getLength();
     low = Math.clamp(low, 0, length);
     high = Math.clamp(high, low, length);
-    if (observers) PhysicalObservers.cover(path, low, high);
+    if (observers) groups.observers.cover(path, low, high);
     var cuts = new ArrayList<Double>();
     cuts.add(low);
     cuts.add(high);
@@ -227,13 +237,13 @@ public final class PhysicalSignals {
     }
   }
 
-  private static void addGroup(TrackNetwork.Path path, double offset, Set<UUID> groups) {
+  private static void addGroup(TrackNetwork.Path path, double offset, Coverage groups) {
     var id = path.edge().getEdgeData().getGroupAtPosition(path.network(), offset);
-    if (id != null && !id.equals(EdgeData.passiveGroup)) groups.add(id);
+    if (id != null && !id.equals(EdgeData.passiveGroup)) groups.signals.add(id);
   }
 
   private static void connectTree(
-      State s, ServerLevel level, List<TrackNetwork.Sample> samples, Set<UUID> groups) {
+      State s, ServerLevel level, List<TrackNetwork.Sample> samples, Coverage groups) {
     int size = samples.size();
     if (size < 2) return;
     var path = samples.getFirst().path();
@@ -277,7 +287,7 @@ public final class PhysicalSignals {
   }
 
   private static void bridge(
-      State s, ServerLevel level, TrackNetwork.Sample a, TrackNetwork.Sample b, Set<UUID> groups) {
+      State s, ServerLevel level, TrackNetwork.Sample a, TrackNetwork.Sample b, Coverage groups) {
     if (!a.path().graph().equals(b.path().graph())) return;
     if (a.path() == b.path()) {
       mark(
@@ -320,7 +330,7 @@ public final class PhysicalSignals {
         for (var signal : a.path().network().getPoints(EdgePointType.SIGNAL))
           for (boolean side : new boolean[] {false, true}) {
             var group = signal.groups.get(side);
-            if (group != null) groups.add(group);
+            if (group != null) groups.signals.add(group);
           }
         return;
       }
@@ -349,7 +359,7 @@ public final class PhysicalSignals {
       TrackNetwork.Sample sample,
       Vector3d heading,
       double distance,
-      Set<UUID> groups) {
+      Coverage groups) {
     var n = network(s, level, sample.path().graph());
     var first = n.direction(sample, heading);
     var queue = new ArrayDeque<Reach>();

@@ -110,6 +110,31 @@ public final class NativeCargoCheck {
     check(
         cargo.getVersion() != version && cargo.getTicksSinceLastExchange() == 0,
         "unbind invalidates revision and does not claim idle");
+    var observer = code("com/guidedrailways/PhysicalObservers$Context");
+    var query =
+        observer.methods.stream().filter(m -> m.name.equals("query")).findFirst().orElseThrow();
+    check(
+        calls(query).stream()
+            .noneMatch(c -> List.of("extractItem", "drain", "fill", "insertItem").contains(c.name)),
+        "observer reads copies without requiring writable handlers");
+    for (var name : List.of("getStackInSlot", "getFluidInTank", "test"))
+      check(
+          calls(query).stream().anyMatch(c -> c.name.equals(name)),
+          "observer uses native read/filter interface: " + name);
+    var nativeObserver = code("com/simibubi/create/content/trains/observer/TrackObserver");
+    var keepAlive =
+        nativeObserver.methods.stream()
+            .filter(m -> m.name.equals("keepAlive"))
+            .findFirst()
+            .orElseThrow();
+    for (var field : List.of("activated", "currentTrain")) {
+      boolean written = false;
+      for (var i : keepAlive.instructions)
+        if (i instanceof FieldInsnNode f
+            && f.getOpcode() == Opcodes.PUTFIELD
+            && f.name.equals(field)) written = true;
+      check(written, "native keepAlive owns " + field);
+    }
     System.out.println("NativeCargoCheck: " + checks + " checks passed");
   }
 }

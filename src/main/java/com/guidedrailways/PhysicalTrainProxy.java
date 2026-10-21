@@ -29,6 +29,7 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   final NativeTrainJourney journey = new NativeTrainJourney();
+  final ObserverFilterCache observerFilters = new ObserverFilterCache();
 
   PhysicalTrainProxy(UUID id) {
     super(
@@ -142,6 +143,7 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   private void clearCargo() {
+    observerFilters.clear();
     for (var carriage : carriages)
       if (carriage.storage instanceof PhysicalCargoManager cargo) cargo.unbind();
   }
