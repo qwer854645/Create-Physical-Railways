@@ -681,3 +681,32 @@ tasks.register('checkClientSignals', JavaExec) {
 }
 
 tasks.named('check') { dependsOn 'checkClientSignals' }
+
+// Opt-in server fixtures are a separate development mod and never enter the release jar.
+if (project.hasProperty('signalServerTests')) {
+    sourceSets {
+        signalValidation {
+            compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+            runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+        }
+    }
+    neoForge {
+        mods {
+            guidedrailways_signal_validation { sourceSet sourceSets.signalValidation }
+        }
+        runs {
+            signalValidation {
+                type = 'gameTestServer'
+                gameDirectory = file('build/signal-validation-run')
+                systemProperty 'neoforge.enabledGameTestNamespaces', 'guidedrailways_signal_validation'
+            }
+        }
+    }
+    tasks.register('copySignalValidationMods', Copy) {
+        into file('build/signal-validation-run/mods')
+        from('libs') { include '*.jar' }
+        from configurations.devRuntimeMods
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    tasks.named('runSignalValidation') { dependsOn 'copySignalValidationMods' }
+}
