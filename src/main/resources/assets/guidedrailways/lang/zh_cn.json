@@ -100,6 +100,8 @@
   "gui.guidedrailways.driver.secondary": "备用驾驶台：列车由最先放置的驾驶台控制",
   "gui.guidedrailways.auto.state.15": "备用驾驶台，可取回存放的时刻表",
   "gui.guidedrailways.auto.physical_station": "此处停有物理列车，请使用车上的驾驶台",
+  "gui.guidedrailways.station.controls_name": "请在车上的驾驶台更改列车名称",
+  "gui.guidedrailways.station.no_assembly": "物理列车不能在车站组装或拆解",
   "message.guidedrailways.coupler.invalid_pose": "无法连挂：车钩方向无效",
   "message.guidedrailways.coupler.too_far": "无法连挂：车钩间距超过 2 格",
   "message.guidedrailways.coupler.align": "摆正车体后才能连挂",

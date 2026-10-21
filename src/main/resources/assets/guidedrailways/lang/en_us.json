@@ -100,6 +100,8 @@
   "gui.guidedrailways.driver.secondary": "Standby controls: the first placed controls operate this train",
   "gui.guidedrailways.auto.state.15": "Standby controls; stored Schedule may be retrieved",
   "gui.guidedrailways.auto.physical_station": "A physical train is at this station; use its onboard controls",
+  "gui.guidedrailways.station.controls_name": "Rename this train using its onboard controls",
+  "gui.guidedrailways.station.no_assembly": "Physical trains cannot be assembled or disassembled at stations",
   "message.guidedrailways.coupler.invalid_pose": "Cannot couple: invalid coupler orientation",
   "message.guidedrailways.coupler.too_far": "Cannot couple: heads are more than 2 blocks apart",
   "message.guidedrailways.coupler.align": "Align the carriages before coupling",

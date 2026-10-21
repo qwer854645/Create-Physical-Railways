@@ -12,6 +12,7 @@
     "NativeTrainContactMixin",
     "PlatformBuildingMixin",
     "StationBlockEntityMixin",
+    "PhysicalTrainEditMixin",
     "SignalEdgeGroupMixin",
     "TrackObserverMixin",
     "CargoItemHandlerMixin",
@@ -35,6 +36,7 @@
   },
   "plugin": "com.guidedrailways.mixin.CargoCompatPlugin",
   "client": [
+    "PhysicalStationScreenMixin",
     "RailwayBogeyMenuMixin",
     "BlocksBogiesMenuMixin",
     "RailwayBogeyIconMixin"

@@ -31,9 +31,10 @@ public abstract class StationBlockEntityMixin {
   private void guidedrailways$physicalAssemblyHint(
       ServerPlayer player, CallbackInfoReturnable<Boolean> cir) {
     var self = (StationBlockEntity) (Object) this;
-    if (StationPresence.present(self.getLevel(), self.getBlockPos())) {
-      player.displayClientMessage(
-          Component.translatable("gui.guidedrailways.auto.physical_station"), true);
+    if (StationPresence.blocksAssembly(self)) {
+      if (player != null)
+        player.displayClientMessage(
+            Component.translatable("gui.guidedrailways.auto.physical_station"), true);
       cir.setReturnValue(false);
     }
   }
@@ -41,6 +42,17 @@ public abstract class StationBlockEntityMixin {
   @Inject(method = "tryEnterAssemblyMode", at = @At("HEAD"), cancellable = true, require = 1)
   private void guidedrailways$preventPhysicalAssembly(CallbackInfoReturnable<Boolean> cir) {
     var self = (StationBlockEntity) (Object) this;
-    if (StationPresence.present(self.getLevel(), self.getBlockPos())) cir.setReturnValue(false);
+    if (StationPresence.blocksAssembly(self)) cir.setReturnValue(false);
+  }
+
+  @Inject(method = "tryDisassembleTrain", at = @At("HEAD"), cancellable = true, require = 1)
+  private void guidedrailways$preventPhysicalDisassembly(
+      ServerPlayer player, CallbackInfoReturnable<Boolean> cir) {
+    var self = (StationBlockEntity) (Object) this;
+    if (!StationPresence.blocksAssembly(self)) return;
+    if (player != null)
+      player.displayClientMessage(
+          Component.translatable("gui.guidedrailways.auto.physical_station"), true);
+    cir.setReturnValue(false);
   }
 }

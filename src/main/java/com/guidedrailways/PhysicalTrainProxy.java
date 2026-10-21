@@ -51,6 +51,18 @@ public final class PhysicalTrainProxy extends Train {
     return snapshot.copy();
   }
 
+  /** Identity packets and native graph packets can arrive in either order. */
+  void refreshClientGraph(
+      Map<UUID, TrackGraph> graphs, net.minecraft.core.HolderLookup.Provider registries) {
+    var resolved = snapshot.hasUUID("Graph") ? graphs.get(snapshot.getUUID("Graph")) : null;
+    var previousStation = getCurrentStation();
+    if (graph != resolved
+        || resolved != null && carriages.stream().anyMatch(c -> ((LogicalCarriage) c).unresolved()))
+      apply(snapshot, graphs, registries);
+    // Graph synchronization may also reset a station's weak reservation on the same graph.
+    syncStation(this, previousStation);
+  }
+
   void apply(
       CompoundTag data,
       Map<UUID, TrackGraph> graphs,
@@ -246,6 +258,13 @@ public final class PhysicalTrainProxy extends Train {
     LogicalCarriage(CompoundTag front, CompoundTag rear) {
       super(new LogicalBogey(front), rear == null ? null : new LogicalBogey(rear), 0);
       storage = new PhysicalCargoManager();
+    }
+
+    boolean unresolved() {
+      return bogeys.getFirst().leading().blocked
+          || bogeys.getFirst().trailing().blocked
+          || bogeys.getSecond() != null
+              && (bogeys.getSecond().leading().blocked || bogeys.getSecond().trailing().blocked);
     }
 
     void update(CompoundTag tag, ResourceKey<Level> dimension, TrackGraph graph) {

@@ -47,7 +47,12 @@ public final class NativeStationContractCheck {
       check(method(station, name) != null, "required station API: " + name);
     var be = code("com/simibubi/create/content/trains/station/StationBlockEntity");
     for (var name :
-        List.of("applyAutoSchedule", "dropSchedule", "enterAssemblyMode", "tryEnterAssemblyMode"))
+        List.of(
+            "applyAutoSchedule",
+            "dropSchedule",
+            "enterAssemblyMode",
+            "tryEnterAssemblyMode",
+            "tryDisassembleTrain"))
       check(method(be, name) != null, "required native station hook: " + name);
     check(
         calls(method(be, "tick")).stream().anyMatch(m -> m.name.equals("getImminentTrain")),
@@ -65,6 +70,44 @@ public final class NativeStationContractCheck {
         calls(method(mixin, "guidedrailways$keepScheduleInControls")).stream()
             .anyMatch(m -> m.name.equals("cancel")),
         "native automatic schedules cannot start a second runtime on the proxy");
+    for (var hook :
+        List.of(
+            "guidedrailways$physicalAssemblyHint",
+            "guidedrailways$preventPhysicalAssembly",
+            "guidedrailways$preventPhysicalDisassembly"))
+      check(
+          calls(method(mixin, hook)).stream().anyMatch(m -> m.name.equals("blocksAssembly")),
+          "all native assembly entry points check the live association: " + hook);
+    check(
+        calls(method(presence, "blocksAssembly")).stream()
+            .anyMatch(m -> m.name.equals("getNearestTrain")),
+        "assembly protection does not rely only on the debounced position cache");
+    var nativeEdit =
+        method(code("com/simibubi/create/content/trains/station/TrainEditPacket"), "handleSided");
+    check(
+        nativeEdit.desc.equals("(Lnet/minecraft/world/entity/player/Player;)V"),
+        "native train editing hook has the supported signature");
+    check(
+        calls(
+                method(
+                    code("com/guidedrailways/mixin/PhysicalTrainEditMixin"),
+                    "guidedrailways$keepPhysicalIdentity"))
+            .stream()
+            .anyMatch(m -> m.name.equals("cancel")),
+        "native train editing cannot write into a physical query proxy");
+    var screen = code("com/simibubi/create/content/trains/station/StationScreen");
+    for (var hook : List.of("tick", "syncTrainNameAndColor"))
+      check(method(screen, hook) != null, "native station screen hook exists: " + hook);
+    var screenMixin = code("com/guidedrailways/mixin/PhysicalStationScreenMixin");
+    check(
+        calls(method(screenMixin, "guidedrailways$readOnlyIdentity")).stream()
+            .anyMatch(m -> m.name.equals("cancel")),
+        "physical station views do not send native edits");
+    check(
+        calls(method(screenMixin, "guidedrailways$physicalStationView")).stream()
+            .anyMatch(m -> m.name.equals("setValue")),
+        "open station views refresh the controls' name");
+    check(clientCodeHasGraphRefresh(), "client retries native graph and station synchronization");
     var mail = method(code("com/guidedrailways/PackageMail"), "exchange");
     check(
         calls(mail).stream()
@@ -86,5 +129,11 @@ public final class NativeStationContractCheck {
         "NativeStationContractCheck: "
             + checks
             + " native station and integration contract checks passed");
+  }
+
+  private static boolean clientCodeHasGraphRefresh() throws Exception {
+    return code("com/guidedrailways/NativeTrainClient").methods.stream()
+        .flatMap(m -> calls(m).stream())
+        .anyMatch(m -> m.name.equals("refreshClientGraph"));
   }
 }

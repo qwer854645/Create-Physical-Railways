@@ -113,8 +113,12 @@ final class NativeTrainClient {
           var manager = CreateClient.RAILWAYS;
           for (var id : List.copyOf(PENDING.keySet())) applyPending(id);
           for (var train : manager.trains.values())
-            if (train instanceof PhysicalTrainProxy proxy)
+            if (train instanceof PhysicalTrainProxy proxy) {
+              if (tick % 10 == 0)
+                proxy.refreshClientGraph(
+                    manager.trackNetworks, Minecraft.getInstance().level.registryAccess());
               proxy.signals.retry(manager.signalEdgeGroups, manager.trains);
+            }
         });
     NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) -> clear());

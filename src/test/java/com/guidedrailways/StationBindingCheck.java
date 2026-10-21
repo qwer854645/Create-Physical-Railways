@@ -65,6 +65,22 @@ public final class StationBindingCheck {
     check(stop.tick(.15, .05, true), "actual stop debounces for six ticks");
     check(!stop.tick(.15, .25, true), "departure clears stop");
     for (int i = 0; i < 20; i++) check(!stop.tick(0, 10, true), "high speed pass never binds");
+    var restored = new StationStopState();
+    for (int i = 0; i < 5; i++)
+      check(
+          !restored.tick(.1, 0, true),
+          "reload revalidates the real stop instead of trusting a saved flag");
+    check(restored.tick(.1, 0, true), "station presence can be reconstructed after reload");
+    check(!restored.tick(.1, 0, false), "missing station/track invalidates the reconstructed stop");
+    check(
+        StationBindingSelection.choose(
+                List.of(
+                    new StationBindingSelection.Candidate(a, x, .8),
+                    new StationBindingSelection.Candidate(a, x, .1)),
+                Map.of(),
+                Set.of())
+            .equals(Map.of(x, a)),
+        "two endpoint candidates still publish one train/station association");
     System.out.println(
         "StationBindingCheck: " + checks + " station ownership and stop checks passed");
   }
