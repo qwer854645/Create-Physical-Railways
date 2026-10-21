@@ -172,7 +172,7 @@ tasks.register('copyDevMods', Copy) {
         def selected = (fileTree('libs') { include '*.jar' }.files + configurations.devRuntimeMods.files)*.name as Set
         def managed = ['create-1.21.1-', 'sable-neoforge-1.21.1-', 'ponder-neoforge-', 'flywheel-neoforge-1.21.1-',
                        'railways-', 'create_bb-', 'electroenergetics-', 'VS-Sable-HoseConnectors-',
-                       'create-aeronautics-bundled-', 'create_aeronautics_automated_logistics-']
+                       'create-aeronautics-bundled-', 'create_aeronautics_automated_logistics-', 'xaerominimap-']
         file('run/mods').listFiles()?.findAll { f ->
             f.isFile() && f.name.endsWith('.jar') && !selected.contains(f.name) && managed.any { f.name.startsWith(it) }
         }?.each { f ->
@@ -581,3 +581,18 @@ tasks.register('checkPlatformBuilding', JavaExec) {
 }
 
 tasks.named('check') { dependsOn 'checkPlatformBuilding' }
+
+
+tasks.register('checkTrainIdentity', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.TrainIdentityCheck'
+}
+tasks.named('check') { dependsOn 'checkTrainIdentity' }
+
+tasks.register('checkNativeTrainBridge', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.NativeTrainBridgeCheck'
+}
+tasks.named('check') { dependsOn 'checkNativeTrainBridge' }

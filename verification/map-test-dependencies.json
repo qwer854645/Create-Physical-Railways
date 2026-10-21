@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "mod": "xaerominimap",
+  "version": "neoforge-1.21.1-26.6.0",
+  "minecraft": "1.21.1",
+  "loader": "neoforge",
+  "file": "xaerominimap-neoforge-1.21.1-26.6.0.jar",
+  "url": "https://cdn.modrinth.com/data/1bokaNcj/versions/irjR7dHk/xaerominimap-neoforge-1.21.1-26.6.0.jar",
+  "sha256": "d3398221b2262abfe2d394b588122e5b3fd2e4d8c4bf66a5fd357352fcf51b2e",
+  "project": "https://modrinth.com/mod/xaeros-minimap",
+  "purpose": "Optional development client; entity radar is not proof of native Train identity compatibility"
+}

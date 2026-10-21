@@ -122,6 +122,7 @@ public final class Content {
   static void register(IEventBus bus) {
     bus.addListener(DriverNetwork::register);
     bus.addListener(BogeySelectionNetwork::register);
+    bus.addListener(NativeTrainNetwork::register);
     BLOCKS.register(bus);
     MENUS.register(bus);
     ITEMS.register(bus);

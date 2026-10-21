@@ -221,5 +221,10 @@
   "gui.guidedrailways.bogey.size": "尺寸：%s",
   "gui.guidedrailways.bogey.small": "小型",
   "gui.guidedrailways.bogey.large": "大型",
-  "tooltip.guidedrailways.bogey.bnb": "潜行右击：选择 Blocks & Bogies 款式"
+  "tooltip.guidedrailways.bogey.bnb": "潜行右击：选择 Blocks & Bogies 款式",
+  "gui.guidedrailways.identity.name": "物理列车 %s",
+  "message.guidedrailways.identity.count": "原生注册表中的物理列车：%s",
+  "message.guidedrailways.identity.entry": "%s\nUUID：%s · 车厢：%s\n位置：%s，%s，%s · 速度：%s 格/秒 · %s",
+  "message.guidedrailways.identity.on_track": "已关联轨道",
+  "message.guidedrailways.identity.off_track": "未关联轨道"
 }

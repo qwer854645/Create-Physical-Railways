@@ -26,7 +26,10 @@
     "RailwayHardwareEntityMixin",
     "HoseCargoBindingMixin",
     "LogisticsSnapshotMixin",
-    "LogisticsDockTransferMixin"
+    "LogisticsDockTransferMixin",
+    "NativeTrainLoginMixin",
+    "NativeTrainSaveMixin",
+    "NativeTrainCollisionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -28,7 +28,17 @@ public final class GuidedRailways {
           if (e.getLevel() instanceof ServerLevel) {
             CargoTransfers.observe(e.getContainer());
             TrainConsists.observe(e.getContainer());
+            NativeTrainBridge.observe(e.getContainer());
           }
+        });
+    NeoForge.EVENT_BUS.addListener(NativeTrainDiagnostics::register);
+    NeoForge.EVENT_BUS.addListener(
+        (net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent e) -> {
+          if (e.getEntity() instanceof ServerPlayer player) NativeTrainBridge.login(player);
+        });
+    NeoForge.EVENT_BUS.addListener(
+        (LevelTickEvent.Post e) -> {
+          if (e.getLevel() instanceof ServerLevel level) NativeTrainBridge.tick(level);
         });
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Pre e) -> {
@@ -64,6 +74,7 @@ public final class GuidedRailways {
             CouplerConnections.unload(level);
             DriverControls.unload(level);
             TrainConsists.unload(level);
+            NativeTrainBridge.unload(level);
             CargoStorage.unload(level);
             RailwaysCompat.unload(level);
             TrainElectricity.unload(level);

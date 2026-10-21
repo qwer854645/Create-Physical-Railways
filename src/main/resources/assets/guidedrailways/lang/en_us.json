@@ -221,5 +221,10 @@
   "gui.guidedrailways.bogey.size": "Size: %s",
   "gui.guidedrailways.bogey.small": "Small",
   "gui.guidedrailways.bogey.large": "Large",
-  "tooltip.guidedrailways.bogey.bnb": "Sneak-R-Click to choose a Blocks & Bogies style"
+  "tooltip.guidedrailways.bogey.bnb": "Sneak-R-Click to choose a Blocks & Bogies style",
+  "gui.guidedrailways.identity.name": "Physical Train %s",
+  "message.guidedrailways.identity.count": "Physical trains in the native registry: %s",
+  "message.guidedrailways.identity.entry": "%s\nUUID: %s · Carriages: %s\nPosition: %s, %s, %s · Speed: %s blocks/s · %s",
+  "message.guidedrailways.identity.on_track": "Track associated",
+  "message.guidedrailways.identity.off_track": "No track association"
 }

@@ -166,6 +166,9 @@ def mixin_contracts(mod, own):
             result.setdefault(owner, set()).update(names)
         for called, signature in re.findall(r'target\s*=\s*"L([^;]+);([^"]+)"', text):
             if called.startswith(PREFIXES[mod]):
+                # Mixin FIELD targets use name:descriptor; class members use name+descriptor.
+                if '(' not in signature:
+                    signature = signature.replace(':', '', 1)
                 result.setdefault(called, set()).add(signature)
     if mod == 'hose':
         p = 'com/mk2525/vsfluidlink/content/'
