@@ -2,7 +2,6 @@ package com.guidedrailways.validation;
 
 import com.guidedrailways.*;
 import com.simibubi.create.*;
-import com.simibubi.create.content.kinetics.base.*;
 import com.simibubi.create.content.trains.entity.*;
 import com.simibubi.create.content.trains.schedule.*;
 import com.simibubi.create.content.trains.schedule.destination.*;
@@ -88,18 +87,23 @@ public final class StraightMixedRunTests {
     final BlockPos base;
     final List<SignalBlockEntity> signals = new ArrayList<>();
     StationBlockEntity assembly, destination;
-    Train nativeTrain;
+    Train nativeTrain, leaderIdentity;
+    UUID occupiedSection;
     Object unit;
     DriverConsoleEntity driver;
     ServerSubLevel carrier;
     int tick, stoppedTicks;
-    boolean moved, released;
+    boolean moved, released, tailCleared;
+    double minimumGap = Double.POSITIVE_INFINITY;
+    final Set<Long> forcedChunks = new HashSet<>();
     double initialFollower, releaseLeader;
 
     Run(GameTestHelper helper, boolean nativeLeader) {
       this.helper = helper;
       this.level = helper.getLevel();
       this.nativeLeader = nativeLeader;
+      // Rapier uses float positions: random GameTest origins millions of blocks away quantise
+      // small integration steps to zero. Both scenes stay near zero in the isolated test world.
       base = new BlockPos(nativeLeader ? 1024 : 1536, 80, 0);
     }
 
@@ -111,6 +115,7 @@ public final class StraightMixedRunTests {
               action.run();
             } catch (Throwable error) {
               LOG.error("MOVING_FIXTURE_FAILED tick={}", tick, error);
+              cleanup();
               helper.fail(error.toString());
             }
           });
@@ -121,12 +126,13 @@ public final class StraightMixedRunTests {
         var track = AllBlocks.TRACK.getDefaultState().setValue(TrackBlock.SHAPE, TrackShape.ZO);
         for (int z = 0; z <= 180; z++) {
           var pos = base.offset(0, 0, z);
-          level.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4, true);
+          var chunk = new net.minecraft.world.level.ChunkPos(pos);
+          if (forcedChunks.add(chunk.toLong())) level.setChunkForced(chunk.x, chunk.z, true);
           level.setBlock(pos.below(), Blocks.STONE.defaultBlockState(), 3);
           level.setBlock(pos, track, 3);
         }
-        assembly = station(nativeLeader ? 80 : 120, "Assembly");
-        destination = station(20, "Destination");
+        assembly = station(nativeLeader ? 80 : 120);
+        destination = station(20);
         for (int z : new int[] {60, 100, 140}) {
           var pos = base.offset(2, 0, z);
           level.setBlock(pos, AllBlocks.TRACK_SIGNAL.getDefaultState(), 3);
@@ -145,11 +151,12 @@ public final class StraightMixedRunTests {
             });
       } catch (Exception e) {
         LOG.error("MOVING_FIXTURE_SETUP_FAILED", e);
+        cleanup();
         helper.fail(e.toString());
       }
     }
 
-    StationBlockEntity station(int z, String name) throws Exception {
+    StationBlockEntity station(int z) throws Exception {
       var pos = base.offset(2, 0, z);
       level.setBlock(pos, AllBlocks.TRACK_STATION.getDefaultState(), 3);
       var station = (StationBlockEntity) level.getBlockEntity(pos);
@@ -315,6 +322,20 @@ public final class StraightMixedRunTests {
 
     void begin() throws Exception {
       helper.assertTrue(nativeTrain.hasForwardConductor(), "real native conductor captured");
+      var physicalIdentity =
+          Create.RAILWAYS.trains.values().stream()
+              .filter(t -> t instanceof PhysicalTrainProxy && t.graph == nativeTrain.graph)
+              .findFirst()
+              .orElseThrow();
+      leaderIdentity = nativeLeader ? nativeTrain : physicalIdentity;
+      var boundary = signals.get(1).getSignal();
+      var a = boundary.edgeLocation.getFirst();
+      var b = boundary.edgeLocation.getSecond();
+      var downstream = nativeTrain.graph.locateNode(a.getZ() < b.getZ() ? a : b);
+      occupiedSection = boundary.getGroup(downstream);
+      helper.assertTrue(
+          Create.RAILWAYS.signalEdgeGroups.get(occupiedSection).trains.contains(leaderIdentity),
+          "real leading train occupies the following section");
       initialFollower = nativeLeader ? physicalZ() : nativeZ();
       if (nativeLeader) startPhysical();
       else startNative();
@@ -378,6 +399,22 @@ public final class StraightMixedRunTests {
             get(get(driver, "schedule"), "status"),
             released);
       helper.assertTrue(!nativeTrain.derailed, "native train remains on track");
+      helper.assertTrue(!(boolean) get(unit, "detached"), "physical train remains on track");
+      minimumGap = Math.min(minimumGap, follower - leader);
+      boolean occupied =
+          Create.RAILWAYS.signalEdgeGroups.get(occupiedSection).trains.contains(leaderIdentity);
+      if (released && !occupied && !tailCleared) {
+        tailCleared = true;
+        LOG.info(
+            "MOVING_TAIL_CLEARED nativeLeader={} tick={} leader={} follower={}",
+            nativeLeader,
+            tick,
+            leader,
+            follower);
+      }
+      if (!tailCleared)
+        helper.assertTrue(
+            follower > 100, "follower cannot cross signal before leader tail clears section");
       helper.assertTrue(follower - leader > 5, "vehicles remain separated");
       if (!released && moved && follower < 115 && follower > 100 && Math.abs(speed) < .1)
         stoppedTicks++;
@@ -386,19 +423,29 @@ public final class StraightMixedRunTests {
         helper.assertTrue(
             signals.get(1).getState() == SignalBlockEntity.SignalState.RED,
             "following train stops at red");
+        helper.assertTrue(occupied, "red stop is caused by the actual leading train");
+        LOG.info(
+            "MOVING_STOP_CONFIRMED nativeLeader={} tick={} position={} speed={} stableTicks={}",
+            nativeLeader,
+            tick,
+            follower,
+            speed,
+            stoppedTicks);
         releaseLeader = leader;
         if (nativeLeader) startNative();
         else startPhysical();
         released = true;
         LOG.info("MOVING_LEADER_RELEASED tick={}", tick);
       }
-      if (released && releaseLeader - leader > 10 && follower < 96) {
+      if (released && tailCleared && releaseLeader - leader > 10 && follower < 96) {
         LOG.info(
-            "MOVING_MIXED_PASS nativeLeader={} tick={} leader={} follower={}",
+            "MOVING_MIXED_PASS nativeLeader={} tick={} leader={} follower={} minimumGap={}",
             nativeLeader,
             tick,
             leader,
-            follower);
+            follower,
+            minimumGap);
+        cleanup();
         helper.succeed();
         return;
       }
@@ -412,6 +459,34 @@ public final class StraightMixedRunTests {
               throw new RuntimeException(e);
             }
           });
+    }
+
+    void cleanup() {
+      if (nativeTrain != null) {
+        nativeTrain.carriages.forEach(
+            c -> c.forEachPresentEntity(net.minecraft.world.entity.Entity::discard));
+        Create.RAILWAYS.trains.remove(nativeTrain.id);
+        for (var group : Create.RAILWAYS.signalEdgeGroups.values())
+          group.trains.remove(nativeTrain);
+      }
+      if (unit != null)
+        try {
+          var container = dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level);
+          var bogie = (ServerSubLevel) get(unit, "bogie");
+          if (!bogie.isRemoved())
+            container.removeSubLevel(
+                bogie, dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason.REMOVED);
+          if (!carrier.isRemoved())
+            container.removeSubLevel(
+                carrier, dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason.REMOVED);
+        } catch (Exception error) {
+          LOG.error("MOVING_CLEANUP_FAILED", error);
+        }
+      for (long key : forcedChunks) {
+        var chunk = new net.minecraft.world.level.ChunkPos(key);
+        level.setChunkForced(chunk.x, chunk.z, false);
+      }
+      forcedChunks.clear();
     }
   }
 }
