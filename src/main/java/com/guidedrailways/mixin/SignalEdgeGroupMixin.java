@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Add external occupancy without inserting synthetic Train objects into Create's collections. */
+/** Preserve physical claims and uncontrolled occupation alongside native query identities. */
 @Mixin(value = SignalEdgeGroup.class, remap = false)
 public abstract class SignalEdgeGroupMixin {
   @Shadow public UUID id;
@@ -19,7 +19,7 @@ public abstract class SignalEdgeGroupMixin {
       cancellable = true,
       require = 1)
   private void guidedrailways$train(Train train, CallbackInfoReturnable<Boolean> cir) {
-    if (PhysicalSignals.nativeBlocked(id, null)) cir.setReturnValue(true);
+    if (PhysicalSignals.nativeBlockedForTrain(id, train)) cir.setReturnValue(true);
   }
 
   @Inject(

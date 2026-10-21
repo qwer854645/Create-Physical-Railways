@@ -34,6 +34,12 @@ final class NativeTrainDiagnostics {
                     : "message.guidedrailways.identity.on_track"),
             stoppedAt);
     if (train instanceof PhysicalTrainProxy proxy) {
+      if (proxy.signals.ready())
+        description.append(
+            Component.translatable(
+                "message.guidedrailways.identity.sections",
+                train.occupiedSignalBlocks.size(),
+                train.reservedSignalBlocks.size()));
       var owner = proxy.trainOwner();
       description.append(
           Component.translatable(

@@ -242,5 +242,6 @@
   "gui.guidedrailways.driver.owner_unknown": "未记录",
   "message.guidedrailways.identity.owner": "\n所有者：%s · UUID：%s",
   "message.guidedrailways.identity.cargo": "%s · 车厢：%s\n物品：%s · 槽位：%s\n流体：%s mB · 储罐：%s",
-  "message.guidedrailways.identity.cargo_unavailable": "%s · 暂无法读取货物，请等待全部车厢和容器加载"
+  "message.guidedrailways.identity.cargo_unavailable": "%s · 暂无法读取货物，请等待全部车厢和容器加载",
+  "message.guidedrailways.identity.sections": "\n占用区段：%s · 预约区段：%s"
 }

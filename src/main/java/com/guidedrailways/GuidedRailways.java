@@ -38,7 +38,10 @@ public final class GuidedRailways {
         });
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Post e) -> {
-          if (e.getLevel() instanceof ServerLevel level) NativeTrainBridge.tick(level);
+          if (e.getLevel() instanceof ServerLevel level) {
+            NativeTrainBridge.tick(level);
+            PhysicalSignals.publish(level);
+          }
         });
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Pre e) -> {

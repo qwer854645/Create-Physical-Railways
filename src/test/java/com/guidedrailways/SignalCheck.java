@@ -79,6 +79,31 @@ public final class SignalCheck {
         "manual takeover or pause releases future claims but not physical occupation");
     ledger.refresh(Map.of(), Set.of(), 18);
     check(!ledger.nativeBlocked(block, null), "removing the physical footprint clears occupation");
+    ledger.refresh(Map.of(a, Set.of(block, next), b, Set.of(crossing)), Set.of(a, b), 30);
+    check(
+        ledger.occupiedBy(a).equals(Set.of(block, next)),
+        "projection preserves a long train's complete coverage");
+    check(
+        !ledger.blocked(block, a) && ledger.blocked(block, null),
+        "native identity excludes only its own physical owner");
+    ledger.refresh(Map.of(a, Set.of(block), b, Set.of(block)), Set.of(a, b), 31);
+    check(ledger.blocked(block, a), "self exclusion cannot conceal a second physical occupant");
+    ledger.refresh(Map.of(a, Set.of(block)), Set.of(a), 32);
+    check(
+        ledger.claim(a, Map.of(next, signal), 32, g -> false),
+        "projection can observe an existing physical route claim");
+    check(
+        ledger.claimedBy(a).equals(Set.of(next)) && ledger.claimedBy(b).isEmpty(),
+        "claims retain their actual owner");
+    check(
+        !ledger.blocked(next, a) && ledger.blocked(next, b),
+        "own future claim is excluded without granting it to others");
+    ledger.refresh(Map.of(b, Set.of(block)), Set.of(), 33);
+    check(
+        ledger.occupiedBy(a).isEmpty() && ledger.claimedBy(a).isEmpty(),
+        "merge removal and pause release obsolete identity views");
+    check(
+        ledger.occupiedBy(b).equals(Set.of(block)), "another train's occupation survives cleanup");
     // Integrate the actual bounded service-force model at several speed and braking ratios.
     for (double cap : new double[] {3.2, 12.8, 25.6})
       for (double fraction : new double[] {.25, .5, 1}) {

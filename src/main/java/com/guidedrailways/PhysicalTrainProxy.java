@@ -30,6 +30,7 @@ public final class PhysicalTrainProxy extends Train {
 
   final NativeTrainJourney journey = new NativeTrainJourney();
   final ObserverFilterCache observerFilters = new ObserverFilterCache();
+  final NativeSignalState signals = new NativeSignalState(this);
 
   PhysicalTrainProxy(UUID id) {
     super(
@@ -129,6 +130,7 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   void clearJourney() {
+    signals.clear();
     clearCargo();
     journey.reset();
     snapshot.remove("Journey");
@@ -287,7 +289,9 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   @Override
-  public void earlyTick(Level level) {}
+  public void earlyTick(Level level) {
+    signals.publish();
+  }
 
   @Override
   public void tick(Level level) {}

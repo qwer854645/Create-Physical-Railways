@@ -53,7 +53,6 @@ public final class NativeTrainBridgeCheck {
     var node = code("com/guidedrailways/PhysicalTrainProxy");
     for (var methodName :
         List.of(
-            "earlyTick",
             "tick",
             "burnFuel",
             "crash",
@@ -74,6 +73,30 @@ public final class NativeTrainBridgeCheck {
           "native proxy operation has no side effects: " + methodName);
     }
     var carriage = code("com/guidedrailways/PhysicalTrainProxy$LogicalCarriage");
+    var early =
+        node.methods.stream().filter(m -> m.name.equals("earlyTick")).findFirst().orElseThrow();
+    var earlyCalls = new ArrayList<MethodInsnNode>();
+    for (var i : early.instructions) if (i instanceof MethodInsnNode call) earlyCalls.add(call);
+    check(
+        earlyCalls.size() == 1
+            && earlyCalls.getFirst().owner.equals("com/guidedrailways/NativeSignalState")
+            && earlyCalls.getFirst().name.equals("publish"),
+        "early tick only republishes physical signal query state");
+    var signal = code("com/guidedrailways/NativeSignalState");
+    boolean removesExactTrain = false;
+    for (var m : signal.methods)
+      for (var i : m.instructions) {
+        if (i instanceof FieldInsnNode f)
+          check(
+              !(f.getOpcode() == org.objectweb.asm.Opcodes.PUTFIELD
+                  && f.owner.equals("com/simibubi/create/content/trains/signal/SignalEdgeGroup")
+                  && f.name.equals("reserved")),
+              "query projection never creates a native reservation");
+        if (m.name.equals("clear")
+            && i instanceof MethodInsnNode call
+            && call.name.equals("remove")) removesExactTrain = true;
+      }
+    check(removesExactTrain, "cleanup removes its own train instead of clearing a shared group");
     var manage =
         carriage.methods.stream()
             .filter(m -> m.name.equals("manageEntities"))

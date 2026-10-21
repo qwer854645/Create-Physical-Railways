@@ -9,9 +9,12 @@ public final class SignalOccupancy {
 
   private final Map<UUID, Set<UUID>> occupants = new HashMap<>();
   private final Map<UUID, Claim> claims = new HashMap<>();
+  private final Map<UUID, Set<UUID>> byOwner = new HashMap<>();
 
   public void refresh(Map<UUID, Set<UUID>> groupsByOwner, Set<UUID> running, long tick) {
     occupants.clear();
+    byOwner.clear();
+    groupsByOwner.forEach((owner, groups) -> byOwner.put(owner, Set.copyOf(groups)));
     groupsByOwner.forEach(
         (owner, groups) ->
             groups.forEach(
@@ -23,6 +26,19 @@ public final class SignalOccupancy {
                 e.getValue().expires < tick
                     || !running.contains(e.getValue().owner)
                     || occupants.getOrDefault(e.getKey(), Set.of()).contains(e.getValue().owner));
+  }
+
+  public Set<UUID> occupiedBy(UUID owner) {
+    return byOwner.getOrDefault(owner, Set.of());
+  }
+
+  public Set<UUID> claimedBy(UUID owner) {
+    var result = new HashSet<UUID>();
+    claims.forEach(
+        (group, claim) -> {
+          if (claim.owner.equals(owner)) result.add(group);
+        });
+    return Set.copyOf(result);
   }
 
   public boolean blocked(UUID group, UUID owner) {

@@ -30,6 +30,8 @@ public final class PhysicalSignals {
     final Map<UUID, AutomaticNavigation> networks = new HashMap<>();
     final Map<UUID, Stop> stops = new HashMap<>();
     final Map<Axle, Previous> previous = new HashMap<>();
+    final Set<PhysicalTrainProxy> published = new HashSet<>();
+    final Map<UUID, UUID> identities = new HashMap<>();
   }
 
   private static final Map<ServerLevel, State> STATES = new WeakHashMap<>();
@@ -44,6 +46,38 @@ public final class PhysicalSignals {
   public static boolean nativeBlocked(UUID group, UUID boundary) {
     for (var state : STATES.values()) if (state.ledger.nativeBlocked(group, boundary)) return true;
     return false;
+  }
+
+  public static boolean nativeBlockedForTrain(
+      UUID group, com.simibubi.create.content.trains.entity.Train except) {
+    for (var state : STATES.values()) {
+      UUID owner =
+          except instanceof PhysicalTrainProxy proxy
+                  && Create.RAILWAYS.trains.get(proxy.id) == proxy
+              ? state.identities.get(proxy.id)
+              : null;
+      if (state.ledger.blocked(group, owner)) return true;
+    }
+    return false;
+  }
+
+  /** Publish only identities already registered for complete, controlled physical consists. */
+  static void publish(ServerLevel level) {
+    var state = STATES.get(level);
+    if (state == null) return;
+    var seen = new HashSet<PhysicalTrainProxy>();
+    state.identities.clear();
+    for (var group : TrainConsists.get(level).groups()) {
+      var train = NativeTrainBridge.registered(level, group);
+      if (train == null || !CouplerConnections.cargoComplete(level, group.members())) continue;
+      var owner = group.members().stream().min(UUID::compareTo).orElseThrow();
+      state.identities.put(train.id, owner);
+      train.signals.update(state.ledger.occupiedBy(owner), state.ledger.claimedBy(owner));
+      seen.add(train);
+    }
+    for (var old : state.published) if (!seen.contains(old)) old.signals.clear();
+    state.published.clear();
+    state.published.addAll(seen);
   }
 
   private static AutomaticNavigation network(State state, ServerLevel level, UUID graph) {
@@ -496,7 +530,10 @@ public final class PhysicalSignals {
               level.getGameTime(),
               id -> {
                 var g = all.get(id);
-                return g == null || !g.trains.isEmpty() || g.reserved != null;
+                // Physical occupants are authoritative in our ledger, including self exclusion.
+                return g == null
+                    || g.trains.stream().anyMatch(t -> !(t instanceof PhysicalTrainProxy))
+                    || g.reserved != null;
               })) denied = "section_occupied_or_reserved";
       if (denied != null) {
         var stop = new Stop(first.signal.id, denied);
@@ -524,6 +561,7 @@ public final class PhysicalSignals {
   }
 
   static void unload(ServerLevel level) {
-    STATES.remove(level);
+    var state = STATES.remove(level);
+    if (state != null) for (var train : state.published) train.signals.clear();
   }
 }
