@@ -20,6 +20,7 @@ public final class TrainConfig {
     MAX_TARGET_SPEED =
         b.comment(
                 "Maximum target blocks per second at 256 input RPM; other RPM scales proportionally")
+            .translation("config.guidedrailways.maxTargetSpeedAt256")
             .defineInRange("maxTargetSpeedAt256", 25.6, .1, 256);
     FORCE_PER_RPM =
         b.comment("Maximum traction force per input RPM per powered bogie")

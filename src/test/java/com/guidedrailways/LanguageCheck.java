@@ -53,11 +53,40 @@ public final class LanguageCheck {
       check(
           placeholders(zh.get(key)).equals(placeholders(en.get(key))),
           "format argument mismatch: " + key);
+    // Every visible server setting must bind the existing localized label and tooltip.
+    var configSource =
+        Files.readString(Path.of("src/main/java/com/guidedrailways/TrainConfig.java"));
+    var definitions =
+        Pattern.compile(
+                "(?s)\\b[A-Z_][A-Z0-9_]*\\s*=\\s*b\\.(.*?)(?=\\n    [A-Z_][A-Z0-9_]*\\s*=|\\n  \\})")
+            .matcher(configSource);
+    int settings = 0;
+    while (definitions.find()) {
+      var chain = definitions.group(1);
+      var definition = Pattern.compile("\\.define(?:InRange)?\\(\\s*\"([^\"]+)\"").matcher(chain);
+      if (!definition.find()) continue;
+      settings++;
+      var key = "config.guidedrailways." + definition.group(1);
+      var translation = Pattern.compile("\\.translation\\(\\s*\"([^\"]+)\"").matcher(chain);
+      check(
+          translation.find() && translation.group(1).equals(key),
+          "configuration translation binding: " + key);
+      check(
+          en.containsKey(key) && en.containsKey(key + ".tooltip"),
+          "configuration label and tooltip: " + key);
+    }
+    check(
+        settings > 0
+            && settings
+                == en.keySet().stream()
+                    .filter(k -> k.startsWith("config.guidedrailways.") && !k.endsWith(".tooltip"))
+                    .count(),
+        "configuration labels and source definitions must cover one another");
     var literal =
         Pattern.compile(
             "\"((?:itemGroup|item|block|tooltip|gui|message|config)\\.guidedrailways\\.[A-Za-z0-9_.]+)\"");
     var helper = Pattern.compile("text\\(\"([a-z_]+)\"");
-    var hint = Pattern.compile("hint\\(player,\"([a-z_]+)\"");
+    var hint = Pattern.compile("hint\\(\\s*player\\s*,\\s*\"([a-z_]+)\"");
     try (var paths = Files.walk(Path.of("src/main/java/com/guidedrailways"))) {
       for (var path : paths.filter(p -> p.toString().endsWith(".java")).toList()) {
         String source = Files.readString(path);
