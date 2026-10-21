@@ -232,5 +232,10 @@
   "message.guidedrailways.identity.no_destination": "未规划",
   "message.guidedrailways.identity.manual": "\n未装入时刻表",
   "message.guidedrailways.identity.eta": "\n预计到站：%s 秒",
-  "message.guidedrailways.identity.eta_unknown": "\n预计到站时间待定"
+  "message.guidedrailways.identity.eta_unknown": "\n预计到站时间待定",
+  "gui.guidedrailways.driver.train_name": "列车名称",
+  "gui.guidedrailways.driver.apply_name": "应用名称",
+  "gui.guidedrailways.driver.name_help": "留空使用默认名称\n名称适用于整个连挂编组",
+  "gui.guidedrailways.driver.name_read_only": "请使用可操作的主驾驶台修改名称",
+  "gui.guidedrailways.driver.name_saved": "名称已保存"
 }

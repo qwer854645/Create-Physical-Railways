@@ -48,6 +48,12 @@ public final class PhysicalTrainProxy extends Train {
       Map<UUID, TrackGraph> graphs,
       net.minecraft.core.HolderLookup.Provider registries) {
     snapshot = data.copy();
+    String customName = TrainName.normalize(data.getString("Name"));
+    name =
+        customName.isEmpty()
+            ? Component.translatable(
+                "gui.guidedrailways.identity.name", id.toString().substring(0, 8))
+            : UserText.userInput(customName);
     dimension =
         ResourceKey.create(
             Registries.DIMENSION, ResourceLocation.parse(data.getString("Dimension")));

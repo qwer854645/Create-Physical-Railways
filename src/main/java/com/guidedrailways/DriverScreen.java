@@ -20,11 +20,16 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       takeover,
       autoRemove,
       gearTabButton,
-      saveGears;
+      saveGears,
+      nameTabButton,
+      saveName;
   private final List<AbstractWidget> mainWidgets = new ArrayList<>();
   private final EditBox[] gears = new EditBox[DriverModel.MAX_NOTCH];
   private final int[] syncedGears = new int[DriverModel.MAX_NOTCH];
   private boolean gearTab, gearsEdited;
+  private boolean nameTab, nameEdited, namePending, nameFailed, nameSaved;
+  private EditBox trainName;
+  private String syncedName;
   private int selectedGear;
   private GearLeverWidget lever;
   private GearSpeedSlider speedSlider;
@@ -74,6 +79,19 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     takeover = command(text("takeover"), 107, 190, 86, 35);
     autoRemove =
         command(Component.translatable("gui.guidedrailways.auto.remove"), 202, 190, 86, 32);
+    nameTabButton =
+        button(
+                text("train_name"),
+                180,
+                8,
+                18,
+                b -> {
+                  nameTab = !nameTab;
+                  gearTab = false;
+                  setFocused(nameTab ? trainName : null);
+                })
+            .icon(AllIcons.I_CONFIG_OPEN, true)
+            .selected(() -> nameTab);
     gearTabButton =
         button(
             text("gear_settings"),
@@ -81,9 +99,26 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
             8,
             86,
             b -> {
-              gearTab = !gearTab;
+              if (nameTab) nameTab = false;
+              else gearTab = !gearTab;
               setFocused(null);
             });
+    String previousName = trainName == null ? "" : trainName.getValue();
+    trainName = new EditBox(font, leftPos + 18, topPos + 65, 264, 14, text("train_name"));
+    trainName.setMaxLength(TrainName.MAX_LENGTH);
+    trainName.setBordered(false);
+    trainName.setTextColor(CreateGuiTheme.TEXT);
+    trainName.setTextColorUneditable(CreateGuiTheme.DIM);
+    trainName.setValue(previousName);
+    trainName.setResponder(
+        value -> {
+          nameEdited = true;
+          nameFailed = nameSaved = false;
+        });
+    trainName.visible = nameTab;
+    addRenderableWidget(trainName);
+    saveName =
+        button(text("apply_name"), 12, 211, 248, b -> applyName()).icon(AllIcons.I_CONFIRM, false);
     for (int i = 0; i < gears.length; i++) {
       String previous = gears[i] == null ? "" : gears[i].getValue();
       var box = new EditBox(font, leftPos + 212, topPos + 68, 70, 14, text("gear_label", i + 1));
@@ -169,9 +204,40 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     Arrays.fill(syncedGears, -1);
   }
 
+  private void applyName() {
+    if (!saveName.active || namePending || menu.value(30) == 0) return;
+    namePending = true;
+    nameFailed = nameSaved = false;
+    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+        new DriverNetwork.SetName(menu.containerId, TrainName.normalize(trainName.getValue())));
+    setFocused(null);
+  }
+
   @Override
   protected void containerTick() {
     super.containerTick();
+    var reply = menu.nameResult;
+    if (reply != null) {
+      menu.nameResult = null;
+      if (namePending) {
+        namePending = false;
+        nameFailed = !reply.applied();
+        if (reply.applied()) {
+          trainName.setValue(reply.name());
+          syncedName = reply.name();
+          nameEdited = false;
+          nameSaved = true;
+        }
+      }
+    }
+    if (!nameEdited
+        && !namePending
+        && menu.details.menu() == menu.containerId
+        && !menu.details.trainName().equals(syncedName)) {
+      syncedName = menu.details.trainName();
+      trainName.setValue(syncedName);
+      nameEdited = nameSaved = false;
+    }
     for (int i = 0; i < gears.length; i++) {
       int value = menu.value(22 + i);
       if (value > 0 && value != syncedGears[i] && !gearsEdited) {
@@ -185,7 +251,29 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
   @Override
   protected void renderBg(GuiGraphics g, float partial, int mouseX, int mouseY) {
     CreateGuiTheme.panel(g, leftPos, topPos, imageWidth, imageHeight);
-    g.drawString(font, title, leftPos + 12, topPos + 4, CreateGuiTheme.HEADER, false);
+    g.drawString(
+        font,
+        CreateGuiTheme.fit(font, title.getString(), 158),
+        leftPos + 12,
+        topPos + 4,
+        CreateGuiTheme.HEADER,
+        false);
+    if (nameTab) {
+      g.drawString(font, text("train_name"), leftPos + 12, topPos + 42, CreateGuiTheme.TEXT, false);
+      CreateGuiTheme.inset(g, leftPos + 12, topPos + 58, 276, 24);
+      int y = topPos + 94;
+      for (var line : UserText.lines(text("name_help"))) {
+        g.drawString(font, line, leftPos + 12, y, CreateGuiTheme.DIM, false);
+        y += 12;
+      }
+      if (nameFailed || menu.value(30) == 0)
+        g.drawString(
+            font, text("name_read_only"), leftPos + 12, topPos + 126, CreateGuiTheme.DIM, false);
+      else if (nameSaved)
+        g.drawString(
+            font, text("name_saved"), leftPos + 12, topPos + 126, CreateGuiTheme.ACCENT, false);
+      return;
+    }
     if (gearTab) {
       g.drawString(
           font, text("lever_instructions"), leftPos + 12, topPos + 36, CreateGuiTheme.TEXT, false);
@@ -227,7 +315,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     if (menu.value(12) != 0)
       g.drawString(
           font,
-          CreateGuiTheme.fit(font, scheduleHeading().getString(), 184),
+          CreateGuiTheme.fit(font, scheduleHeading().getString(), 158),
           leftPos + 12,
           topPos + 19,
           CreateGuiTheme.DIM,
@@ -335,8 +423,16 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
 
   @Override
   public void render(GuiGraphics g, int x, int y, float partial) {
-    for (var widget : mainWidgets) widget.visible = !gearTab;
-    gearTabButton.setMessage(text(gearTab ? "back_settings" : "gear_settings"));
+    for (var widget : mainWidgets) widget.visible = !gearTab && !nameTab;
+    gearTabButton.setMessage(text(gearTab || nameTab ? "back_settings" : "gear_settings"));
+    nameTabButton.visible = !gearTab;
+    trainName.visible = saveName.visible = nameTab;
+    trainName.setEditable(menu.value(30) != 0 && !namePending);
+    saveName.active =
+        menu.value(30) != 0
+            && !namePending
+            && menu.details.menu() == menu.containerId
+            && !TrainName.normalize(trainName.getValue()).equals(menu.details.trainName());
     for (int i = 0; i < gears.length; i++) {
       gears[i].visible = gearTab && i == selectedGear;
       gears[i].setEditable(menu.value(16) != 0 && menu.value(20) != 0);
@@ -358,7 +454,13 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     autoRemove.active = menu.value(12) != 0 && menu.value(18) != 0 && menu.value(20) != 0;
     super.render(g, x, y, partial);
     renderTooltip(g, x, y);
-    if (!gearTab && menu.value(12) != 0 && isHovering(12, 19, 184, 9, x, y))
+    if (nameTab
+        && !trainName.isFocused()
+        && font.width(trainName.getValue()) > 264
+        && isHovering(12, 58, 276, 24, x, y))
+      g.renderTooltip(
+          font, List.of(UserText.userInput(trainName.getValue())), Optional.empty(), x, y);
+    if (!gearTab && !nameTab && menu.value(12) != 0 && isHovering(12, 19, 158, 9, x, y))
       g.renderTooltip(
           font,
           menu.details.title().isEmpty()
@@ -371,18 +473,23 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
           x,
           y);
     Component status = Component.translatable("gui.guidedrailways.auto.state." + menu.value(13));
-    if (!gearTab && font.width(status) > 264 && isHovering(18, 124, 264, 10, x, y))
+    if (!gearTab && !nameTab && font.width(status) > 264 && isHovering(18, 124, 264, 10, x, y))
       g.renderTooltip(font, List.of(status), Optional.empty(), x, y);
     Component target =
         Component.translatable("gui.guidedrailways.auto.target", menu.details.target());
-    if (!gearTab && !menu.schedulePreview.isEmpty() && isHovering(17, 106, 265, 16, x, y))
-      g.renderTooltip(font, menu.schedulePreview, x, y);
+    if (!gearTab
+        && !nameTab
+        && !menu.schedulePreview.isEmpty()
+        && isHovering(17, 106, 265, 16, x, y)) g.renderTooltip(font, menu.schedulePreview, x, y);
     else if (!gearTab
+        && !nameTab
         && font.width(target) > 246
         && isHovering(36, 108, 246, 10, x, y)
         && !menu.details.target().isEmpty())
       g.renderTooltip(font, List.of(target), Optional.empty(), x, y);
-    if (!isDragging() && isHovering(12, gearTab ? 195 : 211, 248, gearTab ? 14 : 18, x, y))
+    if (!nameTab
+        && !isDragging()
+        && isHovering(12, gearTab ? 195 : 211, 248, gearTab ? 14 : 18, x, y))
       g.renderTooltip(font, UserText.lines(text("gears_help")), Optional.empty(), x, y);
   }
 
@@ -412,8 +519,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
   @Override
   public boolean keyPressed(int key, int scan, int mods) {
     if (key == GLFW.GLFW_KEY_ESCAPE) {
-      if (gearTab) {
-        gearTab = false;
+      if (gearTab || nameTab) {
+        gearTab = nameTab = false;
         setFocused(null);
       } else {
         DriverClient.exit();
@@ -421,6 +528,13 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       }
       return true;
     }
+    if (nameTab && (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER)) {
+      applyName();
+      return true;
+    }
+    // Text such as E must not be interpreted as the inventory-close shortcut.
+    if (nameTab && trainName.isFocused() && key != GLFW.GLFW_KEY_TAB)
+      return trainName.keyPressed(key, scan, mods);
     if (gearTab && (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER)) {
       applyGears();
       return true;

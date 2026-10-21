@@ -85,7 +85,12 @@ public final class DriverNetwork {
   }
 
   public record MenuState(
-      int menu, String target, int remainingTenths, String title, int throttlePercent)
+      int menu,
+      String target,
+      int remainingTenths,
+      String title,
+      int throttlePercent,
+      String trainName)
       implements CustomPacketPayload {
     static final Type<MenuState> TYPE =
         new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "driver_menu_state"));
@@ -97,6 +102,7 @@ public final class DriverNetwork {
               b.writeVarInt(v.remainingTenths);
               b.writeUtf(v.title, 256);
               b.writeVarInt(v.throttlePercent);
+              b.writeUtf(v.trainName, TrainName.MAX_LENGTH);
             },
             b ->
                 new MenuState(
@@ -104,10 +110,46 @@ public final class DriverNetwork {
                     b.readUtf(256),
                     b.readVarInt(),
                     b.readUtf(256),
-                    b.readVarInt()));
+                    b.readVarInt(),
+                    b.readUtf(TrainName.MAX_LENGTH)));
 
     @Override
     public Type<MenuState> type() {
+      return TYPE;
+    }
+  }
+
+  public record SetName(int menu, String name) implements CustomPacketPayload {
+    static final Type<SetName> TYPE =
+        new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "driver_set_name"));
+    static final StreamCodec<RegistryFriendlyByteBuf, SetName> CODEC =
+        StreamCodec.of(
+            (b, v) -> {
+              b.writeVarInt(v.menu);
+              b.writeUtf(v.name, TrainName.MAX_LENGTH);
+            },
+            b -> new SetName(b.readVarInt(), b.readUtf(TrainName.MAX_LENGTH)));
+
+    @Override
+    public Type<SetName> type() {
+      return TYPE;
+    }
+  }
+
+  public record NameResult(int menu, boolean applied, String name) implements CustomPacketPayload {
+    static final Type<NameResult> TYPE =
+        new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "driver_name_result"));
+    static final StreamCodec<RegistryFriendlyByteBuf, NameResult> CODEC =
+        StreamCodec.of(
+            (b, v) -> {
+              b.writeVarInt(v.menu);
+              b.writeBoolean(v.applied);
+              b.writeUtf(v.name, TrainName.MAX_LENGTH);
+            },
+            b -> new NameResult(b.readVarInt(), b.readBoolean(), b.readUtf(TrainName.MAX_LENGTH)));
+
+    @Override
+    public Type<NameResult> type() {
       return TYPE;
     }
   }
@@ -157,7 +199,22 @@ public final class DriverNetwork {
   }
 
   static void register(RegisterPayloadHandlersEvent event) {
-    var r = event.registrar("2");
+    var r = event.registrar("3");
+    r.playToServer(
+        SetName.TYPE,
+        SetName.CODEC,
+        (message, context) -> {
+          if (context.player() instanceof ServerPlayer player
+              && player.containerMenu instanceof DriverMenu menu
+              && menu.containerId == message.menu) menu.setName(player, message.name);
+        });
+    r.playToClient(
+        NameResult.TYPE,
+        NameResult.CODEC,
+        (message, context) -> {
+          if (context.player().containerMenu instanceof DriverMenu menu
+              && menu.containerId == message.menu) menu.nameResult = message;
+        });
     r.playToServer(
         Command.TYPE,
         Command.CODEC,

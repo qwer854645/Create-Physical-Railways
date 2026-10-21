@@ -20,6 +20,21 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   boolean active, enabled, emergency, observing;
   int direction = 1, notch = -4;
   private int[] gearSpeeds;
+  private String trainName = "";
+
+  String trainName() {
+    return trainName;
+  }
+
+  boolean setTrainName(Player player, String value) {
+    if (!canConfigure(player)) return false;
+    String next = TrainName.normalize(value);
+    if (!next.equals(trainName)) {
+      trainName = next;
+      updateVisual();
+    }
+    return true;
+  }
 
   int maxSpeedTenths() {
     return SpeedSetting.fromRatio(TrainConfig.speedPerRpm());
@@ -39,12 +54,19 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     return Math.abs(rpm) * TrainConfig.speedPerRpm();
   }
 
-  private boolean canConfigure(Player player) {
+  boolean canConfigure(Player player) {
+    return configurationAllowed(player) && DriverControls.isPrimary(this);
+  }
+
+  boolean canConfigureView(Player player) {
+    return configurationAllowed(player) && DriverControls.primaryView(this);
+  }
+
+  private boolean configurationAllowed(Player player) {
     return level instanceof ServerLevel
         && player.mayBuild()
         && level.mayInteract(player, worldPosition)
         && DriverControls.accessible(this, player)
-        && DriverControls.isPrimary(this)
         && (!active || player.getUUID().equals(operator));
   }
 
@@ -263,6 +285,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
     super.saveAdditional(tag, registries);
     tag.putInt("Direction", direction);
+    tag.putString("TrainName", trainName);
     tag.putIntArray("GearSpeeds", gearSpeeds());
     tag.putUUID("ConsoleId", consoleId);
     tag.putLong("PlacementOrder", placementOrder);
@@ -275,6 +298,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     super.loadAdditional(tag, registries);
     if (tag.hasUUID("ConsoleId")) consoleId = tag.getUUID("ConsoleId");
     placementOrder = Math.max(0, tag.getLong("PlacementOrder"));
+    trainName = TrainName.normalize(tag.getString("TrainName"));
     schedule.load(tag, registries);
     direction = tag.contains("Direction") ? Math.clamp(tag.getInt("Direction"), -1, 1) : 1;
     int[] gears = tag.getIntArray("GearSpeeds");

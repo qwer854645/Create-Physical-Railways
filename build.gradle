@@ -625,3 +625,15 @@ tasks.register('checkArrivalEstimate', JavaExec) {
     mainClass = 'com.guidedrailways.ArrivalEstimateCheck'
 }
 tasks.named('check') { dependsOn 'checkArrivalEstimate' }
+
+tasks.register('checkTrainName', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.TrainNameCheck'
+}
+tasks.register('checkTrainNameCodec', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.TrainNameCodecCheck'
+}
+tasks.named('check') { dependsOn 'checkTrainName', 'checkTrainNameCodec' }

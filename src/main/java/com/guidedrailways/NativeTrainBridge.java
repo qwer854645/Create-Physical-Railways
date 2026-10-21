@@ -214,6 +214,8 @@ public final class NativeTrainBridge {
       centers.put(body.getUniqueId(), body.boundingBox().center(new Vector3d()));
     var tag = new CompoundTag();
     tag.putUUID("Id", id);
+    var driver = group.units().getFirst().driver;
+    tag.putString("Name", driver == null ? "" : driver.trainName());
     tag.putString("Dimension", level.dimension().location().toString());
     var carriages = new ListTag();
     UUID graph = null;

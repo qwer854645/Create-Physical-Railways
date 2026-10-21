@@ -11,7 +11,8 @@ public final class DriverMenu extends AbstractContainerMenu {
   private final Player viewer;
   private long nextDetails;
   private DriverNetwork.MenuState sentDetails;
-  DriverNetwork.MenuState details = new DriverNetwork.MenuState(-1, "", -1, "", 100);
+  DriverNetwork.MenuState details = new DriverNetwork.MenuState(-1, "", -1, "", 100, "");
+  DriverNetwork.NameResult nameResult;
   ItemStack schedulePreview = ItemStack.EMPTY;
   private ItemStack sentSchedule;
 
@@ -21,7 +22,7 @@ public final class DriverMenu extends AbstractContainerMenu {
     viewer = inventory.player;
     data =
         console == null
-            ? new SimpleContainerData(30)
+            ? new SimpleContainerData(31)
             : new ContainerData() {
               @Override
               public int get(int i) {
@@ -57,6 +58,7 @@ public final class DriverMenu extends AbstractContainerMenu {
                           ? 1
                           : 0;
                   case 21 -> console.maxSpeedTenths();
+                  case 30 -> console.canConfigureView(inventory.player) ? 1 : 0;
                   default -> 0;
                 };
               }
@@ -66,7 +68,7 @@ public final class DriverMenu extends AbstractContainerMenu {
 
               @Override
               public int getCount() {
-                return 30;
+                return 31;
               }
             };
     addDataSlots(data);
@@ -79,6 +81,16 @@ public final class DriverMenu extends AbstractContainerMenu {
   void setGears(Player player, int[] tenths) {
     if (console != null && stillValid(player) && console.setGearSpeeds(player, tenths))
       broadcastChanges();
+  }
+
+  void setName(net.minecraft.server.level.ServerPlayer player, String value) {
+    boolean applied = console != null && stillValid(player) && console.setTrainName(player, value);
+    String actual =
+        console == null ? "" : applied ? console.trainName() : DriverControls.trainName(console);
+    nextDetails = 0;
+    broadcastChanges();
+    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+        player, new DriverNetwork.NameResult(containerId, applied, actual));
   }
 
   @Override
@@ -111,7 +123,8 @@ public final class DriverMenu extends AbstractContainerMenu {
             target,
             distance,
             title,
-            (int) Math.round(console.schedule.throttle * 100));
+            (int) Math.round(console.schedule.throttle * 100),
+            DriverControls.trainName(console));
     if (!next.equals(sentDetails)) {
       sentDetails = next;
       net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, next);

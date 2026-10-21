@@ -232,5 +232,10 @@
   "message.guidedrailways.identity.no_destination": "Not planned",
   "message.guidedrailways.identity.manual": "\nNo schedule installed",
   "message.guidedrailways.identity.eta": "\nEstimated arrival: %s seconds",
-  "message.guidedrailways.identity.eta_unknown": "\nArrival time to be determined"
+  "message.guidedrailways.identity.eta_unknown": "\nArrival time to be determined",
+  "gui.guidedrailways.driver.train_name": "Train Name",
+  "gui.guidedrailways.driver.apply_name": "Apply Name",
+  "gui.guidedrailways.driver.name_help": "Leave blank to use the default name\nThe name applies to the entire coupled train",
+  "gui.guidedrailways.driver.name_read_only": "Use the available primary controls to rename",
+  "gui.guidedrailways.driver.name_saved": "Name saved"
 }

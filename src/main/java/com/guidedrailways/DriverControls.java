@@ -86,6 +86,14 @@ public final class DriverControls {
         && (b == null || VIEW.getOrDefault(level, Map.of()).get(b.getUniqueId()) == e);
   }
 
+  static String trainName(DriverConsoleEntity console) {
+    var carrier = body(console);
+    if (!(console.getLevel() instanceof ServerLevel level) || carrier == null)
+      return console.trainName();
+    var primary = VIEW.getOrDefault(level, Map.of()).get(carrier.getUniqueId());
+    return primary == null ? console.trainName() : primary.trainName();
+  }
+
   static void secondaryHint(Player player) {
     player.displayClientMessage(
         net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.secondary"),
