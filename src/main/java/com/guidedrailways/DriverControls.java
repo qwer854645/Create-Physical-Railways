@@ -106,13 +106,13 @@ public final class DriverControls {
       if (other != e && player.getUUID().equals(other.operator)) other.leave();
   }
 
-  static void emergency(ServerLevel level, DriverConsoleEntity source) {
+  static void emergency(DriverConsoleEntity source) {
     source.emergency = true;
     source.notch = -4;
     source.updateVisual();
   }
 
-  static void resetEmergency(ServerLevel level, DriverConsoleEntity source) {
+  static void resetEmergency(DriverConsoleEntity source) {
     source.emergency = false;
     source.notch = -4;
     source.updateVisual();

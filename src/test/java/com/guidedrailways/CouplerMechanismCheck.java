@@ -18,7 +18,7 @@ public final class CouplerMechanismCheck {
             progress >= 0 && progress <= 1 && progress >= previous,
             "saved operation time produces bounded monotonic progress");
         previous = progress;
-        var motion = CouplerMechanism.motion(kind, progress);
+        var motion = CouplerMechanism.motion(progress);
         check(
             motion.jawOpen() >= 0
                 && motion.jawOpen() <= 1

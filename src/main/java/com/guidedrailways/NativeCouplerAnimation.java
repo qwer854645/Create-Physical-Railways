@@ -86,7 +86,7 @@ final class NativeCouplerAnimation {
       Vector3d peerUp,
       Workspace workspace) {
     var out = workspace.parts;
-    var motion = CouplerMechanism.motion(kind, p);
+    var motion = CouplerMechanism.motion(p);
     var base = out.get(Part.BODY).identity();
     if ((kind == CouplerKind.KNUCKLE || kind == CouplerKind.KNUCKLE_SPLIT)
         && valid

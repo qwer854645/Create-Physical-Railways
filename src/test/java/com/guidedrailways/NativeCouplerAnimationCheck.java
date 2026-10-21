@@ -31,7 +31,7 @@ public final class NativeCouplerAnimationCheck {
                 var actual =
                     NativeCouplerAnimation.transforms(
                         kind, p, .8, shift, valid, active, target, peerUp, workspace);
-                var motion = CouplerMechanism.motion(kind, p);
+                var motion = CouplerMechanism.motion(p);
                 for (var part : Part.values())
                   for (var input : List.of(new Vector3d(.3, .2, .1), new Vector3d(.7, .8, .9))) {
                     var expected = new Vector3d(input);

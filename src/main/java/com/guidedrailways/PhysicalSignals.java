@@ -36,8 +36,7 @@ public final class PhysicalSignals {
 
   private static final Map<ServerLevel, State> STATES = new WeakHashMap<>();
 
-  private record Boundary(
-      SignalBoundary signal, TrackNode to, TrackEdge edge, double distance, boolean chain) {}
+  private record Boundary(SignalBoundary signal, TrackNode to, double distance, boolean chain) {}
 
   private record Stop(UUID signal, String reason) {}
 
@@ -456,7 +455,6 @@ public final class PhysicalSignals {
               new Boundary(
                   signal,
                   to,
-                  edge,
                   distance + d,
                   signal.types.get(signal.isPrimary(to)) == SignalBlock.SignalType.CROSS_SIGNAL));
         }

@@ -215,8 +215,7 @@ final class VehiclePlacement {
     for (int i = 0; i < units.size(); i++) {
       var u = units.get(i);
       var fit = plan.bogies().get(i);
-      checkPlacementSpace(
-          level, fit.origin(), fit.rotation(), u.mount.variant, u.mount.gauge, units);
+      checkPlacementSpace(level, fit.origin(), fit.rotation(), u.mount.variant, units);
       var target =
           new Vector3d(u.bogie.logicalPose().rotationPoint())
               .sub(center(u.bogie))
@@ -331,7 +330,7 @@ final class VehiclePlacement {
             selection.variant().ride,
             selection.variant().half,
             selection.variant().compactPivotHeight());
-    checkPlacementSpace(level, fit.origin(), fit.rotation(), selection.variant(), gauge, List.of());
+    checkPlacementSpace(level, fit.origin(), fit.rotation(), selection.variant(), List.of());
     ServerSubLevel bogie = null, carrier = null;
     try {
       bogie =
@@ -406,7 +405,7 @@ final class VehiclePlacement {
     var origin =
         new Vector3d(pivot)
             .sub(new Vector3d(0, selection.variant().compactPivotHeight(), 0).rotate(rotation));
-    checkPlacementSpace(level, origin, rotation, selection.variant(), gauge, List.of());
+    checkPlacementSpace(level, origin, rotation, selection.variant(), List.of());
     var bogie =
         createBody(
             level,
@@ -482,7 +481,6 @@ final class VehiclePlacement {
       Vector3dc origin,
       Quaterniond rotation,
       BogeyVariant variant,
-      RailGauge gauge,
       List<Unit> excluded) {
     var offset = BogiePairContact.offset(variant);
     var half = BogiePairContact.half(variant);

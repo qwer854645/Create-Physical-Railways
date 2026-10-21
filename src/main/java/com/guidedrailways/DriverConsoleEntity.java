@@ -211,7 +211,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
       updateVisual();
       return;
     } else if (command == 8) {
-      DriverControls.emergency(server, this);
+      DriverControls.emergency(this);
     } else {
       if (!active) return;
       if (command == 9) {
@@ -219,7 +219,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
           hint(player, "reset_stop");
           return;
         }
-        DriverControls.resetEmergency(server, this);
+        DriverControls.resetEmergency(this);
       } else if (emergency) {
         hint(player, "reset_first");
         return;

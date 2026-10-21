@@ -38,7 +38,7 @@ public final class CouplerMechanism {
 
   public record Motion(double jawOpen, double pinLift, double linkInsertion, double screwTurns) {}
 
-  public static Motion motion(CouplerKind kind, double progress) {
+  public static Motion motion(double progress) {
     double p = Math.clamp(progress, 0, 1);
     return new Motion(
         1 - Math.clamp(p / .7, 0, 1),
