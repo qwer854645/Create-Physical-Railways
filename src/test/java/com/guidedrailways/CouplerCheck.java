@@ -28,11 +28,9 @@ public final class CouplerCheck {
     var backward = new Vector3d(0, 0, -1);
     var up = new Vector3d(0, 1, 0);
     var engagement = CouplerGeometry.engage(a, forward, up, b, backward, up);
+    check(engagement.isFinite(), "engagement produces a finite initial frame");
     check(
-        engagement.point().distance(new Vector3d(0, 0, .2)) < 1e-12,
-        "engagement uses a common midpoint without moving either body");
-    check(
-        new Vector3d(1, 0, 0).rotate(engagement.frame()).distance(forward) < 1e-12,
+        new Vector3d(1, 0, 0).rotate(engagement).distance(forward) < 1e-12,
         "joint X follows coupler longitudinal direction");
     check(
         a.equals(new Vector3d()) && b.equals(new Vector3d(0, 0, .4)),
@@ -47,62 +45,56 @@ public final class CouplerCheck {
       var worldUp = new Vector3d(up).rotate(global);
       var plan = CouplerGeometry.engage(wa, faceA, worldUp, wb, faceB, worldUp);
       check(
-          plan.point().distance(new Vector3d(wa).add(wb).mul(.5)) < 1e-10,
-          "engagement invariant under a global rigid transform");
-      for (var bodyRot :
-          List.of(
-              new Quaterniond().rotateY(.3 + i * .02), new Quaterniond().rotateY(2.7 + i * .01))) {
-        var position = new Vector3d(112, 31, -12);
-        var reference = new Vector3d(16000000.5, .5, 16000000.5);
-        var local =
-            new Vector3d(plan.point())
-                .sub(position)
-                .rotate(new Quaterniond(bodyRot).conjugate())
-                .add(reference);
-        var storedFrame = new Quaterniond(bodyRot).conjugate().mul(plan.frame());
-        var restored = new Vector3d(local).sub(reference).rotate(bodyRot).add(position);
-        check(
-            restored.distance(plan.point()) < 1e-7,
-            "saved plot-local anchor restores the same world point");
-        check(
-            Math.abs(new Quaterniond(bodyRot).mul(storedFrame).dot(plan.frame())) > 1 - 1e-12,
-            "saved local frame restores the same world orientation");
-      }
+          new Vector3d(1, 0, 0).rotate(plan).distance(faceA) < 1e-10,
+          "engagement direction is invariant under a global rigid transform");
+      for (var anchor : List.of(wa, wb))
+        for (var bodyRot :
+            List.of(
+                new Quaterniond().rotateY(.3 + i * .02),
+                new Quaterniond().rotateY(2.7 + i * .01))) {
+          var position = new Vector3d(112, 31, -12);
+          var reference = new Vector3d(16000000.5, .5, 16000000.5);
+          var local =
+              new Vector3d(anchor)
+                  .sub(position)
+                  .rotate(new Quaterniond(bodyRot).conjugate())
+                  .add(reference);
+          var storedFrame = new Quaterniond(bodyRot).conjugate().mul(plan);
+          var restored = new Vector3d(local).sub(reference).rotate(bodyRot).add(position);
+          check(
+              restored.distance(anchor) < 1e-7,
+              "each saved socket restores its own world position");
+          check(
+              Math.abs(new Quaterniond(bodyRot).mul(storedFrame).dot(plan)) > 1 - 1e-12,
+              "saved local frame restores the same world orientation");
+        }
     }
     check(
-        CouplerGeometry.engage(a, forward, up, new Vector3d(0, 0, 2), backward, up)
-            .point()
-            .isFinite(),
+        CouplerGeometry.engage(a, forward, up, new Vector3d(0, 0, 2), backward, up).isFinite(),
         "near maximum engagement gap is valid");
     check(
-        CouplerGeometry.engage(a, forward, up, b, forward, up).point().isFinite(),
+        CouplerGeometry.engage(a, forward, up, b, forward, up).isFinite(),
         "manual coupling accepts same-facing heads");
     rejects(
         () -> CouplerGeometry.engage(a, forward, up, new Vector3d(0, 0, 2.01), backward, up),
         "distant heads must be rejected");
     check(
-        CouplerGeometry.engage(a, forward, up, new Vector3d(.8, 0, .5), backward, up)
-            .point()
-            .isFinite(),
+        CouplerGeometry.engage(a, forward, up, new Vector3d(.8, 0, .5), backward, up).isFinite(),
         "manual coupling accepts sideways offset");
     rejects(
         () -> CouplerGeometry.engage(a, forward, up, new Vector3d(0, 1.01, .1), backward, up),
         "height mismatch must be rejected");
     check(
-        CouplerGeometry.engage(a, forward, up, new Vector3d(0, 0, -.2), backward, up)
-            .point()
-            .isFinite(),
+        CouplerGeometry.engage(a, forward, up, new Vector3d(0, 0, -.2), backward, up).isFinite(),
         "small crossed head offset is allowed without snapping");
     rejects(
         () -> CouplerGeometry.engage(a, forward, up, b, backward, new Vector3d(0, -1, 0)),
         "opposed carriage up directions must be rejected");
     check(
-        CouplerGeometry.engage(a, forward, up, new Vector3d(0, 1, .5), backward, up)
-            .point()
-            .isFinite(),
+        CouplerGeometry.engage(a, forward, up, new Vector3d(0, 1, .5), backward, up).isFinite(),
         "one-block height tolerance is inclusive");
     check(
-        CouplerGeometry.engage(a, forward, up, a, forward, up).frame().isFinite(),
+        CouplerGeometry.engage(a, forward, up, a, forward, up).isFinite(),
         "coincident same-facing heads have a valid fallback frame");
     // A swivel changes the drawbar direction without creating a spring extension.
     for (int yaw = -180; yaw <= 180; yaw += 5)

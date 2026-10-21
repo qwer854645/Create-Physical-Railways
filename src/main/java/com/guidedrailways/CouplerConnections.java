@@ -360,7 +360,7 @@ public final class CouplerConnections {
         pipe.getAngularVelocity(ba, new Vector3d()),
         pipe.getAngularVelocity(bb, new Vector3d())))
       throw new IllegalArgumentException("message.guidedrailways.coupler.too_fast");
-    var geometry = engagement(level, a, b, ba, bb);
+    var frame = engagement(level, a, b, ba, bb);
     var kind = RailwayHardware.kind(a);
     var socketA = socket(a);
     var socketB = socket(b);
@@ -371,8 +371,8 @@ public final class CouplerConnections {
                 RailwayHardware.pivot(a).distance(RailwayHardware.tip(a)),
                 RailwayHardware.pivot(b).distance(RailwayHardware.tip(b))));
     length = CouplerBufferSpacing.length(level, a, b, ba, bb, length);
-    a.geometry(socketA.sub(blockOrigin(a)), localFrame(ba, geometry.frame()), length);
-    b.geometry(socketB.sub(blockOrigin(b)), localFrame(bb, geometry.frame()), length);
+    a.geometry(socketA.sub(blockOrigin(a)), localFrame(ba, frame), length);
+    b.geometry(socketB.sub(blockOrigin(b)), localFrame(bb, frame), length);
     a.visualPeer(b);
     b.visualPeer(a);
     var link = new CouplingLinks.Link(UUID.randomUUID(), a.endpointId, b.endpointId);
@@ -389,7 +389,7 @@ public final class CouplerConnections {
     TrainConsists.changed(level, ba.getUniqueId(), bb.getUniqueId());
   }
 
-  private static CouplerGeometry.Engagement engagement(
+  private static Quaterniond engagement(
       ServerLevel level,
       CouplerEndpoint a,
       CouplerEndpoint b,

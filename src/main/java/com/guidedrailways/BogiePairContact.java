@@ -9,11 +9,7 @@ import org.joml.Vector3dc;
 public final class BogiePairContact {
   public static final double SKIN = .12;
 
-  public record Pose(Vector3d center, Quaterniond rotation, boolean guided, Vector3dc half) {
-    public Pose(Vector3d center, Quaterniond rotation, boolean guided) {
-      this(center, rotation, guided, HALF);
-    }
-  }
+  public record Pose(Vector3d center, Quaterniond rotation, boolean guided, Vector3dc half) {}
 
   public record Contact(Vector3d normal, double separation, double minimum) {
     public double gap() {

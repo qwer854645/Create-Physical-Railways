@@ -12,13 +12,11 @@ public final class CouplerGeometry {
 
   public static final double MAX_RELATIVE_ACCELERATION = 24;
 
-  public record Engagement(Vector3d point, Quaterniond frame) {}
-
   public record Spring(double stiffness, double damping, double maxForce) {}
 
   private CouplerGeometry() {}
 
-  public static Engagement engage(
+  public static Quaterniond engage(
       Vector3dc a,
       Vector3dc facingA,
       Vector3dc upA,
@@ -55,8 +53,7 @@ public final class CouplerGeometry {
       throw new IllegalArgumentException("message.guidedrailways.coupler.invalid_pose");
     z.normalize();
     var y = new Vector3d(z).cross(x).normalize();
-    return new Engagement(
-        new Vector3d(a).add(b).mul(.5), new Quaterniond().setFromNormalized(new Matrix3d(x, y, z)));
+    return new Quaterniond().setFromNormalized(new Matrix3d(x, y, z));
   }
 
   /** World X follows the current drawbar, with no stored yaw/pitch/roll reference. */

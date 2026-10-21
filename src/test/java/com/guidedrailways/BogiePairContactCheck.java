@@ -14,7 +14,7 @@ public final class BogiePairContactCheck {
   private static BogiePairContact.Pose pose(
       double x, double y, double z, double yaw, boolean guided) {
     return new BogiePairContact.Pose(
-        new Vector3d(x, y, z), new Quaterniond().rotationY(yaw), guided);
+        new Vector3d(x, y, z), new Quaterniond().rotationY(yaw), guided, BogiePairContact.HALF);
   }
 
   public static void main(String[] args) {
@@ -62,8 +62,14 @@ public final class BogiePairContactCheck {
       var q = new Quaterniond().rotationY(yaw);
       var axis = new Vector3d(0, 0, 1).rotate(q);
       var b =
-          new BogiePairContact.Pose(new Vector3d(axis).mul(length - .05), new Quaterniond(q), true);
-      var c = BogiePairContact.find(new BogiePairContact.Pose(new Vector3d(), q, true), b, null);
+          new BogiePairContact.Pose(
+              new Vector3d(axis).mul(length - .05),
+              new Quaterniond(q),
+              true,
+              BogiePairContact.HALF);
+      var c =
+          BogiePairContact.find(
+              new BogiePairContact.Pose(new Vector3d(), q, true, BogiePairContact.HALF), b, null);
       check(
           c != null && c.normal().dot(axis) > .999,
           "same-track contact is invariant under overall yaw");
