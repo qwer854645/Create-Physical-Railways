@@ -103,7 +103,51 @@ final class NativeTrainDiagnostics {
                               for (var train : trains)
                                 context.getSource().sendSuccess(() -> describe(train), false);
                               return trains.size();
+                            }))
+                .then(
+                    Commands.literal("cargo")
+                        .executes(
+                            context -> {
+                              int count = 0;
+                              for (var train : Create.RAILWAYS.trains.values()) {
+                                if (!(train instanceof PhysicalTrainProxy proxy)) continue;
+                                context.getSource().sendSuccess(() -> describeCargo(proxy), false);
+                                count++;
+                              }
+                              if (count == 0)
+                                context
+                                    .getSource()
+                                    .sendSuccess(
+                                        () ->
+                                            Component.translatable(
+                                                "message.guidedrailways.identity.count", 0),
+                                        false);
+                              return count;
                             })));
+  }
+
+  private static Component describeCargo(PhysicalTrainProxy train) {
+    if (!train.cargoReady())
+      return Component.translatable(
+          "message.guidedrailways.identity.cargo_unavailable", train.name);
+    long items = 0, fluid = 0, slots = 0, tanks = 0;
+    for (var carriage : train.carriages) {
+      var inventory = carriage.storage.getAllItems();
+      var fluids = carriage.storage.getFluids();
+      slots += inventory.getSlots();
+      tanks += fluids.getTanks();
+      for (int i = 0; i < inventory.getSlots(); i++)
+        items += inventory.getStackInSlot(i).getCount();
+      for (int i = 0; i < fluids.getTanks(); i++) fluid += fluids.getFluidInTank(i).getAmount();
+    }
+    return Component.translatable(
+        "message.guidedrailways.identity.cargo",
+        train.name,
+        train.carriages.size(),
+        items,
+        slots,
+        fluid,
+        tanks);
   }
 
   private NativeTrainDiagnostics() {}

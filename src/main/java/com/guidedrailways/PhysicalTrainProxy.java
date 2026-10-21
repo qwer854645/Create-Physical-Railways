@@ -91,6 +91,7 @@ public final class PhysicalTrainProxy extends Train {
     }
     if (!bodyIds.equals(ids)) {
       bodyIds = List.copyOf(ids);
+      clearCargo();
       carriages.clear();
       carriageSpacing.clear();
       for (int i = 0; i < parts.size(); i++) {
@@ -127,10 +128,28 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   void clearJourney() {
+    clearCargo();
     journey.reset();
     snapshot.remove("Journey");
     ((PhysicalNavigation) navigation).project(new CompoundTag());
     ((PhysicalScheduleRuntime) runtime).project(new CompoundTag(), null);
+  }
+
+  void bindCargo(net.minecraft.server.level.ServerLevel level, TrainConsists.Group group) {
+    for (var carriage : carriages)
+      ((PhysicalCargoManager) carriage.storage)
+          .bind(level, ((LogicalCarriage) carriage).body, group.members());
+  }
+
+  private void clearCargo() {
+    for (var carriage : carriages)
+      if (carriage.storage instanceof PhysicalCargoManager cargo) cargo.unbind();
+  }
+
+  public boolean cargoReady() {
+    return !carriages.isEmpty()
+        && carriages.stream()
+            .allMatch(c -> c.storage instanceof PhysicalCargoManager cargo && cargo.ready());
   }
 
   static void syncStation(
@@ -218,11 +237,15 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   private static final class LogicalCarriage extends Carriage {
+    UUID body;
+
     LogicalCarriage(CompoundTag front, CompoundTag rear) {
       super(new LogicalBogey(front), rear == null ? null : new LogicalBogey(rear), 0);
+      storage = new PhysicalCargoManager();
     }
 
     void update(CompoundTag tag, ResourceKey<Level> dimension, TrackGraph graph) {
+      body = tag.getUUID("Body");
       ((LogicalBogey) bogeys.getFirst()).update(tag.getCompound("Front"), dimension, graph);
       if (bogeys.getSecond() instanceof LogicalBogey rear)
         rear.update(tag.getCompound("Rear"), dimension, graph);

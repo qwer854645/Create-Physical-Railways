@@ -103,6 +103,7 @@ public final class NativeTrainBridge {
         snapshot.putUUID("Station", proxy.currentStation);
       snapshot.put("Journey", proxy.journey.capture(groups.get(i), snapshot));
       proxy.apply(snapshot, Create.RAILWAYS.trackNetworks, level.registryAccess());
+      proxy.bindCargo(level, groups.get(i));
       var registration = new Registration(proxy, memberships.get(i));
       for (var member : registration.members()) byBogie.put(member, registration);
       var previous = Create.RAILWAYS.trains.get(id);

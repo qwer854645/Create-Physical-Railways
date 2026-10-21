@@ -240,5 +240,7 @@
   "gui.guidedrailways.driver.name_saved": "Name saved",
   "gui.guidedrailways.driver.train_owner": "Owner: %s",
   "gui.guidedrailways.driver.owner_unknown": "Not recorded",
-  "message.guidedrailways.identity.owner": "\nOwner: %s · UUID: %s"
+  "message.guidedrailways.identity.owner": "\nOwner: %s · UUID: %s",
+  "message.guidedrailways.identity.cargo": "%s · Carriages: %s\nItems: %s · Slots: %s\nFluid: %s mB · Tanks: %s",
+  "message.guidedrailways.identity.cargo_unavailable": "%s · Cargo unavailable — wait for all carriages and containers to load"
 }

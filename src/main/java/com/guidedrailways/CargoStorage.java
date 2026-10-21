@@ -22,6 +22,33 @@ public final class CargoStorage {
 
   record Consist(Map<UUID, ServerSubLevel> bodies, boolean complete) {}
 
+  record Contents(
+      List<ItemStack> items,
+      List<Integer> itemLimits,
+      List<FluidStack> fluids,
+      List<Integer> fluidLimits,
+      boolean ready) {
+    static final Contents UNAVAILABLE =
+        new Contents(List.of(), List.of(), List.of(), List.of(), false);
+  }
+
+  private static final class ContentsBuilder {
+    final List<ItemStack> items = new ArrayList<>();
+    final List<Integer> itemLimits = new ArrayList<>();
+    final List<FluidStack> fluids = new ArrayList<>();
+    final List<Integer> fluidLimits = new ArrayList<>();
+    boolean ready = true;
+
+    Contents build() {
+      return new Contents(
+          List.copyOf(items),
+          List.copyOf(itemLimits),
+          List.copyOf(fluids),
+          List.copyOf(fluidLimits),
+          ready);
+    }
+  }
+
   public record Snapshot(
       Set<UUID> bodies,
       boolean complete,
@@ -29,6 +56,7 @@ public final class CargoStorage {
       List<ItemStack> items,
       List<FluidStack> fluids,
       List<Location> locations,
+      Map<UUID, Contents> byBody,
       long captured) {
     long items(ServerLevel level, FilterItemStack filter, boolean stacks) {
       long n = 0;
@@ -81,7 +109,7 @@ public final class CargoStorage {
     var ids = Set.copyOf(group.bodies.keySet());
     long tick = level.getGameTime();
     if (!group.complete)
-      return new Snapshot(ids, false, false, List.of(), List.of(), List.of(), tick);
+      return new Snapshot(ids, false, false, List.of(), List.of(), List.of(), Map.of(), tick);
     var cache = CACHE.computeIfAbsent(level, k -> new Cached()).snapshots;
     var old = root == null ? null : cache.get(root.getUniqueId());
     if (old != null
@@ -96,7 +124,8 @@ public final class CargoStorage {
           break;
         }
       if (loaded) return old;
-      return new Snapshot(ids, false, old.monitored, List.of(), List.of(), List.of(), tick);
+      return new Snapshot(
+          ids, false, old.monitored, List.of(), List.of(), List.of(), Map.of(), tick);
     }
     var items = new ArrayList<ItemStack>();
     var fluids = new ArrayList<FluidStack>();
@@ -104,8 +133,13 @@ public final class CargoStorage {
     var roots = new HashSet<BlockPos>();
     var itemHandlers = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
     var fluidHandlers = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+    var byBody = new HashMap<UUID, Contents>();
     boolean complete = true, monitored = false, monitorFailed = false;
-    for (var body : group.bodies.values()) {
+    for (var body :
+        group.bodies.values().stream()
+            .sorted(Comparator.comparing(ServerSubLevel::getUniqueId))
+            .toList()) {
+      var contents = new ContentsBuilder();
       if (body.isRemoved() || body.getPlot().getLoadedChunks().isEmpty()) {
         complete = false;
         continue;
@@ -156,13 +190,34 @@ public final class CargoStorage {
             if (inventory != null && itemHandlers.add(inventory)) {
               hasItems = true;
               CargoTransfers.bind(inventory, entity);
-              for (int i = 0; i < inventory.getSlots(); i++)
-                items.add(inventory.getStackInSlot(i).copy());
+              for (int i = 0; i < inventory.getSlots(); i++) {
+                var stack = inventory.getStackInSlot(i).copy();
+                items.add(stack);
+                contents.items.add(stack);
+                try {
+                  contents.itemLimits.add(Math.max(0, inventory.getSlotLimit(i)));
+                } catch (RuntimeException error) {
+                  contents.itemLimits.add(0);
+                  contents.ready = false;
+                  CargoAdapters.warn(entity, error);
+                }
+              }
             }
             if (tank != null && fluidHandlers.add(tank)) {
               hasFluids = true;
               CargoTransfers.bind(tank, entity);
-              for (int i = 0; i < tank.getTanks(); i++) fluids.add(tank.getFluidInTank(i).copy());
+              for (int i = 0; i < tank.getTanks(); i++) {
+                var fluid = tank.getFluidInTank(i).copy();
+                fluids.add(fluid);
+                contents.fluids.add(fluid);
+                try {
+                  contents.fluidLimits.add(Math.max(0, tank.getTankCapacity(i)));
+                } catch (RuntimeException error) {
+                  contents.fluidLimits.add(0);
+                  contents.ready = false;
+                  CargoAdapters.warn(entity, error);
+                }
+              }
             }
             if (hasItems || hasFluids) {
               locations.add(new Location(pos, hasItems, hasFluids, CargoAdapters.dock(entity)));
@@ -177,6 +232,7 @@ public final class CargoStorage {
             CargoAdapters.warn(entity, error);
           }
         }
+      byBody.put(body.getUniqueId(), contents.build());
     }
     var result =
         new Snapshot(
@@ -186,6 +242,7 @@ public final class CargoStorage {
             List.copyOf(items),
             List.copyOf(fluids),
             List.copyOf(locations),
+            Map.copyOf(byBody),
             tick);
     if (old != null
         && old.complete
