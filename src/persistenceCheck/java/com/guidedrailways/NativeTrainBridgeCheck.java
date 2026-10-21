@@ -92,7 +92,7 @@ public final class NativeTrainBridgeCheck {
                   && f.owner.equals("com/simibubi/create/content/trains/signal/SignalEdgeGroup")
                   && f.name.equals("reserved")),
               "query projection never creates a native reservation");
-        if (m.name.equals("clear")
+        if (m.name.equals("clearProjection")
             && i instanceof MethodInsnNode call
             && call.name.equals("remove")) removesExactTrain = true;
       }

@@ -177,8 +177,11 @@ public final class NativeTrainBridge {
 
   static void login(net.minecraft.server.level.ServerPlayer player) {
     for (var live : LIVE.values())
-      for (var proxy : live.values())
+      for (var proxy : live.values()) {
         PacketDistributor.sendToPlayer(player, new NativeTrainNetwork.Update(proxy.snapshot()));
+        PacketDistributor.sendToPlayer(
+            player, new NativeTrainNetwork.Update(proxy.signals.packet()));
+      }
   }
 
   private static CompoundTag snapshot(ServerLevel level, UUID id, TrainConsists.Group group) {

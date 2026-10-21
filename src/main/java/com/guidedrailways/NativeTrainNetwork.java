@@ -30,7 +30,7 @@ public final class NativeTrainNetwork {
 
   static void register(RegisterPayloadHandlersEvent event) {
     event
-        .registrar("1")
+        .registrar("2")
         .playToClient(
             Update.TYPE,
             Update.CODEC,
