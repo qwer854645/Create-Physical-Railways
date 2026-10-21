@@ -41,10 +41,13 @@ final class SteamRailwaysBogeys implements PhysicalBogeySelection.Bridge {
         net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(
             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
                 "railways", "track_monorail"));
-    if (dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback.sable$getCallback(
-            rail.defaultBlockState())
-        != MonorailContacts.INSTANCE)
-      throw new IllegalStateException("Monorail contact callback missing");
+    // Other mods may wrap the public lookup in a callback chain (Discovery does this).
+    // Verify our registration at the block, rather than comparing the chain's identity.
+    if (!(rail instanceof dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback contact)
+        || contact.sable$getCallback() != MonorailContacts.INSTANCE
+        || dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback.sable$getCallback(
+                rail.defaultBlockState())
+            == null) throw new IllegalStateException("Monorail contact callback missing");
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info("[MonorailContact] selective guided-bogie callback registered");
     int count = 0;
