@@ -24,6 +24,10 @@ final class NativeTrainClient {
       var pending =
           new PendingSignal(
               tag.getString("Dimension"), SignalFrame.read(tag.getCompound("Signals")), tick);
+      var previous = PENDING.get(id);
+      if (previous != null
+          && previous.dimension.equals(pending.dimension)
+          && previous.frame.revision() > pending.frame.revision()) return;
       if (PENDING.size() >= 1024 && !PENDING.containsKey(id))
         PENDING.remove(PENDING.keySet().iterator().next());
       PENDING.put(id, pending);
@@ -48,8 +52,19 @@ final class NativeTrainClient {
   private static void clear() {
     PENDING.clear();
     tick = 0;
-    for (var train : CreateClient.RAILWAYS.trains.values())
-      if (train instanceof PhysicalTrainProxy proxy) proxy.clearJourney();
+    var trains = CreateClient.RAILWAYS.trains;
+    for (var id : List.copyOf(trains.keySet()))
+      if (trains.get(id) instanceof PhysicalTrainProxy proxy) {
+        release(proxy);
+        trains.remove(id);
+      }
+  }
+
+  private static void release(PhysicalTrainProxy proxy) {
+    proxy.clearJourney();
+    var station = proxy.getCurrentStation();
+    proxy.station(null);
+    PhysicalTrainProxy.syncStation(proxy, station);
   }
 
   static void register() {
@@ -60,21 +75,18 @@ final class NativeTrainClient {
             signal(tag);
             return;
           }
-          if (Minecraft.getInstance().level == null) return;
           var manager = CreateClient.RAILWAYS;
           var id = tag.getUUID("Id");
           var previous = manager.trains.get(id);
           if (tag.getBoolean("Removed")) {
             PENDING.remove(id);
             if (previous instanceof PhysicalTrainProxy proxy) {
-              proxy.clearJourney();
-              var station = proxy.getCurrentStation();
-              proxy.station(null);
-              PhysicalTrainProxy.syncStation(proxy, station);
+              release(proxy);
               manager.trains.remove(id);
             }
             return;
           }
+          if (Minecraft.getInstance().level == null) return;
           if (previous != null && !(previous instanceof PhysicalTrainProxy)) {
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
                 .error("Native train UUID collision on client: {}", id);

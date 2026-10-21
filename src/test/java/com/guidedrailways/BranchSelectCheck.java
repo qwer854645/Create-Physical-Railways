@@ -2,7 +2,7 @@ package com.guidedrailways;
 
 import org.joml.Vector3d;
 
-/** CPU-only Create-steer scoring regression. */
+/** CPU-only checks of the branch selector used by current routing. */
 public final class BranchSelectCheck {
   static int checks;
 
@@ -21,26 +21,16 @@ public final class BranchSelectCheck {
     var entries = new Vector3d[] {straight, left, right};
 
     check(
-        BranchSelect.fromHeading(exit, up, new Vector3d(0, 0, 1)) == BranchSelect.Steer.NONE,
-        "ahead prefers NONE");
+        BranchSelect.choose(exit, up, entries, BranchSelect.Steer.NONE) == 0,
+        "default chooses straight");
     check(
-        BranchSelect.fromHeading(exit, up, new Vector3d(1, 0, .2)) == BranchSelect.Steer.LEFT,
-        "yaw left prefers LEFT");
+        BranchSelect.choose(exit, up, entries, BranchSelect.Steer.LEFT) == 1,
+        "left intent chooses left");
     check(
-        BranchSelect.fromHeading(exit, up, new Vector3d(-1, 0, .2)) == BranchSelect.Steer.RIGHT,
-        "yaw right prefers RIGHT");
-
+        BranchSelect.choose(exit, up, entries, BranchSelect.Steer.RIGHT) == 2,
+        "right intent chooses right");
     check(
-        BranchSelect.steer(BranchSelect.Steer.NONE, exit, up, entries) == 0,
-        "NONE picks straight continuation");
-    check(
-        BranchSelect.steer(BranchSelect.Steer.LEFT, exit, up, entries) == 1,
-        "LEFT picks left branch");
-    check(
-        BranchSelect.steer(BranchSelect.Steer.RIGHT, exit, up, entries) == 2,
-        "RIGHT picks right branch");
-    check(
-        BranchSelect.steer(BranchSelect.Steer.NONE, exit, up, new Vector3d[0]) == -1,
+        BranchSelect.choose(exit, up, new Vector3d[0], BranchSelect.Steer.NONE) == -1,
         "empty candidates yield -1");
 
     check(
@@ -79,8 +69,7 @@ public final class BranchSelectCheck {
         var choices =
             new Vector3d[] {new Vector3d(travel), new Vector3d(travel).add(sideways).normalize()};
         check(
-            BranchSelect.steer(BranchSelect.fromHeading(travel, up, travel), travel, up, choices)
-                == 0,
+            BranchSelect.choose(travel, up, choices, BranchSelect.Steer.NONE) == 0,
             "straight continuation is symmetric in rotated and reversed travel");
       }
     }

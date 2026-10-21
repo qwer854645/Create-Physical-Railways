@@ -14,10 +14,10 @@ final class NativeSignalState {
   private Map<UUID, SignalEdgeGroup> registry = Map.of();
   private Map<UUID, Train> trains = Map.of();
   private SignalFrame desired = SignalFrame.UNKNOWN, projected, sent;
-  private boolean ready;
+  private String sentDimension;
 
   boolean ready() {
-    return ready;
+    return projected != null;
   }
 
   NativeSignalState(PhysicalTrainProxy train) {
@@ -27,23 +27,23 @@ final class NativeSignalState {
   void update(Set<UUID> occupied, Set<UUID> claimed) {
     registry = Create.RAILWAYS.signalEdgeGroups;
     trains = Create.RAILWAYS.trains;
-    var actual = new HashSet<>(occupied);
-    actual.retainAll(registry.keySet());
-    var reservations = new HashSet<>(claimed);
-    reservations.retainAll(registry.keySet());
-    boolean known = actual.size() <= SignalFrame.LIMIT && reservations.size() <= SignalFrame.LIMIT;
-    if (!known) {
-      actual.clear();
-      reservations.clear();
-    }
+    boolean known =
+        occupied.size() <= SignalFrame.LIMIT
+            && claimed.size() <= SignalFrame.LIMIT
+            && registry.keySet().containsAll(occupied)
+            && registry.keySet().containsAll(claimed);
+    Set<UUID> actual = known ? occupied : Set.of();
+    Set<UUID> reservations = known ? claimed : Set.of();
     if (desired.known() != known
         || !desired.occupied().equals(actual)
         || !desired.claimed().equals(reservations))
       desired = new SignalFrame(desired.revision() + 1, known, actual, reservations);
     resolve();
-    if (!desired.equals(sent)) {
+    String dimension = train.getPresentDimensions().getFirst().location().toString();
+    if (!desired.equals(sent) || !dimension.equals(sentDimension)) {
       PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(packet()));
       sent = desired;
+      sentDimension = dimension;
     }
   }
 
@@ -70,7 +70,7 @@ final class NativeSignalState {
 
   private void resolve() {
     boolean available = desired.resolvable(registry.keySet());
-    if (ready
+    if (projected != null
         && desired.equals(projected)
         && available
         && groups.stream().allMatch(g -> registry.get(g.id) == g)) {
@@ -86,7 +86,6 @@ final class NativeSignalState {
       train.occupiedSignalBlocks.put(id, null);
     }
     train.reservedSignalBlocks.addAll(desired.claimed());
-    ready = true;
     projected = desired;
     publish();
   }
@@ -97,7 +96,6 @@ final class NativeSignalState {
   }
 
   private void clearProjection() {
-    ready = false;
     projected = null;
     for (var group : groups) group.trains.remove(train);
     groups.clear();

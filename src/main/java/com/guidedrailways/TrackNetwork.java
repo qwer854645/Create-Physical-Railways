@@ -545,17 +545,6 @@ public final class TrackNetwork {
     return Double.POSITIVE_INFINITY;
   }
 
-  private static Branch steerBranch(
-      List<Branch> options, TrackEdge current, Vector3dc up, Vector3dc heading) {
-    var exitDir = vec(current.getDirection(false));
-    var entries = new Vector3d[options.size()];
-    for (int i = 0; i < options.size(); i++)
-      entries[i] = vec(options.get(i).edge.getDirection(true));
-    int pick =
-        BranchSelect.steer(BranchSelect.fromHeading(exitDir, up, heading), exitDir, up, entries);
-    return options.get(Math.max(0, pick));
-  }
-
   /** Prefer the outgoing edge that reaches the leader's current nodes (Create {@code follow}). */
   private static Branch followLeader(List<Branch> options, Sample leader) {
     int la = leader.path.a, lb = leader.path.b;
