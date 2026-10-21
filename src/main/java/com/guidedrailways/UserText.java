@@ -6,6 +6,11 @@ import net.minecraft.network.chat.Component;
 
 /** Player-facing messages stay translatable; technical exceptions remain in the log. */
 final class UserText {
+  /** Titles and station filters are player-supplied text, not translation keys. */
+  static net.minecraft.network.chat.MutableComponent userInput(String value) {
+    return Component.literal(value);
+  }
+
   static Component error(Throwable error) {
     String key = error.getMessage();
     if (key != null && key.startsWith("message.guidedrailways."))

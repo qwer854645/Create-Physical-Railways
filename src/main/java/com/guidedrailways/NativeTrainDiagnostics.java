@@ -57,6 +57,14 @@ final class NativeTrainDiagnostics {
                     : target.name,
                 target == null ? "—" : Math.round(nav.getDouble("Remaining") * 10) / 10.0,
                 target == null ? 0 : nav.getIntArray("Path").length / 2));
+        for (var prediction : train.runtime.submitPredictions()) {
+          if (prediction.ticks != 0)
+            description.append(
+                prediction.ticks < 0
+                    ? Component.translatable("message.guidedrailways.identity.eta_unknown")
+                    : Component.translatable(
+                        "message.guidedrailways.identity.eta", (prediction.ticks + 19L) / 20));
+        }
       } else description.append(Component.translatable("message.guidedrailways.identity.manual"));
     }
     return description;

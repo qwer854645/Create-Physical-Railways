@@ -91,6 +91,7 @@ public final class NativeJourneyCheck {
     var id = UUID.randomUUID();
     nav.putUUID("Destination", id);
     nav.putDouble("Remaining", 17.25);
+    nav.putInt("ArrivalTicks", 120);
     nav.putBoolean("BehindTrain", true);
     nav.putIntArray("Path", new int[] {5, 6, 6, 7});
     nav.putIntArray("Branches", new int[] {1});
@@ -180,6 +181,52 @@ public final class NativeJourneyCheck {
         calls(method(proxy, "clearJourney")).stream().filter(c -> c.name.equals("project")).count()
             == 2,
         "removal clears both views");
+    var predictions =
+        method(code("com/guidedrailways/PhysicalScheduleRuntime"), "submitPredictions");
+    check(
+        calls(predictions).stream().anyMatch(c -> c.name.equals("getCurrentStation"))
+            && calls(predictions).stream().anyMatch(c -> c.name.equals("getPresentTrain")),
+        "arrived prediction requires both sides of actual station association");
+    check(
+        calls(predictions).stream()
+            .noneMatch(
+                c ->
+                    Set.of(
+                            "findPathTo",
+                            "startNavigation",
+                            "reserveFor",
+                            "advance",
+                            "destinationReached")
+                        .contains(c.name)),
+        "display queries do not execute navigation or advance schedules");
+    for (var instruction : predictions.instructions)
+      check(
+          !(instruction instanceof FieldInsnNode f) || f.getOpcode() != Opcodes.PUTFIELD,
+          "display refresh does not mutate physical schedule state");
+    var display = code("com/simibubi/create/content/trains/display/GlobalTrainDisplayData");
+    check(
+        calls(method(display, "refresh")).stream()
+            .anyMatch(c -> c.name.equals("submitPredictions")),
+        "installed native display consumes runtime predictions");
+    var summary =
+        code("com/simibubi/create/content/redstone/displayLink/source/StationSummaryDisplaySource");
+    check(
+        summary.methods.stream()
+            .flatMap(m -> calls(m).stream())
+            .anyMatch(c -> c.name.equals("prepare")),
+        "installed station summary reads native train display data");
+    var unknown =
+        new com.simibubi.create.content.trains.display.GlobalTrainDisplayData
+            .TrainDeparturePrediction(
+            null, -1, net.minecraft.network.chat.Component.literal("Route"), "Station");
+    var known =
+        new com.simibubi.create.content.trains.display.GlobalTrainDisplayData
+            .TrainDeparturePrediction(
+            null, 400, net.minecraft.network.chat.Component.literal("Route"), "Station");
+    check(unknown.compareTo(known) > 0, "native unknown-time sentinel sorts behind known arrivals");
+    check(
+        unknown.destination.equals("Station") && unknown.scheduleTitle.getString().equals("Route"),
+        "native prediction carries actual station and journey title");
     System.out.println(
         "NativeJourneyCheck: " + checks + " route validation, NBT and isolation checks passed");
   }

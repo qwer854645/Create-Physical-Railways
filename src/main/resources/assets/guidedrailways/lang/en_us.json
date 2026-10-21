@@ -230,5 +230,7 @@
   "message.guidedrailways.identity.not_at_station": "Not stopped",
   "message.guidedrailways.identity.journey": "\n%s · Entry: %s/%s\nDestination: %s · Remaining: %s blocks · Upcoming edges: %s",
   "message.guidedrailways.identity.no_destination": "Not planned",
-  "message.guidedrailways.identity.manual": "\nNo schedule installed"
+  "message.guidedrailways.identity.manual": "\nNo schedule installed",
+  "message.guidedrailways.identity.eta": "\nEstimated arrival: %s seconds",
+  "message.guidedrailways.identity.eta_unknown": "\nArrival time to be determined"
 }

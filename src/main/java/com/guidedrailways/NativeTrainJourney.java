@@ -13,6 +13,7 @@ final class NativeTrainJourney {
   private int cachedLeg = -1;
   private int[] cachedPath = new int[0];
   private int[] cachedBranches = new int[0];
+  private final ArrivalEstimate arrival = new ArrivalEstimate();
 
   CompoundTag capture(TrainConsists.Group group, CompoundTag train) {
     var out = new CompoundTag();
@@ -62,6 +63,14 @@ final class NativeTrainJourney {
     navigation.putDouble("Remaining", Math.max(0, c.remaining));
     navigation.putDouble("StartedAt", p.route.distance());
     navigation.putBoolean("Waiting", c.waiting);
+    navigation.putInt(
+        "ArrivalTicks",
+        arrival.sample(
+            p,
+            driver.getLevel().getGameTime(),
+            Math.max(0, c.remaining),
+            Math.abs(train.getDouble("Speed")),
+            c.status == ScheduleController.TRAVELLING && !c.waiting));
     var parts = train.getList("Carriages", Tag.TAG_COMPOUND);
     var front = parts.getCompound(0);
     var axis =
@@ -104,6 +113,7 @@ final class NativeTrainJourney {
   }
 
   private void forgetRoute() {
+    arrival.reset();
     cachedPlan = null;
     cachedLeg = -1;
     cachedPath = new int[0];

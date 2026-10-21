@@ -2,7 +2,9 @@ package com.guidedrailways;
 
 import com.simibubi.create.content.trains.display.GlobalTrainDisplayData.TrainDeparturePrediction;
 import com.simibubi.create.content.trains.graph.DiscoveredPath;
+import com.simibubi.create.content.trains.graph.EdgePointType;
 import com.simibubi.create.content.trains.schedule.*;
+import com.simibubi.create.content.trains.schedule.destination.DestinationInstruction;
 import java.util.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.*;
@@ -13,6 +15,8 @@ import net.minecraft.world.level.Level;
 /** Read-only projection. The only executable schedule and physical item stay in the controls. */
 final class PhysicalScheduleRuntime extends ScheduleRuntime {
   private CompoundTag program;
+  private UUID predictionStation;
+  private int arrivalTicks = -1;
 
   PhysicalScheduleRuntime(PhysicalTrainProxy train) {
     super(train);
@@ -58,7 +62,14 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
             i < contexts.size() ? contexts.getCompound(i).copy() : new CompoundTag());
       }
     }
-    // No measured journey history exists yet. Do not publish fabricated departure predictions.
+    var navigation = tag.getCompound("Navigation");
+    predictionStation =
+        navigation.hasUUID("Destination") ? navigation.getUUID("Destination") : null;
+    arrivalTicks =
+        navigation.contains("ArrivalTicks", Tag.TAG_INT)
+            ? Math.max(-1, navigation.getInt("ArrivalTicks"))
+            : -1;
+    // Future legs have no confirmed route yet; do not invent durations for them.
     predictionTicks.clear();
     if (schedule != null) for (var entry : schedule.entries) predictionTicks.add(-1);
     ticksInTransit = 0;
@@ -104,7 +115,38 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
 
   @Override
   public Collection<TrainDeparturePrediction> submitPredictions() {
-    return List.of();
+    if (schedule == null
+        || paused
+        || completed
+        || currentEntry >= schedule.entries.size()
+        || train.derailed
+        || train.graph == null
+        || predictionStation == null) return List.of();
+    var station = train.graph.getPoint(EdgePointType.STATION, predictionStation);
+    if (station == null || station.assembling) return List.of();
+    int ticks;
+    if (state == State.POST_TRANSIT) {
+      if (train.getCurrentStation() != station || station.getPresentTrain() != train)
+        return List.of();
+      ticks = 0;
+    } else {
+      if (!train.navigation.isActive() || train.navigation.destination != station) return List.of();
+      ticks = arrivalTicks < 0 ? -1 : Math.max(1, arrivalTicks);
+    }
+    return List.of(new TrainDeparturePrediction(train, ticks, predictionTitle(), station.name));
+  }
+
+  private MutableComponent predictionTitle() {
+    if (!currentTitle.isBlank()) return UserText.userInput(currentTitle);
+    // Match Create's fallback: the next scheduled destination supplies a blank journey title.
+    for (int i = 1; i < schedule.entries.size(); i++) {
+      int entry = currentEntry + i;
+      if (entry >= schedule.entries.size() && !schedule.cyclic) break;
+      var instruction = schedule.entries.get(entry % schedule.entries.size()).instruction;
+      if (instruction instanceof DestinationInstruction destination)
+        return UserText.userInput(destination.getFilter().replace("*", "").trim());
+    }
+    return Component.empty();
   }
 
   @Override

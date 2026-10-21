@@ -230,5 +230,7 @@
   "message.guidedrailways.identity.not_at_station": "未停靠",
   "message.guidedrailways.identity.journey": "\n%s · 行程：%s/%s\n目的地：%s · 剩余：%s 格 · 后续轨段：%s",
   "message.guidedrailways.identity.no_destination": "未规划",
-  "message.guidedrailways.identity.manual": "\n未装入时刻表"
+  "message.guidedrailways.identity.manual": "\n未装入时刻表",
+  "message.guidedrailways.identity.eta": "\n预计到站：%s 秒",
+  "message.guidedrailways.identity.eta_unknown": "\n预计到站时间待定"
 }
