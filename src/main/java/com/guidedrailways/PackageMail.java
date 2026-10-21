@@ -35,6 +35,8 @@ final class PackageMail {
       for (var station : graph.getPoints(EdgePointType.STATION)) {
         if (!level.dimension().equals(station.getBlockEntityDimension())) continue;
         if (!RailDocks.bound(level, station.id)) continue;
+        var stationAddresses =
+            station.connectedPorts.values().stream().map(p -> p.address).toList();
         for (var entry : station.connectedPorts.entrySet()) {
           var port = entry.getValue();
           if (CargoStorage.trainBody(level, entry.getKey()) != null) continue;
@@ -49,7 +51,7 @@ final class PackageMail {
             for (int i = 0; i < inventory.getSlots(); i++) {
               var stack = inventory.getStackInSlot(i);
               if (PackageItem.isPackage(stack)
-                  && !PackageItem.matchAddress(stack, port.address)
+                  && !matchesAny(stack, stationAddresses)
                   && filter.matcher(PackageItem.getAddress(stack)).matches()) {
                 ids.add(station.id);
                 break;
@@ -100,6 +102,11 @@ final class PackageMail {
       ports.add(new Port(box, entry.getValue().address));
     }
     if (ports.isEmpty()) return ScheduleController.WAITING;
+    var stationAddresses = ports.stream().map(Port::address).toList();
+    Pattern fetchFilter =
+        controller.instruction() instanceof FetchPackagesInstruction fetch
+            ? Pattern.compile(fetch.getFilterForRegex())
+            : null;
     if (!RailDocks.bound(level, stop.id))
       return controller.packageInstruction()
           ? ScheduleController.RAIL_DOCK
@@ -107,16 +114,10 @@ final class PackageMail {
     int docking = RailDocks.acquire(level, controller, snapshot);
     if (docking != ScheduleController.WAITING) return docking;
     controller.mailMonitored = true;
-    var stores = CargoStorage.packageInventories(level, snapshot);
+    var stores = RailDocks.mailBuffers(level, controller, snapshot);
+    if (stores.isEmpty()) return ScheduleController.RAIL_DOCK;
     var cargo = new ArrayList<Store>();
-    for (var access : stores)
-      cargo.add(
-          new Store(
-              access.inventory(),
-              () -> {
-                access.owner().setChanged();
-                CargoTransfers.changed(access.owner());
-              }));
+    for (var access : stores) cargo.add(new Store(access.inventory(), access.changed()));
     int received = 0, sent = 0;
     // Unload first, leaving space for outgoing mail at either endpoint.
     for (var port : ports) {
@@ -133,10 +134,7 @@ final class PackageMail {
       var stationStore = mailbox(port.entity);
       sent +=
           ParcelTransfer.move(
-              stationStore,
-              cargo,
-              p -> PackageItem.isPackage(p) && !PackageItem.matchAddress(p, port.address),
-              64 - sent);
+              stationStore, cargo, p -> outgoing(p, stationAddresses, fetchFilter), 64 - sent);
     }
     if (received + sent > 0) {
       CargoStorage.invalidate(level, snapshot.bodies());
@@ -152,6 +150,13 @@ final class PackageMail {
     }
     // Do not depart a package task while matching mail is blocked by a full/locked store.
     if (controller.packageInstruction()) {
+      // Incoming mail may already be in the shore buffer, outside the train snapshot.
+      for (var access : stores)
+        for (int i = 0; i < access.inventory().getSlots(); i++) {
+          var parcel = access.inventory().getStackInSlot(i);
+          if (PackageItem.isPackage(parcel) && matchesAny(parcel, stationAddresses))
+            return ScheduleController.PACKAGE_WAIT;
+        }
       var remaining = CargoStorage.snapshot(level, DriverControls.body(controller.owner));
       if (!remaining.complete()) return ScheduleController.UNLOADED;
       for (var port : ports) {
@@ -162,12 +167,22 @@ final class PackageMail {
           return ScheduleController.PACKAGE_WAIT;
         for (int i = 0; i < port.entity.inventory.getSlots(); i++) {
           var stack = port.entity.inventory.getStackInSlot(i);
-          if (PackageItem.isPackage(stack) && !PackageItem.matchAddress(stack, port.address))
+          if (outgoing(stack, stationAddresses, fetchFilter))
             return ScheduleController.PACKAGE_WAIT;
         }
       }
     }
     return ScheduleController.WAITING;
+  }
+
+  private static boolean matchesAny(ItemStack stack, List<String> addresses) {
+    return addresses.stream().anyMatch(address -> PackageItem.matchAddress(stack, address));
+  }
+
+  private static boolean outgoing(ItemStack stack, List<String> addresses, Pattern filter) {
+    return PackageItem.isPackage(stack)
+        && !matchesAny(stack, addresses)
+        && (filter == null || filter.matcher(PackageItem.getAddress(stack)).matches());
   }
 
   private static Store mailbox(PostboxBlockEntity box) {

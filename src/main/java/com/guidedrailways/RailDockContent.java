@@ -140,6 +140,34 @@ final class RailDockContent {
                   && level.hasChunkAt(dock.getBlockPos())
                   && dock.lease.release(console, level.getGameTime())) dock.applyPower();
           }
+
+          public List<RailDocks.MailBuffer> mailBuffers(
+              ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo) {
+            var out = new ArrayList<RailDocks.MailBuffer>();
+            UUID station = controller.station;
+            if (station == null || !cargo.complete()) return out;
+            for (var pos : RailDockIndex.get(level).endpoints(station)) {
+              if (!level.hasChunkAt(pos)
+                  || !(level.getBlockEntity(pos) instanceof RailDockEntity shore)
+                  || !(shore.getOtherConnector() instanceof RailDockEntity car)) continue;
+              java.util.function.BooleanSupplier valid =
+                  () -> mailPair(level, controller, cargo, station, shore, car);
+              if (valid.getAsBoolean()) {
+                // Native slot 0 inserts into the car buffer, slot 1 extracts from shore.
+                // Initialize both local insertion permissions through the native paired API.
+                car.getInventory();
+                out.add(
+                    new RailDocks.MailBuffer(
+                        new ScopedItemHandler(new ContainerWrapper<>(shore.getInventory()), valid),
+                        () -> {
+                          shore.setChanged();
+                          car.setChanged();
+                          CargoTransfers.changed(car);
+                        }));
+              }
+            }
+            return out;
+          }
         };
     if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT)
       RailDockClient.register(bus);
@@ -178,6 +206,46 @@ final class RailDockContent {
     }
   }
 
+  private static boolean mailPair(
+      ServerLevel level,
+      ScheduleController controller,
+      CargoStorage.Snapshot cargo,
+      UUID station,
+      RailDockEntity shore,
+      RailDockEntity car) {
+    if (!Objects.equals(station, controller.station)
+        || controller.owner.isRemoved()
+        || shore.isRemoved()
+        || car.isRemoved()
+        || shore.getLevel() != level
+        || car.getLevel() != level
+        || !level.hasChunkAt(shore.getBlockPos())
+        || !level.hasChunkAt(car.getBlockPos())
+        || level.getBlockEntity(shore.getBlockPos()) != shore
+        || level.getBlockEntity(car.getBlockPos()) != car
+        || !shore.lease.ownedBy(controller.owner.consoleId, level.getGameTime())
+        || !car.lease.ownedBy(controller.owner.consoleId, level.getGameTime())) return false;
+    var bound = shore.linkedStation();
+    var body = CargoStorage.trainBody(level, car.getBlockPos());
+    var group = body == null ? null : TrainConsists.get(level).group(body.getUniqueId());
+    var driverBody = DriverControls.body(controller.owner);
+    return bound != null
+        && station.equals(bound.id)
+        && group != null
+        && group.members().equals(cargo.bodies())
+        && driverBody != null
+        && group.members().contains(driverBody.getUniqueId())
+        && CouplerConnections.cargoComplete(level, group.members())
+        && RailDockGate.ready(
+            station,
+            shore.stationId,
+            body.getUniqueId(),
+            group.members(),
+            shore.getOtherConnector() == car && car.getOtherConnector() == shore,
+            shore.isLocked(),
+            car.isLocked());
+  }
+
   private static void capabilities(RegisterCapabilitiesEvent event) {
     // A capability can outlive a docking session. Resolve the native pair on every call
     // rather than retaining the former peer's buffers after undocking or redocking.
@@ -187,34 +255,55 @@ final class RailDockContent {
         (dock, side) ->
             new net.neoforged.neoforge.items.IItemHandler() {
               private ContainerWrapper<?> current() {
+                var peer = dock.getOtherConnector();
+                if (peer != null
+                    && (!liveConnector(peer)
+                        || peer.getOtherConnector() != dock
+                        || !dock.isLocked()
+                        || !peer.isLocked())) return new ContainerWrapper<>(dock.inventory);
                 return new ContainerWrapper<>(dock.getInventory());
               }
 
               public int getSlots() {
-                return current().getSlots();
+                return liveConnector(dock) ? current().getSlots() : 0;
               }
 
               public ItemStack getStackInSlot(int slot) {
-                return current().getStackInSlot(slot);
+                if (!liveConnector(dock)) return ItemStack.EMPTY;
+                var view = current();
+                return slot >= 0 && slot < view.getSlots()
+                    ? view.getStackInSlot(slot)
+                    : ItemStack.EMPTY;
               }
 
               public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-                if (!RailDockContent.allowsTransfer(dock, dock.getOtherConnector(), stack))
+                if (!liveConnector(dock)
+                    || !RailDockContent.allowsTransfer(dock, dock.getOtherConnector(), stack))
                   return stack;
-                return current().insertItem(slot, stack, simulate);
+                var view = current();
+                return slot >= 0 && slot < view.getSlots()
+                    ? view.insertItem(slot, stack, simulate)
+                    : stack;
               }
 
               public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                return current().extractItem(slot, amount, simulate);
+                if (!liveConnector(dock)) return ItemStack.EMPTY;
+                var view = current();
+                return slot >= 0 && slot < view.getSlots()
+                    ? view.extractItem(slot, amount, simulate)
+                    : ItemStack.EMPTY;
               }
 
               public int getSlotLimit(int slot) {
-                return current().getSlotLimit(slot);
+                if (!liveConnector(dock)) return 0;
+                var view = current();
+                return slot >= 0 && slot < view.getSlots() ? view.getSlotLimit(slot) : 0;
               }
 
               public boolean isItemValid(int slot, ItemStack stack) {
                 var peer = dock.getOtherConnector();
-                return slot == 0
+                return liveConnector(dock)
+                    && slot == 0
                     && peer != null
                     && RailDockContent.allowsTransfer(dock, peer, stack);
               }
@@ -222,7 +311,8 @@ final class RailDockContent {
     event.registerBlockEntity(
         Capabilities.FluidHandler.BLOCK,
         ENTITY.get(),
-        (dock, side) -> new SingleTankWrapper(dock.tank));
+        (dock, side) ->
+            new ScopedFluidHandler(new SingleTankWrapper(dock.tank), () -> liveConnector(dock)));
     event.registerBlockEntity(
         Capabilities.EnergyStorage.BLOCK,
         ENTITY.get(),
@@ -240,7 +330,9 @@ final class RailDockContent {
     if (!(source instanceof DockingConnectorBlockEntity from)
         || !(destination instanceof DockingConnectorBlockEntity to)
         || !(from.getLevel() instanceof ServerLevel level)
-        || to.getLevel() != level) return false;
+        || to.getLevel() != level
+        || !liveConnector(from)
+        || !liveConnector(to)) return false;
     boolean receivingWorld = SableCompanion.INSTANCE.getContaining(level, to.getBlockPos()) == null;
     var shore = receivingWorld ? to : from;
     var car = receivingWorld ? from : to;
@@ -262,6 +354,13 @@ final class RailDockContent {
             && from.isLocked()
             && to.isLocked();
     return RailDockMail.allows(true, paired, ready, receivingWorld, matches);
+  }
+
+  private static boolean liveConnector(DockingConnectorBlockEntity dock) {
+    return !dock.isRemoved()
+        && dock.getLevel() instanceof ServerLevel level
+        && level.hasChunkAt(dock.getBlockPos())
+        && level.getBlockEntity(dock.getBlockPos()) == dock;
   }
 
   private static Vector3d position(RailDockEntity dock) {

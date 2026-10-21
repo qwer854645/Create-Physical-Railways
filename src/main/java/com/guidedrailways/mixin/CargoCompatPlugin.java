@@ -40,10 +40,6 @@ public final class CargoCompatPlugin implements IMixinConfigPlugin {
           "HoseCargoBindingMixin",
               Set.of(
                   "<init>(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V"),
-          "LogisticsSnapshotMixin",
-              Set.of(
-                  "capture(Lnet/minecraft/world/level/Level;Ljava/util/List;)Lnet/sprocketgames/create_aeronautics_automated_logistics/cargo/LinkedCargoSnapshot;",
-                  "empty()Lnet/sprocketgames/create_aeronautics_automated_logistics/cargo/LinkedCargoSnapshot;"),
           "LogisticsDockTransferMixin",
               Set.of(
                   "captureConnector(Ldev/simulated_team/simulated/content/blocks/docking_connector/DockingConnectorBlockEntity;)Lnet/sprocketgames/create_aeronautics_automated_logistics/dock/DockTransferSnapshot$ConnectorContents;",

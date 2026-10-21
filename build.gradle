@@ -665,3 +665,11 @@ tasks.register('checkObserverFilterCache', JavaExec) {
 }
 
 tasks.named('check') { dependsOn 'checkObserverFilterCache' }
+
+tasks.register('checkCargoBoundary', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.CargoBoundaryCheck'
+}
+
+tasks.named('check') { dependsOn 'checkCargoBoundary' }

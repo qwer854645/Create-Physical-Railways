@@ -2,6 +2,10 @@
 
 版本：Guided Railways 0.1.44 · 2026-10-19
 
+## 0.2.22 范围修正
+
+货物统计与真实存取分开：保留整列只读统计，移除包裹任意车厢写入和 Automated Logistics 容器选择扩展。以下为早期实现记录，当前规则、实际连接路径与集中验收清单以 [货运访问边界](CARGO_ACCESS_BOUNDARY.md) 为准
+
 ## 对接版本
 
 - Minecraft 1.21.1 / NeoForge 21.1.229 / Create 6.0.10-280 / Sable 2.0.3

@@ -25,7 +25,6 @@
     "RailwayHardwareBlockMixin",
     "RailwayHardwareEntityMixin",
     "HoseCargoBindingMixin",
-    "LogisticsSnapshotMixin",
     "LogisticsDockTransferMixin",
     "NativeTrainLoginMixin",
     "NativeTrainSaveMixin",

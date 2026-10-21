@@ -21,6 +21,10 @@ final class RailDockLease {
     return owner != null && now < until;
   }
 
+  boolean ownedBy(UUID console, long now) {
+    return active(now) && owner.equals(console);
+  }
+
   boolean release(UUID console, long now) {
     if (owner == null || !owner.equals(console)) return false;
     owner = null;

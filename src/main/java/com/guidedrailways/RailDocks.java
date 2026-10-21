@@ -6,10 +6,16 @@ import net.minecraft.world.item.ItemStack;
 
 /** Core code contains no optional Simulated classes in signatures or initializers. */
 public final class RailDocks {
+  record MailBuffer(
+      net.neoforged.neoforge.items.IItemHandlerModifiable inventory, Runnable changed) {}
+
   interface Bridge {
     ItemStack item();
 
     int acquire(ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo);
+
+    List<MailBuffer> mailBuffers(
+        ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo);
 
     void release(ServerLevel level, UUID console);
 
@@ -38,6 +44,11 @@ public final class RailDocks {
   static void release(ScheduleController controller) {
     if (bridge != null && controller.owner.getLevel() instanceof ServerLevel level)
       bridge.release(level, controller.owner.consoleId);
+  }
+
+  static List<MailBuffer> mailBuffers(
+      ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo) {
+    return bridge == null ? List.of() : bridge.mailBuffers(level, controller, cargo);
   }
 
   public static boolean allowsHandoff(

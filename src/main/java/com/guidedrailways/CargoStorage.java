@@ -273,31 +273,6 @@ public final class CargoStorage {
     return true;
   }
 
-  record ItemAccess(BlockEntity owner, IItemHandlerModifiable inventory) {}
-
-  static List<ItemAccess> packageInventories(ServerLevel level, Snapshot snapshot) {
-    var out = new ArrayList<ItemAccess>();
-    var seen = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
-    for (var location : snapshot.locations)
-      if (location.items && !location.dock && level.hasChunkAt(location.pos)) {
-        var entity = level.getBlockEntity(location.pos);
-        if (entity == null || entity.isRemoved()) continue;
-        IItemHandler inventory;
-        if (CargoAdapters.hose(entity)) inventory = CargoAdapters.localItems(entity);
-        else if (entity instanceof Container container) inventory = new InvWrapper(container);
-        else {
-          inventory =
-              level.getCapability(Capabilities.ItemHandler.BLOCK, location.pos, (Direction) null);
-          for (var side : Direction.values())
-            if (inventory == null)
-              inventory = level.getCapability(Capabilities.ItemHandler.BLOCK, location.pos, side);
-        }
-        if (inventory instanceof IItemHandlerModifiable writable && seen.add(inventory))
-          out.add(new ItemAccess(entity, writable));
-      }
-    return out;
-  }
-
   static void invalidate(ServerLevel level, Set<UUID> bodies) {
     var cache = CACHE.get(level);
     if (cache != null) for (var id : bodies) cache.snapshots.remove(id);
