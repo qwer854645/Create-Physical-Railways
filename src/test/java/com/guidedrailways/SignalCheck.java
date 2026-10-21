@@ -124,7 +124,9 @@ public final class SignalCheck {
                   2.5,
                   braking,
                   .6,
-                  .05);
+                  .05,
+                  1000,
+                  false);
           // Simulate a supported consist with proportional braking and normal traction.
           speed += force / 1000 * .05;
           room -= speed * .05;

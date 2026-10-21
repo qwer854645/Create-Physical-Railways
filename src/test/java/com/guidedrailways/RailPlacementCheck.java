@@ -45,13 +45,21 @@ public final class RailPlacementCheck {
     for (double r : new double[] {2, 4, 8, 16, 64})
       for (double centre : new double[] {-3, 0, 3}) {
         var route = circle(r);
-        var fit = RailPlacement.bogie(route, centre, BogieGeometry.RIDE_HEIGHT, 1);
+        var fit =
+            RailPlacement.bogie(
+                route, centre, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight());
         fitChecks(route, fit);
         check(fit.front() - centre > 1, "arc length exceeds half chord on a bend");
       }
     var straight = straight(30);
-    fitChecks(straight, RailPlacement.bogie(straight, 0, BogieGeometry.RIDE_HEIGHT, 1));
-    fitChecks(straight(1), RailPlacement.bogie(straight(1), 0, BogieGeometry.RIDE_HEIGHT, 1));
+    fitChecks(
+        straight,
+        RailPlacement.bogie(
+            straight, 0, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight()));
+    fitChecks(
+        straight(1),
+        RailPlacement.bogie(
+            straight(1), 0, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight()));
     for (double r : new double[] {4, 8, 16, 64})
       for (double spacing : new double[] {2, 4, 6})
         for (int selected : new int[] {0, 1}) {
@@ -59,7 +67,14 @@ public final class RailPlacementCheck {
           var seats = List.of(new Vector3d(0, .25, 0), new Vector3d(0, .25, spacing));
           var plan =
               RailPlacement.carriage(
-                  route, seats, selected, new Vector3d(0, 0, 1), BogieGeometry.RIDE_HEIGHT, 1);
+                  route,
+                  seats,
+                  selected,
+                  new Vector3d(0, 0, 1),
+                  java.util.Collections.nCopies(
+                      seats.size(),
+                      new RailPlacement.Dimensions(
+                          BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight())));
           for (int i = 0; i < 2; i++) {
             fitChecks(route, plan.bogies().get(i));
             check(
@@ -72,22 +87,46 @@ public final class RailPlacementCheck {
           }
         }
     var shortCurve = (RailPlacement.Route) (d -> Math.abs(d) <= 1.05 ? circle(4).at(d) : null);
-    fitChecks(shortCurve, RailPlacement.bogie(shortCurve, 0, BogieGeometry.RIDE_HEIGHT, 1));
+    fitChecks(
+        shortCurve,
+        RailPlacement.bogie(
+            shortCurve, 0, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight()));
     var sidewaysSeats = List.of(new Vector3d(-4, .25, 0), new Vector3d(4, .25, 0));
     var sidewaysCar =
         RailPlacement.carriage(
-            circle(16), sidewaysSeats, 0, new Vector3d(0, 0, 1), BogieGeometry.RIDE_HEIGHT, 1);
+            circle(16),
+            sidewaysSeats,
+            0,
+            new Vector3d(0, 0, 1),
+            java.util.Collections.nCopies(
+                sidewaysSeats.size(),
+                new RailPlacement.Dimensions(
+                    BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight())));
     check(
         sidewaysCar.bogies().get(0).pivot().distance(sidewaysCar.bogies().get(1).pivot()) > 7.8,
         "mount layout controls spacing even after bogie turns sideways relative to carrier");
     var seats = List.of(new Vector3d(0, .25, -4), new Vector3d(0, .25, 0), new Vector3d(0, .25, 4));
     var plan =
         RailPlacement.carriage(
-            straight, seats, 1, new Vector3d(0, 0, 1), BogieGeometry.RIDE_HEIGHT, 1);
+            straight,
+            seats,
+            1,
+            new Vector3d(0, 0, 1),
+            java.util.Collections.nCopies(
+                seats.size(),
+                new RailPlacement.Dimensions(
+                    BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight())));
     check(plan.bogies().size() == 3, "straight route accepts three supporting bogies");
     try {
       RailPlacement.carriage(
-          straight(3), seats, 1, new Vector3d(0, 0, 1), BogieGeometry.RIDE_HEIGHT, 1);
+          straight(3),
+          seats,
+          1,
+          new Vector3d(0, 0, 1),
+          java.util.Collections.nCopies(
+              seats.size(),
+              new RailPlacement.Dimensions(
+                  BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight())));
       throw new AssertionError("short route must fail");
     } catch (IllegalArgumentException expected) {
       checks++;
@@ -119,10 +158,20 @@ public final class RailPlacementCheck {
                     new Vector3d(0, d * .2, d * Math.sqrt(.96)),
                     new Vector3d(0, .2, Math.sqrt(.96)),
                     new Vector3d(0, Math.sqrt(.96), -.2)));
-    fitChecks(grade, RailPlacement.bogie(grade, 0, BogieGeometry.RIDE_HEIGHT, 1));
+    fitChecks(
+        grade,
+        RailPlacement.bogie(
+            grade, 0, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight()));
     var gradeCar =
         RailPlacement.carriage(
-            grade, seats, 1, new Vector3d(0, 0, 1), BogieGeometry.RIDE_HEIGHT, 1);
+            grade,
+            seats,
+            1,
+            new Vector3d(0, 0, 1),
+            java.util.Collections.nCopies(
+                seats.size(),
+                new RailPlacement.Dimensions(
+                    BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight())));
     check(gradeCar.rotation().isFinite(), "sloped carriage has finite orientation");
     var reverse =
         (RailPlacement.Route)
@@ -130,7 +179,10 @@ public final class RailPlacementCheck {
               var p = circle(16).at(-d);
               return new RailPlacement.Point(p.position(), p.tangent().negate(), p.up());
             });
-    fitChecks(reverse, RailPlacement.bogie(reverse, 0, BogieGeometry.RIDE_HEIGHT, 1));
+    fitChecks(
+        reverse,
+        RailPlacement.bogie(
+            reverse, 0, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight()));
     System.out.println("RailPlacementCheck: " + checks + " assertions passed");
   }
 }

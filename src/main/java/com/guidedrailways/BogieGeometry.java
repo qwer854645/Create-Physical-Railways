@@ -14,9 +14,7 @@ public final class BogieGeometry {
   public static final double RIDE_HEIGHT = RAIL_TOP + TREAD_RADIUS + .5 - RENDER_Y - AXLE_RENDER_Y;
 
   /** Create flat track graph points are at the rail block's bottom face. */
-  public static final double MOUNT_TOP = 2, MOUNT_UNDERSIDE = .75;
+  public static final double MOUNT_UNDERSIDE = .75;
 
-  public static final double PLATE_OFFSET = MOUNT_TOP - .5 - RIDE_HEIGHT;
-  public static final double PIVOT_HEIGHT = PLATE_OFFSET + MOUNT_UNDERSIDE - .5;
   public static final double SUPPORT_BOTTOM = 5.742566 / 16;
 }

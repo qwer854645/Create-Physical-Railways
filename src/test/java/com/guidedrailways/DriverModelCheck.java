@@ -18,7 +18,8 @@ public final class DriverModelCheck {
       boolean emergency,
       boolean hold,
       double dt) {
-    return DriverModel.force(speed, limit, rpm, mass, notch, emergency, hold, 6, 2.5, 4, .6, dt);
+    return DriverModel.force(
+        speed, limit, rpm, mass, notch, emergency, hold, 6, 2.5, 4, .6, dt, mass, false);
   }
 
   static double run(
@@ -53,8 +54,20 @@ public final class DriverModelCheck {
       for (int i = 0; i < 3; i++) {
         double f =
             DriverModel.manualForce(
-                sign * 4, sign * 25.6, rpm[i], masses[i], 8, false, false, 6, 2.5, 4, .6, .025,
-                shares[i], true);
+                sign * 4,
+                sign * 25.6,
+                rpm[i],
+                masses[i],
+                8,
+                false,
+                false,
+                6,
+                2.5,
+                4,
+                .6,
+                .025,
+                shares[i],
+                true);
         check(
             Math.abs(f) <= Math.abs(rpm[i]) * 6 + 1e-8,
             "trailers gain no phantom motor and actual motor keeps RPM force cap");

@@ -7,8 +7,8 @@ import org.joml.Vector3dc;
 
 /** Pure initial engagement geometry. There is no scripted pulling force. */
 public final class CouplerGeometry {
-  /** Two standard 0.73-block drawbars, with 0.1 block total compression/extension. */
-  public static final double REST_LENGTH = 1.46, HALF_STROKE = .1, MAX_GAP = 2.0, MAX_HEIGHT = 1.0;
+  /** Standard drawbar half-stroke and manual coupling selection limits. */
+  public static final double HALF_STROKE = .1, MAX_GAP = 2.0, MAX_HEIGHT = 1.0;
 
   public static final double MAX_RELATIVE_ACCELERATION = 24;
 
@@ -72,22 +72,10 @@ public final class CouplerGeometry {
     return a.distance(b) - restLength;
   }
 
-  /** Engage end stops only after the capped spring has settled inside the working stroke. */
-  public static boolean canCapture(double length, double radialSpeed) {
-    return canCapture(length, radialSpeed, REST_LENGTH);
-  }
-
   public static double nominalLength(double reachA, double reachB) {
     if (!Double.isFinite(reachA) || !Double.isFinite(reachB) || reachA <= 0 || reachB <= 0)
       throw new IllegalArgumentException("invalid coupler reach");
     return reachA + reachB;
-  }
-
-  public static boolean canCapture(double length, double radialSpeed, double restLength) {
-    return Double.isFinite(length)
-        && Double.isFinite(radialSpeed)
-        && Math.abs(length - restLength) <= HALF_STROKE * .8
-        && Math.abs(radialSpeed) <= .25;
   }
 
   public static boolean slowEnough(Vector3dc va, Vector3dc vb, Vector3dc wa, Vector3dc wb) {

@@ -62,10 +62,6 @@ public final class RailPlacement {
         new Vector3d(start).fma(s, u).distanceSquared(new Vector3d(a).fma(t, v)), s, t);
   }
 
-  public static Bogie bogie(Route route, double centre, double ride, double halfWheelbase) {
-    return bogie(route, centre, ride, halfWheelbase, BogieGeometry.PIVOT_HEIGHT);
-  }
-
   public static Bogie bogie(
       Route route, double centre, double ride, double halfWheelbase, double pivotHeight) {
     double lo = 0, hi = halfWheelbase * 1.65;
@@ -105,36 +101,7 @@ public final class RailPlacement {
         origin, rotation, new Vector3d(origin).fma(pivotHeight, up), centre + half, centre - half);
   }
 
-  /** Fit one rigid carrier to every mounting seat; invalid plans never mutate a body. */
-  public static Car carriage(
-      Route route,
-      List<Vector3d> seats,
-      int selected,
-      Vector3dc localForward,
-      double ride,
-      double halfWheelbase) {
-    return carriage(
-        route, seats, selected, localForward, ride, halfWheelbase, BogieGeometry.PIVOT_HEIGHT);
-  }
-
   public record Dimensions(double ride, double halfWheelbase, double pivotHeight) {}
-
-  public static Car carriage(
-      Route route,
-      List<Vector3d> seats,
-      int selected,
-      Vector3dc localForward,
-      double ride,
-      double halfWheelbase,
-      double pivotHeight) {
-    return carriage(
-        route,
-        seats,
-        selected,
-        localForward,
-        java.util.Collections.nCopies(
-            seats.size(), new Dimensions(ride, halfWheelbase, pivotHeight)));
-  }
 
   public static Car carriage(
       Route route,

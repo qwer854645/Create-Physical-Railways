@@ -62,28 +62,47 @@ public final class TrainIntegrationCheck {
     var b = new ConsoleElection.Console(id(2), id(12), 20);
     var c = new ConsoleElection.Console(id(3), id(11), 30);
     var joined =
-        List.of(new ConsoleElection.Link(id(11), id(90)), new ConsoleElection.Link(id(90), id(12)));
+        List.of(new ConsistGraph.Link(id(11), id(90)), new ConsistGraph.Link(id(90), id(12)));
     for (int i = 0; i < 100; i++) {
       var records = new ArrayList<>(List.of(a, b, c));
       Collections.shuffle(records, new Random(i));
-      var election = ConsoleElection.elect(records, joined);
+      var election =
+          ConsoleElection.electGroups(
+              records,
+              ConsistGraph.components(
+                  records.stream().map(ConsoleElection.Console::carrier).toList(), joined));
       check(
           election.get(id(11)).equals(a.id())
               && election.get(id(12)).equals(a.id())
               && election.get(id(90)).equals(a.id()),
           "placement order wins regardless of load order or bare intermediate carriers");
-      var split = ConsoleElection.elect(records, List.of());
+      var split =
+          ConsoleElection.electGroups(
+              records,
+              ConsistGraph.components(
+                  records.stream().map(ConsoleElection.Console::carrier).toList(), List.of()));
       check(
           split.get(id(11)).equals(a.id()) && split.get(id(12)).equals(b.id()),
           "uncoupling elects the oldest console independently in each new train");
     }
     check(
-        ConsoleElection.elect(List.of(b, c), joined).get(id(11)).equals(b.id()),
+        ConsoleElection.electGroups(
+                List.of(b, c),
+                ConsistGraph.components(
+                    List.of(b, c).stream().map(ConsoleElection.Console::carrier).toList(), joined))
+            .get(id(11))
+            .equals(b.id()),
         "removing the primary promotes the next oldest console across carriages");
     var tied = new ConsoleElection.Console(id(8), id(12), 0);
     var tied2 = new ConsoleElection.Console(id(7), id(11), 0);
     check(
-        ConsoleElection.elect(List.of(a, tied, tied2), joined).get(id(12)).equals(tied2.id()),
+        ConsoleElection.electGroups(
+                List.of(a, tied, tied2),
+                ConsistGraph.components(
+                    List.of(a, tied, tied2).stream().map(ConsoleElection.Console::carrier).toList(),
+                    joined))
+            .get(id(12))
+            .equals(tied2.id()),
         "equal placement orders use stable persisted UUID tie-breaking");
     var reload =
         new ConsoleElection.Console(
@@ -91,10 +110,23 @@ public final class TrainIntegrationCheck {
             UUID.fromString(a.carrier().toString()),
             Long.parseLong("10"));
     check(
-        ConsoleElection.elect(List.of(reload, b), joined).get(id(12)).equals(a.id()),
+        ConsoleElection.electGroups(
+                List.of(reload, b),
+                ConsistGraph.components(
+                    List.of(reload, b).stream().map(ConsoleElection.Console::carrier).toList(),
+                    joined))
+            .get(id(12))
+            .equals(a.id()),
         "serializable identity/order survive save and reload");
     check(
-        ConsoleElection.elect(List.of(), joined).isEmpty(),
+        ConsoleElection.electGroups(
+                List.of(),
+                ConsistGraph.components(
+                    List.<ConsoleElection.Console>of().stream()
+                        .map(ConsoleElection.Console::carrier)
+                        .toList(),
+                    joined))
+            .isEmpty(),
         "a train without consoles has no invented authority");
     var presence = new StationStopState();
     for (int i = 0; i < 5; i++)

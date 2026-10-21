@@ -73,10 +73,6 @@ public final class RouteMemory {
     repeat.remove(axle);
   }
 
-  public int choose(Axle axle, Junction node, int from, int[] exits, int proposed) {
-    return select(axle, node, from, exits, proposed, true, false);
-  }
-
   public int preview(
       Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned) {
     return select(axle, node, from, exits, proposed, false, planned);

@@ -20,35 +20,53 @@ public final class TrainIdentityCheck {
       var a = Set.of(id(1), id(2));
       var b = Set.of(id(3), id(4));
       var all = Set.of(id(1), id(2), id(3), id(4));
-      var first = ledger.reconcile(List.of(all)).get(all);
+      var first = ledger.reconcile(List.of(all), Set.copyOf(List.of(all))).get(all);
       check(first != null, "first identity");
       for (int i = 0; i < 1000; i++)
-        check(first.equals(ledger.reconcile(List.of(all)).get(all)), "tick stable");
+        check(
+            first.equals(ledger.reconcile(List.of(all), Set.copyOf(List.of(all))).get(all)),
+            "tick stable");
       var persisted = new TrainIdentityLedger();
       persisted.records.putAll(ledger.records);
-      check(first.equals(persisted.reconcile(List.of(all)).get(all)), "reload stable");
+      check(
+          first.equals(persisted.reconcile(List.of(all), Set.copyOf(List.of(all))).get(all)),
+          "reload stable");
       var before = Map.copyOf(ledger.records);
-      check(ledger.reconcile(List.of(a)).isEmpty(), "anchor-only partial load is not a split");
+      check(
+          ledger.reconcile(List.of(a), Set.copyOf(List.of(a))).isEmpty(),
+          "anchor-only partial load is not a split");
       check(ledger.records.equals(before), "partial anchor load retains unloaded members");
-      check(ledger.reconcile(List.of(b)).isEmpty(), "unloaded anchor is not a new identity");
+      check(
+          ledger.reconcile(List.of(b), Set.copyOf(List.of(b))).isEmpty(),
+          "unloaded anchor is not a new identity");
       check(ledger.records.equals(before), "partial tail load retains identity");
       check(
-          ledger.reconcile(List.of()).isEmpty() && ledger.records.equals(before),
+          ledger.reconcile(List.of(), Set.copyOf(List.of())).isEmpty()
+              && ledger.records.equals(before),
           "unload is not deletion");
-      var split = ledger.reconcile(order == 0 ? List.of(a, b) : List.of(b, a));
+      var split =
+          ledger.reconcile(
+              order == 0 ? List.of(a, b) : List.of(b, a),
+              Set.copyOf(order == 0 ? List.of(a, b) : List.of(b, a)));
       check(first.equals(split.get(a)), "anchor split keeps identity independent of group order");
       check(
           split.get(b) != null && !first.equals(split.get(b)),
           "split tail receives distinct identity");
       check(ledger.records.size() == 2, "exactly two split records");
-      var merged = ledger.reconcile(List.of(all)).get(all);
+      var merged = ledger.reconcile(List.of(all), Set.copyOf(List.of(all))).get(all);
       check(ledger.records.size() == 1, "merge retires other identity");
       check(
           merged.equals(first) || merged.equals(split.get(b)), "merge keeps an existing identity");
       ledger.removed(id(1));
       check(
           merged.equals(
-              ledger.reconcile(List.of(Set.of(id(2), id(3), id(4)))).values().iterator().next()),
+              ledger
+                  .reconcile(
+                      List.of(Set.of(id(2), id(3), id(4))),
+                      Set.copyOf(List.of(Set.of(id(2), id(3), id(4)))))
+                  .values()
+                  .iterator()
+                  .next()),
           "anchor deletion reanchors");
       ledger.removed(id(2));
       ledger.removed(id(3));
@@ -93,11 +111,11 @@ public final class TrainIdentityCheck {
       var ledger = new TrainIdentityLedger();
       var groups = new ArrayList<Set<UUID>>();
       for (int i = 0; i < count; i++) groups.add(Set.of(id(i + 1)));
-      var expected = ledger.reconcile(groups);
+      var expected = ledger.reconcile(groups, Set.copyOf(groups));
       for (int j = 0; j < 20; j++) {
         Collections.shuffle(groups, random);
         check(
-            expected.equals(ledger.reconcile(groups)),
+            expected.equals(ledger.reconcile(groups, Set.copyOf(groups))),
             "independent groups remain stable when reordered");
         check(new HashSet<>(expected.values()).size() == count, "no duplicate live UUIDs");
       }

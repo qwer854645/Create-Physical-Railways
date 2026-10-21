@@ -92,13 +92,6 @@ public final class BogeyVariant {
     return index >= 0 && index < ALL.size() ? ALL.get(index) : DEFAULT;
   }
 
-  public static BogeyVariant find(String id) {
-    var small = find(id, "create:small");
-    if (small != null) return small;
-    for (var v : ALL) if (v.id.equals(id)) return v;
-    return null;
-  }
-
   public static BogeyVariant find(String id, String size) {
     for (var v : ALL) if (v.id.equals(id) && v.size.equals(size)) return v;
     return null;

@@ -97,7 +97,7 @@ public final class NativeCargoCheck {
     }
     // An unbound/client view must be safe to query and cannot retain a world reference.
     var cargo = new PhysicalCargoManager();
-    check(!cargo.bound() && !cargo.ready(), "unbound view is unknown, not confirmed empty");
+    check(!cargo.ready(), "unbound view is unknown, not confirmed empty");
     check(
         cargo.getAllItems().getSlots() == 0 && cargo.getFluids().getTanks() == 0,
         "empty native query surfaces are initialized");

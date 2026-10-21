@@ -34,36 +34,6 @@ public final class DriverModel {
       double acceleration,
       double braking,
       double coasting,
-      double dt) {
-    return manualForce(
-        speed,
-        ceiling,
-        rpm,
-        mass,
-        notch,
-        emergency,
-        hold,
-        forcePerRpm,
-        acceleration,
-        braking,
-        coasting,
-        dt,
-        mass,
-        false);
-  }
-
-  public static double manualForce(
-      double speed,
-      double ceiling,
-      double rpm,
-      double mass,
-      int notch,
-      boolean emergency,
-      boolean hold,
-      double forcePerRpm,
-      double acceleration,
-      double braking,
-      double coasting,
       double dt,
       double tractionMass,
       boolean trainPowered) {
@@ -93,36 +63,6 @@ public final class DriverModel {
         dt,
         tractionMass,
         trainPowered);
-  }
-
-  public static double force(
-      double speed,
-      double ceiling,
-      double rpm,
-      double mass,
-      int notch,
-      boolean emergency,
-      boolean hold,
-      double forcePerRpm,
-      double acceleration,
-      double braking,
-      double coasting,
-      double dt) {
-    return force(
-        speed,
-        ceiling,
-        rpm,
-        mass,
-        notch,
-        emergency,
-        hold,
-        forcePerRpm,
-        acceleration,
-        braking,
-        coasting,
-        dt,
-        mass,
-        false);
   }
 
   public static double force(

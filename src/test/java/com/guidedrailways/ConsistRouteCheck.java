@@ -38,58 +38,59 @@ public final class ConsistRouteCheck {
     var journal = new RouteMemory(ids);
     var node = new RouteMemory.Junction(UUID.randomUUID(), 100);
     check(
-        journal.choose(a, node, 10, new int[] {20, 30}, 30) == 30,
+        journal.commit(a, node, 10, new int[] {20, 30}, 30, false) == 30,
         "physical leading axle chooses branch");
     check(
-        journal.choose(a, node, 10, new int[] {20, 30}, 20) == 30,
+        journal.commit(a, node, 10, new int[] {20, 30}, 20, false) == 30,
         "same junction contact cannot record multiple passages or switch branch");
     for (var follower : List.of(b, c, d))
       check(
-          journal.choose(follower, node, 10, new int[] {20, 30}, 20) == 30,
+          journal.commit(follower, node, 10, new int[] {20, 30}, 20, false) == 30,
           "all axles of coupled carriers follow the same passage");
     for (var axle : ids) journal.clearRepeat(axle);
     for (var axle : List.of(d, c, b, a))
       check(
-          journal.choose(axle, node, 30, new int[] {10, 40}, 40) == 10,
+          journal.commit(axle, node, 30, new int[] {10, 40}, 40, false) == 10,
           "reverse motion retraces the actual entrance");
     for (var axle : ids) journal.clearRepeat(axle);
     check(
-        journal.choose(a, node, 10, new int[] {20, 30}, 20) == 20,
+        journal.commit(a, node, 10, new int[] {20, 30}, 20, false) == 20,
         "after whole consist reverses clear, a fresh branch can be chosen");
     check(
-        journal.choose(c, node, 10, new int[] {30}, 30) == -1,
+        journal.commit(c, node, 10, new int[] {30}, 30, false) == -1,
         "missing recorded branch cannot redirect a follower to the wrong route");
     check(
-        journal.choose(c, node, 10, new int[] {20, 30}, 30) == 20,
+        journal.commit(c, node, 10, new int[] {20, 30}, 30, false) == 20,
         "restoring branch retains the original choice");
     var loop = new RouteMemory(ids);
     for (int lap = 0; lap < 12; lap++) {
       int turn = lap % 2 == 0 ? 20 : 30;
       loop.clearRepeat(a);
       check(
-          loop.choose(a, node, 10, new int[] {20, 30}, turn) == turn,
+          loop.commit(a, node, 10, new int[] {20, 30}, turn, false) == turn,
           "leader can revisit a junction before its tail");
     }
     for (var follower : List.of(b, c, d))
       for (int lap = 0; lap < 12; lap++) {
         loop.clearRepeat(follower);
         check(
-            loop.choose(follower, node, 10, new int[] {20, 30}, 99) == (lap % 2 == 0 ? 20 : 30),
+            loop.commit(follower, node, 10, new int[] {20, 30}, 99, false)
+                == (lap % 2 == 0 ? 20 : 30),
             "tail consumes repeated junction visits in order, without using newest visit early");
       }
     var split = loop.copyFor(Set.of(c, d));
     split.clearRepeat(c);
     check(
-        split.choose(c, node, 10, new int[] {20, 30}, 30) == 30,
+        split.commit(c, node, 10, new int[] {20, 30}, 30, false) == 30,
         "uncoupled component can create an independent next passage");
     loop.clearRepeat(a);
     check(
-        loop.choose(a, node, 10, new int[] {20, 30}, 20) == 20,
+        loop.commit(a, node, 10, new int[] {20, 30}, 20, false) == 20,
         "other component retains independent history after split");
     var otherGraph = new RouteMemory.Junction(UUID.randomUUID(), 100);
     journal.clearRepeat(a);
     check(
-        journal.choose(a, otherGraph, 10, new int[] {20, 30}, 30) == 30,
+        journal.commit(a, otherGraph, 10, new int[] {20, 30}, 30, false) == 30,
         "same numeric node in another graph is independent");
     var speculative = new RouteMemory(ids);
     check(
@@ -118,16 +119,16 @@ public final class ConsistRouteCheck {
         "the new trip is committed separately from historical reverse retracing");
     for (var follower : List.of(b, c, d))
       check(
-          speculative.choose(follower, node, 30, new int[] {10, 40}, 10) == 40,
+          speculative.commit(follower, node, 30, new int[] {10, 40}, 10, false) == 40,
           "trailers follow the new trip rather than a completed older passage");
     var straddled = new RouteMemory(ids);
-    straddled.choose(a, node, 10, new int[] {20, 30}, 30);
+    straddled.commit(a, node, 10, new int[] {20, 30}, 30, false);
     straddled.clearRepeat(a);
     check(
         straddled.preview(a, node, 30, new int[] {10, 40}, 40, true) == 10,
         "a consist still spanning the junction must retrace its active passage");
     var rejectedReverse = new RouteMemory(ids);
-    for (var axle : ids) rejectedReverse.choose(axle, node, 10, new int[] {20, 30}, 30);
+    for (var axle : ids) rejectedReverse.commit(axle, node, 10, new int[] {20, 30}, 30, false);
     for (var axle : ids) rejectedReverse.clearRepeat(axle);
     check(
         rejectedReverse.preview(d, node, 30, new int[] {10, 40}, 40, false) == 10,

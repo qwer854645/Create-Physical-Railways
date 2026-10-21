@@ -80,16 +80,16 @@ public final class RailwaysCheck {
     var after = new ScheduleRoute.Goal(a, "after", edge, 8);
     var before = new ScheduleRoute.Goal(b, "before", edge, 3);
     check(
-        ScheduleRoute.find(buffered, edge, 0, java.util.List.of(after)) == null,
+        ScheduleRoute.find(buffered, edge, 0, java.util.List.of(after), 0) == null,
         "a target beyond a buffer on the same edge is unreachable");
     check(
-        ScheduleRoute.find(buffered, edge, 0, java.util.List.of(before)) != null,
+        ScheduleRoute.find(buffered, edge, 0, java.util.List.of(before), 0) != null,
         "a station before the buffer remains reachable");
     check(
-        ScheduleRoute.find(buffered, edge, 6, java.util.List.of(after)) != null,
+        ScheduleRoute.find(buffered, edge, 6, java.util.List.of(after), 0) != null,
         "a buffer behind the train does not block forward navigation");
     for (var gauge : new RailGauge[] {RailGauge.NARROW, RailGauge.WIDE, RailGauge.MONORAIL}) {
-      var cells = BogieCollision.cells(gauge);
+      var cells = BogieCollision.cells(BogeyVariant.defaultFor(gauge));
       var ids = new java.util.HashSet<Integer>();
       check(
           cells.stream()
@@ -114,7 +114,7 @@ public final class RailwaysCheck {
                   && box.z1() <= 1,
               "scaled collision remains partitioned inside occupied cells");
       }
-      for (var box : BogieCollision.boxes(gauge)) {
+      for (var box : BogieCollision.boxes(BogeyVariant.defaultFor(gauge))) {
         double x = (box.x0() + box.x1()) * .5,
             y = (box.y0() + box.y1()) * .5,
             z = (box.z0() + box.z1()) * .5;

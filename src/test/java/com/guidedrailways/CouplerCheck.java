@@ -139,20 +139,23 @@ public final class CouplerCheck {
         "coincident sockets have finite fallback");
     double standard = CouplerVisual.pivot(0, 1).distance(CouplerVisual.restTip(0, 1)) * 2;
     check(
-        Math.abs(CouplerGeometry.REST_LENGTH - standard) < 1e-12,
+        Math.abs(CouplerGeometry.nominalLength(.73, .73) - standard) < 1e-12,
         "standard distance matches two unstretched visual drawbars");
-    check(CouplerGeometry.canCapture(standard, 0), "resting standard drawbars engage end stops");
     check(
-        !CouplerGeometry.canCapture(standard + .2, 0),
+        CouplerMechanism.canCapture(CouplerKind.STANDARD, standard, 0, standard),
+        "resting standard drawbars engage end stops");
+    check(
+        !CouplerMechanism.canCapture(CouplerKind.STANDARD, standard + .2, 0, standard),
         "loose engagement must be drawn in by the capped spring before end stops engage");
     check(
-        !CouplerGeometry.canCapture(standard - .2, 0),
+        !CouplerMechanism.canCapture(CouplerKind.STANDARD, standard - .2, 0, standard),
         "compressed engagement must settle before end stops engage");
     check(
-        !CouplerGeometry.canCapture(standard, .26),
+        !CouplerMechanism.canCapture(CouplerKind.STANDARD, standard, .26, standard),
         "fast closing drawbars cannot suddenly engage end stops");
     check(
-        !CouplerGeometry.canCapture(Double.NaN, 0), "invalid lengths cannot enable a native limit");
+        !CouplerMechanism.canCapture(CouplerKind.STANDARD, Double.NaN, 0, standard),
+        "invalid lengths cannot enable a native limit");
     // Fixed target must converge from different engagement gaps and mass ratios.
     for (double initial : new double[] {.5, 1, 2, 3.4})
       for (double ma : new double[] {20, 100, 1000})
@@ -168,7 +171,8 @@ public final class CouplerCheck {
                     spring.maxForce());
             velocity += force / reduced / 240;
             distance += velocity / 240;
-            captured |= CouplerGeometry.canCapture(distance, velocity);
+            captured |=
+                CouplerMechanism.canCapture(CouplerKind.STANDARD, distance, velocity, standard);
           }
           check(
               captured && Math.abs(distance - standard) < 1e-6 && Math.abs(velocity) < 1e-6,
@@ -220,14 +224,14 @@ public final class CouplerCheck {
             rest == reachA + reachB,
             "hardware length comes from its geometry rather than engagement gap");
         check(
-            CouplerGeometry.canCapture(rest, .1, rest),
+            CouplerMechanism.canCapture(CouplerKind.STANDARD, rest, .1, rest),
             "short and mixed native couplers can capture at their own nominal length");
         check(
-            !CouplerGeometry.canCapture(rest + .2, 0, rest),
+            !CouplerMechanism.canCapture(CouplerKind.STANDARD, rest + .2, 0, rest),
             "native couplers retain the same finite stroke");
       }
     check(
-        CouplerGeometry.nominalLength(.73, .73) == CouplerGeometry.REST_LENGTH,
+        CouplerGeometry.nominalLength(.73, .73) == standard,
         "standard saved geometry retains its original length");
     rejects(
         () -> CouplerGeometry.nominalLength(0, .5),
@@ -257,7 +261,9 @@ public final class CouplerCheck {
       endpoints.add(eb);
       links.add(new CouplingLinks.Link(id, ea, eb));
       check(
-          links.forEndpoint(ea).other(ea).equals(eb) && links.forEndpoint(eb).other(eb).equals(ea),
+          links.forEndpoint(ea).equals(links.forEndpoint(eb))
+              && links.forEndpoint(ea).a().equals(ea)
+              && links.forEndpoint(ea).b().equals(eb),
           "bidirectional stable pairing");
     }
     var snapshot = links.all();

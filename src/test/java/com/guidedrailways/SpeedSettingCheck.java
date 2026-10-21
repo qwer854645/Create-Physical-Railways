@@ -9,40 +9,20 @@ public final class SpeedSettingCheck {
   }
 
   public static void main(String[] args) {
-    check(SpeedSetting.fromRatio(.05) == 128, "legacy default remains 12.8 blocks/s at 256 RPM");
     for (double ratio : new double[] {.001, .05, .1, 1})
       check(
-          Math.abs(SpeedSetting.target(256, SpeedSetting.fromRatio(ratio)) - ratio * 256) <= .05,
-          "legacy config migrates within the GUI tenth precision");
-    for (int setting : new int[] {1, 128, 200, 640, 2560}) {
-      check(
-          Math.abs(SpeedSetting.target(256, setting) - setting / 10.0) < 1e-12,
-          "full RPM reaches configured target");
-      check(SpeedSetting.target(0, setting) == 0, "a speed setting never supplies power");
-      for (int rpm = 1; rpm <= 256; rpm++) {
-        double target = SpeedSetting.target(rpm, setting);
-        check(
-            Math.abs(target / (setting / 10.0) - rpm / 256.0) < 1e-12,
-            "every input RPM scales proportionally");
-        check(
-            target == SpeedSetting.target(-rpm, setting),
-            "reversed inputs retain the same target magnitude");
-        check(
-            target <= SpeedSetting.target(256, setting),
-            "targets never exceed configured maximum at normal Create RPM");
-      }
-    }
+          Math.abs(SpeedSetting.fromRatio(ratio) / 10.0 - ratio * 256) <= .05,
+          "configured RPM ratio maps to the gear editor's tenth precision");
     check(
-        SpeedSetting.target(128, 200) == 10 && SpeedSetting.target(64, 200) == 5,
-        "20 blocks/s setting gives 10 at 128 RPM and 5 at 64 RPM");
+        SpeedSetting.fromRatio(.00001) == SpeedSetting.MIN,
+        "small positive limits clamp to the editor minimum");
+    check(
+        SpeedSetting.fromRatio(100) == SpeedSetting.MAX,
+        "large limits clamp to the editor maximum");
+    for (double invalid : new double[] {0, -1, Double.NaN, Double.POSITIVE_INFINITY})
+      check(SpeedSetting.fromRatio(invalid) == 128, "invalid ratios use the editor fallback");
     for (int invalid : new int[] {Integer.MIN_VALUE, -1, 0, 2561, Integer.MAX_VALUE})
-      check(
-          !SpeedSetting.valid(invalid) && SpeedSetting.target(256, invalid) == 0,
-          "invalid or malicious settings cannot create unbounded propulsion");
-    check(
-        SpeedSetting.target(Double.NaN, 128) == 0
-            && SpeedSetting.target(Double.POSITIVE_INFINITY, 128) == 0,
-        "invalid RPM cannot propagate non-finite forces");
+      check(!SpeedSetting.valid(invalid), "out-of-range gear settings are rejected");
     int[] gears = {20, 40, 80, 100, 128, 160, 200, 256};
     check(
         SpeedSetting.validGears(SpeedSetting.MAX, gears),
@@ -80,7 +60,7 @@ public final class SpeedSettingCheck {
         for (int i = 0; i < 20 / dt; i++) {
           double force =
               DriverModel.manualForce(
-                  speed, direction * 8, 256, 600, 3, false, false, 6, 2.5, 4, .6, dt);
+                  speed, direction * 8, 256, 600, 3, false, false, 6, 2.5, 4, .6, dt, 600, false);
           double next = speed + force / 600 * dt;
           check(
               Math.abs(next - speed) <= 4 * dt + 1e-9 && next * direction > 0,
@@ -90,11 +70,14 @@ public final class SpeedSettingCheck {
         check(
             Math.abs(Math.abs(speed) - 8) < .061,
             "manual downshift converges to its configured absolute speed");
-        double f1 = DriverModel.manualForce(0, 8, 256, 600, 1, false, false, 6, 2.5, 4, .6, dt);
-        double f8 = DriverModel.manualForce(0, 8, 256, 600, 8, false, false, 6, 2.5, 4, .6, dt);
+        double f1 =
+            DriverModel.manualForce(0, 8, 256, 600, 1, false, false, 6, 2.5, 4, .6, dt, 600, false);
+        double f8 =
+            DriverModel.manualForce(0, 8, 256, 600, 8, false, false, 6, 2.5, 4, .6, dt, 600, false);
         check(f1 == f8, "manual notch denotes speed rather than an effort percentage");
         check(
-            DriverModel.manualForce(0, 8, 0, 600, 3, false, false, 6, 2.5, 4, .6, dt) == 0,
+            DriverModel.manualForce(0, 8, 0, 600, 3, false, false, 6, 2.5, 4, .6, dt, 600, false)
+                == 0,
             "a configured gear cannot supply power to an unpowered bogie");
       }
     System.out.println("SpeedSettingCheck: " + checks + " assertions passed");

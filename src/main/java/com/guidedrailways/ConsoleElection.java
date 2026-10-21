@@ -6,14 +6,6 @@ import java.util.*;
 public final class ConsoleElection {
   public record Console(UUID id, UUID carrier, long order) {}
 
-  public record Link(UUID a, UUID b) {}
-
-  public static Map<UUID, UUID> elect(Collection<Console> consoles, List<Link> links) {
-    var bodies = consoles.stream().map(Console::carrier).toList();
-    var edges = links.stream().map(l -> new ConsistGraph.Link(l.a(), l.b())).toList();
-    return electGroups(consoles, ConsistGraph.components(bodies, edges));
-  }
-
   public static Map<UUID, UUID> electGroups(
       Collection<Console> consoles, Collection<Set<UUID>> components) {
     var result = new HashMap<UUID, UUID>();

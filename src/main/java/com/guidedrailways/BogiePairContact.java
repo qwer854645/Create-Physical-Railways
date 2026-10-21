@@ -41,14 +41,6 @@ public final class BogiePairContact {
 
   private record Bounds(Vector3dc offset, Vector3dc half) {}
 
-  public static Vector3dc offset(RailGauge gauge) {
-    return gauge == RailGauge.STANDARD ? OFFSET : NATIVE.get(BogeyVariant.defaultFor(gauge)).offset;
-  }
-
-  public static Vector3dc half(RailGauge gauge) {
-    return gauge == RailGauge.STANDARD ? HALF : NATIVE.get(BogeyVariant.defaultFor(gauge)).half;
-  }
-
   private static final Map<BogeyVariant, Bounds> NATIVE = new HashMap<>();
 
   static {

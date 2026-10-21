@@ -4,11 +4,7 @@ import java.util.*;
 
 /** Authoritative pairing survives endpoint unload; deletion always updates both ends. */
 public final class CouplingLinks {
-  public record Link(UUID id, UUID a, UUID b) {
-    public UUID other(UUID endpoint) {
-      return a.equals(endpoint) ? b : b.equals(endpoint) ? a : null;
-    }
-  }
+  public record Link(UUID id, UUID a, UUID b) {}
 
   private final Map<UUID, Link> links = new HashMap<>();
   private final Map<UUID, UUID> endpoints = new HashMap<>();

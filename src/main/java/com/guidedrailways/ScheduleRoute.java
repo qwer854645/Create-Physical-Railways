@@ -47,10 +47,6 @@ public final class ScheduleRoute {
 
   private record Visit(Key key, double cost, Visit previous) {}
 
-  public static Route find(Network network, Edge start, double offset, List<Goal> goals) {
-    return find(network, start, offset, goals, 0);
-  }
-
   public static Route find(
       Network network, Edge start, double offset, List<Goal> goals, double arrivalTolerance) {
     return find(network, start, offset, goals, arrivalTolerance, Double.POSITIVE_INFINITY);

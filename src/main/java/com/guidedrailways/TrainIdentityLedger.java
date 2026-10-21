@@ -14,10 +14,6 @@ public final class TrainIdentityLedger {
 
   final Map<UUID, Identity> records = new HashMap<>();
 
-  public Map<Set<UUID>, UUID> reconcile(List<Set<UUID>> groups) {
-    return reconcile(groups, Set.copyOf(groups));
-  }
-
   /**
    * Observe all loaded groups to distinguish splitting from unloading; only eligible groups start
    * identities.

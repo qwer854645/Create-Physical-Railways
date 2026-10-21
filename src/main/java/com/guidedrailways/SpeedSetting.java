@@ -15,10 +15,6 @@ public final class SpeedSetting {
     return (int) Math.clamp(Math.round(ratio * 2560), MIN, MAX);
   }
 
-  public static double target(double rpm, int tenths) {
-    return !Double.isFinite(rpm) || !valid(tenths) ? 0 : Math.abs(rpm) * tenths / 2560.0;
-  }
-
   public static int[] defaultGears(int maximum) {
     int[] result = new int[DriverModel.MAX_NOTCH];
     for (int i = 0; i < result.length; i++)

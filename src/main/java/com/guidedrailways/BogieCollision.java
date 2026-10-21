@@ -47,16 +47,6 @@ public final class BogieCollision {
     return variant == BogeyVariant.DEFAULT ? CELLS : NATIVE_CELLS.get(variant);
   }
 
-  public static List<Box> boxes(RailGauge gauge) {
-    return boxes(
-        gauge == RailGauge.STANDARD ? BogeyVariant.DEFAULT : BogeyVariant.defaultFor(gauge));
-  }
-
-  public static List<Cell> cells(RailGauge gauge) {
-    return cells(
-        gauge == RailGauge.STANDARD ? BogeyVariant.DEFAULT : BogeyVariant.defaultFor(gauge));
-  }
-
   public record Shape(int id, BogeyVariant variant, Cell cell, double mass) {}
 
   private static final List<Shape> SHAPES = new ArrayList<>();

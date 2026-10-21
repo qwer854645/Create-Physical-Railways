@@ -56,7 +56,7 @@ public final class AutomaticScheduleCheck {
             .turn(2, 4, 3)
             .turn(4, 3, 5)
             .turn(2, 3, 5);
-    var route = ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(3, 5, 3)));
+    var route = ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(3, 5, 3)), 0);
     check(
         route != null && Math.abs(route.distance() - 17) < 1e-9,
         "shortest allowed route includes both partial edge distances");
@@ -74,16 +74,16 @@ public final class AutomaticScheduleCheck {
         Math.abs(route.remaining(n, 1, 2) - 11) < 1e-9,
         "remaining distance updates without replanning or nearest-station distance");
     check(
-        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(1, 2, 8))).distance() == 2,
+        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(1, 2, 8)), 0).distance() == 2,
         "same-edge station ahead");
     check(
-        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(1, 2, 5))) == null,
+        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(1, 2, 5)), 0) == null,
         "no arrival at a station already passed without a return route");
     check(
-        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(2, 1, 2))) == null,
+        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(2, 1, 2)), 0) == null,
         "wrong station approach direction is not accepted");
     check(
-        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(2, 3, 4), goal(2, 4, 1)))
+        ScheduleRoute.find(n, e(1, 2), 6, List.of(goal(2, 3, 4), goal(2, 4, 1)), 0)
             .goal()
             .edge()
             .equals(e(2, 4)),
@@ -96,7 +96,7 @@ public final class AutomaticScheduleCheck {
             .turn(1, 2, 3)
             .turn(2, 3, 1)
             .turn(3, 1, 2);
-    var back = ScheduleRoute.find(loop, e(1, 2), 7, List.of(goal(1, 2, 3)));
+    var back = ScheduleRoute.find(loop, e(1, 2), 7, List.of(goal(1, 2, 3)), 0);
     check(
         back != null && back.distance() == 26 && back.edges().size() == 4,
         "a passed station on the starting edge can be reached after one circuit");
@@ -109,7 +109,7 @@ public final class AutomaticScheduleCheck {
         "arrival tolerance preserves the measured signed stop error");
     check(back.next(3, 1, 2) == 2, "loop route preserves repeated-edge transitions");
     check(
-        ScheduleRoute.find(loop, e(1, 2), Double.NaN, List.of(goal(1, 2, 3))) == null,
+        ScheduleRoute.find(loop, e(1, 2), Double.NaN, List.of(goal(1, 2, 3)), 0) == null,
         "invalid location is rejected");
     var progressRoute =
         new ScheduleRoute.Route(
@@ -194,7 +194,9 @@ public final class AutomaticScheduleCheck {
                       2.5,
                       4,
                       .6,
-                      dt);
+                      dt,
+                      mass,
+                      false);
               double next = speed + force / mass * dt;
               check(
                   Double.isFinite(next) && Math.abs(next - speed) <= 4 * dt + 1e-8,

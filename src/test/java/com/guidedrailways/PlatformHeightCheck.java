@@ -28,8 +28,10 @@ public final class PlatformHeightCheck {
             d ->
                 new RailPlacement.Point(
                     new Vector3d(.5, y, .5).fma(d, along), new Vector3d(along), new Vector3d(up));
-        var bogie = RailPlacement.bogie(track, 0, BogieGeometry.RIDE_HEIGHT, 1);
-        var mountOrigin = new Vector3d(bogie.origin()).fma(BogieGeometry.PLATE_OFFSET, up);
+        var bogie =
+            RailPlacement.bogie(
+                track, 0, BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight());
+        var mountOrigin = new Vector3d(bogie.origin()).fma(BogeyVariant.DEFAULT.plateOffset(), up);
         check(
             near(mountOrigin.y - .5, y + 1),
             "carrier block bottom lies on the world grid on horizontal rails");
@@ -48,7 +50,14 @@ public final class PlatformHeightCheck {
         var seats = List.of(new Vector3d(0, .25, -4), new Vector3d(0, .25, 4));
         var car =
             RailPlacement.carriage(
-                track, seats, 0, new Vector3d(0, 0, 1), BogieGeometry.RIDE_HEIGHT, 1);
+                track,
+                seats,
+                0,
+                new Vector3d(0, 0, 1),
+                java.util.Collections.nCopies(
+                    seats.size(),
+                    new RailPlacement.Dimensions(
+                        BogieGeometry.RIDE_HEIGHT, 1, BogeyVariant.DEFAULT.pivotHeight())));
         check(
             near(car.position().y + .5, y + 2),
             "all mounts of a rigid carrier rerail to one standard floor height");
@@ -58,9 +67,10 @@ public final class PlatformHeightCheck {
         var orientation = new Quaterniond().rotateYXZ(.8, pitch, roll);
         var up = new Vector3d(0, 1, 0).rotate(orientation);
         var anchor = new Vector3d(10, 20, 30);
-        var lowerOrigin = new Vector3d(anchor).fma(-BogieGeometry.PIVOT_HEIGHT, up);
+        var lowerOrigin = new Vector3d(anchor).fma(-BogeyVariant.DEFAULT.pivotHeight(), up);
         check(
-            new Vector3d(lowerOrigin).fma(BogieGeometry.PIVOT_HEIGHT, up).distance(anchor) < 1e-8,
+            new Vector3d(lowerOrigin).fma(BogeyVariant.DEFAULT.pivotHeight(), up).distance(anchor)
+                < 1e-8,
             "underside installation uses the same bearing offset on rotated bodies");
       }
     var model =

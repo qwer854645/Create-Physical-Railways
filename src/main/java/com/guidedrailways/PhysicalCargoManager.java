@@ -62,10 +62,6 @@ final class PhysicalCargoManager extends TrainCargoManager {
     revision++;
   }
 
-  boolean bound() {
-    return level != null;
-  }
-
   boolean ready() {
     return contents().ready();
   }

@@ -44,11 +44,12 @@ public final class NativeTrainBridgeCheck {
     contract("com/simibubi/create/content/trains/entity/Train", "findCollidingTrain");
     var data = new TrainIdentityData();
     var members = Set.of(new UUID(1, 2), new UUID(3, 4));
-    var id = data.ledger.reconcile(List.of(members)).get(members);
+    var id = data.ledger.reconcile(List.of(members), Set.copyOf(List.of(members))).get(members);
     var tag = data.save(new CompoundTag(), null);
     var restored = TrainIdentityData.load(tag, null);
     check(
-        id.equals(restored.ledger.reconcile(List.of(members)).get(members)),
+        id.equals(
+            restored.ledger.reconcile(List.of(members), Set.copyOf(List.of(members))).get(members)),
         "real NBT identity round trip");
     var node = code("com/guidedrailways/PhysicalTrainProxy");
     for (var methodName :
@@ -120,7 +121,10 @@ public final class NativeTrainBridgeCheck {
             new java.io.DataInputStream(new java.io.ByteArrayInputStream(binary.toByteArray())));
     check(
         id.equals(
-            TrainIdentityData.load(disk, null).ledger.reconcile(List.of(members)).get(members)),
+            TrainIdentityData.load(disk, null)
+                .ledger
+                .reconcile(List.of(members), Set.copyOf(List.of(members)))
+                .get(members)),
         "binary NBT round trip");
     System.out.println(
         "NativeTrainBridgeCheck: "

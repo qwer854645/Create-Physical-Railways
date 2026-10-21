@@ -5,7 +5,6 @@ import com.simibubi.create.content.trains.graph.*;
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3d;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
@@ -178,13 +177,6 @@ public final class TrackNetwork {
             == path.edge;
   }
 
-  static Collection<Path> paths(ServerLevel level) {
-    var index = INDEX.get(level);
-    return index == null
-        ? List.of()
-        : index.paths.values().stream().filter(p -> live(level, p)).toList();
-  }
-
   static long generation(ServerLevel level) {
     var index = INDEX.get(level);
     return index == null ? 0 : index.generation;
@@ -263,37 +255,6 @@ public final class TrackNetwork {
                 BlockPos.containing(sample.position.x, sample.position.y, sample.position.z))
         ? sample
         : null;
-  }
-
-  public static Sample follow(
-      ServerLevel level, Vector3dc point, Vector3dc heading, Sample previous, double radius) {
-    return follow(level, point, heading, previous, null, radius);
-  }
-
-  /**
-   * Stay on the current edge while mid-span; at nodes choose by geometric turn angle and explicit
-   * intent, with consist passage history taking priority over local guesses.
-   */
-  public static Sample follow(
-      ServerLevel level,
-      Vector3dc point,
-      Vector3dc heading,
-      Sample previous,
-      Sample leader,
-      double radius) {
-    return follow(level, point, heading, previous, leader, radius, false);
-  }
-
-  /** Heading fixes body/traction orientation; reverse changes traversal only. */
-  public static Sample follow(
-      ServerLevel level,
-      Vector3dc point,
-      Vector3dc heading,
-      Sample previous,
-      Sample leader,
-      double radius,
-      boolean reverse) {
-    return follow(level, point, heading, previous, leader, radius, reverse, null);
   }
 
   static Sample follow(
@@ -577,15 +538,6 @@ public final class TrackNetwork {
     return null;
   }
 
-  private static Vector3d vec(Vec3 v) {
-    return new Vector3d(v.x, v.y, v.z);
-  }
-
-  public static Sample nearest(
-      ServerLevel level, Vector3dc point, Vector3dc heading, Path previous, double radius) {
-    return nearest(level, point, heading, previous, radius, RailGauge.STANDARD);
-  }
-
   static Sample nearest(
       ServerLevel level,
       Vector3dc point,
@@ -625,13 +577,6 @@ public final class TrackNetwork {
   public static void refreshNow(ServerLevel level) {
     INDEX.computeIfAbsent(level, l -> new Index()).next = 0;
     refresh(level);
-  }
-
-  /**
-   * Server-side rail picking also hits Bezier track drawn through air, without an ITrackBlock hit.
-   */
-  public static Sample pick(net.minecraft.server.level.ServerPlayer player) {
-    return pick(player, RailGauge.STANDARD);
   }
 
   static Sample pick(net.minecraft.server.level.ServerPlayer player, RailGauge gauge) {
@@ -846,10 +791,6 @@ public final class TrackNetwork {
       var s = sample(d);
       return s == null ? null : new RailPlacement.Point(s.position, s.tangent, s.up);
     }
-  }
-
-  public static PlacementRoute placementRoute(ServerLevel level, Sample anchor, double extent) {
-    return new PlacementRoute(level, anchor, extent, Set.of(RailGauge.STANDARD));
   }
 
   static PlacementRoute placementRoute(

@@ -25,18 +25,6 @@ public final class DriveModel {
       double speedRatio,
       double forceRatio,
       double acceleration,
-      double braking) {
-    return force(speed, rpm, mass, brake, speedRatio, forceRatio, acceleration, braking, mass);
-  }
-
-  public static double force(
-      double speed,
-      double rpm,
-      double mass,
-      boolean brake,
-      double speedRatio,
-      double forceRatio,
-      double acceleration,
       double braking,
       double tractionMass) {
     if (!Double.isFinite(speed) || !Double.isFinite(rpm) || !Double.isFinite(mass) || mass <= 0)

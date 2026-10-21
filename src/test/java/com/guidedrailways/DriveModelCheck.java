@@ -9,7 +9,7 @@ public final class DriveModelCheck {
   }
 
   private static double f(double v, double rpm, double mass, boolean brake) {
-    return DriveModel.force(v, rpm, mass, brake, .05, 6, 2.5, 4);
+    return DriveModel.force(v, rpm, mass, brake, .05, 6, 2.5, 4, mass);
   }
 
   public static void main(String[] args) {
