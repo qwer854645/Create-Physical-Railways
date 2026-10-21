@@ -15,6 +15,14 @@ public final class TrainIdentityLedger {
   final Map<UUID, Identity> records = new HashMap<>();
 
   public Map<Set<UUID>, UUID> reconcile(List<Set<UUID>> groups) {
+    return reconcile(groups, Set.copyOf(groups));
+  }
+
+  /**
+   * Observe all loaded groups to distinguish splitting from unloading; only eligible groups start
+   * identities.
+   */
+  public Map<Set<UUID>, UUID> reconcile(List<Set<UUID>> groups, Set<Set<UUID>> eligible) {
     var loaded = new HashSet<UUID>();
     groups.forEach(loaded::addAll);
     var original = List.copyOf(records.values());
@@ -43,6 +51,10 @@ public final class TrainIdentityLedger {
               .filter(Objects::nonNull)
               .sorted(Comparator.comparing(Identity::id))
               .toList();
+      if (candidates.isEmpty() && !eligible.contains(members)) {
+        claimed.addAll(members);
+        continue;
+      }
       UUID id = candidates.isEmpty() ? UUID.randomUUID() : candidates.getFirst().id();
       UUID anchor =
           candidates.isEmpty() ? Collections.min(members) : candidates.getFirst().anchor();

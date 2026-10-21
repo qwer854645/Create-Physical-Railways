@@ -63,13 +63,19 @@ public final class NativeTrainBridge {
                         .map(u -> u.bogie.getUniqueId())
                         .collect(java.util.stream.Collectors.toUnmodifiableSet()))
             .toList();
-    var identities = data.ledger.reconcile(memberships);
+    var eligible = new HashSet<Set<UUID>>();
+    for (int i = 0; i < groups.size(); i++)
+      if (hasConsole(level, groups.get(i))) eligible.add(memberships.get(i));
+    // Keep uncontrolled groups in topology reconciliation: a detached unpowered trailer is not
+    // an unloaded half of its former train. Only publication requires a primary console.
+    var identities = data.ledger.reconcile(memberships, eligible);
     if (!before.equals(data.ledger.records)) data.setDirty();
     var live = LIVE.computeIfAbsent(level, l -> new HashMap<>());
     var seen = new HashSet<UUID>();
     var warned = WARNED.computeIfAbsent(level, l -> new HashSet<>());
     warned.retainAll(identities.values());
     for (int i = 0; i < groups.size(); i++) {
+      if (!eligible.contains(memberships.get(i))) continue;
       var id = identities.get(memberships.get(i));
       if (id == null) continue;
       var snapshot = snapshot(level, id, groups.get(i));
@@ -106,6 +112,20 @@ public final class NativeTrainBridge {
         PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(snapshot));
     }
     for (var id : List.copyOf(live.keySet())) if (!seen.contains(id)) remove(live, id);
+  }
+
+  private static boolean hasConsole(ServerLevel level, TrainConsists.Group group) {
+    for (var unit : group.units()) {
+      var driver = unit.driver;
+      if (driver == null
+          || driver.isRemoved()
+          || driver.getLevel() != level
+          || !level.hasChunkAt(driver.getBlockPos())
+          || level.getBlockEntity(driver.getBlockPos()) != driver) continue;
+      var body = DriverControls.body(driver);
+      if (body != null && group.members().contains(body.getUniqueId())) return true;
+    }
+    return false;
   }
 
   private static void remove(Map<UUID, PhysicalTrainProxy> live, UUID id) {

@@ -55,6 +55,39 @@ public final class TrainIdentityCheck {
       ledger.removed(id(4));
       check(ledger.records.isEmpty(), "confirmed destruction removes identity");
     }
+    for (int order = 0; order < 2; order++) {
+      var ledger = new TrainIdentityLedger();
+      var a = Set.of(id(10));
+      var b = Set.of(id(11));
+      var all = Set.of(id(10), id(11));
+      check(
+          ledger.reconcile(List.of(a, b), Set.of()).isEmpty() && ledger.records.isEmpty(),
+          "loose bogies never allocate train identities");
+      var controlled = ledger.reconcile(List.of(a, b), Set.of(a));
+      var original = controlled.get(a);
+      check(
+          original != null && !controlled.containsKey(b) && ledger.records.size() == 1,
+          "only the console group becomes a train");
+      ledger.reconcile(List.of(a, b), Set.of());
+      check(
+          original.equals(ledger.reconcile(List.of(a, b), Set.of(a)).get(a)),
+          "console replacement can retain the dormant identity");
+      check(
+          original.equals(ledger.reconcile(List.of(all), Set.of(all)).get(all)),
+          "unpowered trailers join the one controlled train");
+      var split = ledger.reconcile(order == 0 ? List.of(a, b) : List.of(b, a), Set.of(a));
+      check(
+          original.equals(split.get(a)) && !split.containsKey(b),
+          "uncontrolled split tail does not block or create a second train");
+      check(
+          ledger.records.size() == 1 && ledger.records.get(original).members().equals(a),
+          "detached trailer is removed from the original identity membership");
+      ledger.reconcile(List.of(all), Set.of(all));
+      split = ledger.reconcile(order == 0 ? List.of(a, b) : List.of(b, a), Set.of(b));
+      check(
+          split.get(b) != null && !original.equals(split.get(b)),
+          "controlled split tail receives its own identity while old anchor remains dormant");
+    }
     var random = new Random(9123);
     for (int count = 1; count <= 64; count++) {
       var ledger = new TrainIdentityLedger();
