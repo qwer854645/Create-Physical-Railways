@@ -227,5 +227,8 @@
   "message.guidedrailways.identity.entry": "%s\nUUID: %s · Carriages: %s\nPosition: %s, %s, %s · Speed: %s blocks/s · %s\nStation: %s",
   "message.guidedrailways.identity.on_track": "Track associated",
   "message.guidedrailways.identity.off_track": "No track association",
-  "message.guidedrailways.identity.not_at_station": "Not stopped"
+  "message.guidedrailways.identity.not_at_station": "Not stopped",
+  "message.guidedrailways.identity.journey": "\n%s · Entry: %s/%s\nDestination: %s · Remaining: %s blocks · Upcoming edges: %s",
+  "message.guidedrailways.identity.no_destination": "Not planned",
+  "message.guidedrailways.identity.manual": "\nNo schedule installed"
 }

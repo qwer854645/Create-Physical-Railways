@@ -20,6 +20,7 @@ final class NativeTrainClient {
           var previous = manager.trains.get(id);
           if (tag.getBoolean("Removed")) {
             if (previous instanceof PhysicalTrainProxy proxy) {
+              proxy.clearJourney();
               var station = proxy.getCurrentStation();
               proxy.station(null);
               PhysicalTrainProxy.syncStation(proxy, station);
@@ -34,7 +35,7 @@ final class NativeTrainClient {
           }
           var proxy = previous instanceof PhysicalTrainProxy p ? p : new PhysicalTrainProxy(id);
           var oldStation = proxy.getCurrentStation();
-          proxy.apply(tag, manager.trackNetworks);
+          proxy.apply(tag, manager.trackNetworks, Minecraft.getInstance().level.registryAccess());
           PhysicalTrainProxy.syncStation(proxy, oldStation);
           manager.trains.put(id, proxy);
         };

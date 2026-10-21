@@ -18,20 +18,48 @@ final class NativeTrainDiagnostics {
         station != null && station.getPresentTrain() == train
             ? station.name
             : Component.translatable("message.guidedrailways.identity.not_at_station");
-    return Component.translatable(
-        "message.guidedrailways.identity.entry",
-        train.name,
-        train.id.toString(),
-        train.carriages.size(),
-        pos.getX(),
-        pos.getY(),
-        pos.getZ(),
-        Math.round(Math.abs(train.speed) * 200) / 10.0,
+    var description =
         Component.translatable(
-            train.derailed
-                ? "message.guidedrailways.identity.off_track"
-                : "message.guidedrailways.identity.on_track"),
-        stoppedAt);
+            "message.guidedrailways.identity.entry",
+            train.name,
+            train.id.toString(),
+            train.carriages.size(),
+            pos.getX(),
+            pos.getY(),
+            pos.getZ(),
+            Math.round(Math.abs(train.speed) * 200) / 10.0,
+            Component.translatable(
+                train.derailed
+                    ? "message.guidedrailways.identity.off_track"
+                    : "message.guidedrailways.identity.on_track"),
+            stoppedAt);
+    if (train instanceof PhysicalTrainProxy proxy) {
+      var journey = proxy.snapshot().getCompound("Journey");
+      if (train.runtime.getSchedule() != null) {
+        var nav = journey.getCompound("Navigation");
+        var target =
+            nav.hasUUID("Destination") && train.graph != null
+                ? train.graph.getPoint(
+                    com.simibubi.create.content.trains.graph.EdgePointType.STATION,
+                    nav.getUUID("Destination"))
+                : null;
+        var status =
+            Component.translatable("gui.guidedrailways.auto.state." + journey.getInt("Status"));
+        description.append(
+            Component.translatable(
+                "message.guidedrailways.identity.journey",
+                status,
+                Math.min(
+                    train.runtime.currentEntry + 1, train.runtime.getSchedule().entries.size()),
+                train.runtime.getSchedule().entries.size(),
+                target == null
+                    ? Component.translatable("message.guidedrailways.identity.no_destination")
+                    : target.name,
+                target == null ? "—" : Math.round(nav.getDouble("Remaining") * 10) / 10.0,
+                target == null ? 0 : nav.getIntArray("Path").length / 2));
+      } else description.append(Component.translatable("message.guidedrailways.identity.manual"));
+    }
+    return description;
   }
 
   static void register(RegisterCommandsEvent event) {

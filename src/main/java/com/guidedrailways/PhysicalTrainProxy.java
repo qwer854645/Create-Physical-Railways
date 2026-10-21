@@ -22,6 +22,7 @@ public final class PhysicalTrainProxy extends Train {
   private List<String> bodyIds = List.of();
   private int length;
   private CompoundTag snapshot = new CompoundTag();
+  final NativeTrainJourney journey = new NativeTrainJourney();
 
   PhysicalTrainProxy(UUID id) {
     super(
@@ -34,13 +35,18 @@ public final class PhysicalTrainProxy extends Train {
         Component.translatable("gui.guidedrailways.identity.name", id.toString().substring(0, 8)),
         TrainIconType.getDefault(),
         0);
+    navigation = new PhysicalNavigation(this);
+    runtime = new PhysicalScheduleRuntime(this);
   }
 
   public CompoundTag snapshot() {
     return snapshot.copy();
   }
 
-  void apply(CompoundTag data, Map<UUID, TrackGraph> graphs) {
+  void apply(
+      CompoundTag data,
+      Map<UUID, TrackGraph> graphs,
+      net.minecraft.core.HolderLookup.Provider registries) {
     snapshot = data.copy();
     dimension =
         ResourceKey.create(
@@ -92,6 +98,9 @@ public final class PhysicalTrainProxy extends Train {
       }
     }
     invalid = false;
+    var journeyData = data.getCompound("Journey");
+    ((PhysicalNavigation) navigation).project(journeyData.getCompound("Navigation"));
+    ((PhysicalScheduleRuntime) runtime).project(journeyData, registries);
   }
 
   /** Actual station association only; never invokes the native runtime or mail transfer. */
@@ -99,6 +108,13 @@ public final class PhysicalTrainProxy extends Train {
     currentStation = station;
     if (station == null) snapshot.remove("Station");
     else snapshot.putUUID("Station", station);
+  }
+
+  void clearJourney() {
+    journey.reset();
+    snapshot.remove("Journey");
+    ((PhysicalNavigation) navigation).project(new CompoundTag());
+    ((PhysicalScheduleRuntime) runtime).project(new CompoundTag(), null);
   }
 
   static void syncStation(
@@ -179,7 +195,7 @@ public final class PhysicalTrainProxy extends Train {
     point.edge =
         point.node1 == null || point.node2 == null
             ? null
-            : graph.getConnectionsFrom(point.node1).get(point.node2);
+            : TrackNetwork.connections(graph, point.node1).get(point.node2);
     point.position =
         point.edge == null ? 0 : Math.clamp(tag.getDouble("Offset"), 0, point.edge.getLength());
     point.blocked = point.edge == null;

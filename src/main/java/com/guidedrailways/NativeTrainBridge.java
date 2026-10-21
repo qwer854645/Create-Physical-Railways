@@ -101,7 +101,8 @@ public final class NativeTrainBridge {
       }
       if (proxy.currentStation != null && !snapshot.getBoolean("Derailed"))
         snapshot.putUUID("Station", proxy.currentStation);
-      proxy.apply(snapshot, Create.RAILWAYS.trackNetworks);
+      snapshot.put("Journey", proxy.journey.capture(groups.get(i), snapshot));
+      proxy.apply(snapshot, Create.RAILWAYS.trackNetworks, level.registryAccess());
       var registration = new Registration(proxy, memberships.get(i));
       for (var member : registration.members()) byBogie.put(member, registration);
       var previous = Create.RAILWAYS.trains.get(id);
@@ -155,6 +156,7 @@ public final class NativeTrainBridge {
 
   private static void remove(ServerLevel level, Map<UUID, PhysicalTrainProxy> live, UUID id) {
     var proxy = live.remove(id);
+    proxy.clearJourney();
     StationPresence.releaseTrain(level, proxy);
     if (Create.RAILWAYS.trains.get(id) == proxy) Create.RAILWAYS.removeTrain(id);
     var removed = new CompoundTag();
