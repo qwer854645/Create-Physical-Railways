@@ -33,7 +33,22 @@ public final class CouplerConnections {
   }
 
   static void register(ServerLevel level, CouplerEndpoint e) {
+    if (!loaded(level, e)) return;
     if (!CouplerTransfers.restore(level, e)) return;
+    var data = CouplerSavedData.get(level);
+    var s = state(level);
+    var previous = s.endpoints.get(e.endpointId);
+    if ((previous != null && previous != e && loaded(level, previous))
+        || !data.claim(e.endpointId, e.getBlockPos())) {
+      e.endpointId = UUID.randomUUID();
+      e.hasGeometry = false;
+      e.restLength = -1;
+      e.hardwareFrame = null;
+      e.visualPeer(null);
+      e.setChanged();
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .warn("Cloned coupler assigned a new endpoint ID at {}", e.getBlockPos());
+    }
     var frame =
         String.valueOf(RailwayHardware.kind(e))
             + ":"
@@ -46,18 +61,8 @@ public final class CouplerConnections {
     if (e.hardwareFrame != null && !e.hardwareFrame.equals(frame))
       disconnect(level, e.endpointId, "hardware_changed");
     e.hardwareFrame = frame;
-    var s = state(level);
-    var previous = s.endpoints.get(e.endpointId);
-    if (previous != null && previous != e && loaded(level, previous)) {
-      e.endpointId = UUID.randomUUID();
-      e.hasGeometry = false;
-      e.setChanged();
-      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
-          .warn("Cloned coupler assigned a new endpoint ID at {}", e.getBlockPos());
-    }
     s.endpoints.put(e.endpointId, e);
-    if (e.visualConnected && CouplerSavedData.get(level).links.forEndpoint(e.endpointId) == null)
-      e.visualPeer(null);
+    if (e.visualConnected && data.links.forEndpoint(e.endpointId) == null) e.visualPeer(null);
   }
 
   /** Incremental materialisation only while a saved pair lacks a loaded endpoint. */
@@ -138,14 +143,16 @@ public final class CouplerConnections {
 
   static void destroyed(ServerLevel level, CouplerEndpoint e) {
     if (CouplerTransfers.moving(level, e)) return;
+    if (!CouplerSavedData.get(level).owns(e.endpointId, e.getBlockPos())) return;
     disconnect(level, e.endpointId, "removed");
     suspend(level, e.endpointId);
     state(level).pending.values().removeIf(p -> p.endpoint.equals(e.endpointId));
   }
 
   static void link(ServerLevel level, CouplerEndpoint e, ServerPlayer player) {
-    boolean unlink = connected(level, e);
     register(level, e);
+    if (state(level).endpoints.get(e.endpointId) != e || !loaded(level, e)) return;
+    boolean unlink = connected(level, e);
     var s = state(level);
     var data = CouplerSavedData.get(level);
     if (unlink) {
@@ -232,7 +239,7 @@ public final class CouplerConnections {
     a.visualPeer(b);
     b.visualPeer(a);
     var link = new CouplingLinks.Link(UUID.randomUUID(), a.endpointId, b.endpointId);
-    data.add(link);
+    data.add(link, a.getBlockPos(), b.getBlockPos());
     try {
       reconcile(level, link);
       if (CouplerMechanism.carries(kind, a.hardwareProgress(0))
@@ -276,7 +283,8 @@ public final class CouplerConnections {
   }
 
   static boolean connected(ServerLevel level, CouplerEndpoint e) {
-    return CouplerSavedData.get(level).links.forEndpoint(e.endpointId) != null;
+    var data = CouplerSavedData.get(level);
+    return data.owns(e.endpointId, e.getBlockPos()) && data.links.forEndpoint(e.endpointId) != null;
   }
 
   /** Trackside operation reuses exactly the same saved links and physics joints as a wrench. */
@@ -488,6 +496,9 @@ public final class CouplerConnections {
   static void beforeMove(ServerLevel from, ServerLevel to, BlockPos oldPos, BlockPos newPos) {
     var endpoint = CouplerEndpoint.get(from.getBlockEntity(oldPos));
     if (endpoint == null) return;
+    register(from, endpoint);
+    if (state(from).endpoints.get(endpoint.endpointId) != endpoint
+        || !CouplerSavedData.get(from).owns(endpoint.endpointId, oldPos)) return;
     if (from != to) disconnect(from, endpoint.endpointId, "dimension_changed");
     CouplerTransfers.capture(from, to, oldPos, newPos, endpoint);
     suspend(from, endpoint.endpointId);

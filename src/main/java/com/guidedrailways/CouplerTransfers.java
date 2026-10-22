@@ -67,11 +67,14 @@ final class CouplerTransfers {
   static boolean restore(ServerLevel level, CouplerEndpoint e) {
     var key = GlobalPos.of(level.dimension(), e.getBlockPos());
     var transfer = TRANSFERS.get(key);
-    if (transfer == null) return true;
-    e.endpointId = transfer.endpoint;
+    if (transfer == null || !transfer.endpoint.equals(e.endpointId)) return true;
+    var b = body(level, e);
+    if (transfer.geometry && (b == null || b.getMassTracker().getMass() <= 0)) return false;
+    if (!CouplerSavedData.get(level).move(e.endpointId, transfer.source.pos(), e.getBlockPos())) {
+      TRANSFERS.remove(key);
+      return true; // Registration will reject the stale handoff as a copied endpoint.
+    }
     if (transfer.geometry) {
-      var b = body(level, e);
-      if (b == null || b.getMassTracker().getMass() <= 0) return false;
       e.geometry(
           local(b, transfer.anchor).sub(blockOrigin(e)),
           localFrame(b, transfer.frame),
