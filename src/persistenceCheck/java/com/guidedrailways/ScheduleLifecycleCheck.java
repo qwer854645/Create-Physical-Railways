@@ -82,8 +82,9 @@ public final class ScheduleLifecycleCheck {
       boolean isolated = true;
       for (var insn : method.instructions)
         if (insn instanceof MethodInsnNode call
-            && call.owner.equals("com/guidedrailways/VehiclePhysics")
-            && call.name.equals("tick")) isolated = false;
+            && ((call.owner.equals("com/guidedrailways/VehiclePhysics")
+                    && (call.name.equals("refresh") || call.name.equals("update")))
+                || call.owner.equals("com/guidedrailways/TrainRuntime"))) isolated = false;
       check(isolated, "construction cannot advance every train: " + method.name);
     }
     System.out.println(

@@ -548,6 +548,13 @@ tasks.register('checkCargoBaseline', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkCargoBaseline' }
 
+tasks.register('checkTrainRuntime', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.TrainRuntimeCheck'
+}
+tasks.named('check') { dependsOn 'checkTrainRuntime' }
+
 
 tasks.register('generateCollisionMetadata', JavaExec) {
     dependsOn testClasses

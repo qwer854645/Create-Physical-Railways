@@ -45,23 +45,18 @@ public final class GuidedRailways {
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Post e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
-            NativeTrainBridge.tick(level);
-            PhysicalSignals.publish(level);
+            TrainRuntime.afterTick(level);
           }
         });
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Pre e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
-            CargoStorage.tick(level);
-            CouplerConnections.restoreLoaded(level);
-            if (VehiclePhysics.hasVehicles(level)) TrackNetwork.refresh(level);
-            VehiclePhysics.tick(level);
+            TrainRuntime.beforeTick(level);
           }
         });
     NeoForge.EVENT_BUS.addListener(
         (dev.ryanhcode.sable.neoforge.event.ForgeSablePrePhysicsTickEvent e) -> {
-          VehiclePhysics.step(e.getPhysicsSystem(), e.getTimeStep());
-          CouplerConnections.step(e.getPhysicsSystem());
+          TrainRuntime.physicsStep(e.getPhysicsSystem(), e.getTimeStep());
         });
     NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.event.level.BlockDropsEvent e) -> {
@@ -78,15 +73,7 @@ public final class GuidedRailways {
     NeoForge.EVENT_BUS.addListener(
         (LevelEvent.Unload e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
-            VehiclePhysics.unload(level);
-            TrackNetwork.unload(level);
-            CouplerConnections.unload(level);
-            DriverControls.unload(level);
-            TrainConsists.unload(level);
-            NativeTrainBridge.unload(level);
-            CargoStorage.unload(level);
-            RailwaysCompat.unload(level);
-            TrainElectricity.unload(level);
+            TrainRuntime.unload(level);
           }
         });
     NeoForge.EVENT_BUS.addListener(

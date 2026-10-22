@@ -233,10 +233,14 @@ public final class DriverControls {
           }
         }
     }
-    PhysicalSignals.tick(level);
-    AutomaticTrains.tick(level, units, map.values());
-    StationPresence.tick(level);
-    for (var e : map.values()) {
+  }
+
+  static Collection<DriverConsoleEntity> consoles(ServerLevel level) {
+    return List.copyOf(CONSOLES.getOrDefault(level, Map.of()).values());
+  }
+
+  static void publish(ServerLevel level) {
+    for (var e : CONSOLES.getOrDefault(level, Map.of()).values()) {
       var body = body(e);
       if (body == null) continue;
       if (e.active && level.getGameTime() % 5 == 0) DriverNetwork.sync(e, true);

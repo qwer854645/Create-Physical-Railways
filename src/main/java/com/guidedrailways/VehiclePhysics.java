@@ -243,10 +243,7 @@ public final class VehiclePhysics {
     return unit;
   }
 
-  static void tick(ServerLevel level) {
-    var container = SubLevelContainer.getContainer(level);
-    var system = SubLevelPhysicsSystem.get(level);
-    if (container == null || system == null) return;
+  static java.util.Collection<Unit> refresh(ServerLevel level) {
     var inputs = INPUTS.computeIfAbsent(level, l -> new HashMap<>());
     inputs
         .values()
@@ -267,14 +264,15 @@ public final class VehiclePhysics {
               }
               return false;
             });
-    TrainConsists.refresh(level, units.values());
-    TrainConsists.applyChanges(level);
-    TrainElectricity.refresh(level);
-    DriverControls.refresh(level, units.values());
+    return java.util.List.copyOf(units.values());
+  }
+
+  static void update(ServerLevel level, java.util.Collection<Unit> units) {
+    var system = SubLevelPhysicsSystem.get(level);
     PerfCounters.report(level, units.size());
     var counts = new HashMap<UUID, Integer>();
-    for (var u : units.values()) counts.merge(u.carrier.getUniqueId(), 1, Integer::sum);
-    for (var u : units.values()) {
+    for (var u : units) counts.merge(u.carrier.getUniqueId(), 1, Integer::sum);
+    for (var u : units) {
       int supports = counts.get(u.carrier.getUniqueId());
       if (u.supports != supports) {
         if (u.pivot != null && u.pivot.isValid()) u.pivot.remove();
@@ -285,7 +283,7 @@ public final class VehiclePhysics {
       u.mount.setLoad(u.mass);
     }
     VehicleTraction.allocate(level);
-    for (var u : units.values()) {
+    for (var u : units) {
       if (level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual) {
         visual.speed = u.speed;
         visual.distance += u.speed / 20;
