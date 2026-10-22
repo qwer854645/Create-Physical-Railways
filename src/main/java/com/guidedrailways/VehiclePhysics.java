@@ -59,6 +59,14 @@ public final class VehiclePhysics {
       detached = tag != null && tag.getBoolean("GuidedDerailed");
     }
 
+    /** Shared liveness cutoff for topology, route preparation and physics contacts. */
+    boolean ready(long tick) {
+      return !carrier.isRemoved()
+          && !bogie.isRemoved()
+          && !mount.isRemoved()
+          && lastSeen + 2 >= tick;
+    }
+
     Vector3d axle(int i) {
       return new Vector3d(localCenter)
           .add(0, -mount.variant.ride, i == 0 ? mount.variant.half : -mount.variant.half);
@@ -243,7 +251,7 @@ public final class VehiclePhysics {
     return unit;
   }
 
-  static java.util.Collection<Unit> refresh(ServerLevel level) {
+  static Collection<Unit> refresh(ServerLevel level) {
     var inputs = INPUTS.computeIfAbsent(level, l -> new HashMap<>());
     inputs
         .values()
@@ -264,10 +272,10 @@ public final class VehiclePhysics {
               }
               return false;
             });
-    return java.util.List.copyOf(units.values());
+    return List.copyOf(units.values());
   }
 
-  static void update(ServerLevel level, java.util.Collection<Unit> units) {
+  static void update(ServerLevel level, Collection<Unit> units) {
     var system = SubLevelPhysicsSystem.get(level);
     PerfCounters.report(level, units.size());
     var counts = new HashMap<UUID, Integer>();
@@ -462,10 +470,7 @@ public final class VehiclePhysics {
     BogiePairContacts.step(physics, ACTIVE.getOrDefault(level, Map.of()).values(), dt);
     for (var plan : ConsistRoutes.prepare(level, ACTIVE.getOrDefault(level, Map.of()).values())) {
       var u = plan.unit();
-      if (u.carrier.isRemoved()
-          || u.bogie.isRemoved()
-          || u.mount.isRemoved()
-          || u.lastSeen + 2 < level.getGameTime()) continue;
+      if (!u.ready(level.getGameTime())) continue;
       var pose = pipe.readPose(u.bogie, new Pose3d());
       var heading = new Vector3d(0, 0, 1).rotate(pose.orientation());
       if (u.detached) {

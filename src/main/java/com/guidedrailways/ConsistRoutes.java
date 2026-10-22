@@ -185,11 +185,7 @@ final class ConsistRoutes {
     if (cached != null && cached.tick == level.getGameTime()) return cached.plans;
     var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
     var units = new ArrayList<VehiclePhysics.Unit>();
-    for (var u : input)
-      if (!u.carrier.isRemoved()
-          && !u.bogie.isRemoved()
-          && !u.mount.isRemoved()
-          && u.lastSeen + 2 >= level.getGameTime()) units.add(u);
+    for (var u : input) if (u.ready(level.getGameTime())) units.add(u);
     var liveUnits = new HashSet<>(units);
     var graph = new HashMap<UUID, Set<UUID>>();
     var sockets = new HashMap<UUID, Vector3d>();

@@ -55,15 +55,7 @@ final class TrainConsists {
   }
 
   static Snapshot refresh(ServerLevel level, Collection<VehiclePhysics.Unit> input) {
-    var units =
-        input.stream()
-            .filter(
-                u ->
-                    !u.carrier.isRemoved()
-                        && !u.bogie.isRemoved()
-                        && !u.mount.isRemoved()
-                        && u.lastSeen + 2 >= level.getGameTime())
-            .toList();
+    var units = input.stream().filter(u -> u.ready(level.getGameTime())).toList();
     var links =
         CouplerConnections.bodyLinks(level).stream()
             .filter(link -> !link.a().isRemoved() && !link.b().isRemoved())
