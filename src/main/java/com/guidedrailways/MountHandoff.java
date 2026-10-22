@@ -24,6 +24,12 @@ record MountHandoff(
         : new MountHandoff(source, destination, worldReference);
   }
 
+  MountHandoff ownershipCommitted() {
+    return source.equals(destination)
+        ? this
+        : new MountHandoff(destination, destination, worldReference);
+  }
+
   CompoundTag save() {
     var tag = new CompoundTag();
     tag.put("Source", BogieMountBinding.encode(source));

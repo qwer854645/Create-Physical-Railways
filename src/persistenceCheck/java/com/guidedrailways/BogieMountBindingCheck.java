@@ -86,6 +86,46 @@ public final class BogieMountBindingCheck {
         !BogieMountBinding.move(data, copiedMove.source(), copiedMove.destination()),
         "foreign pending move cannot steal the body");
     check(MountHandoff.load(new CompoundTag()) == null, "absent handoff has no authority");
+    var partialData = new CompoundTag();
+    check(BogieMountBinding.claim(partialData, original), "partial scenario starts at original");
+    var partial = MountHandoff.begin(null, original, moved, reference);
+    check(
+        BogieMountBinding.move(partialData, partial.source(), partial.destination()),
+        "ownership commits before the carrier is ready for pivot restoration");
+    partial = partial.ownershipCommitted();
+    check(
+        partial.source().equals(moved) && partial.destination().equals(moved),
+        "pending pivot restoration records the actual committed location");
+    check(
+        partial.ownershipCommitted() == partial,
+        "repeated waiting does not rebuild committed state");
+    partialData = reload(partialData);
+    partial = MountHandoff.load(reload(partial.save()));
+    var afterPartial =
+        MountHandoff.begin(
+            partial, moved, finalDestination, new org.joml.Quaterniond().rotateY(-.5));
+    check(
+        afterPartial.source().equals(moved),
+        "next move starts at B after A-to-B ownership committed");
+    check(
+        afterPartial.worldReference().equals(reference, 1e-12),
+        "saved partial handoff retains the original world pivot reference");
+    check(
+        BogieMountBinding.move(partialData, afterPartial.source(), afterPartial.destination()),
+        "B-to-C handoff succeeds while the previous pivot restoration is pending");
+    check(
+        !BogieMountBinding.claim(partialData, original)
+            && !BogieMountBinding.claim(partialData, moved),
+        "old locations cannot reclaim after C commits");
+    var reverse =
+        MountHandoff.begin(
+            afterPartial.ownershipCommitted(),
+            finalDestination,
+            original,
+            new org.joml.Quaterniond());
+    check(
+        BogieMountBinding.move(partialData, reverse.source(), reverse.destination()),
+        "reversing a partially completed move uses the latest committed owner");
     System.out.println(
         "BogieMountBindingCheck: "
             + checks

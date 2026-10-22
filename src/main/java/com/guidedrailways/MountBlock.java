@@ -123,7 +123,10 @@ public final class MountBlock extends ComponentBlock
 
   @Override
   public void beforeMove(ServerLevel from, ServerLevel to, BlockState s, BlockPos a, BlockPos b) {
-    if (from.getBlockEntity(a) instanceof MountEntity mount && mount.bogieId != null) {
+    if (from.getBlockEntity(a) instanceof MountEntity mount) {
+      // Reconcile a saved partial handoff before composing another move from this position.
+      restore(mount);
+      if (mount.bogieId == null) return;
       org.joml.Quaterniond reference = null;
       if (mount.pivotReferenceKnown
           && dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContaining(from, a)
@@ -172,6 +175,11 @@ public final class MountBlock extends ComponentBlock
       if (result == MountHandoff.Result.REJECTED) {
         VehiclePhysics.unlinkMount(mount);
         return;
+      }
+      var committed = handoff.ownershipCommitted();
+      if (committed != handoff) {
+        mount.handoff = handoff = committed;
+        mount.setChanged();
       }
       if (handoff.worldReference() != null) {
         if (!(dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContaining(
