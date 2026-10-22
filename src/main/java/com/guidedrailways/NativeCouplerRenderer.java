@@ -105,23 +105,6 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
         });
   }
 
-  private static String modelName(CouplerKind kind) {
-    return switch (kind) {
-      case LINK -> "link_and_pin";
-      case LINKLESS -> "link_and_pin_linkless";
-      case KNUCKLE -> "knuckle_coupler";
-      case KNUCKLE_SPLIT -> "split_knuckle_coupler";
-      case SCREWLINK -> "screwlink_coupler";
-      default -> throw new IllegalArgumentException();
-    };
-  }
-
-  private static String path(String mount, CouplerKind kind, boolean flip) {
-    return mount.equals("single_deco")
-        ? "single_deco/" + modelName(kind)
-        : "headstock/" + mount + "_" + modelName(kind) + (flip ? "_upside_down" : "");
-  }
-
   private static void reload(ResourceManager resources) {
     HardwareRenderData.ready = false;
     MESHES.clear();
@@ -131,42 +114,35 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
           for (String mount : List.of("single_deco", "wooden_headstock", "copycat_headstock"))
             for (boolean flip : new boolean[] {false, true}) {
               if (flip && mount.equals("single_deco")) continue;
-              String path = path(mount, kind, flip);
+              String path = NativeCouplerModel.path(mount, kind, flip);
               try (var reader =
                   resources.openAsReader(
                       ResourceLocation.fromNamespaceAndPath(
                           "railways", "models/block/buffer/" + path + ".json"))) {
                 var json = JsonParser.parseReader(reader).getAsJsonObject();
-                var model = BlockModel.fromString(json.toString());
-                var names = new HashMap<Integer, String>();
-                NativeCouplerAnimation.groups(json.getAsJsonArray("groups"), names);
+                var resolved =
+                    NativeCouplerModel.resolve(
+                        json,
+                        (namespace, name) -> {
+                          try (var parent =
+                              resources.openAsReader(
+                                  ResourceLocation.fromNamespaceAndPath(
+                                      namespace, name + ".json"))) {
+                            return JsonParser.parseReader(parent).getAsJsonObject();
+                          }
+                        });
+                var model = BlockModel.fromString(resolved.toString());
                 var elements = new ArrayList<Element>();
-                for (int i = 0; i < model.getElements().size(); i++) {
-                  var element = model.getElements().get(i);
-                  boolean attachment =
-                      element.faces.values().stream()
-                          .anyMatch(
-                              f ->
-                                  model
-                                      .getMaterial(f.texture())
-                                      .texture()
-                                      .getNamespace()
-                                      .equals("railways"));
-                  if (!attachment) continue;
-                  String group = names.getOrDefault(i, "");
-                  Part part =
-                      NativeCouplerAnimation.classify(
-                          kind,
-                          group,
-                          new Vector3d(element.from),
-                          new Vector3d(element.to),
-                          mount.equals("single_deco"));
-                  elements.add(new Element(element, part));
-                }
+                for (var piece :
+                    NativeCouplerModel.pieces(resolved, kind, !mount.equals("single_deco")))
+                  if (piece.attachment())
+                    elements.add(new Element(model.getElements().get(piece.index()), piece.part()));
                 if (elements.isEmpty())
                   throw new IllegalStateException("No native coupler elements: " + path);
                 MESHES.put(
-                    path, new Mesh(model, elements, mount.equals("single_deco") ? 0 : -3 / 16.0));
+                    path,
+                    new Mesh(
+                        model, elements, NativeCouplerModel.shift(!mount.equals("single_deco"))));
               }
             }
       HardwareRenderData.ready = true;
@@ -260,7 +236,7 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
     var kind = RailwayHardware.kind(e);
     if (kind == null || kind == CouplerKind.STANDARD) return;
     String mounting = mount(e.getBlockState());
-    var mesh = MESHES.get(path(mounting, kind, flip(e.getBlockState())));
+    var mesh = MESHES.get(NativeCouplerModel.path(mounting, kind, flip(e.getBlockState())));
     if (mesh == null) return;
     String paint =
         owner instanceof IDyedBuffer dyed && dyed.getColor() != null
@@ -320,7 +296,7 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
       quads.put(
           Part.LINK,
           MESHES
-              .get(path(mounting, CouplerKind.LINK, flip(e.getBlockState())))
+              .get(NativeCouplerModel.path(mounting, CouplerKind.LINK, flip(e.getBlockState())))
               .quads(paint)
               .get(Part.LINK));
     }

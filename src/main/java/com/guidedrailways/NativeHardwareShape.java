@@ -19,9 +19,7 @@ import org.joml.Vector3d;
 public final class NativeHardwareShape {
   private record Key(BlockState state, boolean physics) {}
 
-  private record Piece(Part part, List<Vector3d> corners, boolean physics) {}
-
-  private record Mesh(List<Piece> pieces, Matrix4d facing, double shift) {}
+  private record Mesh(List<NativeCouplerModel.Piece> pieces, Matrix4d facing, double shift) {}
 
   private static final ThreadLocal<NativeCouplerAnimation.Workspace> ANIMATION =
       ThreadLocal.withInitial(NativeCouplerAnimation.Workspace::new);
@@ -234,93 +232,17 @@ public final class NativeHardwareShape {
     var modelId = variant.get("model").getAsString().split(":");
     if (substitute != null) modelId[1] = modelId[1].replace("link_and_pin_linkless", substitute);
     var model = json(owner, modelId[0], "models/" + modelId[1]);
-    while (!model.has("elements")) {
-      var parent = model.get("parent").getAsString().split(":");
-      model = json(owner, parent[0], "models/" + parent[1]);
-    }
+    model = NativeCouplerModel.resolve(model, (namespace, path) -> json(owner, namespace, path));
     double yaw = variant.has("y") ? Math.toRadians(-variant.get("y").getAsDouble()) : 0,
         pitch = variant.has("x") ? Math.toRadians(-variant.get("x").getAsDouble()) : 0;
     var facing =
         new Matrix4d().translation(.5, .5, .5).rotateY(yaw).rotateX(pitch).translate(-.5, -.5, -.5);
     boolean headstock = id.getPath().contains("headstock");
-    var names = new HashMap<Integer, String>();
-    NativeCouplerAnimation.groups(model.getAsJsonArray("groups"), names);
-    String modelPath = modelId[1];
-    var kind =
-        substitute != null
-            ? CouplerKind.LINK
-            : modelPath.contains("split_knuckle")
-                ? CouplerKind.KNUCKLE_SPLIT
-                : modelPath.contains("knuckle_coupler")
-                    ? CouplerKind.KNUCKLE
-                    : modelPath.contains("screwlink_coupler")
-                        ? CouplerKind.SCREWLINK
-                        : modelPath.contains("link_and_pin_linkless")
-                            ? CouplerKind.LINKLESS
-                            : modelPath.contains("link_and_pin") ? CouplerKind.LINK : null;
-    boolean automatic = kind == CouplerKind.KNUCKLE || kind == CouplerKind.KNUCKLE_SPLIT;
-    var pieces = new ArrayList<Piece>();
-    int index = 0;
-    for (var value : model.getAsJsonArray("elements")) {
-      var element = value.getAsJsonObject();
-      var from = vector(element.getAsJsonArray("from"));
-      var to = vector(element.getAsJsonArray("to"));
-      var group = names.getOrDefault(index++, "");
-      var part =
-          kind == null
-              ? Part.MOUNT
-              : NativeCouplerAnimation.classify(kind, group, from, to, !headstock);
-      // Wooden/copycat beams stay fixed even when the attached coupler animates.
-      boolean attachment = false;
-      for (var face : element.getAsJsonObject("faces").entrySet()) {
-        String texture = face.getValue().getAsJsonObject().get("texture").getAsString();
-        int hops = 0;
-        while (texture.startsWith("#")
-            && model.has("textures")
-            && model.getAsJsonObject("textures").has(texture.substring(1))
-            && hops++ < 16)
-          texture = model.getAsJsonObject("textures").get(texture.substring(1)).getAsString();
-        if (texture.startsWith("railways:")) attachment = true;
-      }
-      if (!attachment) part = Part.MOUNT;
-      boolean physical =
-          !Set.of("link", "pin", "flat_links", "shackle", "screw").contains(group)
-              && !(automatic && from.z < (headstock ? 9 : 12) && !(headstock && from.z >= 13));
-      var corners = new ArrayList<Vector3d>();
-      for (int i = 0; i < 8; i++) {
-        var point =
-            new Vector3d(
-                (i & 1) == 0 ? from.x : to.x,
-                (i & 2) == 0 ? from.y : to.y,
-                (i & 4) == 0 ? from.z : to.z);
-        if (element.has("rotation")) {
-          var rotation = element.getAsJsonObject("rotation");
-          var origin = vector(rotation.getAsJsonArray("origin"));
-          double angle = Math.toRadians(rotation.get("angle").getAsDouble());
-          point.sub(origin);
-          switch (rotation.get("axis").getAsString()) {
-            case "x" -> point.rotateX(angle);
-            case "y" -> point.rotateY(angle);
-            case "z" -> point.rotateZ(angle);
-          }
-          if (rotation.has("rescale") && rotation.get("rescale").getAsBoolean()) {
-            double scale = 1 / Math.cos(angle);
-            switch (rotation.get("axis").getAsString()) {
-              case "x" -> point.mul(1, scale, scale);
-              case "y" -> point.mul(scale, 1, scale);
-              case "z" -> point.mul(scale, scale, 1);
-            }
-          }
-          point.add(origin);
-        }
-        corners.add(point.div(16));
-      }
-      pieces.add(new Piece(part, List.copyOf(corners), physical));
-    }
-    return new Mesh(List.copyOf(pieces), facing, headstock ? -3 / 16.0 : 0);
-  }
-
-  private static Vector3d vector(JsonArray a) {
-    return new Vector3d(a.get(0).getAsDouble(), a.get(1).getAsDouble(), a.get(2).getAsDouble());
+    var pieces =
+        NativeCouplerModel.pieces(
+            model,
+            substitute != null ? CouplerKind.LINK : NativeCouplerModel.kind(modelId[1]),
+            headstock);
+    return new Mesh(List.copyOf(pieces), facing, NativeCouplerModel.shift(headstock));
   }
 }

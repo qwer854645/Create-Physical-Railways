@@ -236,6 +236,14 @@ tasks.register('checkConstructionTransaction', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkConstructionTransaction' }
 
+tasks.register('checkNativeCouplerModel', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.NativeCouplerModelCheck'
+    args file(providers.gradleProperty('railways_api_jar').getOrElse("libs/railways-${railways_version}.jar")).absolutePath
+}
+tasks.named('check') { dependsOn 'checkNativeCouplerModel' }
+
 tasks.register('checkPathGeometry', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
