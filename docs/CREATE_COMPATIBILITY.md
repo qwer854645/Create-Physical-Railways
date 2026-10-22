@@ -28,6 +28,8 @@ StationPresence 根据实际停稳位置关联 GlobalStation，旗帜和比较�
 
 详见 [原生身份桥接](NATIVE_TRAIN_IDENTITY.md)。
 
+可选 Xaero's Minimap 标记适配已接入：按现有原生代理 UUID 为整列显示一个列车图标与名称，优先读取已加载物理车体的位置，并复用已有快照作为卸载时的回退。不生成雷达实体或持久路径点；目前核对的 API 为 26.6.0，实际画面仍待验收。详见 [Xaero 小地图](XAERO_MINIMAP.md)。
+
 ### 时刻表
 
 支持在驾驶台装入、取回、查看原版时刻表，以及暂停、继续、跳过和重新开始。

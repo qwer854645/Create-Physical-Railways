@@ -15,6 +15,14 @@ public final class TrainClient {
     ItemDescriptions.register(bus);
     NativeBogeyCapture.register();
     NativeTrainClient.register();
+    if (net.neoforged.fml.ModList.get().isLoaded("xaerominimap")) {
+      try {
+        XaeroTrainMap.register();
+      } catch (LinkageError error) {
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+            .warn("Xaero train markers unavailable for the installed minimap API", error);
+      }
+    }
     if (net.neoforged.fml.ModList.get().isLoaded("railways")) {
       NativeCouplerRenderer.register(bus);
       SteamRailwaysClient.register();

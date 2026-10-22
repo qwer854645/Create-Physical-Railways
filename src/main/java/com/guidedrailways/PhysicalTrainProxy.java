@@ -51,6 +51,30 @@ public final class PhysicalTrainProxy extends Train {
     return snapshot.copy();
   }
 
+  /** Prefer live physical carriage positions; unloaded bodies use the existing query snapshot. */
+  Vec3 mapPosition(Level level) {
+    if (!dimension.equals(level.dimension()) || carriages.isEmpty()) return null;
+    var container = dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level);
+    Vec3 total = Vec3.ZERO;
+    int count = 0;
+    for (var carriage : carriages) {
+      var body =
+          container == null ? null : container.getSubLevel(((LogicalCarriage) carriage).body);
+      Vec3 position;
+      if (body != null && !body.isRemoved()) {
+        var center = body.boundingBox().center(new org.joml.Vector3d());
+        position = new Vec3(center.x, center.y, center.z);
+      } else position = carriage.getDimensional(dimension).positionAnchor;
+      if (position == null
+          || !Double.isFinite(position.x)
+          || !Double.isFinite(position.y)
+          || !Double.isFinite(position.z)) continue;
+      total = total.add(position);
+      count++;
+    }
+    return count == 0 ? null : total.scale(1.0 / count);
+  }
+
   /** Identity packets and native graph packets can arrive in either order. */
   void refreshClientGraph(
       Map<UUID, TrackGraph> graphs, net.minecraft.core.HolderLookup.Provider registries) {

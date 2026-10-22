@@ -168,6 +168,8 @@ UUID 数组有长度与结构验证，每组最多 4096 项。超出发送范围
 
 ## Xaero 测试环境
 
+当前已在原生身份数据之上增加可选小地图标记层，按列车 UUID 显示整列图标与名称；原生身份本身仍不负责创建雷达实体。具体实现、适配版本与验收边界见 [Xaero 小地图](XAERO_MINIMAP.md)。下面的原生接口查询仍应独立验收。
+
 安装的可选开发模组：Xaero's Minimap 26.6.0，NeoForge / Minecraft 1.21.1。官方文件 URL 和 SHA-256 见 verification/map-test-dependencies.json。
 
 准备环境：

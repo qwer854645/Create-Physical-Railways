@@ -126,6 +126,7 @@ dependencies {
     def railwaysApi = file(providers.gradleProperty('railways_api_jar').getOrElse("libs/railways-${railways_version}.jar"))
     if (!railwaysApi.exists()) throw new GradleException('Missing optional-mod compile API: run powershell -NoProfile -ExecutionPolicy Bypass -File verification/prepare_railways.ps1')
     compileOnly files(railwaysApi)
+    compileOnly files(providers.gradleProperty('xaero_api_jar').getOrElse('libs/xaerominimap-neoforge-1.21.1-26.6.0.jar'))
     compileOnly files(providers.gradleProperty('bnb_api_jar').getOrElse('libs/create_bb-1.0.8-1.21.1.jar'),
                       providers.gradleProperty('cee_api_jar').getOrElse('libs/electroenergetics-1.21.1-1.1.4.jar'))
     if (simulatedApiFile.isPresent()) compileOnly files(simulatedApiFile.get())
@@ -618,6 +619,13 @@ tasks.register('checkPonderAssets', JavaExec) {
     mainClass = 'com.guidedrailways.PonderAssetCheck'
 }
 tasks.named('check') { dependsOn 'checkPonderAssets' }
+
+tasks.register('checkMinimapBridge', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.MinimapBridgeCheck'
+}
+tasks.named('check') { dependsOn 'checkMinimapBridge' }
 
 tasks.register('checkNativeJourney', JavaExec) {
     dependsOn classes, persistenceCheckClasses
