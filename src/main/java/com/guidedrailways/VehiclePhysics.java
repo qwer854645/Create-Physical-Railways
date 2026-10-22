@@ -123,6 +123,19 @@ public final class VehiclePhysics {
           .put(mount.getBlockPos().immutable(), mount);
   }
 
+  static void forget(MountEntity mount) {
+    if (!(mount.getLevel() instanceof ServerLevel level)) return;
+    var inputs = INPUTS.get(level);
+    if (inputs != null) inputs.remove(mount.getBlockPos(), mount);
+    var units = ACTIVE.get(level);
+    var unit = units == null ? null : units.get(mount.bogieId);
+    if (unit != null && unit.mount == mount) {
+      units.remove(mount.bogieId);
+      unit.close();
+    }
+    TrainConsists.invalidate(level);
+  }
+
   /** Initialize one support without advancing schedules, signals or animation clocks. */
   static Unit initialize(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level) || mount.bogieId == null) return null;

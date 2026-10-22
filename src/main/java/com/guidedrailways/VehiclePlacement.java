@@ -13,7 +13,6 @@ import java.util.*;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
@@ -335,9 +334,8 @@ final class VehiclePlacement {
             selection.variant().half,
             selection.variant().compactPivotHeight());
     checkPlacementSpace(level, fit.origin(), fit.rotation(), selection.variant(), List.of());
-    ServerSubLevel bogie = null, carrier = null;
-    try {
-      bogie =
+    try (var transaction = new ConstructionTransaction()) {
+      var bogie =
           createBody(
               level,
               Content.BOGIE
@@ -346,13 +344,14 @@ final class VehiclePlacement {
                   .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
               fit.origin(),
               fit.rotation());
+      transaction.undo(() -> discard(bogie));
       applyBogeySelection(bogie, selection);
       var upperOrigin =
           new Vector3d(fit.origin())
               .add(
                   new Vector3d(0, selection.variant().compactPlateOffset(), 0)
                       .rotate(fit.rotation()));
-      carrier =
+      var carrier =
           createBody(
               level,
               Content.MOUNT
@@ -362,6 +361,7 @@ final class VehiclePlacement {
                   .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
               upperOrigin,
               fit.rotation());
+      transaction.undo(() -> discard(carrier));
       var mount = (MountEntity) level.getBlockEntity(carrier.getPlot().getCenterBlock());
       if (mount == null)
         throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
@@ -369,11 +369,13 @@ final class VehiclePlacement {
       mount.variant = selection.variant();
       mount.bogieId = bogie.getUniqueId();
       mount.setChanged();
+      transaction.undo(() -> VehiclePhysics.forget(mount));
       register(mount);
       var u = VehiclePhysics.initialize(mount);
       if (u == null)
         throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
       seedPlacement(u, fit, route);
+      transaction.commit();
       org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
           .info(
               "[RailPlacement] action=place curve={} position={} frontArc={} rearArc={}",
@@ -381,13 +383,6 @@ final class VehiclePlacement {
               fit.origin(),
               fit.front(),
               fit.rear());
-    } catch (RuntimeException e) {
-      var c = SubLevelContainer.getContainer(level);
-      if (bogie != null && !bogie.isRemoved())
-        c.removeSubLevel(bogie, SubLevelRemovalReason.REMOVED);
-      if (carrier != null && !carrier.isRemoved())
-        c.removeSubLevel(carrier, SubLevelRemovalReason.REMOVED);
-      throw e;
     }
   }
 
@@ -397,8 +392,12 @@ final class VehiclePlacement {
     if (context.getClickedFace() != Direction.DOWN)
       throw new IllegalArgumentException("message.guidedrailways.placement.underside");
     var pos = context.getClickedPos().below();
-    if (!level.getBlockState(pos).canBeReplaced())
+    var previous = level.getBlockState(pos);
+    if (!previous.canBeReplaced())
       throw new IllegalArgumentException("message.guidedrailways.placement.no_space");
+    var previousEntity = level.getBlockEntity(pos);
+    var previousData =
+        previousEntity == null ? null : previousEntity.saveWithFullMetadata(level.registryAccess());
     var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
     var rotation = new Quaterniond(pipe.readPose(carrier, new Pose3d()).orientation());
     var pivot =
@@ -411,52 +410,69 @@ final class VehiclePlacement {
         new Vector3d(pivot)
             .sub(new Vector3d(0, selection.variant().compactPivotHeight(), 0).rotate(rotation));
     checkPlacementSpace(level, origin, rotation, selection.variant(), List.of());
-    var bogie =
-        createBody(
-            level,
-            Content.BOGIE
-                .get()
-                .defaultBlockState()
-                .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
-            origin,
-            rotation);
-    applyBogeySelection(bogie, selection);
-    var tag = bogie.getUserDataTag();
-    if (tag == null) tag = new net.minecraft.nbt.CompoundTag();
-    tag.putBoolean("GuidedDerailed", true);
-    bogie.setUserDataTag(tag);
-    try {
-      level.setBlock(
+    try (var transaction = new ConstructionTransaction()) {
+      var bogie =
+          createBody(
+              level,
+              Content.BOGIE
+                  .get()
+                  .defaultBlockState()
+                  .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
+              origin,
+              rotation);
+      transaction.undo(() -> discard(bogie));
+      applyBogeySelection(bogie, selection);
+      var tag = bogie.getUserDataTag();
+      if (tag == null) tag = new net.minecraft.nbt.CompoundTag();
+      tag.putBoolean("GuidedDerailed", true);
+      bogie.setUserDataTag(tag);
+      transaction.undo(() -> refreshMass(carrier));
+      transaction.undo(
+          () -> {
+            if (!level.setBlock(pos, previous, 3) && !level.getBlockState(pos).equals(previous))
+              throw new IllegalStateException("Cannot restore bogie mounting block");
+            if (previousData != null && level.getBlockEntity(pos) != null)
+              level.getBlockEntity(pos).loadWithComponents(previousData, level.registryAccess());
+          });
+      if (!level.setBlock(
           pos,
           Content.MOUNT
               .get()
               .defaultBlockState()
               .setValue(MountBlock.COMPACT, true)
               .setValue(BogieBlock.STYLE, selection.variant().ordinal()),
-          3);
+          3)) throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
       if (!(level.getBlockEntity(pos) instanceof MountEntity mount))
         throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
       mount.gauge = gauge;
       mount.variant = selection.variant();
       mount.bogieId = bogie.getUniqueId();
       mount.setChanged();
+      transaction.undo(() -> VehiclePhysics.forget(mount));
       register(mount);
-      carrier.buildMassTracker();
-      carrier.updateMergedMassData(1);
-      pipe.onStatsChanged(carrier);
+      refreshMass(carrier);
       if (VehiclePhysics.initialize(mount) == null)
         throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
+      transaction.commit();
       context
           .getPlayer()
           .displayClientMessage(
               net.minecraft.network.chat.Component.translatable(
                   "message.guidedrailways.placement.installed"),
               true);
-    } catch (RuntimeException e) {
-      SubLevelContainer.getContainer(level).removeSubLevel(bogie, SubLevelRemovalReason.REMOVED);
-      level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-      throw e;
     }
+  }
+
+  private static void discard(ServerSubLevel body) {
+    if (!body.isRemoved())
+      SubLevelContainer.getContainer(body.getLevel())
+          .removeSubLevel(body, SubLevelRemovalReason.REMOVED);
+  }
+
+  private static void refreshMass(ServerSubLevel carrier) {
+    carrier.buildMassTracker();
+    carrier.updateMergedMassData(1);
+    SubLevelPhysicsSystem.get(carrier.getLevel()).getPipeline().onStatsChanged(carrier);
   }
 
   private static void applyBogeySelection(
