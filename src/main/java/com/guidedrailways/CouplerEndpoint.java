@@ -86,6 +86,7 @@ public final class CouplerEndpoint {
   long livingShapeTick = Long.MIN_VALUE;
   String hardwareFrame;
   UUID endpointId = UUID.randomUUID();
+  CouplerHandoff handoff;
   Vector3d anchor = new Vector3d(.5, .5, .5);
   Quaterniond frame = new Quaterniond();
   boolean hasGeometry;
@@ -164,6 +165,8 @@ public final class CouplerEndpoint {
     tag.putDouble("OperationFrom", operationFrom);
     tag.putDouble("OperationTo", operationTo);
     tag.putUUID("Endpoint", endpointId);
+    if (handoff == null) tag.remove("Handoff");
+    else tag.put("Handoff", handoff.save());
     tag.putBoolean("HasGeometry", hasGeometry);
     tag.putDouble("RestLength", restLength);
     tag.putDouble("Ax", anchor.x);
@@ -185,6 +188,7 @@ public final class CouplerEndpoint {
   public void read(CompoundTag tag) {
     livingShape = null;
     endpointId = tag.hasUUID("Endpoint") ? tag.getUUID("Endpoint") : UUID.randomUUID();
+    handoff = tag.contains("Handoff", 10) ? CouplerHandoff.load(tag.getCompound("Handoff")) : null;
     anchor.set(tag.getDouble("Ax"), tag.getDouble("Ay"), tag.getDouble("Az"));
     frame.set(tag.getDouble("Qx"), tag.getDouble("Qy"), tag.getDouble("Qz"), tag.getDouble("Qw"));
     restLength = tag.contains("RestLength") ? tag.getDouble("RestLength") : -1;

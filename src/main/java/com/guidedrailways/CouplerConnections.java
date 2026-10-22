@@ -41,6 +41,7 @@ public final class CouplerConnections {
     if ((previous != null && previous != e && loaded(level, previous))
         || !data.claim(e.endpointId, e.getBlockPos())) {
       e.endpointId = UUID.randomUUID();
+      e.handoff = null;
       e.hasGeometry = false;
       e.restLength = -1;
       e.hardwareFrame = null;
@@ -143,7 +144,12 @@ public final class CouplerConnections {
 
   static void destroyed(ServerLevel level, CouplerEndpoint e) {
     if (CouplerTransfers.moving(level, e)) return;
-    if (!CouplerSavedData.get(level).owns(e.endpointId, e.getBlockPos())) return;
+    var data = CouplerSavedData.get(level);
+    if (!data.owns(e.endpointId, e.getBlockPos())
+        && (e.handoff == null
+            || !e.handoff.authorizes(
+                data, e.endpointId, level.dimension().location().toString(), e.getBlockPos())))
+      return;
     disconnect(level, e.endpointId, "removed");
     suspend(level, e.endpointId);
     state(level).pending.values().removeIf(p -> p.endpoint.equals(e.endpointId));
@@ -431,7 +437,6 @@ public final class CouplerConnections {
               .error("[Coupler] joint rebuild failed link={}", link.id(), error);
       }
     s.pending.values().removeIf(p -> p.expires < level.getGameTime());
-    CouplerTransfers.prune(level);
   }
 
   private static void reconcile(ServerLevel level, CouplingLinks.Link link) {
@@ -496,9 +501,17 @@ public final class CouplerConnections {
   static void beforeMove(ServerLevel from, ServerLevel to, BlockPos oldPos, BlockPos newPos) {
     var endpoint = CouplerEndpoint.get(from.getBlockEntity(oldPos));
     if (endpoint == null) return;
-    register(from, endpoint);
-    if (state(from).endpoints.get(endpoint.endpointId) != endpoint
-        || !CouplerSavedData.get(from).owns(endpoint.endpointId, oldPos)) return;
+    var data = CouplerSavedData.get(from);
+    var pending = endpoint.handoff;
+    boolean continuing =
+        pending != null
+            && pending.authorizes(
+                data, endpoint.endpointId, from.dimension().location().toString(), oldPos);
+    if (!continuing) {
+      register(from, endpoint);
+      if (state(from).endpoints.get(endpoint.endpointId) != endpoint
+          || !data.owns(endpoint.endpointId, oldPos)) return;
+    }
     if (from != to) disconnect(from, endpoint.endpointId, "dimension_changed");
     CouplerTransfers.capture(from, to, oldPos, newPos, endpoint);
     suspend(from, endpoint.endpointId);
@@ -513,6 +526,5 @@ public final class CouplerConnections {
     CouplerDiscovery.unload(level);
     var s = STATES.remove(level);
     if (s != null) s.live.values().forEach(live -> live.close(false));
-    CouplerTransfers.unload(level);
   }
 }
