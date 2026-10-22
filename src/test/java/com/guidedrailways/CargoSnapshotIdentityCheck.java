@@ -44,6 +44,44 @@ public final class CargoSnapshotIdentityCheck {
     mutable.clear();
     cache.invalidate(Set.of(4));
     check(cache.get(5) == null, "caller membership mutation cannot break alias invalidation");
+    var wholeTrain = new StorageIdentities<Integer, Object>();
+    var entities = new HashMap<Integer, Object>();
+    for (int i = 0; i < 100; i++) {
+      var entity = new Object();
+      entities.put(i, entity);
+      wholeTrain.capture(i, entity);
+    }
+    int[] lookups = {0};
+    java.util.function.Function<Integer, Object> current =
+        key -> {
+          lookups[0]++;
+          return entities.get(key);
+        };
+    var captures = new ConsistCache<Integer, StorageIdentities<Integer, Object>>();
+    captures.put(Set.of(1, 2), wholeTrain);
+    var beforeReplacement = captures.token(1);
+    for (int carriage = 0; carriage < 20; carriage++)
+      check(wholeTrain.matches(100, current), "carriages share this tick's identity validation");
+    check(lookups[0] == 100, "20 views validate 100 entities once instead of 2000 times");
+    check(
+        wholeTrain.matches(101, current) && lookups[0] == 200,
+        "next tick rechecks live identities");
+    entities.put(0, replacement);
+    // The entity lifecycle hook invalidates every carriage alias, even within this same tick.
+    captures.invalidate(Set.of(2));
+    check(captures.get(1) == null, "same-tick replacement expires the validated shared capture");
+    var refreshed = new StorageIdentities<Integer, Object>();
+    entities.forEach(refreshed::capture);
+    captures.put(Set.of(1, 2), refreshed);
+    check(
+        captures.token(1) != beforeReplacement && captures.get(1).matches(101, current),
+        "same-tick replacement creates a fresh capture and native view token");
+    check(lookups[0] == 300, "replacement forces exactly one new complete identity validation");
+    check(
+        refreshed.matches(0, current) && lookups[0] == 400,
+        "clock rollback cannot reuse future validation");
+    entities.remove(0);
+    check(!refreshed.matches(1, current), "missing container is rejected on the next validation");
     System.out.println(
         "CargoSnapshotIdentityCheck: replacement, removal, shared invalidation, same-tick tokens, split and expiry passed");
   }

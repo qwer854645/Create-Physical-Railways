@@ -18,6 +18,8 @@
     "TrackObserverMixin",
     "CargoItemHandlerMixin",
     "CargoFluidTankMixin",
+    "CargoEntityRemovalMixin",
+    "CargoEntityInsertionMixin",
     "DockCargoTankMixin",
     "DockCargoItemMixin",
     "DockCargoBindingMixin",

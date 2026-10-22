@@ -123,6 +123,7 @@ public final class CargoStorage {
       if (captured
           .owners()
           .matches(
+              tick,
               pos -> {
                 if (!level.hasChunkAt(pos)) return null;
                 var entity = level.getBlockEntity(pos);
@@ -281,6 +282,14 @@ public final class CargoStorage {
   static void invalidate(ServerLevel level, Set<UUID> bodies) {
     var cache = CACHE.get(level);
     if (cache != null) cache.snapshots.invalidate(bodies);
+  }
+
+  /** Chunk/entity hooks invalidate the shared capture before another same-tick cargo query. */
+  public static void blockEntitiesChanged(net.minecraft.world.level.Level world, BlockPos pos) {
+    if (!(world instanceof ServerLevel level) || !CACHE.containsKey(level)) return;
+    if (dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level) == null) return;
+    if (SableCompanion.INSTANCE.getContaining(level, pos) instanceof ServerSubLevel body)
+      invalidate(level, Set.of(body.getUniqueId()));
   }
 
   static Object captureToken(ServerLevel level, UUID body) {

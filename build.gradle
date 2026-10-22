@@ -534,6 +534,13 @@ tasks.register('checkRecoveryBoundary', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkRecoveryBoundary' }
 
+tasks.register('checkCargoIdentityHooks', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.CargoIdentityHookCheck'
+}
+tasks.named('check') { dependsOn 'checkCargoIdentityHooks' }
+
 
 tasks.register('generateCollisionMetadata', JavaExec) {
     dependsOn testClasses
