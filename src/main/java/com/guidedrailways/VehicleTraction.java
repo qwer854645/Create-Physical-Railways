@@ -37,7 +37,7 @@ final class VehicleTraction {
           control.hold()
               || control.owner().isRemoved()
               || u.mount.braking
-              || control.navigation() != null && control.navigation().routeRetry;
+              || control.navigation() != null && control.navigation().routeRetry();
       if (control.mode() == TrainCommand.Mode.MANUAL) {
         ceiling =
             Math.copySign(

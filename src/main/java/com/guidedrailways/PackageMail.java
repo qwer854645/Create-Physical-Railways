@@ -73,11 +73,11 @@ final class PackageMail {
   }
 
   static int exchange(ServerLevel level, ScheduleController controller) {
-    controller.mailMonitored = false;
-    if (controller.station == null) return ScheduleController.UNLOADED;
+    controller.mailMonitoring(false);
+    if (controller.station() == null) return ScheduleController.UNLOADED;
     GlobalStation stop = null;
     for (var graph : Create.RAILWAYS.sided(level).trackNetworks.values()) {
-      stop = graph.getPoint(EdgePointType.STATION, controller.station);
+      stop = graph.getPoint(EdgePointType.STATION, controller.station());
       if (stop != null) break;
     }
     if (stop == null || !level.dimension().equals(stop.getBlockEntityDimension()))
@@ -91,7 +91,7 @@ final class PackageMail {
     }
     var snapshot = CargoStorage.snapshot(level, DriverControls.body(controller.owner));
     if (!snapshot.complete()
-        || controller.cargoBodies != null && !controller.cargoBodies.equals(snapshot.bodies()))
+        || controller.cargoBodies() != null && !controller.cargoBodies().equals(snapshot.bodies()))
       return ScheduleController.UNLOADED;
     var ports = new ArrayList<Port>();
     for (var entry : stop.connectedPorts.entrySet()) {
@@ -113,7 +113,7 @@ final class PackageMail {
           : ScheduleController.WAITING;
     int docking = RailDocks.acquire(level, controller, snapshot);
     if (docking != ScheduleController.WAITING) return docking;
-    controller.mailMonitored = true;
+    controller.mailMonitoring(true);
     var stores = RailDocks.mailBuffers(level, controller, snapshot);
     if (stores.isEmpty()) return ScheduleController.RAIL_DOCK;
     var cargo = new ArrayList<Store>();

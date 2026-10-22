@@ -35,31 +35,188 @@ final class ScheduleController {
       PACKAGE_WAIT = 20,
       RAIL_DOCK = 21;
   final DriverConsoleEntity owner;
-  ItemStack item = ItemStack.EMPTY;
-  Schedule program;
-  boolean running, manualOverride, waiting, releaseBrakes;
-  long nextPlan, nextVisual;
-  boolean visualDirty;
-  int entry, status, stableTicks;
-  UUID station;
-  AutomaticTrains.Plan plan;
-  Set<UUID> members;
-  DriverConsoleEntity manualSource;
-  volatile boolean routeRetry;
-  boolean resumePending;
+  private ItemStack item = ItemStack.EMPTY;
+  private Schedule program;
+  private boolean running, manualOverride, waiting, releaseBrakes;
+  private long nextPlan, nextVisual;
+  private boolean visualDirty;
+  private int entry, status, stableTicks;
+  private UUID station;
+  private AutomaticTrains.Plan plan;
+  private Set<UUID> members;
+  private DriverConsoleEntity manualSource;
+  private volatile boolean routeRetry;
+  private boolean resumePending;
   private ScheduleReloadGate reloadGate;
-  double remaining = Double.NaN;
-  long nextMail;
-  int mailState = WAITING, conditionState = WAITING;
-  boolean mailMonitored;
-  double throttle = 1;
-  String currentTitle = "";
-  Set<UUID> cargoBodies;
-  final List<Integer> progress = new ArrayList<>();
-  final List<CompoundTag> contexts = new ArrayList<>();
+  private double remaining = Double.NaN;
+  private long nextMail;
+  private int mailState = WAITING, conditionState = WAITING;
+  private boolean mailMonitored;
+  private double throttle = 1;
+  private String currentTitle = "";
+  private Set<UUID> cargoBodies;
+  private final List<Integer> progress = new ArrayList<>();
+  private final List<CompoundTag> contexts = new ArrayList<>();
 
   ScheduleController(DriverConsoleEntity owner) {
     this.owner = owner;
+  }
+
+  // Mutations of runtime state belong here; clients receive read-only queries.
+  ItemStack item() {
+    return item.copy();
+  }
+
+  boolean running() {
+    return running;
+  }
+
+  boolean manualOverride() {
+    return manualOverride;
+  }
+
+  boolean waiting() {
+    return waiting;
+  }
+
+  int entry() {
+    return entry;
+  }
+
+  int status() {
+    return status;
+  }
+
+  UUID station() {
+    return station;
+  }
+
+  AutomaticTrains.Plan plan() {
+    return plan;
+  }
+
+  Set<UUID> members() {
+    return members;
+  }
+
+  DriverConsoleEntity manualSource() {
+    return manualSource;
+  }
+
+  boolean routeRetry() {
+    return routeRetry;
+  }
+
+  boolean resumePending() {
+    return resumePending;
+  }
+
+  double remaining() {
+    return remaining;
+  }
+
+  double throttle() {
+    return throttle;
+  }
+
+  String currentTitle() {
+    return currentTitle;
+  }
+
+  Set<UUID> cargoBodies() {
+    return cargoBodies;
+  }
+
+  List<Integer> conditionProgress() {
+    return List.copyOf(progress);
+  }
+
+  List<CompoundTag> conditionContexts() {
+    return contexts.stream().map(CompoundTag::copy).toList();
+  }
+
+  boolean acceptMembers(Set<UUID> actual) {
+    if (members == null) {
+      members = Set.copyOf(actual);
+      owner.setChanged();
+    }
+    return members.equals(actual);
+  }
+
+  boolean acceptCargoBodies(Set<UUID> actual) {
+    if (cargoBodies == null) {
+      cargoBodies = Set.copyOf(actual);
+      owner.setChanged();
+    }
+    return cargoBodies.equals(actual);
+  }
+
+  boolean takeBrakeRelease() {
+    boolean release = releaseBrakes;
+    releaseBrakes = false;
+    return release;
+  }
+
+  void requestRouteRetry() {
+    routeRetry = true;
+  }
+
+  void invalidateRoute(boolean forgetArrival) {
+    routeRetry = false;
+    plan = null;
+    remaining = Double.NaN;
+    nextPlan = 0;
+    stableTicks = 0;
+    if (forgetArrival) {
+      waiting = false;
+      station = null;
+      resetConditions();
+    }
+  }
+
+  void topologyChanged() {
+    RailDocks.release(this);
+    members = null;
+    cargoBodies = null;
+    invalidateRoute(true);
+    owner.setChanged();
+  }
+
+  boolean beginPlanning(long tick) {
+    if (tick < nextPlan) return false;
+    nextPlan = tick + 10;
+    return true;
+  }
+
+  boolean acceptPlan(AutomaticTrains.Plan next) {
+    plan = next;
+    if (next == null) return false;
+    station = next.route.goal().id();
+    owner.setChanged();
+    return true;
+  }
+
+  void distance(double distance) {
+    remaining = distance;
+  }
+
+  void leaveArrival() {
+    waiting = false;
+    resetConditions();
+  }
+
+  boolean arrivalStable() {
+    if (++stableTicks < 6) return false;
+    waiting = true;
+    return true;
+  }
+
+  void travelling() {
+    stableTicks = 0;
+  }
+
+  void mailMonitoring(boolean monitored) {
+    mailMonitored = monitored;
   }
 
   boolean present() {
@@ -332,30 +489,21 @@ final class ScheduleController {
   }
 
   void manual(DriverConsoleEntity source) {
-    RailDocks.release(this);
-    running = false;
-    routeRetry = false;
-    resumePending = false;
-    reloadGate = null;
-    manualOverride = true;
-    manualSource = source;
-    plan = null;
-    remaining = Double.NaN;
-    stableTicks = 0;
-    state(PAUSED);
+    stop(PAUSED, source);
   }
 
   void pause(int reason) {
+    stop(reason, null);
+  }
+
+  private void stop(int reason, DriverConsoleEntity source) {
     RailDocks.release(this);
     running = false;
-    routeRetry = false;
     resumePending = false;
     reloadGate = null;
-    manualOverride = false;
-    manualSource = null;
-    plan = null;
-    remaining = Double.NaN;
-    stableTicks = 0;
+    manualOverride = source != null;
+    manualSource = source;
+    invalidateRoute(false);
     state(reason);
   }
 

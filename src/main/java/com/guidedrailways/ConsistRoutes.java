@@ -80,8 +80,8 @@ final class ConsistRoutes {
       return switchWaiting
           || leading
               && context.automatic != null
-              && context.automatic.running
-              && (context.automatic.plan == null || context.automatic.routeRetry);
+              && context.automatic.running()
+              && (context.automatic.plan() == null || context.automatic.routeRetry());
     }
 
     @Override
@@ -114,17 +114,17 @@ final class ConsistRoutes {
       boolean planned =
           leading
               && context.automatic != null
-              && context.automatic.running
-              && context.automatic.plan != null;
+              && context.automatic.running()
+              && context.automatic.plan() != null;
       if (leading
           && context.automatic != null
-          && context.automatic.running
-          && (context.automatic.plan == null || context.automatic.routeRetry)) return -1;
+          && context.automatic.running()
+          && (context.automatic.plan() == null || context.automatic.routeRetry())) return -1;
       if (planned) {
-        proposed = context.automatic.plan.choose(path, node, from);
+        proposed = context.automatic.plan().choose(path, node, from);
         final int expected = proposed;
         if (expected < 0 || java.util.Arrays.stream(exits).noneMatch(exit -> exit == expected)) {
-          context.automatic.routeRetry = true;
+          context.automatic.requestRouteRetry();
           org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
               .warn(
                   "[AutomaticJunctionRetry] console={} bogie={} node={} from={} planned={} exits={} target={}",
@@ -134,7 +134,7 @@ final class ConsistRoutes {
                   from,
                   expected,
                   java.util.Arrays.toString(exits),
-                  context.automatic.station);
+                  context.automatic.station());
           return -1;
         }
       }
@@ -148,15 +148,15 @@ final class ConsistRoutes {
       boolean planned =
           leading
               && context.automatic != null
-              && context.automatic.running
-              && context.automatic.plan != null;
+              && context.automatic.running()
+              && context.automatic.plan() != null;
       int committed =
           context.memory.commit(
               axle, new RouteMemory.Junction(path.graph(), node), from, exits, selected, planned);
       if (committed != selected) return false;
       context.anchors.put(axle, new Vector3d(position));
       if (planned) {
-        int expected = context.automatic.plan.choose(path, node, from);
+        int expected = context.automatic.plan().choose(path, node, from);
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
             .info(
                 "[AutomaticJunction] console={} bogie={} axle={} node={} from={} planned={} selected={} target={}",
@@ -167,8 +167,8 @@ final class ConsistRoutes {
                 from,
                 expected,
                 selected,
-                context.automatic.station);
-        if (expected != selected) context.automatic.routeRetry = true;
+                context.automatic.station());
+        if (expected != selected) context.automatic.requestRouteRetry();
       }
       return true;
     }
@@ -242,9 +242,9 @@ final class ConsistRoutes {
       for (var u : group)
         if (u.command != null
             && u.command.navigation() != null
-            && u.command.navigation().plan != null
-            && group.contains(u.command.navigation().plan.head)) {
-          var plan = u.command.navigation().plan;
+            && u.command.navigation().plan() != null
+            && group.contains(u.command.navigation().plan().head)) {
+          var plan = u.command.navigation().plan();
           automaticHead = plan.head;
           automaticEnd = plan.end;
           head = automaticHead.carrier.getUniqueId();

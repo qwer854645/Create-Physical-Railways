@@ -111,7 +111,7 @@ public final class PhysicalSignals {
       UUID body = u.carrier.getUniqueId(), owner = s.owners.get(body);
       liveBodies.add(body);
       carriers.put(body, u.carrier);
-      if (u.driver != null && u.driver.schedule.running) running.add(owner);
+      if (u.driver != null && u.driver.schedule.running()) running.add(owner);
       if (u.driver != null) consoles.add(u.driver.consoleId);
       var groups =
           occupied.computeIfAbsent(

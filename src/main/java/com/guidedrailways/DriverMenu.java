@@ -66,12 +66,12 @@ public final class DriverMenu extends AbstractContainerMenu {
                           : 0;
                   case HAS_SCHEDULE -> console.schedule.present() ? 1 : 0;
                   case SCHEDULE_STATUS ->
-                      DriverControls.primaryView(console) ? console.schedule.status : 15;
+                      DriverControls.primaryView(console) ? console.schedule.status() : 15;
                   case SCHEDULE_ENTRY ->
-                      Math.min(console.schedule.total(), console.schedule.entry + 1);
+                      Math.min(console.schedule.total(), console.schedule.entry() + 1);
                   case SCHEDULE_TOTAL -> console.schedule.total();
                   case IS_PRIMARY -> DriverControls.primaryView(console) ? 1 : 0;
-                  case SCHEDULE_RUNNING -> console.schedule.running ? 1 : 0;
+                  case SCHEDULE_RUNNING -> console.schedule.running() ? 1 : 0;
                   case STOPPED -> DriverControls.stopped(console) ? 1 : 0;
                   case OBSERVING -> console.observing ? 1 : 0;
                   case OPERATOR_AVAILABLE ->
@@ -129,20 +129,22 @@ public final class DriverMenu extends AbstractContainerMenu {
     long tick = player.serverLevel().getGameTime();
     if (tick < nextDetails) return;
     nextDetails = tick + 5;
-    if (sentSchedule == null || !ItemStack.matches(sentSchedule, console.schedule.item)) {
-      sentSchedule = console.schedule.item.copy();
+    if (sentSchedule == null || !ItemStack.matches(sentSchedule, console.schedule.item())) {
+      sentSchedule = console.schedule.item().copy();
       net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
           player, new DriverNetwork.SchedulePreview(containerId, sentSchedule.copy()));
     }
     String target = console.schedule.target();
     if (target.length() > 256) target = target.substring(0, 256);
     int distance =
-        Double.isFinite(console.schedule.remaining)
+        Double.isFinite(console.schedule.remaining())
             ? (int)
                 Math.clamp(
-                    Math.round(Math.max(0, console.schedule.remaining) * 10), 0, Integer.MAX_VALUE)
+                    Math.round(Math.max(0, console.schedule.remaining()) * 10),
+                    0,
+                    Integer.MAX_VALUE)
             : -1;
-    String title = console.schedule.currentTitle;
+    String title = console.schedule.currentTitle();
     if (title.length() > 256) title = title.substring(0, 256);
     var primary = DriverControls.primaryForView(console);
     var next =
@@ -151,7 +153,7 @@ public final class DriverMenu extends AbstractContainerMenu {
             target,
             distance,
             title,
-            (int) Math.round(console.schedule.throttle * 100),
+            (int) Math.round(console.schedule.throttle() * 100),
             primary.trainName(),
             primary.trainOwner());
     if (!next.equals(sentDetails)) {

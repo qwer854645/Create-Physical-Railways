@@ -23,16 +23,7 @@ public final class DriverControls {
       if (body == null || !affected.contains(body.getUniqueId())) continue;
       var c = console.schedule;
       RailDocks.release(c);
-      c.members = null;
-      c.cargoBodies = null;
-      c.plan = null;
-      c.nextPlan = 0;
-      c.routeRetry = false;
-      c.waiting = false;
-      c.station = null;
-      c.stableTicks = 0;
-      c.resetConditions();
-      console.setChanged();
+      c.topologyChanged();
     }
   }
 
@@ -177,9 +168,9 @@ public final class DriverControls {
           && chosen.get(b.getUniqueId()) != e
           && (e.active
               || e.enabled
-              || e.schedule.running
-              || e.schedule.resumePending
-              || e.schedule.manualOverride)) e.park();
+              || e.schedule.running()
+              || e.schedule.resumePending()
+              || e.schedule.manualOverride())) e.park();
     }
     for (var u : units) {
       var next = chosen.get(u.carrier.getUniqueId());

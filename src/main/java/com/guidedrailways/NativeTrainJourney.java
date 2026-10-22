@@ -20,39 +20,39 @@ final class NativeTrainJourney {
     var driver = group.units().getFirst().driver;
     if (driver == null || driver.isRemoved()) return clear(out);
     var c = driver.schedule;
-    var data = c.present() ? c.item.get(AllDataComponents.TRAIN_SCHEDULE) : null;
+    var data = c.present() ? c.item().get(AllDataComponents.TRAIN_SCHEDULE) : null;
     if (data == null) return clear(out);
     // The schedule component is replaced when its saved progress changes. Reuse unchanged data.
     if (!data.equals(program)) program = data.copy();
     out.put("Program", program);
-    out.putInt("Entry", c.entry);
-    out.putInt("Status", c.status);
-    out.putBoolean("Paused", !c.running || c.manualOverride || c.resumePending);
-    out.putBoolean("Completed", c.status == ScheduleController.FINISHED);
-    out.putBoolean("Waiting", c.waiting);
-    out.putString("Title", c.currentTitle);
-    out.putIntArray("Progress", c.progress);
+    out.putInt("Entry", c.entry());
+    out.putInt("Status", c.status());
+    out.putBoolean("Paused", !c.running() || c.manualOverride() || c.resumePending());
+    out.putBoolean("Completed", c.status() == ScheduleController.FINISHED);
+    out.putBoolean("Waiting", c.waiting());
+    out.putString("Title", c.currentTitle());
+    out.putIntArray("Progress", c.conditionProgress());
     var contexts = new ListTag();
-    for (var context : c.contexts) contexts.add(context.copy());
+    for (var context : c.conditionContexts()) contexts.add(context.copy());
     out.put("Contexts", contexts);
 
-    var p = c.plan;
+    var p = c.plan();
     var members =
         group.units().stream()
             .map(u -> u.bogie.getUniqueId())
             .collect(java.util.stream.Collectors.toSet());
     if (out.getBoolean("Paused")
         || out.getBoolean("Completed")
-        || c.routeRetry
+        || c.routeRetry()
         || train.getBoolean("Derailed")
         || !train.hasUUID("Graph")
         || p == null
         || !train.getUUID("Graph").equals(p.network.graph)
-        || c.members == null
-        || !members.equals(c.members)
+        || c.members() == null
+        || !members.equals(c.members())
         || !group.units().contains(p.head)
         || !p.network.live(p.route)
-        || !Double.isFinite(c.remaining)
+        || !Double.isFinite(c.remaining())
         || p.leg < 0
         || p.leg >= p.route.edges().size()) {
       forgetRoute();
@@ -60,17 +60,17 @@ final class NativeTrainJourney {
     }
     var navigation = new CompoundTag();
     navigation.putUUID("Destination", p.route.goal().id());
-    navigation.putDouble("Remaining", Math.max(0, c.remaining));
+    navigation.putDouble("Remaining", Math.max(0, c.remaining()));
     navigation.putDouble("StartedAt", p.route.distance());
-    navigation.putBoolean("Waiting", c.waiting);
+    navigation.putBoolean("Waiting", c.waiting());
     navigation.putInt(
         "ArrivalTicks",
         arrival.sample(
             p,
             driver.getLevel().getGameTime(),
-            Math.max(0, c.remaining),
+            Math.max(0, c.remaining()),
             Math.abs(train.getDouble("Speed")),
-            c.status == ScheduleController.TRAVELLING && !c.waiting));
+            c.status() == ScheduleController.TRAVELLING && !c.waiting()));
     var parts = train.getList("Carriages", Tag.TAG_COMPOUND);
     var front = parts.getCompound(0);
     var axis =

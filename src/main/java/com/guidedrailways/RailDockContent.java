@@ -107,14 +107,14 @@ final class RailDockContent {
           public int acquire(
               ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo) {
             int state = RailDockContent.acquire(level, controller, cargo);
-            String value = controller.station + ":" + state;
+            String value = controller.station() + ":" + state;
             var traces = TRACE.computeIfAbsent(level, k -> new HashMap<>());
             if (!value.equals(traces.put(controller.owner.consoleId, value)))
               org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
                   .info(
                       "[RailDock] console={} station={} state={} bodies={}",
                       controller.owner.getBlockPos(),
-                      controller.station,
+                      controller.station(),
                       state,
                       cargo.bodies().size());
             return state;
@@ -132,7 +132,7 @@ final class RailDockContent {
           public List<RailDocks.MailBuffer> mailBuffers(
               ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo) {
             var out = new ArrayList<RailDocks.MailBuffer>();
-            UUID station = controller.station;
+            UUID station = controller.station();
             if (station == null || !cargo.complete()) return out;
             for (var pos : RailDockIndex.get(level).endpoints(station)) {
               if (!level.hasChunkAt(pos)
@@ -201,7 +201,7 @@ final class RailDockContent {
       UUID station,
       RailDockEntity shore,
       RailDockEntity car) {
-    if (!Objects.equals(station, controller.station)
+    if (!Objects.equals(station, controller.station())
         || controller.owner.isRemoved()
         || shore.isRemoved()
         || car.isRemoved()
@@ -363,7 +363,7 @@ final class RailDockContent {
       ServerLevel level, ScheduleController controller, CargoStorage.Snapshot cargo) {
     if (!CargoHookStatus.ready("dock")) return ScheduleController.RAIL_DOCK;
     var index = RailDockIndex.get(level);
-    var ends = index.endpoints(controller.station);
+    var ends = index.endpoints(controller.station());
     if (ends.isEmpty()) return ScheduleController.RAIL_DOCK;
     var world = new ArrayList<RailDockEntity>();
     boolean unloaded = false;
@@ -373,7 +373,7 @@ final class RailDockContent {
         continue;
       }
       if (!(level.getBlockEntity(pos) instanceof RailDockEntity dock)
-          || !controller.station.equals(dock.stationId)
+          || !controller.station().equals(dock.stationId)
           || SableCompanion.INSTANCE.getContaining(level, pos) != null) {
         index.bind(pos, null);
         continue;
@@ -385,7 +385,7 @@ final class RailDockContent {
       if (!(level.getBlockEntity(dock.stationPos)
               instanceof com.simibubi.create.content.trains.station.StationBlockEntity station)
           || station.getStation() == null
-          || !station.getStation().id.equals(controller.station)) continue;
+          || !station.getStation().id.equals(controller.station())) continue;
       world.add(dock);
     }
     var cars = new ArrayList<RailDockEntity>();
@@ -424,7 +424,7 @@ final class RailDockContent {
     chosenCar.applyPower();
     var body = SableCompanion.INSTANCE.getContaining(level, chosenCar.getBlockPos());
     return RailDockGate.ready(
-            controller.station,
+            controller.station(),
             chosenWorld.stationId,
             body == null ? null : body.getUniqueId(),
             cargo.bodies(),

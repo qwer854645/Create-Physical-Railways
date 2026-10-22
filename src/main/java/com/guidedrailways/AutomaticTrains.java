@@ -85,7 +85,7 @@ final class AutomaticTrains {
         hold(group, controller, true);
         continue;
       }
-      if (controller.resumePending) {
+      if (controller.resumePending()) {
         var restored = new HashSet<UUID>();
         for (var u : group) restored.add(u.bogie.getUniqueId());
         if (!controller.restore(level, restored)) {
@@ -111,8 +111,8 @@ final class AutomaticTrains {
         continue;
       }
       if (master.active && !master.observing) controller.manual(master);
-      if (controller.manualOverride) {
-        var source = controller.manualSource;
+      if (controller.manualOverride()) {
+        var source = controller.manualSource();
         if (source == null || source.isRemoved() || DriverControls.body(source) == null) {
           controller.pause(ScheduleController.PAUSED);
           hold(group, controller, false);
@@ -136,14 +136,13 @@ final class AutomaticTrains {
             !source.enabled);
         continue;
       }
-      if (!controller.running) {
+      if (!controller.running()) {
         hold(group, controller, false);
         continue;
       }
       var members = new HashSet<UUID>();
       for (var u : group) members.add(u.bogie.getUniqueId());
-      if (controller.members == null) controller.members = Set.copyOf(members);
-      else if (!controller.members.equals(members)) {
+      if (!controller.acceptMembers(members)) {
         controller.pause(ScheduleController.CHANGED);
         hold(group, controller, false);
         continue;
@@ -163,19 +162,13 @@ final class AutomaticTrains {
         hold(group, controller, false);
         continue;
       }
-      if (controller.cargoBodies == null) {
-        controller.cargoBodies = Set.copyOf(cargo.bodies().keySet());
-        controller.owner.setChanged();
-      } else if (!controller.cargoBodies.equals(cargo.bodies().keySet())) {
+      if (!controller.acceptCargoBodies(cargo.bodies().keySet())) {
         controller.pause(ScheduleController.CHANGED);
         hold(group, controller, false);
         continue;
       }
-      if (controller.releaseBrakes) {
-        for (var u : group) brake(u, false);
-        controller.releaseBrakes = false;
-      }
-      double cap = SchedulePrelude.ceiling(available(group, master), controller.throttle);
+      if (controller.takeBrakeRelease()) for (var u : group) brake(u, false);
+      double cap = SchedulePrelude.ceiling(available(group, master), controller.throttle());
       if (cap <= 0) {
         controller.state(ScheduleController.NO_POWER);
         hold(group, controller, false);
@@ -194,7 +187,7 @@ final class AutomaticTrains {
       }
     }
     for (var console : consoles)
-      if (console.schedule.running && !processed.contains(console.schedule))
+      if (console.schedule.running() && !processed.contains(console.schedule))
         console.schedule.pause(ScheduleController.TRACK_MISSING);
     // A split or removed controller must not leave its former motorised trailers running.
     for (var u : previous)
@@ -261,7 +254,7 @@ final class AutomaticTrains {
     for (var u : group)
       u.command =
           new TrainCommand(
-              c.owner, c.running ? c : null, TrainCommand.Mode.HOLD, 1, 0, -4, emergency, true);
+              c.owner, c.running() ? c : null, TrainCommand.Mode.HOLD, 1, 0, -4, emergency, true);
   }
 
   private static void bind(
@@ -273,7 +266,7 @@ final class AutomaticTrains {
       int notch,
       boolean emergency,
       boolean hold) {
-    if (navigation != null) navigation.visual(notch, navigation.plan.direction);
+    if (navigation != null) navigation.visual(notch, navigation.plan().direction);
     for (var u : group)
       u.command =
           new TrainCommand(
@@ -429,9 +422,9 @@ final class AutomaticTrains {
                   instanceof
                   com.simibubi.create.content.trains.schedule.destination.DestinationInstruction
                           destination
-              ? network.goals(destination, c.waiting ? c.station : null)
+              ? network.goals(destination, c.waiting() ? c.station() : null)
               : network.goals(
-                  stop -> packageTargets.contains(stop.id), c.waiting ? c.station : null);
+                  stop -> packageTargets.contains(stop.id), c.waiting() ? c.station() : null);
       var route =
           ScheduleRoute.find(
               network,
@@ -451,32 +444,23 @@ final class AutomaticTrains {
       List<CouplerConnections.BodyLink> links,
       ScheduleController c,
       double cap) {
-    if (c.routeRetry) {
-      c.routeRetry = false;
-      c.plan = null;
-      c.remaining = Double.NaN;
-      c.nextPlan = 0;
+    if (c.routeRetry()) {
+      c.invalidateRoute(false);
       c.state(ScheduleController.PLANNING);
       hold(group, c, false);
       return;
     }
-    if (c.plan != null && !c.plan.network.live(c.plan.route)) {
-      c.plan = null;
-      c.remaining = Double.NaN;
-      c.waiting = false;
-      c.station = null;
-      c.resetConditions();
-      c.nextPlan = 0;
+    if (c.plan() != null && !c.plan().network.live(c.plan().route)) {
+      c.invalidateRoute(true);
     }
-    if (c.plan == null) {
-      if (level.getGameTime() < c.nextPlan) {
+    if (c.plan() == null) {
+      if (!c.beginPlanning(level.getGameTime())) {
         hold(group, c, false);
         return;
       }
-      c.nextPlan = level.getGameTime() + 10;
       Set<UUID> packageTargets = Set.of();
       if (c.packageInstruction()) {
-        if (c.waiting && c.station != null) packageTargets = Set.of(c.station);
+        if (c.waiting() && c.station() != null) packageTargets = Set.of(c.station());
         else {
           var selection = PackageMail.targets(level, c);
           packageTargets = selection.stations();
@@ -492,24 +476,21 @@ final class AutomaticTrains {
           }
         }
       }
-      c.plan = plan(level, group, links, c, packageTargets);
-      if (c.plan == null) {
+      if (!c.acceptPlan(plan(level, group, links, c, packageTargets))) {
         c.state(ScheduleController.NO_ROUTE);
         hold(group, c, false);
         return;
       }
-      c.station = c.plan.route.goal().id();
-      c.owner.setChanged();
       org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
           .info(
               "[AutomaticRoute] target={} distance={} edges={} leadingBogie={} end={}",
-              c.plan.route.goal().name(),
-              c.plan.route.distance(),
-              c.plan.route.edges().size(),
-              c.plan.head.bogie.getUniqueId(),
-              c.plan.end);
+              c.plan().route.goal().name(),
+              c.plan().route.distance(),
+              c.plan().route.edges().size(),
+              c.plan().head.bogie.getUniqueId(),
+              c.plan().end);
     }
-    var p = c.plan;
+    var p = c.plan();
     var sample = sample(level, p.head, p.end);
     if (sample == null) {
       c.pause(ScheduleController.TRACK_MISSING);
@@ -530,8 +511,7 @@ final class AutomaticTrains {
               p.leg,
               p.route.edges().get(p.leg),
               p.route.goal().id());
-      c.plan = null;
-      c.nextPlan = 0;
+      c.invalidateRoute(false);
       c.state(ScheduleController.PLANNING);
       hold(group, c, false);
       return;
@@ -540,7 +520,7 @@ final class AutomaticTrains {
     var edge = p.route.edges().get(p.leg);
     double offset = p.network.offset(sample, edge);
     double remaining = p.route.remaining(p.network, p.leg, offset);
-    c.remaining = remaining;
+    c.distance(remaining);
     if (level.getGameTime() >= p.nextLoaded) {
       p.loaded = p.network.loaded(p.route, p.leg, offset);
       p.nextLoaded = level.getGameTime() + 10;
@@ -552,20 +532,17 @@ final class AutomaticTrains {
     }
     double maxSpeed = maximumSpeed(group);
     boolean arrived = AutomaticDriveModel.arrived(remaining, maxSpeed);
-    if (c.waiting && !arrived) {
-      c.waiting = false;
-      c.resetConditions();
+    if (c.waiting() && !arrived) {
+      c.leaveArrival();
     }
     if (arrived) {
       hold(group, c, false);
-      c.stableTicks++;
-      if (c.stableTicks >= 6) {
-        c.waiting = true;
+      if (c.arrivalStable()) {
         if (c.exchangeMail(level) && c.tickConditions(level)) c.advance();
       }
       return;
     }
-    c.stableTicks = 0;
+    c.travelling();
     if (CargoStorage.blockedByDock(level, group.getFirst().carrier)) {
       c.state(ScheduleController.DOCK_WAIT);
       hold(group, c, false);
