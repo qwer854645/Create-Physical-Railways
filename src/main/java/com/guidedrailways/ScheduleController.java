@@ -702,6 +702,22 @@ final class ScheduleController {
     return false;
   }
 
+  static void resetCargoObservation(CompoundTag context) {
+    context.remove("CargoWaitStarted");
+    context.remove("CargoLastObserved");
+    context.remove("CargoNextCheck");
+  }
+
+  /** Only consecutive, valid observations can establish a cargo idle interval. */
+  static long cargoWaitStart(CompoundTag context, long tick) {
+    long previous = context.getLong("CargoLastObserved");
+    if (!context.contains("CargoLastObserved") || tick < previous || tick - previous > 1)
+      resetCargoObservation(context);
+    context.putLong("CargoLastObserved", tick);
+    if (!context.contains("CargoWaitStarted")) context.putLong("CargoWaitStarted", tick);
+    return context.getLong("CargoWaitStarted");
+  }
+
   private boolean conditionComplete(
       ServerLevel level, ScheduleWaitCondition condition, CompoundTag context) {
     if (condition.getClass() == PlayerPassengerCondition.class) {
@@ -738,7 +754,7 @@ final class ScheduleController {
       var snapshot = CargoStorage.snapshot(level, DriverControls.body(owner));
       if (!snapshot.complete() || cargoBodies != null && !cargoBodies.equals(snapshot.bodies())) {
         conditionState = UNLOADED;
-        context.remove("CargoWaitStarted");
+        resetCargoObservation(context);
         return false;
       }
       if (cargoBodies == null) {
@@ -748,15 +764,14 @@ final class ScheduleController {
       if (condition.getClass() == IdleCargoCondition.class) {
         if (!snapshot.monitored() && !mailMonitored) {
           conditionState = CARGO_CONNECTOR;
-          context.remove("CargoWaitStarted");
+          resetCargoObservation(context);
           return false;
         }
-        if (!context.contains("CargoWaitStarted"))
-          context.putLong("CargoWaitStarted", level.getGameTime());
+        long since = cargoWaitStart(context, level.getGameTime());
         return CargoStorage.idle(
             level,
             snapshot,
-            context.getLong("CargoWaitStarted"),
+            since,
             ((IdleCargoCondition) condition).totalWaitTicks(),
             mailMonitored);
       }
@@ -887,8 +902,7 @@ final class ScheduleController {
       var b = list.getCompound(i);
       progress.add(Math.max(0, b.getInt("Progress")));
       var context = b.getCompound("Context").copy();
-      context.remove("CargoNextCheck");
-      context.remove("CargoWaitStarted");
+      resetCargoObservation(context);
       contexts.add(context);
     }
     var cargo = new HashSet<UUID>();

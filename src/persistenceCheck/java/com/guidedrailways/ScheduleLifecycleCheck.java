@@ -87,6 +87,15 @@ public final class ScheduleLifecycleCheck {
       menuPending |= calls(method, "resumePending");
     check(menuPending, "pending automatic operation exposes pause rather than start");
     var controller = code("com/guidedrailways/ScheduleController");
+    var conditions =
+        controller.methods.stream()
+            .filter(m -> m.name.equals("conditionComplete"))
+            .findFirst()
+            .orElseThrow();
+    check(calls(conditions, "cargoWaitStart"), "cargo idle uses consecutive observations");
+    var load =
+        controller.methods.stream().filter(m -> m.name.equals("load")).findFirst().orElseThrow();
+    check(calls(load, "resetCargoObservation"), "readback cannot reuse cargo observation clocks");
     var stop =
         controller.methods.stream().filter(m -> m.name.equals("stop")).findFirst().orElseThrow();
     for (String field : List.of("running", "resumePending", "reloadGate")) {

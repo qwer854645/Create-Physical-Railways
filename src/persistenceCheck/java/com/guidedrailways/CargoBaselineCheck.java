@@ -2,6 +2,7 @@ package com.guidedrailways;
 
 import java.util.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 
 /** Real snapshots and activity clocks, without constructing a Minecraft world. */
 public final class CargoBaselineCheck {
@@ -76,7 +77,37 @@ public final class CargoBaselineCheck {
     check(
         cache.previous(a) == null && cache.previous(b) == null,
         "expiry releases dirty captures too");
+    var context = new CompoundTag();
+    context.putInt("Progress", 2);
+    var idleClock = new CargoClock();
+    long since = ScheduleController.cargoWaitStart(context, 0);
+    for (int tick = 1; tick <= 100; tick++)
+      since = ScheduleController.cargoWaitStart(context, tick);
+    check(since == 0 && !idleClock.idle(100, since, 100), "continuous idle keeps the start");
+    // AutomaticTrains may skip all condition evaluation while couplings are incomplete.
+    since = ScheduleController.cargoWaitStart(context, 1000);
+    check(since == 1000 && !idleClock.idle(1000, since, 100), "unobserved time is not idle");
+    for (int tick = 1001; tick <= 1101; tick++)
+      since = ScheduleController.cargoWaitStart(context, tick);
+    check(idleClock.idle(1101, since, 100), "fresh complete idle interval can depart");
+    check(ScheduleController.cargoWaitStart(context, 1101) == 1000, "same-tick reads do not reset");
+    idleClock.exchanged(1101, false, 1);
+    check(!idleClock.idle(1101, since, 100), "successful exchange still resets idle");
+    context.putLong("CargoNextCheck", 1200);
+    ScheduleController.resetCargoObservation(context);
+    check(
+        !context.contains("CargoWaitStarted")
+            && !context.contains("CargoLastObserved")
+            && !context.contains("CargoNextCheck"),
+        "load and invalid observation clear ephemeral clocks");
+    check(context.getInt("Progress") == 2, "unrelated condition context is preserved");
+    check(
+        ScheduleController.cargoWaitStart(context, 5000) == 5000,
+        "readback starts a fresh interval");
+    check(
+        ScheduleController.cargoWaitStart(context, 5) == 5,
+        "clock rollback starts a fresh interval");
     System.out.println(
-        "CargoBaselineCheck: stale reads, idle reset, unchanged cargo, split, deletion and expiry passed");
+        "CargoBaselineCheck: stale reads, interrupted idle, readback reset, unchanged cargo, split, deletion and expiry passed");
   }
 }
