@@ -42,13 +42,11 @@ final class BogiePairContacts {
           && !u.bogie.isRemoved()
           && !u.mount.isRemoved()
           && u.lastSeen + 2 >= level.getGameTime()) {
+        var state = level.getBlockState(u.bogie.getPlot().getCenterBlock());
+        if (!state.is(Content.BOGIE.get())) continue;
+        var variant = BogieBlock.variant(state);
         var pose = pipe.readPose(u.bogie, new Pose3d());
-        var anchor =
-            new Vector3d(u.localCenter)
-                .add(
-                    BogiePairContact.offset(
-                        BogieBlock.variant(
-                            level.getBlockState(u.bogie.getPlot().getCenterBlock()))));
+        var anchor = new Vector3d(u.localCenter).add(BogiePairContact.offset(variant));
         bodies.add(
             new Body(
                 u,
@@ -57,9 +55,7 @@ final class BogiePairContacts {
                     VehiclePhysics.world(u.bogie, anchor),
                     new Quaterniond(pose.orientation()),
                     !u.detached,
-                    BogiePairContact.half(
-                        BogieBlock.variant(
-                            level.getBlockState(u.bogie.getPlot().getCenterBlock()))))));
+                    BogiePairContact.half(variant))));
       }
     bodies.sort(Comparator.comparing(b -> b.unit.bogie.getUniqueId()));
     var seen = new HashSet<Pair>();
