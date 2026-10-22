@@ -250,6 +250,13 @@ tasks.register('checkCargoSnapshotIdentity', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkCargoSnapshotIdentity' }
 
+tasks.register('checkIncrementalSnapshot', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.IncrementalSnapshotCheck'
+}
+tasks.named('check') { dependsOn 'checkIncrementalSnapshot' }
+
 tasks.register('checkNativeCouplerModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -512,6 +519,13 @@ tasks.register('checkScheduleLifecycle', JavaExec) {
     mainClass = 'com.guidedrailways.ScheduleLifecycleCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleLifecycle' }
+
+tasks.register('checkRecoveryBoundary', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.RecoveryBoundaryCheck'
+}
+tasks.named('check') { dependsOn 'checkRecoveryBoundary' }
 
 
 tasks.register('generateCollisionMetadata', JavaExec) {

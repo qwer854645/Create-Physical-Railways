@@ -1,7 +1,9 @@
 package com.guidedrailways;
 
+import com.guidedrailways.mixin.ChunkPendingEntitiesAccessor;
 import dev.ryanhcode.sable.api.sublevel.*;
 import dev.ryanhcode.sable.sublevel.SubLevel;
+import dev.ryanhcode.sable.sublevel.plot.PlotChunkHolder;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import java.util.*;
 import net.minecraft.core.BlockPos;
@@ -13,16 +15,12 @@ final class CouplerDiscovery {
   private static final int WORK_PER_TICK = 128;
 
   private static final class Scan {
-    final Iterator<ChunkPos> chunks;
-    Iterator<BlockPos> positions = Collections.emptyIterator();
+    final Iterator<PlotChunkHolder> chunks;
+    IncrementalSnapshot<BlockPos> positions;
     ChunkPos chunk;
 
     Scan(SubLevel body) {
-      chunks =
-          body.getPlot().getLoadedChunks().stream()
-              .map(holder -> holder.getChunk().getPos())
-              .toList()
-              .iterator();
+      chunks = body.getPlot().getLoadedChunks().iterator();
     }
   }
 
@@ -79,15 +77,38 @@ final class CouplerDiscovery {
             return true;
           }
           var scan = state.scans.computeIfAbsent(id, key -> new Scan(body));
-          if (!scan.positions.hasNext()) {
-            if (!scan.chunks.hasNext()) {
+          if (scan.positions == null) {
+            try {
+              if (!scan.chunks.hasNext()) {
+                state.scans.remove(id);
+                return true;
+              }
+              scan.chunk = scan.chunks.next().getChunk().getPos();
+            } catch (ConcurrentModificationException changed) {
               state.scans.remove(id);
-              return true;
+              return false;
             }
-            scan.chunk = scan.chunks.next();
-            var holder = container.getChunkHolder(scan.chunk);
-            if (holder != null)
-              scan.positions = List.copyOf(holder.getChunk().getBlockEntitiesPos()).iterator();
+            scan.positions =
+                new IncrementalSnapshot<>(
+                    () -> {
+                      var holder = container.getChunkHolder(scan.chunk);
+                      if (holder == null) return Collections.emptyIterator();
+                      var chunk = holder.getChunk();
+                      return com.google.common.collect.Iterators.concat(
+                          ((ChunkPendingEntitiesAccessor) chunk)
+                              .guidedrailways$pendingEntities()
+                              .keySet()
+                              .iterator(),
+                          chunk.getBlockEntities().keySet().iterator());
+                    });
+            return false;
+          }
+          if (!scan.positions.ready()) {
+            scan.positions.advance();
+            return false;
+          }
+          if (!scan.positions.hasNext()) {
+            scan.positions = null;
             return false;
           }
           var pos = scan.positions.next();

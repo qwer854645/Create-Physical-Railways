@@ -4,6 +4,7 @@
   "package": "com.guidedrailways.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ChunkPendingEntitiesAccessor",
     "TrackedContraptionAccessor",
     "NavigationAccessor",
     "TrackTopologyMixin",
