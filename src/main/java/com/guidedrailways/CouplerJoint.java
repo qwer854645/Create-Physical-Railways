@@ -144,7 +144,7 @@ final class CouplerJoint {
     }
     a.visualPeer(b);
     b.visualPeer(a);
-    if (level.getGameTime() >= this.nextLog) {
+    if (TrainConfig.DETAILED_LOGGING.get() && level.getGameTime() >= this.nextLog) {
       this.nextLog = level.getGameTime() + 20;
       var wa = VehiclePhysics.world(ba, blockOrigin(a).add(a.anchor));
       var wb = VehiclePhysics.world(bb, blockOrigin(b).add(b.anchor));

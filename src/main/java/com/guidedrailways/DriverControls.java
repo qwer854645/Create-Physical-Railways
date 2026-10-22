@@ -210,7 +210,9 @@ public final class DriverControls {
       var body = body(e);
       if (body == null) continue;
       if (e.active && level.getGameTime() % 5 == 0) DriverNetwork.sync(e, true);
-      if ((e.active || e.enabled) && level.getGameTime() % 20 == 0)
+      if (TrainConfig.DETAILED_LOGGING.get()
+          && (e.active || e.enabled)
+          && level.getGameTime() % 20 == 0)
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
             .info(
                 "[DriverState] body={} actual={} notch={} available={} direction={} operatorActive={} driveEnabled={} emergency={} powered={} guided={}/{}",

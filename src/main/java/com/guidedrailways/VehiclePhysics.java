@@ -215,7 +215,7 @@ public final class VehiclePhysics {
         if (visual.motionSync.update(level.getGameTime(), visual.speed, visual.distance))
           visual.sendData();
       }
-      if (level.getGameTime() >= u.nextLog) {
+      if (TrainConfig.DETAILED_LOGGING.get() && level.getGameTime() >= u.nextLog) {
         u.nextLog = level.getGameTime() + 20;
         var pos = world(u.bogie, u.localCenter);
         if (level.players().stream().anyMatch(p -> p.distanceToSqr(pos.x, pos.y, pos.z) < 4096)) {
