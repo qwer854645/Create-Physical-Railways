@@ -14,6 +14,8 @@ public final class DriverControls {
       new WeakHashMap<>();
   private static final Map<ServerLevel, List<VehiclePhysics.Unit>> DRIVEN = new WeakHashMap<>();
   private static final Map<ServerLevel, Map<UUID, DriverConsoleEntity>> VIEW = new WeakHashMap<>();
+  private static final Map<ServerLevel, ConsoleIdentities<DriverConsoleEntity>> IDENTITIES =
+      new WeakHashMap<>();
 
   private DriverControls() {}
 
@@ -28,7 +30,22 @@ public final class DriverControls {
   }
 
   static void register(ServerLevel level, DriverConsoleEntity e) {
+    var identity =
+        IDENTITIES
+            .computeIfAbsent(level, l -> new ConsoleIdentities<>())
+            .claim(e.consoleId, e, old -> live(level, old));
+    if (!identity.equals(e.consoleId)) {
+      e.resetCopiedIdentity(identity, ConsoleOrderData.place(level));
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .warn("Copied console assigned a new identity at {}", e.getBlockPos());
+    }
     CONSOLES.computeIfAbsent(level, l -> new HashMap<>()).put(e.getBlockPos().immutable(), e);
+  }
+
+  private static boolean live(ServerLevel level, DriverConsoleEntity e) {
+    return !e.isRemoved()
+        && level.hasChunkAt(e.getBlockPos())
+        && level.getBlockEntity(e.getBlockPos()) == e;
   }
 
   static ServerSubLevel body(DriverConsoleEntity e) {
@@ -44,9 +61,8 @@ public final class DriverControls {
     var records = new ArrayList<ConsoleElection.Console>();
     var byId = new HashMap<UUID, DriverConsoleEntity>();
     for (var e : CONSOLES.getOrDefault(level, Map.of()).values())
-      if (!e.isRemoved()
-          && level.hasChunkAt(e.getBlockPos())
-          && level.getBlockEntity(e.getBlockPos()) == e) {
+      if (live(level, e)) {
+        register(level, e);
         var b = body(e);
         if (b != null) {
           records.add(new ConsoleElection.Console(e.consoleId, b.getUniqueId(), e.placementOrder));
@@ -60,7 +76,16 @@ public final class DriverControls {
       if (snapshot.group(record.carrier()) == null) components.add(Set.of(record.carrier()));
     var result = new HashMap<UUID, DriverConsoleEntity>();
     ConsoleElection.electGroups(records, components)
-        .forEach((carrier, id) -> result.put(carrier, byId.get(id)));
+        .forEach(
+            (carrier, id) -> {
+              var chosen = byId.get(id);
+              var chosenBody = chosen == null ? null : body(chosen);
+              var group = snapshot.group(carrier);
+              if (chosenBody != null
+                  && (chosenBody.getUniqueId().equals(carrier)
+                      || group != null && group.members().contains(chosenBody.getUniqueId())))
+                result.put(carrier, chosen);
+            });
     return result;
   }
 
@@ -119,6 +144,8 @@ public final class DriverControls {
   static void unloaded(ServerLevel level, DriverConsoleEntity e) {
     var map = CONSOLES.get(level);
     if (map != null) map.remove(e.getBlockPos(), e);
+    var identities = IDENTITIES.get(level);
+    if (identities != null) identities.release(e);
     closeSession(e);
   }
 
@@ -142,7 +169,11 @@ public final class DriverControls {
                     e.isRemoved()
                         || !level.hasChunkAt(e.getBlockPos())
                         || level.getBlockEntity(e.getBlockPos()) != e;
-                if (gone) closeSession(e);
+                if (gone) {
+                  var identities = IDENTITIES.get(level);
+                  if (identities != null) identities.release(e);
+                  closeSession(e);
+                }
                 return gone;
               });
     for (var e : map.values())
@@ -297,6 +328,7 @@ public final class DriverControls {
   }
 
   static void unload(ServerLevel level) {
+    IDENTITIES.remove(level);
     CONSOLES.remove(level);
     VIEW.remove(level);
     DRIVEN.remove(level);

@@ -236,6 +236,13 @@ tasks.register('checkConstructionTransaction', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkConstructionTransaction' }
 
+tasks.register('checkConsoleIdentity', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ConsoleIdentityCheck'
+}
+tasks.named('check') { dependsOn 'checkConsoleIdentity' }
+
 tasks.register('checkNativeCouplerModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

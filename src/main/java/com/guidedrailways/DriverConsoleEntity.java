@@ -122,6 +122,19 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     DriverControls.register(server, this);
   }
 
+  void resetCopiedIdentity(java.util.UUID id, long order) {
+    consoleId = id;
+    placementOrder = order;
+    active = false;
+    observing = false;
+    enabled = false;
+    operator = null;
+    steer = 0;
+    notch = -4;
+    schedule.pause(ScheduleController.CHANGED);
+    updateVisual();
+  }
+
   void clientTick() {
     previousLever = lever;
     lever += ((float) DriverModel.lever(notch) - lever) * .5f;
