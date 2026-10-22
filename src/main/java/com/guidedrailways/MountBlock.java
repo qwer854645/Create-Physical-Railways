@@ -3,7 +3,6 @@ package com.guidedrailways;
 import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.foundation.block.IBE;
 import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
-import java.util.*;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.*;
@@ -15,16 +14,6 @@ public final class MountBlock extends ComponentBlock
     implements IRotate, IBE<MountEntity>, BlockSubLevelAssemblyListener {
   public static final net.minecraft.world.level.block.state.properties.BooleanProperty COMPACT =
       net.minecraft.world.level.block.state.properties.BooleanProperty.create("compact");
-
-  private record Transfer(
-      UUID bogie,
-      boolean brake,
-      RailGauge gauge,
-      BogeyVariant variant,
-      org.joml.Quaterniond worldReference,
-      long expires) {}
-
-  private static final Map<GlobalPos, Transfer> TRANSFERS = new HashMap<>();
 
   MountBlock(Properties p) {
     super(p);
@@ -145,15 +134,13 @@ public final class MountBlock extends ComponentBlock
                 .readPose(carrier, new dev.ryanhcode.sable.companion.math.Pose3d());
         reference = new org.joml.Quaterniond(pose.orientation()).mul(mount.pivotReference);
       }
-      TRANSFERS.put(
-          GlobalPos.of(to.dimension(), b),
-          new Transfer(
-              mount.bogieId,
-              mount.braking,
-              mount.gauge,
-              mount.variant,
-              reference,
-              to.getGameTime() + 20));
+      mount.handoff =
+          MountHandoff.begin(
+              mount.handoff,
+              VehiclePhysics.mountLocation(from, a),
+              VehiclePhysics.mountLocation(to, b),
+              reference);
+      mount.setChanged();
       // Assembly explicitly hands ownership to the destination plate, even before source teardown.
       VehiclePhysics.forget(mount);
     }
@@ -169,16 +156,24 @@ public final class MountBlock extends ComponentBlock
 
   static void restore(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level)) return;
-    TRANSFERS
-        .entrySet()
-        .removeIf(
-            e ->
-                e.getKey().dimension().equals(level.dimension())
-                    && e.getValue().expires < level.getGameTime());
-    var key = GlobalPos.of(level.dimension(), mount.getBlockPos());
-    var t = TRANSFERS.get(key);
-    if (t != null) {
-      if (t.worldReference != null) {
+    var handoff = mount.handoff;
+    if (handoff != null) {
+      if (mount.bogieId == null
+          || !handoff
+              .destination()
+              .equals(VehiclePhysics.mountLocation(level, mount.getBlockPos()))) {
+        // A failed source move or a copied pending plate cannot authorize another destination.
+        mount.handoff = null;
+        mount.setChanged();
+        return;
+      }
+      var result = VehiclePhysics.transferMount(level, mount.bogieId, handoff);
+      if (result == MountHandoff.Result.WAITING) return;
+      if (result == MountHandoff.Result.REJECTED) {
+        VehiclePhysics.unlinkMount(mount);
+        return;
+      }
+      if (handoff.worldReference() != null) {
         if (!(dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContaining(
                 level, mount.getBlockPos())
             instanceof dev.ryanhcode.sable.sublevel.ServerSubLevel carrier)) return;
@@ -188,19 +183,15 @@ public final class MountBlock extends ComponentBlock
                 .readPose(carrier, new dev.ryanhcode.sable.companion.math.Pose3d());
         mount.pivotReference.set(
             BogieYawModel.transfer(
-                new org.joml.Quaterniond(), t.worldReference, pose.orientation()));
+                new org.joml.Quaterniond(), handoff.worldReference(), pose.orientation()));
         mount.pivotReferenceKnown = true;
       }
-      mount.bogieId = t.bogie;
-      mount.braking = t.brake;
-      mount.gauge = t.gauge;
-      mount.variant = t.variant;
+      mount.handoff = null;
       mount.setChanged();
-      TRANSFERS.remove(key);
     }
   }
 
-  static void clear(ServerLevel level) {
-    TRANSFERS.keySet().removeIf(p -> p.dimension().equals(level.dimension()));
+  static boolean pending(MountEntity mount) {
+    return mount.handoff != null;
   }
 }

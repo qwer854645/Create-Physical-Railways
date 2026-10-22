@@ -130,9 +130,46 @@ public final class VehiclePhysics {
         && level.getBlockEntity(mount.getBlockPos()) == mount;
   }
 
-  private static void unlinkMount(MountEntity mount) {
+  static BogieMountBinding.Location mountLocation(ServerLevel level, BlockPos pos) {
+    return new BogieMountBinding.Location(level.dimension().location().toString(), pos.asLong());
+  }
+
+  private static boolean claimMount(ServerLevel level, MountEntity mount, ServerSubLevel bogie) {
+    var owner = mountLocation(level, mount.getBlockPos());
+    var saved = bogie.getUserDataTag();
+    if (saved != null && saved.contains(BogieMountBinding.KEY))
+      return BogieMountBinding.matches(saved, owner);
+    var data = saved == null ? new net.minecraft.nbt.CompoundTag() : saved.copy();
+    if (!BogieMountBinding.claim(data, owner)) return false;
+    bogie.setUserDataTag(data);
+    return true;
+  }
+
+  static MountHandoff.Result transferMount(ServerLevel level, UUID bogieId, MountHandoff handoff) {
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null
+        || !(container.getSubLevel(bogieId) instanceof ServerSubLevel bogie)
+        || bogie.isRemoved()) return MountHandoff.Result.WAITING;
+    var saved = bogie.getUserDataTag();
+    var target = handoff.destination();
+    if (BogieMountBinding.matches(saved, target)) return MountHandoff.Result.READY;
+    var data = saved == null ? new net.minecraft.nbt.CompoundTag() : saved.copy();
+    if (!BogieMountBinding.move(data, handoff.source(), target))
+      return MountHandoff.Result.REJECTED;
+    bogie.setUserDataTag(data);
+    return MountHandoff.Result.READY;
+  }
+
+  private static boolean ownsMount(Unit unit) {
+    return BogieMountBinding.matches(
+        unit.bogie.getUserDataTag(),
+        mountLocation(unit.bogie.getLevel(), unit.mount.getBlockPos()));
+  }
+
+  static void unlinkMount(MountEntity mount) {
     closeMount(mount);
     mount.bogieId = null;
+    mount.handoff = null;
     mount.pivotReferenceKnown = false;
     mount.setLoad(0);
     if (mount.hasNetwork())
@@ -163,6 +200,7 @@ public final class VehiclePhysics {
   static Unit initialize(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level) || mount.bogieId == null) return null;
     if (!liveMount(level, mount)) return null;
+    if (MountBlock.pending(mount)) return null;
     var container = SubLevelContainer.getContainer(level);
     if (container == null || SubLevelPhysicsSystem.get(level) == null) return null;
     if (!(SableCompanion.INSTANCE.getContaining(level, mount.getBlockPos())
@@ -181,6 +219,10 @@ public final class VehiclePhysics {
     var unit = units.get(mount.bogieId);
     if (unit != null && unit.mount != mount && liveMount(level, unit.mount)) {
       // A copied plate must never steal a still-live plate's lower body.
+      unlinkMount(mount);
+      return null;
+    }
+    if (!claimMount(level, mount, bogie)) {
       unlinkMount(mount);
       return null;
     }
@@ -614,7 +656,9 @@ public final class VehiclePhysics {
     var units = ACTIVE.getOrDefault(server, Map.of());
     if (level.getBlockEntity(pos) instanceof MountEntity mount && mount.bogieId != null) {
       var unit = units.get(mount.bogieId);
-      return unit != null && unit.mount == mount && liveMount(server, mount) ? unit : null;
+      return unit != null && unit.mount == mount && liveMount(server, mount) && ownsMount(unit)
+          ? unit
+          : null;
     }
     if (SableCompanion.INSTANCE.getContaining(level, pos) instanceof ServerSubLevel b)
       return units.get(b.getUniqueId());
@@ -624,7 +668,8 @@ public final class VehiclePhysics {
   static void dismantle(Unit u, Player player) {
     var level = u.bogie.getLevel();
     if (ACTIVE.getOrDefault(level, Map.of()).get(u.bogie.getUniqueId()) != u
-        || !liveMount(level, u.mount)) return;
+        || !liveMount(level, u.mount)
+        || !ownsMount(u)) return;
     u.close();
     ACTIVE.getOrDefault(level, Map.of()).remove(u.bogie.getUniqueId());
     var container = SubLevelContainer.getContainer(level);
@@ -655,7 +700,6 @@ public final class VehiclePhysics {
       units.values().forEach(Unit::close);
     }
     INPUTS.remove(level);
-    MountBlock.clear(level);
     PerfCounters.unload(level);
     ConsistRoutes.unload(level);
   }

@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class MountEntity extends KineticBlockEntity {
   UUID bogieId;
+  MountHandoff handoff;
   boolean braking;
   double load;
   RailGauge gauge = RailGauge.STANDARD;
@@ -51,6 +52,8 @@ public final class MountEntity extends KineticBlockEntity {
   protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean client) {
     super.write(tag, registries, client);
     if (bogieId != null) tag.putUUID("BogieBody", bogieId);
+    if (handoff != null) tag.put("MountHandoff", handoff.save());
+    else tag.remove("MountHandoff");
     tag.putBoolean("ServiceBrake", braking);
     tag.putDouble("SupportedMass", load);
     tag.putString("RailGauge", gauge.name());
@@ -69,6 +72,7 @@ public final class MountEntity extends KineticBlockEntity {
   protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean client) {
     super.read(tag, registries, client);
     bogieId = tag.hasUUID("BogieBody") ? tag.getUUID("BogieBody") : null;
+    handoff = MountHandoff.load(tag.getCompound("MountHandoff"));
     braking = tag.getBoolean("ServiceBrake");
     load = tag.getDouble("SupportedMass");
     gauge = RailGauge.read(tag.getString("RailGauge"));

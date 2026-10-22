@@ -513,6 +513,13 @@ tasks.register('checkCouplerPersistence', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkCouplerPersistence' }
 
+tasks.register('checkBogieMountBinding', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.BogieMountBindingCheck'
+}
+tasks.named('check') { dependsOn 'checkBogieMountBinding' }
+
 tasks.register('checkScheduleLifecycle', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
