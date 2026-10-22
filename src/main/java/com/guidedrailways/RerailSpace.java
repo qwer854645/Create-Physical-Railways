@@ -84,7 +84,8 @@ final class RerailSpace {
     for (var target : targets.entrySet()) {
       if (target.getKey().isRemoved()
           || !target.getValue().position().isFinite()
-          || !target.getValue().orientation().isFinite())
+          || !target.getValue().orientation().isFinite()
+          || !target.getValue().scale().isFinite())
         throw new IllegalStateException("message.guidedrailways.body.changed");
       moving.addAll(shapes(target.getKey(), target.getValue(), budget));
     }

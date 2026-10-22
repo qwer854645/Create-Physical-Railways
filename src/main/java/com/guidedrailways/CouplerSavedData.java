@@ -80,6 +80,7 @@ final class CouplerSavedData extends SavedData {
   /** Only a verified assembly handoff may change an existing pair's endpoint location. */
   boolean move(UUID endpoint, BlockPos source, BlockPos destination) {
     if (links.forEndpoint(endpoint) == null) return true;
+    if (destination.equals(owners.get(endpoint))) return true;
     if (!owns(endpoint, source)) return false;
     owners.put(endpoint, destination.immutable());
     setDirty();

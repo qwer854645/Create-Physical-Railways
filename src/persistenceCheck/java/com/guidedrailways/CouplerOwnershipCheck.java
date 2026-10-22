@@ -29,9 +29,11 @@ public final class CouplerOwnershipCheck {
         link.equals(data.links.forEndpoint(link.a())), "rejected copy leaves original pair intact");
     check(!data.move(link.a(), copy, b), "a copied source cannot authorize a handoff");
     check(data.move(link.a(), a, copy), "normal assembly handoff updates the location");
+    check(data.move(link.a(), a, copy), "retry after ownership commit is idempotent");
     check(!data.owns(link.a(), a), "late source destruction cannot unlink the moved endpoint");
     check(data.claim(link.a(), copy), "destination can register before source cleanup");
     data = CouplerSavedData.load(data.save(new CompoundTag(), null), null);
+    check(data.move(link.a(), a, copy), "a saved committed handoff accepts the same destination");
     check(data.owns(link.a(), copy) && !data.owns(link.a(), a), "moved ownership survives reload");
     check(data.move(link.a(), copy, a), "reverse handoff preserves identity");
     data.remove(link.id());
