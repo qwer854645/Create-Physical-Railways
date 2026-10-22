@@ -233,6 +233,14 @@ final class VehiclePlacement {
               pipe.getLinearVelocity(u.bogie, new Vector3d()),
               pipe.getAngularVelocity(u.bogie, new Vector3d())));
     }
+    var targets = new LinkedHashMap<ServerSubLevel, Pose3d>();
+    for (var move : moves) {
+      var target = new Pose3d(move.before);
+      target.position().set(move.position);
+      target.orientation().set(move.rotation);
+      targets.put(move.body, target);
+    }
+    RerailSpace.check(level, targets);
     MoveBatch.commit(
         moves,
         m -> {

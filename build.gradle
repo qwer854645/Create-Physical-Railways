@@ -520,6 +520,13 @@ tasks.register('checkCouplerOwnership', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkCouplerOwnership' }
 
+tasks.register('checkRerailSpace', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.RerailSpaceCheck'
+}
+tasks.named('check') { dependsOn 'checkRerailSpace' }
+
 tasks.register('checkBogieMountBinding', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
