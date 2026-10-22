@@ -123,6 +123,12 @@ public final class VehiclePhysics {
           .put(mount.getBlockPos().immutable(), mount);
   }
 
+  private static boolean liveMount(ServerLevel level, MountEntity mount) {
+    return !mount.isRemoved()
+        && level.hasChunkAt(mount.getBlockPos())
+        && level.getBlockEntity(mount.getBlockPos()) == mount;
+  }
+
   static void forget(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level)) return;
     var inputs = INPUTS.get(level);
@@ -139,6 +145,7 @@ public final class VehiclePhysics {
   /** Initialize one support without advancing schedules, signals or animation clocks. */
   static Unit initialize(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level) || mount.bogieId == null) return null;
+    if (!liveMount(level, mount)) return null;
     var container = SubLevelContainer.getContainer(level);
     if (container == null || SubLevelPhysicsSystem.get(level) == null) return null;
     if (!(SableCompanion.INSTANCE.getContaining(level, mount.getBlockPos())
@@ -147,9 +154,18 @@ public final class VehiclePhysics {
     if (!(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
         || bogie.isRemoved()
         || bogie == carrier) return null;
-    if (!CollisionAssembler.populate(bogie, true)) return null;
     var units = ACTIVE.computeIfAbsent(level, l -> new HashMap<>());
     var unit = units.get(mount.bogieId);
+    if (unit != null && unit.mount != mount && liveMount(level, unit.mount)) {
+      // A copied plate must never steal a still-live plate's lower body.
+      mount.bogieId = null;
+      mount.pivotReferenceKnown = false;
+      mount.setLoad(0);
+      mount.setChanged();
+      mount.sendData();
+      return null;
+    }
+    if (!CollisionAssembler.populate(bogie, true)) return null;
     if (unit == null || unit.carrier != carrier || unit.mount != mount) {
       if (unit != null) unit.close();
       unit = new Unit(mount, carrier, bogie);
@@ -577,8 +593,10 @@ public final class VehiclePhysics {
   static Unit owner(Level level, BlockPos pos) {
     if (!(level instanceof ServerLevel server)) return null;
     var units = ACTIVE.getOrDefault(server, Map.of());
-    if (level.getBlockEntity(pos) instanceof MountEntity mount && mount.bogieId != null)
-      return units.get(mount.bogieId);
+    if (level.getBlockEntity(pos) instanceof MountEntity mount && mount.bogieId != null) {
+      var unit = units.get(mount.bogieId);
+      return unit != null && unit.mount == mount && liveMount(server, mount) ? unit : null;
+    }
     if (SableCompanion.INSTANCE.getContaining(level, pos) instanceof ServerSubLevel b)
       return units.get(b.getUniqueId());
     return null;
@@ -586,6 +604,8 @@ public final class VehiclePhysics {
 
   static void dismantle(Unit u, Player player) {
     var level = u.bogie.getLevel();
+    if (ACTIVE.getOrDefault(level, Map.of()).get(u.bogie.getUniqueId()) != u
+        || !liveMount(level, u.mount)) return;
     u.close();
     ACTIVE.getOrDefault(level, Map.of()).remove(u.bogie.getUniqueId());
     var container = SubLevelContainer.getContainer(level);

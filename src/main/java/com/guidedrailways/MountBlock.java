@@ -154,6 +154,8 @@ public final class MountBlock extends ComponentBlock
               mount.variant,
               reference,
               to.getGameTime() + 20));
+      // Assembly explicitly hands ownership to the destination plate, even before source teardown.
+      VehiclePhysics.forget(mount);
     }
   }
 
