@@ -38,9 +38,10 @@ final class ScheduleController {
   private ItemStack item = ItemStack.EMPTY;
   private Schedule program;
   private boolean running, manualOverride, waiting, releaseBrakes;
-  private long nextPlan, nextVisual;
+  private final ScheduleCadence cadence = new ScheduleCadence();
+  private long nextVisual;
   private boolean visualDirty;
-  private int entry, status, stableTicks;
+  private int entry, status;
   private UUID station;
   private AutomaticTrains.Plan plan;
   private Set<UUID> members;
@@ -165,8 +166,7 @@ final class ScheduleController {
     routeRetry = false;
     plan = null;
     remaining = Double.NaN;
-    nextPlan = 0;
-    stableTicks = 0;
+    cadence.reset();
     if (forgetArrival) {
       waiting = false;
       station = null;
@@ -183,9 +183,7 @@ final class ScheduleController {
   }
 
   boolean beginPlanning(long tick) {
-    if (tick < nextPlan) return false;
-    nextPlan = tick + 10;
-    return true;
+    return cadence.beginPlanning(tick);
   }
 
   boolean acceptPlan(AutomaticTrains.Plan next) {
@@ -206,13 +204,13 @@ final class ScheduleController {
   }
 
   boolean arrivalStable() {
-    if (++stableTicks < 6) return false;
+    if (!cadence.arrivalStable()) return false;
     waiting = true;
     return true;
   }
 
   void travelling() {
-    stableTicks = 0;
+    cadence.travelling();
   }
 
   void mailMonitoring(boolean monitored) {
@@ -302,8 +300,7 @@ final class ScheduleController {
       station = null;
       plan = null;
       remaining = Double.NaN;
-      stableTicks = 0;
-      nextPlan = 0;
+      cadence.reset();
       resetConditions();
       if (entry != previousEntry
           || throttle != previousThrottle
@@ -480,8 +477,7 @@ final class ScheduleController {
     remaining = Double.NaN;
     members = null;
     cargoBodies = null;
-    stableTicks = 0;
-    nextPlan = 0;
+    cadence.reset();
     releaseBrakes = true;
     syncProgress();
     state(PLANNING);
@@ -533,7 +529,7 @@ final class ScheduleController {
     running = true;
     members = Set.copyOf(actual);
     releaseBrakes = true;
-    nextPlan = 0;
+    cadence.restartPlanning();
     syncProgress();
     state(PLANNING);
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
@@ -814,13 +810,13 @@ final class ScheduleController {
 
   void advance() {
     RailDocks.release(this);
-    nextPlan = 0;
+    cadence.restartPlanning();
     entry++;
     waiting = false;
     station = null;
     plan = null;
     remaining = Double.NaN;
-    stableTicks = 0;
+    cadence.travelling();
     resetConditions();
     if (entry >= program().entries.size()) {
       if (program().cyclic) entry = 0;
@@ -910,9 +906,10 @@ final class ScheduleController {
     manualOverride = false;
     manualSource = null;
     plan = null;
-    stableTicks = 0;
+    cadence.travelling();
     remaining = Double.NaN;
-    nextPlan = nextVisual = 0;
+    cadence.restartPlanning();
+    nextVisual = 0;
     visualDirty = false;
     releaseBrakes = false;
     status =

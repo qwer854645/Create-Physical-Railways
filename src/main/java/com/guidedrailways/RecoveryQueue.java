@@ -25,7 +25,12 @@ final class RecoveryQueue<K> {
       var iterator = pending.iterator();
       var key = iterator.next();
       iterator.remove();
-      if (!finished.test(key)) pending.add(key);
+      boolean complete = false;
+      try {
+        complete = finished.test(key);
+      } finally {
+        if (!complete) pending.add(key);
+      }
       count++;
     }
     return count;

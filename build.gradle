@@ -244,6 +244,13 @@ tasks.register('checkNativeCouplerModel', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkNativeCouplerModel' }
 
+tasks.register('checkLifecycleReplay', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.LifecycleReplayCheck'
+}
+tasks.named('check') { dependsOn 'checkLifecycleReplay' }
+
 tasks.register('checkPathGeometry', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
@@ -484,6 +491,13 @@ tasks.register('checkCouplerPersistence', JavaExec) {
     mainClass = 'com.guidedrailways.CouplerPersistenceCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerPersistence' }
+
+tasks.register('checkScheduleLifecycle', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.ScheduleLifecycleCheck'
+}
+tasks.named('check') { dependsOn 'checkScheduleLifecycle' }
 
 
 tasks.register('generateCollisionMetadata', JavaExec) {
