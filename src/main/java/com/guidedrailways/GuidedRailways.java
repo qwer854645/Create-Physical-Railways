@@ -28,6 +28,7 @@ public final class GuidedRailways {
           if (e.getLevel() instanceof ServerLevel) {
             CargoTransfers.observe(e.getContainer());
             TrainConsists.observe(e.getContainer());
+            CouplerDiscovery.observe(e.getContainer());
             NativeTrainBridge.observe(e.getContainer());
           }
         });

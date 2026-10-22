@@ -59,7 +59,6 @@ public final class CouplerConnections {
     final Map<UUID, Pending> pending = new HashMap<>();
     final Set<UUID> warned = new HashSet<>();
     final Map<UUID, String> waiting = new HashMap<>();
-    long nextDiscovery;
   }
 
   private record Transfer(
@@ -171,10 +170,9 @@ public final class CouplerConnections {
       e.visualPeer(null);
   }
 
-  /** Materialise only coupler BEs in already-loaded plots while saved pairs are unresolved. */
+  /** Incremental materialisation only while a saved pair lacks a loaded endpoint. */
   static void restoreLoaded(ServerLevel level) {
     var data = CouplerSavedData.get(level);
-    if (data.links.all().isEmpty()) return;
     var s = state(level);
     boolean unresolved = false;
     for (var link : data.links.all())
@@ -182,32 +180,7 @@ public final class CouplerConnections {
         unresolved = true;
         break;
       }
-    if (!unresolved || level.getGameTime() < s.nextDiscovery) return;
-    s.nextDiscovery = level.getGameTime() + 20;
-    var container = dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level);
-    if (container == null) return;
-    int discovered = 0;
-    for (var body : List.copyOf(container.getAllSubLevels()))
-      if (!body.isRemoved())
-        for (var holder : List.copyOf(body.getPlot().getLoadedChunks())) {
-          var chunk = holder.getChunk();
-          for (var pos : List.copyOf(chunk.getBlockEntitiesPos())) {
-            var block = chunk.getBlockState(pos);
-            if (!block.is(Content.COUPLER.get()) && !RailwayHardware.coupler(block)) continue;
-            var endpoint = CouplerEndpoint.get(chunk.getBlockEntity(pos));
-            if (endpoint == null || !loaded(level, endpoint)) continue;
-            boolean known = s.endpoints.get(endpoint.endpointId) == endpoint;
-            register(level, endpoint);
-            if (!known) discovered++;
-          }
-        }
-    if (discovered > 0)
-      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
-          .info(
-              "[CouplerRestore] discovered={} registered={} savedPairs={}",
-              discovered,
-              s.endpoints.size(),
-              data.links.all().size());
+    CouplerDiscovery.tick(level, unresolved);
   }
 
   private static void waiting(State s, CouplingLinks.Link link, String reason) {
@@ -844,6 +817,7 @@ public final class CouplerConnections {
   }
 
   static void unload(ServerLevel level) {
+    CouplerDiscovery.unload(level);
     var s = STATES.remove(level);
     if (s != null) s.live.values().forEach(live -> live.close(false));
     TRANSFERS
