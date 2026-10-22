@@ -19,9 +19,19 @@ public final class ScheduleReloadGate {
     this.expected = expected == null ? Set.of() : Set.copyOf(expected);
   }
 
-  public Result tick(Set<UUID> actual, long tick) {
+  static boolean missing(Set<UUID> expected, Set<UUID> actual) {
+    return actual.isEmpty() || expected != null && !actual.containsAll(expected);
+  }
+
+  public Result tick(Set<UUID> actual, long tick, boolean complete) {
+    if (!complete || missing(expected, actual)) {
+      deadline = Long.MIN_VALUE;
+      stable = 0;
+      previous = Set.of();
+      return Result.WAIT;
+    }
     if (deadline == Long.MIN_VALUE) deadline = tick + 200;
-    if (actual.isEmpty() || !expected.isEmpty() && !expected.equals(actual)) {
+    if (!expected.isEmpty() && !expected.equals(actual)) {
       stable = 0;
       previous = Set.of();
       return tick >= deadline ? Result.CHANGED : Result.WAIT;

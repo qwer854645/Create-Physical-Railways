@@ -136,12 +136,16 @@ final class ScheduleController {
     return contexts.stream().map(CompoundTag::copy).toList();
   }
 
-  boolean acceptMembers(Set<UUID> actual) {
+  ScheduleReloadGate.Result acceptMembers(Set<UUID> actual, boolean complete) {
+    if (!complete || ScheduleReloadGate.missing(members, actual))
+      return ScheduleReloadGate.Result.WAIT;
     if (members == null) {
       members = Set.copyOf(actual);
       owner.setChanged();
     }
-    return members.equals(actual);
+    return members.equals(actual)
+        ? ScheduleReloadGate.Result.READY
+        : ScheduleReloadGate.Result.CHANGED;
   }
 
   boolean acceptCargoBodies(Set<UUID> actual) {
@@ -175,7 +179,8 @@ final class ScheduleController {
   }
 
   void topologyChanged() {
-    RailDocks.release(this);
+    if (resumePending) pause(CHANGED);
+    else RailDocks.release(this);
     members = null;
     cargoBodies = null;
     invalidateRoute(true);
@@ -505,9 +510,9 @@ final class ScheduleController {
     state(reason);
   }
 
-  boolean restore(ServerLevel level, Set<UUID> actual) {
+  boolean restore(ServerLevel level, Set<UUID> actual, boolean complete) {
     if (!resumePending) return true;
-    var readiness = reloadGate.tick(actual, level.getGameTime());
+    var readiness = reloadGate.tick(actual, level.getGameTime(), complete);
     if (readiness == ScheduleReloadGate.Result.WAIT) return false;
     if (readiness == ScheduleReloadGate.Result.CHANGED) {
       pause(CHANGED);

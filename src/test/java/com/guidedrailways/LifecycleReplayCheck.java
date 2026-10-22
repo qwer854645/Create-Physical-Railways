@@ -92,13 +92,15 @@ public final class LifecycleReplayCheck {
       var reload = new ScheduleReloadGate(members);
       for (int tick = 0; tick < 50; tick++)
         check(
-            reload.tick(Set.of(a), tick) == ScheduleReloadGate.Result.WAIT,
+            reload.tick(Set.of(a), tick, true) == ScheduleReloadGate.Result.WAIT,
             "schedule waits for missing trailer");
       for (int tick = 50; tick < 59; tick++)
         check(
-            reload.tick(members, tick) == ScheduleReloadGate.Result.WAIT,
+            reload.tick(members, tick, true) == ScheduleReloadGate.Result.WAIT,
             "restored train settles before resuming");
-      check(reload.tick(members, 59) == ScheduleReloadGate.Result.READY, "complete train resumes");
+      check(
+          reload.tick(members, 59, true) == ScheduleReloadGate.Result.READY,
+          "complete train resumes");
       check(
           train.equals(ledger.reconcile(List.of(members), Set.of(members)).get(members)),
           "identity survives unload/reload");

@@ -88,7 +88,8 @@ final class AutomaticTrains {
       if (controller.resumePending()) {
         var restored = new HashSet<UUID>();
         for (var u : group) restored.add(u.bogie.getUniqueId());
-        if (!controller.restore(level, restored)) {
+        if (!controller.restore(
+            level, restored, CouplerConnections.cargoComplete(level, component.members()))) {
           hold(group, controller, false);
           continue;
         }
@@ -142,7 +143,14 @@ final class AutomaticTrains {
       }
       var members = new HashSet<UUID>();
       for (var u : group) members.add(u.bogie.getUniqueId());
-      if (!controller.acceptMembers(members)) {
+      var cargo = CargoStorage.consist(level, group.getFirst().carrier);
+      var membership = controller.acceptMembers(members, cargo.complete());
+      if (membership == ScheduleReloadGate.Result.WAIT) {
+        controller.state(ScheduleController.UNLOADED);
+        hold(group, controller, false);
+        continue;
+      }
+      if (membership == ScheduleReloadGate.Result.CHANGED) {
         controller.pause(ScheduleController.CHANGED);
         hold(group, controller, false);
         continue;
@@ -153,12 +161,6 @@ final class AutomaticTrains {
         continue;
       }
       if (!controller.prepareInstructions()) {
-        hold(group, controller, false);
-        continue;
-      }
-      var cargo = CargoStorage.consist(level, group.getFirst().carrier);
-      if (!cargo.complete()) {
-        controller.state(ScheduleController.UNLOADED);
         hold(group, controller, false);
         continue;
       }

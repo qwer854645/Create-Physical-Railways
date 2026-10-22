@@ -23,6 +23,14 @@ public final class ScheduleLifecycleCheck {
     return node;
   }
 
+  private static boolean calls(MethodNode method, String name) {
+    for (var insn : method.instructions)
+      if (insn instanceof MethodInsnNode call
+          && call.owner.equals("com/guidedrailways/ScheduleController")
+          && call.name.equals(name)) return true;
+    return false;
+  }
+
   public static void main(String[] args) throws Exception {
     var topology =
         code("com/guidedrailways/DriverControls").methods.stream()
@@ -45,6 +53,51 @@ public final class ScheduleLifecycleCheck {
           && call.owner.equals("com/guidedrailways/RailDocks")
           && call.name.equals("release")) releases++;
     check(releases == 1, "the topology transition owns exactly one dock release");
+    boolean completeBeforeRestore = false, membershipAfterCargo = false;
+    var automatic =
+        code("com/guidedrailways/AutomaticTrains").methods.stream()
+            .filter(m -> m.name.equals("tick"))
+            .findFirst()
+            .orElseThrow();
+    for (var insn : automatic.instructions) {
+      if (!(insn instanceof MethodInsnNode call)) continue;
+      if (call.owner.equals("com/guidedrailways/CouplerConnections")
+          && call.name.equals("cargoComplete")) completeBeforeRestore = true;
+      if (call.owner.equals("com/guidedrailways/CargoStorage") && call.name.equals("consist"))
+        membershipAfterCargo = true;
+      if (call.owner.equals("com/guidedrailways/ScheduleController") && call.name.equals("restore"))
+        check(
+            completeBeforeRestore && call.desc.endsWith("Z)Z"),
+            "restoration receives coupling readiness");
+      if (call.owner.equals("com/guidedrailways/ScheduleController")
+          && call.name.equals("acceptMembers"))
+        check(
+            membershipAfterCargo && call.desc.contains(";Z)"),
+            "running membership receives cargo readiness");
+    }
+    check(completeBeforeRestore && membershipAfterCargo, "both readiness boundaries exist");
+    var command =
+        code("com/guidedrailways/DriverConsoleEntity").methods.stream()
+            .filter(m -> m.name.equals("command"))
+            .findFirst()
+            .orElseThrow();
+    check(calls(command, "resumePending"), "entering pending automatic operation must observe");
+    boolean menuPending = false;
+    for (var method : code("com/guidedrailways/DriverMenu$1").methods)
+      menuPending |= calls(method, "resumePending");
+    check(menuPending, "pending automatic operation exposes pause rather than start");
+    var controller = code("com/guidedrailways/ScheduleController");
+    var stop =
+        controller.methods.stream().filter(m -> m.name.equals("stop")).findFirst().orElseThrow();
+    for (String field : List.of("running", "resumePending", "reloadGate")) {
+      boolean reset = false;
+      for (var insn : stop.instructions)
+        if (insn instanceof FieldInsnNode f
+            && f.getOpcode() == Opcodes.PUTFIELD
+            && f.name.equals(field)) reset = true;
+      check(reset, "pause and explicit takeover clear automatic recovery: " + field);
+    }
+    check(calls(transition, "pause"), "explicit topology changes can cancel pending recovery");
     var cadence = new ScheduleCadence();
     check(cadence.beginPlanning(100), "first route request allowed");
     for (int tick = 100; tick < 110; tick++)

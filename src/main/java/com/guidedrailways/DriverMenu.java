@@ -71,7 +71,8 @@ public final class DriverMenu extends AbstractContainerMenu {
                       Math.min(console.schedule.total(), console.schedule.entry() + 1);
                   case SCHEDULE_TOTAL -> console.schedule.total();
                   case IS_PRIMARY -> DriverControls.primaryView(console) ? 1 : 0;
-                  case SCHEDULE_RUNNING -> console.schedule.running() ? 1 : 0;
+                  case SCHEDULE_RUNNING ->
+                      console.schedule.running() || console.schedule.resumePending() ? 1 : 0;
                   case STOPPED -> DriverControls.stopped(console) ? 1 : 0;
                   case OBSERVING -> console.observing ? 1 : 0;
                   case OPERATOR_AVAILABLE ->

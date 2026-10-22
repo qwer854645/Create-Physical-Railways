@@ -205,7 +205,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
       else {
         DriverControls.claim(server, this, player);
         active = true;
-        observing = schedule.running();
+        observing = schedule.running() || schedule.resumePending();
         if (!observing) enabled = true;
         operator = player.getUUID();
       }
