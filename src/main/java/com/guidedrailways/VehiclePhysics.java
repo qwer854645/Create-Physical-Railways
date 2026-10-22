@@ -123,6 +123,36 @@ public final class VehiclePhysics {
           .put(mount.getBlockPos().immutable(), mount);
   }
 
+  /** Initialize one support without advancing schedules, signals or animation clocks. */
+  static Unit initialize(MountEntity mount) {
+    if (!(mount.getLevel() instanceof ServerLevel level) || mount.bogieId == null) return null;
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null || SubLevelPhysicsSystem.get(level) == null) return null;
+    if (!(SableCompanion.INSTANCE.getContaining(level, mount.getBlockPos())
+            instanceof ServerSubLevel carrier)
+        || carrier.isRemoved()) return null;
+    if (!(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
+        || bogie.isRemoved()
+        || bogie == carrier) return null;
+    if (!CollisionAssembler.populate(bogie, true)) return null;
+    var units = ACTIVE.computeIfAbsent(level, l -> new HashMap<>());
+    var unit = units.get(mount.bogieId);
+    if (unit == null || unit.carrier != carrier || unit.mount != mount) {
+      if (unit != null) unit.close();
+      unit = new Unit(mount, carrier, bogie);
+      try {
+        connectPivot(unit);
+      } catch (RuntimeException error) {
+        unit.close();
+        throw error;
+      }
+      units.put(mount.bogieId, unit);
+      TrainConsists.invalidate(level);
+    }
+    unit.lastSeen = level.getGameTime();
+    return unit;
+  }
+
   static void tick(ServerLevel level) {
     var container = SubLevelContainer.getContainer(level);
     var system = SubLevelPhysicsSystem.get(level);
@@ -133,23 +163,7 @@ public final class VehiclePhysics {
         .removeIf(
             m -> m.isRemoved() || m.bogieId == null || level.getBlockEntity(m.getBlockPos()) != m);
     var units = ACTIVE.computeIfAbsent(level, l -> new HashMap<>());
-    for (var mount : inputs.values()) {
-      if (!(SableCompanion.INSTANCE.getContaining(level, mount.getBlockPos())
-              instanceof ServerSubLevel carrier)
-          || carrier.isRemoved()) continue;
-      if (!(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
-          || bogie.isRemoved()
-          || bogie == carrier) continue;
-      if (!CollisionAssembler.populate(bogie, true)) continue;
-      var unit = units.get(mount.bogieId);
-      if (unit == null || unit.carrier != carrier || unit.mount != mount) {
-        if (unit != null) unit.close();
-        unit = new Unit(mount, carrier, bogie);
-        connectPivot(unit);
-        units.put(mount.bogieId, unit);
-      }
-      unit.lastSeen = level.getGameTime();
-    }
+    for (var mount : inputs.values()) initialize(mount);
     units
         .entrySet()
         .removeIf(

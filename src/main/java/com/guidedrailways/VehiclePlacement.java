@@ -370,9 +370,10 @@ final class VehiclePlacement {
       mount.bogieId = bogie.getUniqueId();
       mount.setChanged();
       register(mount);
-      tick(level);
-      var u = VehiclePhysics.unit(level, bogie.getUniqueId());
-      if (u != null) seedPlacement(u, fit, route);
+      var u = VehiclePhysics.initialize(mount);
+      if (u == null)
+        throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
+      seedPlacement(u, fit, route);
       org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
           .info(
               "[RailPlacement] action=place curve={} position={} frontArc={} rearArc={}",
@@ -443,7 +444,8 @@ final class VehiclePlacement {
       carrier.buildMassTracker();
       carrier.updateMergedMassData(1);
       pipe.onStatsChanged(carrier);
-      tick(level);
+      if (VehiclePhysics.initialize(mount) == null)
+        throw new IllegalStateException("message.guidedrailways.placement.mount_failed");
       context
           .getPlayer()
           .displayClientMessage(
