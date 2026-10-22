@@ -1,6 +1,6 @@
 # Ponder tutorials
 
-Three native Ponder storyboards are registered by the client-only
+Four native Ponder storyboards are registered by the client-only
 `RailwayPonderPlugin`:
 
 - Physical Bogey: choose a style, place directly on track, build/glue the carriage,
@@ -8,6 +8,11 @@ Three native Ponder storyboards are registered by the client-only
 - Physical Train Controls: install on the physical body, enter driving before
   holding right-click, adjust the lever, select branches, brake/reset, edit settings,
   insert a schedule, and explicitly take control from observation mode.
+- Electric Driving: the next page on the controls item, explicitly ordered after
+  manual driving. Shows pantographs, catenary construction, DC supply/ground,
+  energized contact, manual takeover and traction, power/load limits, supply loss
+  and braking. Registered only when Electro Energetics is installed, using its
+  native Ponder wire elements and pantograph renderer. No real circuit is created.
 - Rail Docking Connector: install matching endpoints, select the world endpoint
   with a wrench, bind a station, associate an addressed mailbox, stop and dock,
   transfer through real handling facilities, inspect and release before departure.
@@ -21,7 +26,7 @@ the tutorial. The normal Create Shift description and Ponder entry coexist.
 `assets/guidedrailways/ponder/*.nbt` are self-contained original 9 by 7 by 9 vanilla
 structure templates. Regenerate them with
 `python verification/generate_ponder_scenes.py`; no world or game process is needed.
-The script writes only these three templates, with deterministic gzip metadata.
+The script writes only these four templates, with deterministic gzip metadata.
 
 The bogey's stored cell is separate from the carriage. Its independent display
 section is lowered to the actual rail/tread contact height, and moves alongside
@@ -57,6 +62,10 @@ Manual acceptance, once the user requests the client:
 5. In a development environment without Simulated, verify bogey and controls still
    have tutorials and no connector tutorial is registered. No optional class should
    be required by the ordinary storyboards.
+6. With Electro Energetics installed, open the controls item and confirm electric
+   driving follows manual driving. Check both pantographs and the overhead wires
+   on playback, rewind and restart. Without it, the original manual-driving page
+   remains available without an empty electric page.
 
 No client or server was started for authoring these tutorials; visual acceptance
 remains pending.

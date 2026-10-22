@@ -24,6 +24,10 @@ final class RailwayPonderPlugin implements PonderPlugin {
     helper
         .forComponents(id("driver_console"))
         .addStoryBoard("physical_controls", PhysicalRailwayScenes::controls);
+    if (ModList.get().isLoaded("electroenergetics"))
+      helper
+          .addStoryBoard(id("driver_console"), "electric_controls", ElectricTrainScene::electric)
+          .orderAfter("physical_controls");
     if (ModList.get().isLoaded("simulated"))
       helper
           .forComponents(id("rail_docking_connector"))

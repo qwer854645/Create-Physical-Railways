@@ -309,5 +309,15 @@
   "guidedrailways.ponder.shared.transfer_lock": "等待两端配对并锁定，随后按任务方向和匹配地址交换包裹",
   "guidedrailways.ponder.shared.transfer_cargo": "车载箱子仍需通过真实的漏斗、溜槽等设施连接接口；不会远程读写整列箱子",
   "guidedrailways.ponder.shared.transfer_inspect": "空手右击接口可查看绑定车站、邮箱地址和对接状态",
-  "guidedrailways.ponder.shared.transfer_release": "任务完成后自动解除对接，再允许发车；外部红石仍在供电时，需要解除该供电才能释放"
+  "guidedrailways.ponder.shared.transfer_release": "任务完成后自动解除对接，再允许发车；外部红石仍在供电时，需要解除该供电才能释放",
+  "guidedrailways.ponder.electric_controls.header": "受电弓供电与电力驾驶",
+  "guidedrailways.ponder.shared.electric_install": "在物理车体上安装 Electro Energetics 受电弓与本模组驾驶台；测试纯电牵引时，断开安装座的旋转动力输入",
+  "guidedrailways.ponder.shared.electric_wire": "在轨道上方架设接触网支架，再用线卷依次右击支架，连接接触线",
+  "guidedrailways.ponder.shared.electric_supply": "把接触网接入直流供电回路，并连接接地棒；电源电压须满足 Electro Energetics 配置中的列车最低电压",
+  "guidedrailways.ponder.shared.electric_contact": "空手右击受电弓可切换升降；受电弓必须接触有电的接触线，升起本身不代表已经供电",
+  "guidedrailways.ponder.shared.electric_enter": "先右击驾驶台进入手动驾驶；自动时刻表正在运行时，需要在设置中选择接管驾驶",
+  "guidedrailways.ponder.shared.electric_drive": "对准驾驶台按住右键，向牵引档推杆；本模组把实际接收的电能分配给整列转向架，由驾驶台统一控制",
+  "guidedrailways.ponder.shared.electric_limit": "档位设定的是目标速度；实际加速仍受电压、可供功率与载重限制，满档不保证达到目标速度",
+  "guidedrailways.ponder.shared.electric_loss": "降弓或离开有电接触网后，电力牵引消失；排查不走时，依次检查接触、电压、制动与牵引档位",
+  "guidedrailways.ponder.shared.electric_brake": "断电后制动仍然可用；驾驶时左击紧急制动，停车后对准驾驶台按住右键约一秒复位"
 }

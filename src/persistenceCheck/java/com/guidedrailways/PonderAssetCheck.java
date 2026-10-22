@@ -30,8 +30,10 @@ public final class PonderAssetCheck {
               check(shared.putIfAbsent(key, text) == null, "unique registered Ponder text: " + key);
             });
     var used = new HashSet<String>();
-    var textCall = Pattern.compile("text\\(scene,\\s*\"([a-z_]+)\"");
-    for (var file : List.of("PhysicalRailwayScenes.java", "RailTransferScene.java")) {
+    var textCall = Pattern.compile("text\\(\\s*scene\\s*,\\s*\"([a-z_]+)\"");
+    for (var file :
+        List.of(
+            "PhysicalRailwayScenes.java", "ElectricTrainScene.java", "RailTransferScene.java")) {
       var source = Files.readString(Path.of("src/main/java/com/guidedrailways", file));
       var matches = textCall.matcher(source);
       while (matches.find()) {
@@ -45,7 +47,8 @@ public final class PonderAssetCheck {
       }
     }
     check(used.equals(shared.keySet()), "no orphaned or missing shared tutorial text");
-    for (var name : List.of("physical_bogey", "physical_controls", "rail_transfer")) {
+    for (var name :
+        List.of("physical_bogey", "physical_controls", "electric_controls", "rail_transfer")) {
       var header = "guidedrailways.ponder." + name + ".header";
       check(
           zh.has(header) && RailwayPonderPlugin.title(name).equals(en.get(header).getAsString()),

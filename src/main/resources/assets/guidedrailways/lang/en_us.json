@@ -309,5 +309,15 @@
   "guidedrailways.ponder.shared.transfer_lock": "Wait for both ends to pair and lock; packages are then exchanged according to task direction and matching addresses",
   "guidedrailways.ponder.shared.transfer_cargo": "Connect carriage storage to the connector with real funnels, chutes or other transfer devices; it does not remotely access every chest on the train",
   "guidedrailways.ponder.shared.transfer_inspect": "R-Click a connector with an empty hand to inspect its linked station, mailbox addresses and docking status",
-  "guidedrailways.ponder.shared.transfer_release": "After the task finishes, docking is released before departure; external redstone power must also be removed to allow release"
+  "guidedrailways.ponder.shared.transfer_release": "After the task finishes, docking is released before departure; external redstone power must also be removed to allow release",
+  "guidedrailways.ponder.electric_controls.header": "Pantograph Power and Electric Driving",
+  "guidedrailways.ponder.shared.electric_install": "Install an Electro Energetics pantograph and physical train controls on the carriage; disconnect rotational input at the mount when testing electric-only traction",
+  "guidedrailways.ponder.shared.electric_wire": "Place catenary holders above the track, then R-Click them in sequence with a wire spool to connect the overhead line",
+  "guidedrailways.ponder.shared.electric_supply": "Connect the catenary to a DC supply circuit and a Ground Rod; supply voltage must meet the train minimum configured in Electro Energetics",
+  "guidedrailways.ponder.shared.electric_contact": "R-Click the pantograph with an empty hand to raise or lower it; it must contact an energized overhead line, and being raised alone does not mean power is available",
+  "guidedrailways.ponder.shared.electric_enter": "First R-Click the controls to enter manual driving; if a Schedule is running, choose Take Control in settings",
+  "guidedrailways.ponder.shared.electric_drive": "Aim at the controls, hold right-click and move the lever into a traction notch; the controls distribute received electrical power across the physical train's bogeys",
+  "guidedrailways.ponder.shared.electric_limit": "A traction notch sets a target speed; voltage, available power and load still limit acceleration, so full traction does not guarantee reaching the target",
+  "guidedrailways.ponder.shared.electric_loss": "Lowering the pantograph or leaving energized catenary removes electric traction; if the train will not move, check contact, voltage, brakes and traction notch",
+  "guidedrailways.ponder.shared.electric_brake": "Braking remains available without electrical supply; left-click while driving for emergency braking, then hold right-click on the controls for about a second once stopped to reset it"
 }

@@ -1,4 +1,4 @@
-"""Build our three small, deterministic vanilla structure templates (no game required)."""
+"""Build our small, deterministic vanilla structure templates (no game required)."""
 
 import gzip
 import struct
@@ -63,6 +63,17 @@ def build(name):
     if name != "physical_bogey":
         block((4, 4, 3), "guidedrailways:driver_console", {"facing": "south"},
               {"id": "guidedrailways:driver_console", "VisualNotch": -4, "Direction": 1})
+    if name == "electric_controls":
+        for z, facing in [(4, "north"), (5, "south")]:
+            block((4, 4, z), "electroenergetics:pantograph", {"facing": facing, "double": "true"},
+                  {"id": "electroenergetics:pantograph", "Extended": 0})
+        for z in [1, 7]:
+            for y in range(1, 7):
+                block((2, y, z), "minecraft:iron_bars")
+            block((3, 6, z), "minecraft:iron_bars")
+            block((4, 6, z), "electroenergetics:catenary_holder", {"style": "standard"})
+        block((1, 1, 1), "electroenergetics:creative_battery", {"facing": "south", "ac": "false"})
+        block((0, 1, 1), "electroenergetics:ground_rod")
     if name == "rail_transfer":
         for y in range(1, 4):
             block((1, y, 4), "create:andesite_casing")
@@ -93,5 +104,5 @@ def build(name):
 
 
 if __name__ == "__main__":
-    for scene in ("physical_bogey", "physical_controls", "rail_transfer"):
+    for scene in ("physical_bogey", "physical_controls", "electric_controls", "rail_transfer"):
         build(scene)
