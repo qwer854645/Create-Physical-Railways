@@ -27,6 +27,7 @@ final class PhysicalCargoManager extends TrainCargoManager {
   private Set<UUID> members = Set.of();
   private long cachedTick = Long.MIN_VALUE, boundAt;
   private TrainConsists.Group cachedGroup;
+  private Object cachedCapture;
   private CargoStorage.Contents cached = CargoStorage.Contents.UNAVAILABLE;
   private boolean monitored;
   private int revision;
@@ -56,6 +57,7 @@ final class PhysicalCargoManager extends TrainCargoManager {
     members = Set.of();
     cachedTick = Long.MIN_VALUE;
     cachedGroup = null;
+    cachedCapture = null;
     cached = CargoStorage.Contents.UNAVAILABLE;
     monitored = false;
     transferVersion = 0;
@@ -70,7 +72,11 @@ final class PhysicalCargoManager extends TrainCargoManager {
     if (level == null) return CargoStorage.Contents.UNAVAILABLE;
     long tick = level.getGameTime();
     var group = TrainConsists.get(level).group(body);
-    if (cachedTick == tick && cachedGroup == group) return cached;
+    long version = CargoTransfers.clock(level, body).version();
+    if (cachedTick == tick
+        && cachedGroup == group
+        && version == transferVersion
+        && cachedCapture == CargoStorage.captureToken(level, body)) return cached;
     cachedTick = tick;
     cachedGroup = group;
     CargoStorage.Contents next = CargoStorage.Contents.UNAVAILABLE;
@@ -88,7 +94,8 @@ final class PhysicalCargoManager extends TrainCargoManager {
     if (!next.ready()) next = CargoStorage.Contents.UNAVAILABLE;
     if (!same(cached, next)) revision++;
     cached = next;
-    long version = CargoTransfers.clock(level, body).version();
+    cachedCapture = CargoStorage.captureToken(level, body);
+    version = CargoTransfers.clock(level, body).version();
     if (version != transferVersion) {
       revision++;
       transferVersion = version;

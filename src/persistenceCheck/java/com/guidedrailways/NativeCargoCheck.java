@@ -54,7 +54,7 @@ public final class NativeCargoCheck {
     }
     var unbind =
         manager.methods.stream().filter(m -> m.name.equals("unbind")).findFirst().orElseThrow();
-    for (var field : List.of("level", "body", "members", "cachedGroup", "cached")) {
+    for (var field : List.of("level", "body", "members", "cachedGroup", "cachedCapture", "cached")) {
       boolean cleared = false;
       for (var instruction : unbind.instructions)
         if (instruction instanceof FieldInsnNode f

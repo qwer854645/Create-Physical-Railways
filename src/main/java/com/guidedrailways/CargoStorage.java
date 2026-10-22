@@ -74,9 +74,11 @@ public final class CargoStorage {
   }
 
   private static final class Cached {
-    final Map<UUID, Snapshot> snapshots = new HashMap<>();
+    final ConsistCache<UUID, Captured> snapshots = new ConsistCache<>();
     long nextCleanup;
   }
+
+  private record Captured(Snapshot snapshot, StorageIdentities<BlockPos, BlockEntity> owners) {}
 
   private static final Map<ServerLevel, Cached> CACHE = new WeakHashMap<>();
 
@@ -85,12 +87,12 @@ public final class CargoStorage {
     if (cached == null || level.getGameTime() < cached.nextCleanup) return;
     long tick = level.getGameTime();
     cached.nextCleanup = tick + 20;
-    cached.snapshots.values().removeIf(s -> tick - s.captured > 200);
+    cached.snapshots.removeIf(s -> tick - s.snapshot().captured > 200);
   }
 
   static void removed(ServerLevel level, UUID body) {
     var cached = CACHE.get(level);
-    if (cached != null) cached.snapshots.values().removeIf(s -> s.bodies.contains(body));
+    if (cached != null) cached.snapshots.invalidate(Set.of(body));
   }
 
   private CargoStorage() {}
@@ -111,21 +113,21 @@ public final class CargoStorage {
     if (!group.complete)
       return new Snapshot(ids, false, false, List.of(), List.of(), List.of(), Map.of(), tick);
     var cache = CACHE.computeIfAbsent(level, k -> new Cached()).snapshots;
-    var old = root == null ? null : cache.get(root.getUniqueId());
+    var captured = root == null ? null : cache.get(root.getUniqueId());
+    var old = captured == null ? null : captured.snapshot();
     if (old != null
         && old.complete
         && old.bodies.equals(ids)
         && tick >= old.captured
         && tick - old.captured < 20) {
-      boolean loaded = true;
-      for (var location : old.locations)
-        if (!level.hasChunkAt(location.pos) || level.getBlockEntity(location.pos) == null) {
-          loaded = false;
-          break;
-        }
-      if (loaded) return old;
-      return new Snapshot(
-          ids, false, old.monitored, List.of(), List.of(), List.of(), Map.of(), tick);
+      if (captured
+          .owners()
+          .matches(
+              pos -> {
+                if (!level.hasChunkAt(pos)) return null;
+                var entity = level.getBlockEntity(pos);
+                return entity == null || entity.isRemoved() ? null : entity;
+              })) return old;
     }
     var items = new ArrayList<ItemStack>();
     var fluids = new ArrayList<FluidStack>();
@@ -134,6 +136,7 @@ public final class CargoStorage {
     var itemHandlers = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
     var fluidHandlers = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
     var byBody = new HashMap<UUID, Contents>();
+    var owners = new StorageIdentities<BlockPos, BlockEntity>();
     boolean complete = true, monitored = false, monitorFailed = false;
     for (var body :
         group.bodies.values().stream()
@@ -152,6 +155,7 @@ public final class CargoStorage {
             complete = false;
             continue;
           }
+          owners.capture(raw.getBlockPos().immutable(), raw);
           BlockEntity entity = raw;
           if (entity instanceof IMultiBlockEntityContainer multi) {
             var controller = multi.getController();
@@ -168,6 +172,7 @@ public final class CargoStorage {
             }
           }
           var pos = entity.getBlockPos().immutable();
+          owners.capture(pos, entity);
           if (!roots.add(pos)) continue;
           boolean hasItems = false, hasFluids = false;
           try {
@@ -250,7 +255,7 @@ public final class CargoStorage {
         && old.bodies.equals(ids)
         && !sameContents(old, result))
       for (var id : ids) CargoTransfers.clock(level, id).exchanged(tick, false, 1);
-    for (var id : ids) cache.put(id, result);
+    cache.put(ids, new Captured(result, owners));
     return result;
   }
 
@@ -275,7 +280,12 @@ public final class CargoStorage {
 
   static void invalidate(ServerLevel level, Set<UUID> bodies) {
     var cache = CACHE.get(level);
-    if (cache != null) for (var id : bodies) cache.snapshots.remove(id);
+    if (cache != null) cache.snapshots.invalidate(bodies);
+  }
+
+  static Object captureToken(ServerLevel level, UUID body) {
+    var cache = CACHE.get(level);
+    return cache == null ? null : cache.snapshots.token(body);
   }
 
   static boolean blockedByDock(ServerLevel level, ServerSubLevel root) {

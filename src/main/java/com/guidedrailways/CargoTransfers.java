@@ -57,8 +57,10 @@ public final class CargoTransfers {
         && level.hasChunkAt(owner.getBlockPos())
         && SableCompanion.INSTANCE.getContaining(level, owner.getBlockPos())
             instanceof ServerSubLevel body
-        && !body.isRemoved())
+        && !body.isRemoved()) {
       clock(level, body.getUniqueId()).exchanged(level.getGameTime(), false, 1);
+      CargoStorage.invalidate(level, Set.of(body.getUniqueId()));
+    }
   }
 
   static CargoClock clock(ServerLevel level, UUID body) {
