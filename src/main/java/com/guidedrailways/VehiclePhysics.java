@@ -12,6 +12,7 @@ import net.minecraft.core.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import org.joml.Quaterniond;
@@ -129,10 +130,26 @@ public final class VehiclePhysics {
         && level.getBlockEntity(mount.getBlockPos()) == mount;
   }
 
+  private static void unlinkMount(MountEntity mount) {
+    closeMount(mount);
+    mount.bogieId = null;
+    mount.pivotReferenceKnown = false;
+    mount.setLoad(0);
+    if (mount.hasNetwork())
+      mount.getOrCreateNetwork().updateStressFor(mount, mount.calculateStressApplied());
+    mount.setChanged();
+    mount.sendData();
+  }
+
   static void forget(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level)) return;
     var inputs = INPUTS.get(level);
     if (inputs != null) inputs.remove(mount.getBlockPos(), mount);
+    closeMount(mount);
+  }
+
+  private static void closeMount(MountEntity mount) {
+    if (!(mount.getLevel() instanceof ServerLevel level)) return;
     var units = ACTIVE.get(level);
     var unit = units == null ? null : units.get(mount.bogieId);
     if (unit != null && unit.mount == mount) {
@@ -154,15 +171,17 @@ public final class VehiclePhysics {
     if (!(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
         || bogie.isRemoved()
         || bogie == carrier) return null;
+    var centre = bogie.getPlot().getCenterBlock();
+    if (container.getChunkHolder(new ChunkPos(centre)) == null) return null;
+    if (!level.getBlockState(centre).is(Content.BOGIE.get())) {
+      unlinkMount(mount);
+      return null;
+    }
     var units = ACTIVE.computeIfAbsent(level, l -> new HashMap<>());
     var unit = units.get(mount.bogieId);
     if (unit != null && unit.mount != mount && liveMount(level, unit.mount)) {
       // A copied plate must never steal a still-live plate's lower body.
-      mount.bogieId = null;
-      mount.pivotReferenceKnown = false;
-      mount.setLoad(0);
-      mount.setChanged();
-      mount.sendData();
+      unlinkMount(mount);
       return null;
     }
     if (!CollisionAssembler.populate(bogie, true)) return null;

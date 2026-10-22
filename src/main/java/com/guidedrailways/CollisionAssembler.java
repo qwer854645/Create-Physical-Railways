@@ -21,7 +21,9 @@ final class CollisionAssembler {
   static boolean populate(ServerSubLevel body, boolean refreshMass) {
     var level = body.getLevel();
     var centre = body.getPlot().getCenterBlock();
-    var variant = BogieBlock.variant(level.getBlockState(centre));
+    var centreState = level.getBlockState(centre);
+    if (!centreState.is(Content.BOGIE.get())) return false;
+    var variant = BogieBlock.variant(centreState);
     var saved = body.getUserDataTag();
     if (saved != null
         && CATALOG.equals(saved.getString("CollisionCatalog"))
