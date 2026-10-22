@@ -92,7 +92,7 @@ public final class CargoStorage {
 
   static void removed(ServerLevel level, UUID body) {
     var cached = CACHE.get(level);
-    if (cached != null) cached.snapshots.invalidate(Set.of(body));
+    if (cached != null) cached.snapshots.discard(Set.of(body));
   }
 
   private CargoStorage() {}
@@ -114,21 +114,23 @@ public final class CargoStorage {
       return new Snapshot(ids, false, false, List.of(), List.of(), List.of(), Map.of(), tick);
     var cache = CACHE.computeIfAbsent(level, k -> new Cached()).snapshots;
     var captured = root == null ? null : cache.get(root.getUniqueId());
-    var old = captured == null ? null : captured.snapshot();
-    if (old != null
+    var previous = root == null ? null : cache.previous(root.getUniqueId());
+    var old = previous == null ? null : previous.snapshot();
+    if (captured != null
         && old.complete
         && old.bodies.equals(ids)
         && tick >= old.captured
         && tick - old.captured < 20) {
       if (captured
-          .owners()
-          .matches(
-              tick,
-              pos -> {
-                if (!level.hasChunkAt(pos)) return null;
-                var entity = level.getBlockEntity(pos);
-                return entity == null || entity.isRemoved() ? null : entity;
-              })) return old;
+              .owners()
+              .matches(
+                  tick,
+                  pos -> {
+                    if (!level.hasChunkAt(pos)) return null;
+                    var entity = level.getBlockEntity(pos);
+                    return entity == null || entity.isRemoved() ? null : entity;
+                  })
+          && cache.get(root.getUniqueId()) == captured) return old;
     }
     var items = new ArrayList<ItemStack>();
     var fluids = new ArrayList<FluidStack>();
@@ -250,14 +252,18 @@ public final class CargoStorage {
             List.copyOf(locations),
             Map.copyOf(byBody),
             tick);
-    if (old != null
-        && old.complete
-        && complete
-        && old.bodies.equals(ids)
-        && !sameContents(old, result))
+    if (contentsChanged(old, result))
       for (var id : ids) CargoTransfers.clock(level, id).exchanged(tick, false, 1);
     cache.put(ids, new Captured(result, owners));
     return result;
+  }
+
+  static boolean contentsChanged(Snapshot previous, Snapshot next) {
+    return previous != null
+        && previous.complete
+        && next.complete
+        && previous.bodies.equals(next.bodies)
+        && !sameContents(previous, next);
   }
 
   private static boolean sameContents(Snapshot a, Snapshot b) {
