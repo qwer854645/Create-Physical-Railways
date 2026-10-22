@@ -11,6 +11,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 public final class TrainClient {
   static void register(IEventBus bus) {
+    net.createmod.ponder.foundation.PonderIndex.addPlugin(new RailwayPonderPlugin());
     ItemDescriptions.register(bus);
     NativeBogeyCapture.register();
     NativeTrainClient.register();

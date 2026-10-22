@@ -1,7 +1,7 @@
 {
   "$schema": "./project-style.schema.json",
   "id": "guidedrailways.create-style",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "status": "default",
   "scope": [
     "item_names",
@@ -10,7 +10,8 @@
     "screens",
     "hud",
     "configuration_ui",
-    "accessibility"
+    "accessibility",
+    "ponder_tutorials"
   ],
   "references": {
     "createVersion": "6.0.10-280",
@@ -177,7 +178,8 @@
       "tooltip.guidedrailways.",
       "gui.guidedrailways.",
       "message.guidedrailways.",
-      "config.guidedrailways."
+      "config.guidedrailways.",
+      "guidedrailways.ponder."
     ],
     "rules": [
       {

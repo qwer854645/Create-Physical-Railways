@@ -612,6 +612,13 @@ tasks.register('checkNativeStationContract', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkNativeStationContract' }
 
+tasks.register('checkPonderAssets', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.PonderAssetCheck'
+}
+tasks.named('check') { dependsOn 'checkPonderAssets' }
+
 tasks.register('checkNativeJourney', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
