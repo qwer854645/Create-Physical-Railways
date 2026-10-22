@@ -485,6 +485,8 @@ final class ScheduleController {
   }
 
   void manual(DriverConsoleEntity source) {
+    if (manualOverride && manualSource == source && !running && !resumePending && status == PAUSED)
+      return;
     stop(PAUSED, source);
   }
 
