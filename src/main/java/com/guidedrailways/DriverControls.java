@@ -233,7 +233,7 @@ public final class DriverControls {
           }
         }
     }
-    PhysicalSignals.tick(level, units);
+    PhysicalSignals.tick(level);
     AutomaticTrains.tick(level, units, map.values());
     StationPresence.tick(level);
     for (var e : map.values()) {

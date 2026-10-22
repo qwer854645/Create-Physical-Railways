@@ -83,7 +83,7 @@ public final class PhysicalSignals {
     return state.networks.computeIfAbsent(graph, k -> new AutomaticNavigation(level, k));
   }
 
-  static void tick(ServerLevel level, Collection<VehiclePhysics.Unit> input) {
+  static void tick(ServerLevel level) {
     var s = STATES.computeIfAbsent(level, k -> new State());
     long generation = TrackNetwork.generation(level);
     if (s.networkGeneration != generation) {
@@ -92,12 +92,13 @@ public final class PhysicalSignals {
       s.traces.clear();
     }
     s.owners.clear();
+    var snapshot = TrainConsists.get(level);
     var units = new ArrayList<VehiclePhysics.Unit>();
-    for (var u : input)
-      if (!u.carrier.isRemoved() && !u.bogie.isRemoved() && !u.mount.isRemoved()) units.add(u);
-    for (var group : TrainConsists.get(level).groups()) {
+    // Units and ownership must come from the same snapshot, including its readiness cutoff.
+    for (var group : snapshot.groups()) {
       var owner = group.members().stream().min(UUID::compareTo).orElseThrow();
       for (var id : group.members()) s.owners.put(id, owner);
+      units.addAll(group.units());
     }
     var occupied = new HashMap<UUID, Coverage>();
     var running = new HashSet<UUID>();
@@ -118,8 +119,7 @@ public final class PhysicalSignals {
               owner,
               k ->
                   new Coverage(
-                      new HashSet<>(),
-                      new PhysicalObservers.Context(level, TrainConsists.get(level).group(body))));
+                      new HashSet<>(), new PhysicalObservers.Context(level, snapshot.group(body))));
       var samples = anchors.computeIfAbsent(body, k -> new ArrayList<>());
       var heading =
           new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
@@ -207,7 +207,7 @@ public final class PhysicalSignals {
             connectTree(s, level, samples, occupied.get(owner));
         });
     var bareBodies = new HashSet<UUID>();
-    for (var link : TrainConsists.get(level).links())
+    for (var link : snapshot.links())
       for (var body : List.of(link.a(), link.b())) {
         if (anchors.containsKey(body.getUniqueId()) || !bareBodies.add(body.getUniqueId()))
           continue;
