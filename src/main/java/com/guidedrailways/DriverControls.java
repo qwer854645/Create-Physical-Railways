@@ -24,7 +24,6 @@ public final class DriverControls {
       var body = body(console);
       if (body == null || !affected.contains(body.getUniqueId())) continue;
       var c = console.schedule;
-      RailDocks.release(c);
       c.topologyChanged();
     }
   }

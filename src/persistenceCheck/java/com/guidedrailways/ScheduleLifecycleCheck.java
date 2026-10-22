@@ -24,6 +24,27 @@ public final class ScheduleLifecycleCheck {
   }
 
   public static void main(String[] args) throws Exception {
+    var topology =
+        code("com/guidedrailways/DriverControls").methods.stream()
+            .filter(m -> m.name.equals("topologyChanged"))
+            .findFirst()
+            .orElseThrow();
+    for (var insn : topology.instructions)
+      if (insn instanceof MethodInsnNode call
+          && call.owner.equals("com/guidedrailways/RailDocks")
+          && call.name.equals("release"))
+        throw new AssertionError("topology caller cannot release the same lease a second time");
+    int releases = 0;
+    var transition =
+        code("com/guidedrailways/ScheduleController").methods.stream()
+            .filter(m -> m.name.equals("topologyChanged"))
+            .findFirst()
+            .orElseThrow();
+    for (var insn : transition.instructions)
+      if (insn instanceof MethodInsnNode call
+          && call.owner.equals("com/guidedrailways/RailDocks")
+          && call.name.equals("release")) releases++;
+    check(releases == 1, "the topology transition owns exactly one dock release");
     var cadence = new ScheduleCadence();
     check(cadence.beginPlanning(100), "first route request allowed");
     for (int tick = 100; tick < 110; tick++)
@@ -53,7 +74,9 @@ public final class ScheduleLifecycleCheck {
           if (insn instanceof FieldInsnNode f
               && f.getOpcode() == Opcodes.PUTFIELD
               && f.owner.equals("com/guidedrailways/ScheduleController")) isolated = false;
-        check(isolated, "external systems cannot partially rewrite runtime state: " + name + "." + method.name);
+        check(
+            isolated,
+            "external systems cannot partially rewrite runtime state: " + name + "." + method.name);
       }
     for (var method : code("com/guidedrailways/VehiclePlacement").methods) {
       boolean isolated = true;
