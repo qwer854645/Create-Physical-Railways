@@ -93,7 +93,10 @@ public final class RouteMemory {
       boolean planned) {
     if (!members.contains(axle)) throw new IllegalArgumentException("unknown axle");
     var last = repeat.get(axle);
-    if (last != null && last.node.equals(node) && last.from == from)
+    if (last != null
+        && last.node.equals(node)
+        && last.from == from
+        && !staleRepeat(node, from, last, proposed, planned))
       return contains(exits, last.to) ? last.to : -1;
     Passage choice = null;
     boolean forward = true;
@@ -111,9 +114,15 @@ public final class RouteMemory {
           break;
         }
       }
-    // A fully cleared historical passage is not an active train-spanning lock.
-    // Automatic navigation may make a new trip instead of retracing that old visit.
-    if (choice != null && !forward && choice.complete() && planned && proposed != choice.from)
+    // A fully cleared historical passage is not an active train-spanning lock. Automatic navigation
+    // may make a new trip instead of retracing that old visit, in either direction: a completed
+    // record that contradicts the planned exit would otherwise send the train back down its old
+    // branch on every lap and it would never reach a destination on the other side.
+    if (choice != null
+        && choice.complete()
+        && planned
+        && proposed >= 0
+        && proposed != (forward ? choice.to : choice.from))
       choice = null;
     if (choice != null) {
       int out = forward ? choice.to : choice.from;
@@ -145,5 +154,19 @@ public final class RouteMemory {
   private static boolean contains(int[] values, int needle) {
     for (int v : values) if (v == needle) return true;
     return false;
+  }
+
+  /**
+   * A repeat record keeps a consist from splitting across points while it is still passing, so it
+   * only applies while that passage is incomplete. Once every axle has cleared it, an automatic plan
+   * that asks for another exit at the same node is a new trip, not a mid-passage change: honouring the
+   * record there made a train re-take its previous branch on every lap instead of following its route.
+   */
+  private boolean staleRepeat(
+      Junction node, int from, Repeat last, int proposed, boolean planned) {
+    if (!planned || proposed < 0 || proposed == last.to) return false;
+    for (var p : history)
+      if (p.node.equals(node) && p.from == from && p.to == last.to && !p.complete()) return false;
+    return true;
   }
 }

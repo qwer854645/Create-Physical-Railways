@@ -127,6 +127,35 @@ public final class ConsistRouteCheck {
     check(
         straddled.preview(a, node, 30, new int[] {10, 40}, 40, true) == 10,
         "a consist still spanning the junction must retrace its active passage");
+
+    // Reported symptom: a scheduled train kept taking its previous branch at a junction and drove on
+    // without ever reaching the destination on the other side. The repeat record outlived the
+    // passage, and it outranked the planned exit.
+    var trip = new RouteMemory(ids);
+    check(
+        trip.commit(a, node, 10, new int[] {20, 30}, 20, true) == 20,
+        "the first lap takes the planned branch");
+    for (var axle : List.of(b, c, d))
+      trip.commit(axle, node, 10, new int[] {20, 30}, 20, false);
+    check(
+        trip.preview(a, node, 10, new int[] {20, 30}, 30, true) == 30,
+        "a completed passage stops forcing its branch onto a new planned exit");
+    check(
+        trip.commit(a, node, 10, new int[] {20, 30}, 30, true) == 30,
+        "the new branch can be committed on the next lap");
+    // The safety property the record exists for still holds: while axles are crossing the junction,
+    // the passage keeps the branch even when an automatic plan asks for the other one, so a consist
+    // can never be split across the points.
+    var spanning = new RouteMemory(ids);
+    check(
+        spanning.commit(a, node, 10, new int[] {20, 30}, 20, true) == 20,
+        "the leading axle takes its branch");
+    check(
+        spanning.preview(a, node, 10, new int[] {20, 30}, 30, true) == 20,
+        "a passage that is still being crossed outranks the plan");
+    check(
+        spanning.preview(a, node, 10, new int[] {20, 30}, 30, false) == 20,
+        "a manual consist keeps retaking its active passage");
     var rejectedReverse = new RouteMemory(ids);
     for (var axle : ids) rejectedReverse.commit(axle, node, 10, new int[] {20, 30}, 30, false);
     for (var axle : ids) rejectedReverse.clearRepeat(axle);
