@@ -30,6 +30,7 @@ final class FrameWatch {
   private static int ticks;
   private static Boolean enabled;
   private static long gcLast;
+  private static long gcCountLast;
   private static long lastGameTime = -1;
   private static long lastGameSample;
   private static long stageStart;
@@ -111,7 +112,7 @@ final class FrameWatch {
     }
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
-            "[ClientPerf] fps={} tps={} frames={} frameAvgMs={} frameWorstMs={} tickAvgMs={} tickWorstMs={} gcMs={} worstStage={} worstStageMs={} focused={}",
+            "[ClientPerf] fps={} tps={} frames={} frameAvgMs={} frameWorstMs={} tickAvgMs={} tickWorstMs={} gcMs={} gcCount={} heap={} worstStage={} worstStageMs={} focused={}",
             Math.round(frames / seconds),
             tps < 0 ? "?" : String.format(java.util.Locale.ROOT, "%.1f", tps),
             frames,
@@ -120,10 +121,13 @@ final class FrameWatch {
             ticks == 0 ? 0 : tickTotal / (double) ticks / 1e6,
             tickWorst / 1e6,
             gcTime - gcLast,
+            gcCount() - gcCountLast,
+            heapMb(),
             worstStage == null ? "-" : worstStage,
             worstStageNanos / 1e6,
             Minecraft.getInstance().isWindowActive());
     gcLast = gcTime;
+    gcCountLast = gcCount();
     windowStart = now;
     frames = 0;
     frameTotal = frameWorst = 0;
@@ -165,8 +169,10 @@ final class FrameWatch {
     }
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
-            "[FrameSpike] ms={} onBody={} focused={} paused={} pos={}",
+            "[FrameSpike] ms={} heap={} gc={} onBody={} focused={} paused={} pos={}",
             ms,
+            heapMb(),
+            gcCount(),
             onBody,
             client.isWindowActive(),
             client.isPaused(),
@@ -181,6 +187,22 @@ final class FrameWatch {
       total += Math.max(0, bean.getCollectionTime());
     return total;
   }
+  /** Collection count across all collectors: a spike next to a GC is a heap stall, not rendering. */
+  private static long gcCount() {
+    long total = 0;
+    for (var bean : java.lang.management.ManagementFactory.getGarbageCollectorMXBeans())
+      total += Math.max(0, bean.getCollectionCount());
+    return total;
+  }
+
+  /** Used and committed heap in MB, so growth towards the maximum is visible before it stalls. */
+  private static String heapMb() {
+    var runtime = Runtime.getRuntime();
+    return (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+        + "/"
+        + runtime.maxMemory() / (1024 * 1024);
+  }
+
   private static boolean contains(
       net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
     return dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContaining(level, pos) != null;
