@@ -45,9 +45,9 @@ public final class BogieYawCheck {
           spring.stiffness() > 0 && spring.damping() > 0 && spring.maxTorque() > 0,
           "native yaw motor has nonzero centering and damping with a finite positive cap");
       check(
-          Math.abs(spring.stiffness() * count - 12) < 1e-12
-              && Math.abs(spring.maxTorque() * count - 120) < 1e-12,
-          "multiple bogies share the weak spring budget instead of multiplying stiffness on one body");
+          Math.abs(spring.stiffness() * count - 18) < 1e-12
+              && Math.abs(spring.maxTorque() * count - 360) < 1e-12,
+          "multiple bogies share one centring budget instead of multiplying stiffness on one body");
     }
     System.out.println("BogieYawCheck: " + checks + " assertions passed");
   }

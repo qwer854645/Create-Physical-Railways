@@ -447,8 +447,10 @@ public final class VehiclePhysics {
             ConstraintJointAxis.LINEAR_X,
             ConstraintJointAxis.LINEAR_Y,
             ConstraintJointAxis.LINEAR_Z,
+            // Body-local X runs along travel, so ANGULAR_X is roll and ANGULAR_Z is pitch. Neither
+            // may be free, otherwise the plate banks (roll) or nods (pitch) on its own.
+            ConstraintJointAxis.ANGULAR_X,
             ConstraintJointAxis.ANGULAR_Z);
-    if (u.supports == 1) locks.add(ConstraintJointAxis.ANGULAR_X);
     if (!u.mount.pivotReferenceKnown) {
       var carrier = pipe.readPose(u.carrier, new Pose3d());
       var bogie = pipe.readPose(u.bogie, new Pose3d());
@@ -464,8 +466,8 @@ public final class VehiclePhysics {
             new GenericConstraintConfiguration(
                 upper, lower, u.mount.pivotReference, new Quaterniond(), locks));
     u.pivot.setContactsEnabled(false);
-    // A stable bearing replaces the prototype's spring-supported empty plate.
-    // Weak yaw centering, with damping and a small torque cap; yaw remains unlocked.
+    // Yaw stays free: a bearing has to articulate under the body. It is only centred, with the
+    // budget shared between the bogies of one carrier.
     var spring = BogieYawModel.spring(u.supports);
     u.pivot.setMotor(
         ConstraintJointAxis.ANGULAR_Y,
@@ -474,11 +476,6 @@ public final class VehiclePhysics {
         spring.damping(),
         true,
         spring.maxTorque());
-    if (u.supports > 1) {
-      // Bogies at opposite ends of a long car may meet different grades.
-      u.pivot.setLimit(ConstraintJointAxis.ANGULAR_X, -.35, .35);
-      u.pivot.setMotor(ConstraintJointAxis.ANGULAR_X, 0, 0, 12, true, 4000);
-    }
   }
 
   static void step(SubLevelPhysicsSystem physics, double dt) {

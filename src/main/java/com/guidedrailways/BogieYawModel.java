@@ -4,13 +4,16 @@ import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
 import org.joml.Vector3d;
 
-/** Weak native bearing spring; references live in the carrier's local coordinates. */
+/** Native bearing spring; references live in the carrier's local coordinates. */
 final class BogieYawModel {
   record Spring(double stiffness, double damping, double maxTorque) {}
 
   static Spring spring(int supports) {
     double share = 1.0 / Math.max(1, supports);
-    return new Spring(12 * share, 18 * share, 120 * share);
+    // The carrier is heavy and the drive impulse is applied below it, so the first prototype's
+    // near-free bearing let the plate swing on its own. Centring and damping are tripled while
+    // the budget stays shared between bogies instead of multiplying on one body.
+    return new Spring(18 * share, 60 * share, 360 * share);
   }
 
   static Quaterniond reference(Quaterniondc carrier, Quaterniondc bogie) {
