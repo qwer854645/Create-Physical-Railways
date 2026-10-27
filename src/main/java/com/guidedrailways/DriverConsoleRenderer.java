@@ -86,6 +86,21 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     pose.popPose();
   }
 
+  /** One line per second: whether the renderer even believes a lamp is lit, and why. */
+  private static void diagnose(DriverConsoleEntity e, int mask) {
+    long now = System.currentTimeMillis();
+    if (now < LAMP_LOG_AT) return;
+    LAMP_LOG_AT = now + 1000;
+    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+        .info(
+            "[ConsoleLamp] bound={} notch={} emergency={} mask={}",
+            e.bound,
+            e.notch,
+            e.emergency,
+            mask);
+  }
+
+  private static long LAMP_LOG_AT;
   /** Lamp recesses in the screen texture, mapped into the plate: u = 4, 8, 12 and v = 11, two texels. */
   private static final double LAMP_SIZE = 2 * 5 / 16d;
 
@@ -103,6 +118,7 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
       java.util.function.Function<ResourceLocation, net.minecraft.client.renderer.texture.TextureAtlasSprite> atlas,
       int overlay) {
     int mask = ConsoleDisplay.lampMask(e.bound, e.emergency, e.notch);
+    if (TrainConfig.DETAILED_LOGGING.get()) diagnose(e, mask);
     if (mask == 0) return;
     var vertices = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
     int[] slots = {ConsoleDisplay.LEFT, ConsoleDisplay.MIDDLE, ConsoleDisplay.RIGHT};
