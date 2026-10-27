@@ -327,8 +327,8 @@ public final class TrackNetwork {
     var increasing = PathGeometry.tangent(live::at, previous.t);
     boolean alongIncreasing = BranchSelect.exitsIncreasing(increasing, heading, reverse);
     double endT = alongIncreasing ? 1 : 0;
-    if (Math.abs(previous.t - endT) > .12
-        && (previous.position.distanceSquared(live.at(endT)) > .36)) return null;
+    if (!SeamRules.canAdvance(previous.t, endT, previous.position.distanceSquared(live.at(endT))))
+      return null;
     int exitId = alongIncreasing ? live.b : live.a, enterId = alongIncreasing ? live.a : live.b;
     var exit = live.network.getNode(exitId);
     var enter = live.network.getNode(enterId);

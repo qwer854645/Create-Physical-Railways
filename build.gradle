@@ -395,6 +395,13 @@ tasks.register('checkFrames', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkFrames' }
 
+tasks.register('checkSeamRules', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.SeamRulesCheck'
+}
+tasks.named('check') { dependsOn 'checkSeamRules' }
+
 tasks.register('checkLanguage', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
