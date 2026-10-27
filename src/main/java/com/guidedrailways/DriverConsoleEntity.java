@@ -315,6 +315,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     tag.putUUID("ConsoleId", consoleId);
     tag.putLong("PlacementOrder", placementOrder);
     tag.putBoolean("Emergency", emergency);
+    // The lever is a setting the operator left, not the takeover session: an unloaded carriage
+    // must come back in the gear it was left in, or the driver has to re-dial it after every stop.
+    tag.putInt("Notch", notch);
     schedule.save(tag, registries);
   }
 
@@ -338,10 +341,14 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
           Math.clamp(tag.getInt("VisualNotch"), -DriverModel.BRAKE_NOTCHES, DriverModel.MAX_NOTCH);
       emergency = tag.getBoolean("VisualEmergency");
     } else {
+      // Disk: the takeover session is never restored, but the lever setting is.
       active = false;
       enabled = false;
-      notch = -4;
       emergency = tag.getBoolean("Emergency");
+      notch =
+          tag.contains("Notch")
+              ? Math.clamp(tag.getInt("Notch"), -DriverModel.BRAKE_NOTCHES, DriverModel.MAX_NOTCH)
+              : -4;
     } // Manual takeover is never restored from disk.
   }
 

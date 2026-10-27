@@ -133,6 +133,10 @@ public final class TrainRuntimeCheck {
         mentions(report, "[GuidedPerf]") && mentions(report, "[GuidedPerfSplit]"),
         "the established summary line survives next to the new split line");
     check(
+        mentions(method("DriverConsoleEntity", "saveAdditional"), "Notch")
+            && mentions(method("DriverConsoleEntity", "loadAdditional"), "Notch"),
+        "the lever setting is saved and restored, while the takeover session stays unloaded");
+    check(
         calls("VehiclePhysics", "connectPivot").contains("BearingLock.locked"),
         "pivot rigidity is decided by the checked bearing policy, not by a literal axis list");
     check(
