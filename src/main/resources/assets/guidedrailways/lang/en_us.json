@@ -136,6 +136,8 @@
   "message.guidedrailways.rail.failed": "Rerailing failed; check the carriage and try again",
   "message.guidedrailways.rail.space_blocked": "Blocks or another body obstruct the carriage; choose another position",
   "message.guidedrailways.rail.space_unloaded": "The carriage or target area is not loaded; try again shortly",
+  "message.guidedrailways.rail.space_unloaded_area": "The target area is not loaded; move closer and try again",
+  "message.guidedrailways.rail.space_unloaded_body": "The off-rail carriage is not loaded; walk to it first and try again",
   "message.guidedrailways.rail.space_complex": "Cannot check placement space; simplify the carriage or choose another position",
   "message.guidedrailways.rail.missing_body": "Bogey or carriage no longer exists",
   "message.guidedrailways.rail.uncouple": "Uncouple the carriage before rerailing",

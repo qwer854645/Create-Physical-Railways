@@ -87,7 +87,23 @@ final class RerailSpace {
           || !target.getValue().orientation().isFinite()
           || !target.getValue().scale().isFinite())
         throw new IllegalStateException("message.guidedrailways.body.changed");
-      moving.addAll(shapes(target.getKey(), target.getValue(), budget));
+      var pose = target.getValue();
+      var plot = target.getKey().getPlot().getBoundingBox();
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info(
+              "[RerailSpace] target body={} posePos={},{},{} plotMin={},{},{} plotMax={},{},{} chunks={}",
+              target.getKey().getUniqueId(),
+              pose.position().x,
+              pose.position().y,
+              pose.position().z,
+              plot.minX(),
+              plot.minY(),
+              plot.minZ(),
+              plot.maxX(),
+              plot.maxY(),
+              plot.maxZ(),
+              target.getKey().getPlot().getLoadedChunks().size());
+      moving.addAll(shapes(target.getKey(), pose, budget, "target"));
     }
     if (moving.isEmpty()) throw new IllegalStateException("message.guidedrailways.body.changed");
     AABB bounds = moving.getFirst().bounds;
@@ -98,7 +114,7 @@ final class RerailSpace {
       if (!(other instanceof ServerSubLevel body) || body.isRemoved() || targets.containsKey(body))
         continue;
       var pose = SubLevelPhysicsSystem.get(level).getPipeline().readPose(body, new Pose3d());
-      for (var part : shapes(body, pose, budget))
+      for (var part : shapes(body, pose, budget, "obstacle"))
         if (part.bounds.intersects(bounds))
           for (var key : cells(part.bounds, 4)) {
             budget.use();
@@ -120,8 +136,15 @@ final class RerailSpace {
       // Include neighbouring cells for shapes such as fences that extend beyond their own cell.
       for (var pos : cells(area.inflate(1), 1)) {
         budget.use();
-        if (!level.hasChunkAt(pos))
-          throw new IllegalArgumentException("message.guidedrailways.rail.space_unloaded");
+        if (!level.hasChunkAt(pos)) {
+          org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+              .info(
+                  "[RerailSpace] target area chunk not loaded pos={} partMin={} partMax={}",
+                  pos,
+                  area.minX + "," + area.minY + "," + area.minZ,
+                  area.maxX + "," + area.maxY + "," + area.maxZ);
+          throw new IllegalArgumentException("message.guidedrailways.rail.space_unloaded_area");
+        }
         var state = level.getBlockState(pos);
         if (part.monorail && monorailTrack(state)) continue;
         var boxes =
@@ -166,13 +189,28 @@ final class RerailSpace {
         (int) Math.floor(bounds.maxZ / size));
   }
 
-  private static List<Box> shapes(ServerSubLevel body, Pose3d pose, Budget budget) {
+  private static List<Box> shapes(
+      ServerSubLevel body, Pose3d read, Budget budget, String role) {
+    // A physics pose carries position and orientation only. Without the logical rotation point,
+    // Pose3d.transformPosition rotates absolute plot coordinates instead of plot-relative ones,
+    // which puts the whole carriage tens of millions of blocks away from its own body.
+    var pose = new Pose3d(read);
+    pose.rotationPoint().set(body.logicalPose().rotationPoint());
     var out = new ArrayList<Box>();
     var plot = body.getPlot();
     var bounds = plot.getBoundingBox();
     var getter = plot.getEmbeddedLevelAccessor();
-    if (plot.getLoadedChunks().isEmpty())
-      throw new IllegalArgumentException("message.guidedrailways.rail.space_unloaded");
+    if (plot.getLoadedChunks().isEmpty()) {
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info(
+              "[RerailSpace] body plot not loaded role={} body={} plotMin={} plotMax={} chunks=0 world={}",
+              role,
+              body.getUniqueId(),
+              bounds.minX() + "," + bounds.minY() + "," + bounds.minZ(),
+              bounds.maxX() + "," + bounds.maxY() + "," + bounds.maxZ(),
+              pose.position().x + "," + pose.position().y + "," + pose.position().z);
+      throw new IllegalArgumentException("message.guidedrailways.rail.space_unloaded_body");
+    }
     for (var holder : plot.getLoadedChunks()) {
       budget.use();
       var chunk = holder.getChunk();

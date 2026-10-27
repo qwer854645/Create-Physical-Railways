@@ -136,6 +136,8 @@
   "message.guidedrailways.rail.failed": "重新上轨失败，请检查车体后重试",
   "message.guidedrailways.rail.space_blocked": "目标位置有方块或其他车体阻挡，请更换位置",
   "message.guidedrailways.rail.space_unloaded": "车体或目标区域尚未加载，请稍后重试",
+  "message.guidedrailways.rail.space_unloaded_area": "目标位置所在区域尚未加载，请靠近轨道后再试",
+  "message.guidedrailways.rail.space_unloaded_body": "离轨车体所在区域尚未加载，请先走到车体旁边再试",
   "message.guidedrailways.rail.space_complex": "无法检查放置空间，请简化车体或更换位置",
   "message.guidedrailways.rail.missing_body": "转向架或车体已不存在",
   "message.guidedrailways.rail.uncouple": "解挂车钩后才能重新上轨",
