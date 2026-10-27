@@ -128,21 +128,22 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
           atlas.apply(
               ResourceLocation.fromNamespaceAndPath(
                   "minecraft", ConsoleDisplay.blockTexture(slots[i], e.emergency)));
-      double x = 3 + (4 + i * 4) * 5 / 16d;
-      double z = 4 + 11 * 5 / 16d;
+      // Model pixels, converted the way the lever boxes above convert theirs: this helper takes block
+      // coordinates, and passing model units drew a lamp sixteen times too large.
+      double x = (3 + (4 + i * 4) * 5 / 16d) / 16d;
+      double z = (4 + 11 * 5 / 16d) / 16d;
       CouplerRenderer.box(
           pose.last(),
           vertices,
           sprite,
           x,
           // The plate face is at 11.4/16. A tenth of a unit above it loses the depth test at any
-          // normal viewing distance, which is why the lamps were drawn and still invisible; they now
-          // stand proud of the panel like an indicator that is mounted on it.
+          // normal viewing distance, so the lamps stand slightly proud of the panel.
           11.45 / 16d,
           z,
-          x + LAMP_SIZE,
+          x + LAMP_SIZE / 16d,
           11.95 / 16d,
-          z + LAMP_SIZE,
+          z + LAMP_SIZE / 16d,
           0xF000F0,
           overlay);
     }
