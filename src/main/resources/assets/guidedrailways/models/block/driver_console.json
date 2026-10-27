@@ -6,6 +6,7 @@
     "brass": "create:block/brass_block",
     "panel": "create:block/industrial_iron_block",
     "gauge": "create:block/gauge",
+    "screen": "guidedrailways:block/console_screen",
     "particle": "create:block/industrial_iron_block",
     "red": "minecraft:block/red_concrete"
   },
@@ -272,7 +273,7 @@
           ]
         },
         "up": {
-          "texture": "#gauge",
+          "texture": "#screen",
           "uv": [
             0,
             0,

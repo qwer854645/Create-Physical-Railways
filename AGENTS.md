@@ -2,6 +2,7 @@
 
 Before creating or changing any player-facing text, screen, HUD, tooltip, or configuration UI, read:
 
+0. `docs/TEXTURE_GUIDE.md` — pixel density, palette and lighting constraints for any block, item or screen texture
 1. `docs/project-style.json` — canonical, machine-readable language and UI rules
 2. `docs/PROJECT_STYLE.md` — interpretation, examples, implementation entry points, and review steps
 

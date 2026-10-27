@@ -6,6 +6,7 @@
 
 ## 读取方式与适用范围
 
+- **贴图规范**：[TEXTURE_GUIDE.md](TEXTURE_GUIDE.md)（像素密度、调色板、面着色、mipmap 与自检清单）
 - **唯一规范数据源**：[project-style.json](project-style.json)
 - **结构约束**：[project-style.schema.json](project-style.schema.json)，使用 JSON Schema Draft 2020-12
 - **自动加载入口**：根目录 `AGENTS.md` 与 `.cursor/rules/project-style.mdc`
