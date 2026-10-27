@@ -124,12 +124,14 @@ public final class DriverControls {
   static void emergency(DriverConsoleEntity source) {
     source.emergency = true;
     source.notch = -4;
+    source.press();
     source.updateVisual();
   }
 
   static void resetEmergency(DriverConsoleEntity source) {
     source.emergency = false;
     source.notch = -4;
+    source.press();
     source.updateVisual();
   }
 

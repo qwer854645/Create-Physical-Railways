@@ -7,6 +7,7 @@ import net.minecraft.server.level.*;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.*;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -19,6 +20,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   long steerAt;
   boolean active, enabled, emergency, observing;
   int direction = 1, notch = -4;
+  private long pressedUntil;
   private int[] gearSpeeds;
   private String trainName = "";
   private TrainOwner trainOwner = TrainOwner.UNKNOWN;
@@ -144,11 +146,46 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   void updateVisual() {
     setChanged();
     if (level instanceof ServerLevel server && !isRemoved()) {
+      syncDisplay();
       sendVisual(server);
       DriverNetwork.sync(this, active);
     }
   }
 
+  /** The display index lives in the block state, so the client only has to pick a model. */
+  private void syncDisplay() {
+    var state = getBlockState();
+    if (!state.hasProperty(DriverConsoleBlock.SCREEN)) return;
+    int want = ConsoleDisplay.index(emergency, active, observing, notch);
+    if (state.getValue(DriverConsoleBlock.SCREEN) == want) return;
+    level.setBlock(
+        worldPosition, state.setValue(DriverConsoleBlock.SCREEN, want), Block.UPDATE_CLIENTS);
+  }
+
+  /** Ticks the button stays visibly pressed. */
+  private static final long PRESS_TICKS = 6;
+
+  /** Depresses the emergency button for a moment, so pressing it is visible to everyone nearby. */
+  void press() {
+    if (level == null) return;
+    pressedUntil = level.getGameTime() + PRESS_TICKS;
+    applyPressed(true);
+  }
+
+  /** Releases the button once its press animation is over. */
+  void clearPressIfDue() {
+    if (pressedUntil == 0 || level == null || level.getGameTime() < pressedUntil) return;
+    pressedUntil = 0;
+    applyPressed(false);
+  }
+
+  private void applyPressed(boolean pressed) {
+    var state = getBlockState();
+    if (!state.hasProperty(DriverConsoleBlock.PRESSED)) return;
+    if (state.getValue(DriverConsoleBlock.PRESSED) == pressed) return;
+    level.setBlock(
+        worldPosition, state.setValue(DriverConsoleBlock.PRESSED, pressed), Block.UPDATE_CLIENTS);
+  }
   /**
    * Sends the block entity payload only.
    *

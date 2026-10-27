@@ -420,6 +420,20 @@ tasks.register('checkSwitchReservations', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkSwitchReservations' }
 
+tasks.register('checkConsoleDisplay', JavaExec) {
+    dependsOn testClasses, processResources
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ConsoleDisplayCheck'
+}
+tasks.named('check') { dependsOn 'checkConsoleDisplay' }
+
+tasks.register('checkConsoleAssets', JavaExec) {
+    dependsOn testClasses, processResources
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ConsoleAssetCheck'
+}
+tasks.named('check') { dependsOn 'checkConsoleAssets' }
+
 tasks.register('checkLanguage', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
