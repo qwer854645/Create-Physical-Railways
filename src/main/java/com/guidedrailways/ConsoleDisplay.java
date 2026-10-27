@@ -1,34 +1,45 @@
 package com.guidedrailways;
 
 /**
- * What the console lamps show, decided without the client.
+ * Which console lamps are lit, decided without the client.
  *
- * <p>The lamps follow the train, not the seat: a carriage left standing keeps showing what it was last
- * told to do, because a driver walking away does not switch the vehicle off. Three fixed lamps carry
- * the state, and all of them go dark only when the console cannot drive anything at all.
+ * <p>The lamps follow the vehicle and the lever, not the seat: an unstaffed carriage keeps showing what
+ * it was told to do, and only a console with nothing to drive goes dark.
  *
  * <pre>
- *   all off        nothing bound to this console
- *   left green     traction
- *   middle amber   standby, no notch
- *   right red      braking
- *   all red        emergency
+ *   all dark      nothing bound to this console
+ *   left green    traction
+ *   middle amber  standby, no notch
+ *   right red     braking
+ *   all red       emergency
  * </pre>
+ *
+ * <p>They are drawn by the block entity renderer every frame. Putting them in the block state made
+ * every change cost a client chunk rebuild, which forced a throttle and made the lamps lag behind a
+ * quickly moved lever.
  */
 final class ConsoleDisplay {
-  static final int OFF = 0;
-  static final int POWER = 1;
-  static final int STANDBY = 2;
-  static final int BRAKE = 3;
-  static final int EMERGENCY = 4;
+  static final int LEFT = 1;
+  static final int MIDDLE = 2;
+  static final int RIGHT = 4;
 
-  static final int COUNT = 5;
+  static final int GREEN = 0x74D27C;
+  static final int AMBER = 0xE8AE58;
+  static final int RED = 0xF3664E;
 
-  /** {@code bound} means this console resolves to a live physical body it can actually drive. */
-  static int index(boolean bound, boolean emergency, int notch) {
-    if (!bound) return OFF;
-    if (emergency) return EMERGENCY;
-    return notch > 0 ? POWER : notch < 0 ? BRAKE : STANDBY;
+  /** Bits of {@link #LEFT}, {@link #MIDDLE} and {@link #RIGHT} that are lit. */
+  static int lampMask(boolean bound, boolean emergency, int notch) {
+    if (!bound) return 0;
+    if (emergency) return LEFT | MIDDLE | RIGHT;
+    return notch > 0 ? LEFT : notch < 0 ? RIGHT : MIDDLE;
+  }
+
+  /** Colour of a lit lamp; emergency paints every lit lamp red. */
+  static int colour(int lamp, boolean emergency) {
+    if (emergency) return RED;
+    if ((lamp & LEFT) != 0) return GREEN;
+    if ((lamp & MIDDLE) != 0) return AMBER;
+    return RED;
   }
 
   private ConsoleDisplay() {}

@@ -21,6 +21,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   boolean active, enabled, emergency, observing;
   int direction = 1, notch = -4;
   private long pressedUntil;
+
+  /** Whether this console resolves to a live body; the lamps go dark when it does not. */
+  boolean bound;
   private int[] gearSpeeds;
   private String trainName = "";
   private TrainOwner trainOwner = TrainOwner.UNKNOWN;
@@ -155,11 +158,6 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   /** Ticks the button stays visibly lit. */
   private static final long PRESS_TICKS = 8;
 
-  /** Shortest gap between display updates, so a lever sweeping through neutral cannot spam updates. */
-  private static final long DISPLAY_INTERVAL = 5;
-
-  private long lastDisplaySync;
-
   /**
    * The single writer of the display block state.
    *
@@ -170,25 +168,17 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
    */
   private void syncState() {
     if (!(level instanceof ServerLevel)) return;
-    var state = getBlockState();
-    if (!state.hasProperty(DriverConsoleBlock.SCREEN) || !state.hasProperty(DriverConsoleBlock.PRESSED))
-      return;
-    long now = level.getGameTime();
     // Lamps follow the vehicle, not the seat: an unstaffed carriage keeps showing what it was last
     // told to do, and only a console with nothing to drive goes dark.
-    int want = ConsoleDisplay.index(DriverControls.body(this) != null, emergency, notch);
-    boolean wantPressed = pressedUntil > now;
-    if (state.getValue(DriverConsoleBlock.SCREEN) == want
-        && state.getValue(DriverConsoleBlock.PRESSED) == wantPressed) return;
-    boolean displayChanged = state.getValue(DriverConsoleBlock.SCREEN) != want;
-    if (displayChanged
-        && want != ConsoleDisplay.EMERGENCY
-        && now - lastDisplaySync < DISPLAY_INTERVAL) return;
-    lastDisplaySync = now;
+    bound = DriverControls.body(this) != null;
+    var state = getBlockState();
+    if (!state.hasProperty(DriverConsoleBlock.PRESSED)) return;
+    boolean wantPressed = pressedUntil > level.getGameTime();
+    if (state.getValue(DriverConsoleBlock.PRESSED) == wantPressed) return;
+    // Only the pressed button is worth a client chunk rebuild now that the lamps are drawn by the
+    // block entity renderer every frame; the screen model never changes while driving.
     level.setBlock(
-        worldPosition,
-        state.setValue(DriverConsoleBlock.SCREEN, want).setValue(DriverConsoleBlock.PRESSED, wantPressed),
-        Block.UPDATE_CLIENTS);
+        worldPosition, state.setValue(DriverConsoleBlock.PRESSED, wantPressed), Block.UPDATE_CLIENTS);
   }
 
   /** Lights the emergency button for a moment, so pressing it is visible to everyone nearby. */

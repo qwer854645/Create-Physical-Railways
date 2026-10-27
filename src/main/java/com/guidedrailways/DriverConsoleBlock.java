@@ -18,11 +18,6 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
     implements EntityBlock, IWrenchable {
   public static final MapCodec<DriverConsoleBlock> CODEC = simpleCodec(DriverConsoleBlock::new);
 
-  /** Which display the screen shows; see {@link ConsoleDisplay} for the values. */
-  public static final net.minecraft.world.level.block.state.properties.IntegerProperty SCREEN =
-      net.minecraft.world.level.block.state.properties.IntegerProperty.create(
-          "screen", 0, ConsoleDisplay.COUNT - 1);
-
   /** True for the few ticks after the emergency button is pressed. */
   public static final net.minecraft.world.level.block.state.properties.BooleanProperty PRESSED =
       net.minecraft.world.level.block.state.properties.BooleanProperty.create("pressed");
@@ -30,11 +25,7 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
   DriverConsoleBlock(Properties p) {
     super(p);
     registerDefaultState(
-        stateDefinition
-            .any()
-            .setValue(FACING, Direction.NORTH)
-            .setValue(SCREEN, ConsoleDisplay.OFF)
-            .setValue(PRESSED, false));
+        stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PRESSED, false));
   }
 
   @Override
@@ -44,14 +35,13 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
 
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) {
-    b.add(FACING, SCREEN, PRESSED);
+    b.add(FACING, PRESSED);
   }
 
   @Override
   public BlockState getStateForPlacement(BlockPlaceContext c) {
     return defaultBlockState()
         .setValue(FACING, c.getHorizontalDirection())
-        .setValue(SCREEN, ConsoleDisplay.OFF)
         .setValue(PRESSED, false);
   }
 

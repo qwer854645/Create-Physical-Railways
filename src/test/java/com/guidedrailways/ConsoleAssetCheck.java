@@ -66,8 +66,8 @@ public final class ConsoleAssetCheck {
     var variants =
         JsonParser.parseString(blockstates).getAsJsonObject().getAsJsonObject("variants");
     check(
-        variants.size() == 40,
-        "four facings, five displays and pressed/unpressed must all be covered, found "
+        variants.size() == 8,
+        "four facings and pressed/unpressed must all be covered, found "
             + variants.size());
 
     Set<String> models = new LinkedHashSet<>();
@@ -78,7 +78,7 @@ public final class ConsoleAssetCheck {
       if (entry.getKey().contains("pressed=true")) check(variant.has("y"), entry.getKey() + " rotates");
       else check(!entry.getKey().contains("pressed=false") || variant.has("y"), entry.getKey());
     }
-    check(models.size() == 10, "five displays times pressed/unpressed, found " + models.size());
+    check(models.size() == 2, "plain and pressed models, found " + models.size());
 
     Set<String> textures = new LinkedHashSet<>();
     for (var model : models) {
@@ -92,8 +92,8 @@ public final class ConsoleAssetCheck {
       check(screen != null && screen.has("screen"), model + " names a screen texture");
       textures.add(screen.get("screen").getAsString());
     }
-    check(textures.size() == ConsoleDisplay.COUNT, "one screen texture per display, found " + textures.size());
-    check(textures.size() == 5, "all five displays have their own texture");
+    check(textures.size() == 1, "one static screen texture, found " + textures.size());
+    check(textures.size() == 1, "the screen texture is shared: the lamps are drawn");
 
     // The pressed variants have to light the button, not only lower it.
     Set<String> buttons = new LinkedHashSet<>();
@@ -137,6 +137,6 @@ public final class ConsoleAssetCheck {
     System.out.println(
         "ConsoleAssetCheck: "
             + checks
-            + " block state, model and texture coverage checks passed for 40 variants");
+            + " block state, model and texture coverage checks passed for 8 variants");
   }
 }
