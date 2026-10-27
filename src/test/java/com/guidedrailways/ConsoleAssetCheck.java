@@ -85,6 +85,24 @@ public final class ConsoleAssetCheck {
     check(textures.size() == ConsoleDisplay.COUNT, "one screen texture per display, found " + textures.size());
     check(textures.size() == 4, "all four displays have their own texture");
 
+    // The pressed variants have to light the button, not only lower it.
+    Set<String> buttons = new LinkedHashSet<>();
+    for (var model : models) {
+      if (!model.endsWith("_pressed")) continue;
+      var json = read(modelPath(model));
+      var red =
+          JsonParser.parseString(json)
+              .getAsJsonObject()
+              .getAsJsonObject("textures")
+              .get("red")
+              .getAsString();
+      buttons.add(red);
+    }
+    check(buttons.size() == 1, "every pressed variant lights the same button texture");
+    check(
+        buttons.iterator().next().equals("guidedrailways:block/console_button_pressed"),
+        "the pressed button uses its lit texture");
+    check(packaged(texturePath("guidedrailways:block/console_button_pressed")), "lit button is packaged");
     for (var texture : textures) {
       check(texture.startsWith("guidedrailways:"), "screen textures stay in this mod: " + texture);
       check(packaged(texturePath(texture)), "texture packaged: " + texture);

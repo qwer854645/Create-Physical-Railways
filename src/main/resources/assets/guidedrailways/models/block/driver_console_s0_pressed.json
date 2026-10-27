@@ -8,7 +8,7 @@
     "gauge": "create:block/gauge",
     "screen": "guidedrailways:block/console_screen",
     "particle": "create:block/industrial_iron_block",
-    "red": "minecraft:block/red_concrete"
+    "red": "guidedrailways:block/console_button_pressed"
   },
   "elements": [
     {
