@@ -153,7 +153,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   }
 
   /** Ticks the button stays visibly lit. */
-  private static final long PRESS_TICKS = 6;
+  private static final long PRESS_TICKS = 8;
 
   /** Shortest gap between display updates, so a lever sweeping through neutral cannot spam updates. */
   private static final long DISPLAY_INTERVAL = 5;
@@ -174,7 +174,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     if (!state.hasProperty(DriverConsoleBlock.SCREEN) || !state.hasProperty(DriverConsoleBlock.PRESSED))
       return;
     long now = level.getGameTime();
-    int want = ConsoleDisplay.index(emergency, active, observing, notch);
+    // Lamps follow the vehicle, not the seat: an unstaffed carriage keeps showing what it was last
+    // told to do, and only a console with nothing to drive goes dark.
+    int want = ConsoleDisplay.index(DriverControls.body(this) != null, emergency, notch);
     boolean wantPressed = pressedUntil > now;
     if (state.getValue(DriverConsoleBlock.SCREEN) == want
         && state.getValue(DriverConsoleBlock.PRESSED) == wantPressed) return;

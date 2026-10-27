@@ -32,6 +32,14 @@
       "model": "guidedrailways:block/driver_console_s3_pressed",
       "y": 0
     },
+    "facing=north,screen=4,pressed=false": {
+      "model": "guidedrailways:block/driver_console_s4",
+      "y": 0
+    },
+    "facing=north,screen=4,pressed=true": {
+      "model": "guidedrailways:block/driver_console_s4_pressed",
+      "y": 0
+    },
     "facing=east,screen=0,pressed=false": {
       "model": "guidedrailways:block/driver_console_s0",
       "y": 90
@@ -62,6 +70,14 @@
     },
     "facing=east,screen=3,pressed=true": {
       "model": "guidedrailways:block/driver_console_s3_pressed",
+      "y": 90
+    },
+    "facing=east,screen=4,pressed=false": {
+      "model": "guidedrailways:block/driver_console_s4",
+      "y": 90
+    },
+    "facing=east,screen=4,pressed=true": {
+      "model": "guidedrailways:block/driver_console_s4_pressed",
       "y": 90
     },
     "facing=south,screen=0,pressed=false": {
@@ -96,6 +112,14 @@
       "model": "guidedrailways:block/driver_console_s3_pressed",
       "y": 180
     },
+    "facing=south,screen=4,pressed=false": {
+      "model": "guidedrailways:block/driver_console_s4",
+      "y": 180
+    },
+    "facing=south,screen=4,pressed=true": {
+      "model": "guidedrailways:block/driver_console_s4_pressed",
+      "y": 180
+    },
     "facing=west,screen=0,pressed=false": {
       "model": "guidedrailways:block/driver_console_s0",
       "y": 270
@@ -126,6 +150,14 @@
     },
     "facing=west,screen=3,pressed=true": {
       "model": "guidedrailways:block/driver_console_s3_pressed",
+      "y": 270
+    },
+    "facing=west,screen=4,pressed=false": {
+      "model": "guidedrailways:block/driver_console_s4",
+      "y": 270
+    },
+    "facing=west,screen=4,pressed=true": {
+      "model": "guidedrailways:block/driver_console_s4_pressed",
       "y": 270
     }
   }

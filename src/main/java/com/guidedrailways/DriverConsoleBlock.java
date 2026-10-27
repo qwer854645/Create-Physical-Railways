@@ -33,7 +33,7 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
         stateDefinition
             .any()
             .setValue(FACING, Direction.NORTH)
-            .setValue(SCREEN, ConsoleDisplay.IDLE)
+            .setValue(SCREEN, ConsoleDisplay.OFF)
             .setValue(PRESSED, false));
   }
 
@@ -51,7 +51,7 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
   public BlockState getStateForPlacement(BlockPlaceContext c) {
     return defaultBlockState()
         .setValue(FACING, c.getHorizontalDirection())
-        .setValue(SCREEN, ConsoleDisplay.IDLE)
+        .setValue(SCREEN, ConsoleDisplay.OFF)
         .setValue(PRESSED, false);
   }
 
