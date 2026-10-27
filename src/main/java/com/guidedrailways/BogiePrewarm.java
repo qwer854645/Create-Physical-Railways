@@ -58,12 +58,15 @@ final class BogiePrewarm {
   static void tick() {
     tick++;
     if (PENDING.isEmpty()) return;
+    // Snapshot the keys first: IdentityHashMap invalidates map entries as soon as they are removed,
+    // so reading a key back out of an entry after removal throws.
+    var queued = new java.util.ArrayList<>(PENDING.keySet());
     long spent = 0;
-    var iterator = PENDING.entrySet().iterator();
-    while (iterator.hasNext() && spent < BUDGET_NANOS) {
-      var entry = iterator.next();
-      iterator.remove();
-      spent += bake(entry.getKey(), entry.getValue());
+    for (var variant : queued) {
+      if (spent >= BUDGET_NANOS) break;
+      var data = PENDING.remove(variant);
+      if (data == null) continue;
+      spent += bake(variant, data);
     }
   }
 
