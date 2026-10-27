@@ -88,6 +88,17 @@ flowchart TD
 - 客户端模型、HUD、界面与网络包只呈现或请求操作；驾驶权限及有效性在服务端判定
 - 玩家可见语言、提示和界面遵循 `project-style.json` 与 `PROJECT_STYLE.md`
 
+## 性能计数
+
+`PerfCounters` 只在服务端配置 `performanceLogging=true` 时采样；关闭时 `begin()` 返回 0，各累加器直接忽略，不产生计时代价。每 20 刻输出一行汇总：
+
+- `[GuidedPerf]`：原有字段不变（`bogies`、`steps`、`meanMs`、`maxMs`、`pathQueries`、`index*`），`meanMs` 是**每个物理子步**的 Java 导轨耗时
+- `[GuidedPerfSplit]`：新增分段，`stepMs` 与 `meanMs` 同源；`contactsMs` 是转向架间接触和解，`switchMs`/`switchCalls` 是道岔与停车距离查询（**含在 `stepMs` 内**，不是并列项），`couplerMs` 是同一子步的车钩关节核算，`beforeMs`/`afterMs` 是每游戏刻的 `beforeTick`/`afterTick` 两段
+
+分段是"归因"不是"分区"：`contactsMs`、`switchMs` 属于 `stepMs`，`stepMs` 每刻出现两次，`beforeMs`/`afterMs` 每刻一次，比较时按各自的采样数换算。报告在 `afterTick` 结束处发出，所以一个窗口同时包含两段刻处理与其间的全部物理子步。
+
+该口径仍然只是本模组的 Java 侧耗时，不含原生物理求解、渲染、区块加载和总服务器刻；它用来回答"该优化哪一段"，不能当作帧率或整体占用的结论。
+
 ## 验证边界
 
 标准离线构建覆盖编组、车钩恢复、实际 NBT 交接、时刻表生命周期、货物缓存、信号模型、动画和适配契约等检查。`TrainRuntimeCheck` 检查跨模块调用顺序以及禁止在底层模块隐藏全局推进。

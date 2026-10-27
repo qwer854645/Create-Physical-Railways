@@ -125,6 +125,12 @@ public final class VehiclePhysics {
         || !ACTIVE.getOrDefault(level, Map.of()).isEmpty();
   }
 
+  /** Loaded guided units right now; the performance window reports this instead of a stale list. */
+  static int activeCount(ServerLevel level) {
+    var units = ACTIVE.get(level);
+    return units == null ? 0 : units.size();
+  }
+
   static void register(MountEntity mount) {
     if (mount.getLevel() instanceof ServerLevel level && mount.bogieId != null)
       INPUTS
@@ -303,7 +309,6 @@ public final class VehiclePhysics {
 
   static void update(ServerLevel level, Collection<Unit> units) {
     var system = SubLevelPhysicsSystem.get(level);
-    PerfCounters.report(level, units.size());
     var counts = new HashMap<UUID, Integer>();
     for (var u : units) counts.merge(u.carrier.getUniqueId(), 1, Integer::sum);
     for (var u : units) {
@@ -477,24 +482,25 @@ public final class VehiclePhysics {
   }
 
   static void step(SubLevelPhysicsSystem physics, double dt) {
-    if (!TrainConfig.PERFORMANCE_LOGGING.get()) {
-      stepVehicle(physics, dt);
-      return;
-    }
-    long start = System.nanoTime();
+    long start = PerfCounters.begin();
     try {
       stepVehicle(physics, dt);
     } finally {
-      PerfCounters.step(physics.getLevel(), System.nanoTime() - start);
+      PerfCounters.step(physics.getLevel(), PerfCounters.elapsed(start));
     }
   }
 
   private static void stepVehicle(SubLevelPhysicsSystem physics, double dt) {
     if (!(dt > 0 && Double.isFinite(dt))) return;
     var level = physics.getLevel();
+    // No loaded bogie means no contact pass, no routing pass and no native reads this substep.
+    var units = ACTIVE.get(level);
+    if (units == null || units.isEmpty()) return;
     var pipe = physics.getPipeline();
-    BogiePairContacts.step(physics, ACTIVE.getOrDefault(level, Map.of()).values(), dt);
-    for (var plan : ConsistRoutes.prepare(level, ACTIVE.getOrDefault(level, Map.of()).values())) {
+    long contactsStart = PerfCounters.begin();
+    BogiePairContacts.step(physics, units.values(), dt);
+    PerfCounters.contacts(level, PerfCounters.elapsed(contactsStart));
+    for (var plan : ConsistRoutes.prepare(level, units.values())) {
       var u = plan.unit();
       if (!u.ready(level.getGameTime())) continue;
       var pose = pipe.readPose(u.bogie, new Pose3d());
@@ -516,6 +522,7 @@ public final class VehiclePhysics {
           PhysicalSignals.nose(
                   u, world(u.bogie, u.axle(lead)), new Vector3d(heading).mul(reverse ? -1 : 1))
               + .25;
+      long switchStart = PerfCounters.begin();
       double switchRoom =
           TrackNetwork.switchDistance(
               level,
@@ -525,6 +532,7 @@ public final class VehiclePhysics {
               plan.axle(lead),
               approachSpeed * approachSpeed / (2 * TrainConfig.BRAKING.get()) + nose + 8,
               nose);
+      PerfCounters.switchQuery(level, PerfCounters.elapsed(switchStart));
       switchRoom = plan.axle(lead).limit(switchRoom);
       var atLead = world(u.bogie, u.axle(lead));
       u.samples[lead] =
