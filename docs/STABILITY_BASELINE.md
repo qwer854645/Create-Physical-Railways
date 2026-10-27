@@ -137,3 +137,42 @@
 - **离线通过**：`MountOwnershipCheck` 25 项纯规则断言，覆盖版本递增、往返后版本 2、旧版本拒绝、幂等重放、未知来源放宽、越界与溢出
 - **离线通过**：`BogieMountBindingCheck` 47 项，包含真实二进制 NBT 往返下的版本保存、旧存档按版本 0 读取、旧版本拒绝且不写盘、`SourceRevision` 与连续搬移保留原来源
 - **未测**：以上五组场景在真实世界中的 Sable 回调时序、物理关节、外观与驾驶效果
+
+## 第五阶段：重新上轨、轴承刚性与渲染开销
+
+本阶段处理三个只在真实游戏里才暴露的问题：重新上轨永远被拒、平台在行驶中自己左右倒、某款转向架第一次进入视野时掉帧。三者都先有实测证据再改，改动范围限于对应链路。
+
+### 重新上轨的坐标系
+
+- **现象**：任何重新上轨都被拒绝，聊天栏提示“目标位置所在区域尚未加载”，每次点击还伴随明显卡顿
+- **证据**：`[RerailSpace] target area chunk not loaded pos={x=-8645,y=69,z=28973253}`，而同一批目标车体的 `posePos` 是玩家身边的 `50,-58,7`；单次点击被拒 56 次，日志里 `[MountClaim]` 为 0
+- **根因**：`RerailSpace.shapes()` 用物理 pose 变换 plot 空间的方块坐标，却没有补 `logicalPose().rotationPoint()`。`Pose3d.transformPosition` 的语义是“减去旋转点后旋转、再加位置”，旋转点为 0 时等于把 2000 万量级的绝对坐标当矢量旋转，整个车体被判到 2900 万格外；包围盒被撑大后，地形校验扫到的是永不加载的绘图区
+- **修法**：变换前把 `logicalPose().rotationPoint()` 写入 pose；两种“未加载”拆成 `space_unloaded_area` / `space_unloaded_body` 并记录坐标或车体 ID
+- **回归**：`Frames.toWorld` 抽成纯函数，`FramesCheck` 用 2000 万量级原点覆盖“补旋转点正确 / 漏掉后偏移超过 1e7”；`RerailSpaceCheck` 增加字节码断言，要求 `shapes()` 确实读取 `rotationPoint`
+
+### 轴承刚性
+
+- **现象**：转向架顶上的平台在行驶中自己左右倒（滚转），静止时不出现
+- **证据**：车身局部 X 轴沿行驶方向（导向约束只放开 `LINEAR_X`），故 `ANGULAR_X` 是滚转、`ANGULAR_Z` 是俯仰、`ANGULAR_Y` 是偏航；旧代码对多副转向架只锁俯仰，并给滚转留了 ±0.35 rad 的活动量和一个纯阻尼 motor
+- **修法**：滚转与俯仰在任何转向架数量下都锁死；偏航保留（一个车身下挂多副转向架时，各转向架在弯道朝向不同，锁死偏航会让同一车身收到两个互相冲突的朝向约束），只做回正，预算按转向架数量分摊（13 行的 `18/60/360` 取代原先的 `12/18/120`）
+- **回归**：`BearingLock` 纯策略 + `FramesCheck` 断言 `locked(n)` 恒为 {滚转, 俯仰}、永不含偏航、预算按数量分摊；`TrainRuntimeCheck` 断言 `connectPivot` 经由该策略而不是内联轴表
+
+### 渲染开销
+
+- **现象**：主世界靠近火车时帧率不稳，偶发掉到 30；下界（无物理体）稳定
+- **证据**：`[BogieRender]`（`detailedLogging` 开关）稳态 `meanMs=0.087~0.126`、`maxMs<2.3`，即单次绘制 0.1 ms、一帧约 3 次；但新款式**首次绘制**是 `13.9 / 25.2 / 26.9 / 30.8 / 38.3 / 53.0 ms`，且全部集中在进世界后的头 30 秒，之后不再出现
+- **修法**：`BogiePrewarm` 在方块实体加载时登记款式，每客户端刻烘焙一款并提交缓冲区，把首帧成本挪到区块加载期；`NativeBogeyModels` 按款式缓存 style/size，不再每帧解析两个标识符
+- **本机环境调优**（不进 Git）：`sable-client.toml` 的 `debug_draw_loaded_chunks` 与 `sub_level_dynamic_shading` 关闭后收益明显；`build.gradle` 不再强制 `workerThreads=0`（该值让网格构建落在渲染线程），可用 `-PflywheelWorkers=0` 退回。发布说明应提示玩家这三项与帧率相关
+
+### 已知缺陷（本阶段不修）
+
+- **接缝丢锚点**：`[GuideReleased] reason=track_missing_or_out_of_range`，形态是一根轴在边段 `t≈0.76~0.9` 被判离线、另一根正常的 `error` 仅 0.1~0.2、`align=1.0`。历史日志 20 个文件共 37 次，最早可追到 0.2.11，属既有缺陷
+- 成因候选：`advance()` 的“必须接近边段尽头”闸门（`|previous.t-endT|>0.12` 且距端点 >0.6 格即返回 null），或接缝处 `RailwaysCompat.geometry`（`TrackEdge.canTravelTo`）判定不兼容导致候选集为空
+- 现成修法（未实施）：出口节点只有两条连接时按“纯接缝”特例忽略 `canTravelTo`，仍校验轨距、区块与投影；并让 `follow` 连续失败 N 子步才释放，避免瞬时打断直接脱轨
+- 该记录保留原因为暂未在测试环线上复现；一旦日志出现该 reason，按本条直接实施
+
+### 本阶段验证记录（2026-10-27）
+
+- **游戏内通过（玩家确认）**：重新上轨可正常完成；平台在任何转向架数量下不再自行滚转；主世界靠近火车时帧率稳定、未再低于 40
+- **离线通过**：`FramesCheck` 17 项、`RerailSpaceCheck` 218589 项（含新增旋转点契约）、`TrainRuntimeCheck` 10 项（含轴承策略契约）、`BogieYawCheck` 2552 项
+- **未测**：接缝丢锚点仍未复现也未修复；多副转向架在坡道过渡处的表现未单独验收

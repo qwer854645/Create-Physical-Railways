@@ -446,11 +446,14 @@ public final class VehiclePhysics {
         EnumSet.of(
             ConstraintJointAxis.LINEAR_X,
             ConstraintJointAxis.LINEAR_Y,
-            ConstraintJointAxis.LINEAR_Z,
-            // Body-local X runs along travel, so ANGULAR_X is roll and ANGULAR_Z is pitch. Neither
-            // may be free, otherwise the plate banks (roll) or nods (pitch) on its own.
-            ConstraintJointAxis.ANGULAR_X,
-            ConstraintJointAxis.ANGULAR_Z);
+            ConstraintJointAxis.LINEAR_Z);
+    for (var axis : BearingLock.locked(u.supports))
+      locks.add(
+          switch (axis) {
+            case ROLL -> ConstraintJointAxis.ANGULAR_X;
+            case PITCH -> ConstraintJointAxis.ANGULAR_Z;
+            case YAW -> ConstraintJointAxis.ANGULAR_Y;
+          });
     if (!u.mount.pivotReferenceKnown) {
       var carrier = pipe.readPose(u.carrier, new Pose3d());
       var bogie = pipe.readPose(u.bogie, new Pose3d());

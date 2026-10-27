@@ -388,6 +388,13 @@ tasks.register('checkBogieYaw', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkBogieYaw' }
 
+tasks.register('checkFrames', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.FramesCheck'
+}
+tasks.named('check') { dependsOn 'checkFrames' }
+
 tasks.register('checkLanguage', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

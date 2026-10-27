@@ -95,6 +95,21 @@ public final class RerailSpaceCheck {
     check(
         preflight >= 0 && commit > preflight,
         "whole-body preflight precedes all transactional moves");
+    var space = new ClassNode();
+    try (var input =
+        RerailSpaceCheck.class.getResourceAsStream("/com/guidedrailways/RerailSpace.class")) {
+      new org.objectweb.asm.ClassReader(java.util.Objects.requireNonNull(input)).accept(space, 0);
+    }
+    var shapes =
+        space.methods.stream().filter(m -> m.name.equals("shapes")).findFirst().orElseThrow();
+    boolean rotationPoint = false;
+    for (var instruction : shapes.instructions)
+      if (instruction instanceof MethodInsnNode call && call.name.equals("rotationPoint"))
+        rotationPoint = true;
+    check(
+        rotationPoint,
+        "rerail geometry takes the body's own rotation point before transforming plot"
+            + " coordinates into world coordinates");
     System.out.println(
         "RerailSpaceCheck: " + checks + " geometry and preflight boundary checks passed");
   }

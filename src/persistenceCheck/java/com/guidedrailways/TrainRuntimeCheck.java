@@ -133,6 +133,9 @@ public final class TrainRuntimeCheck {
         mentions(report, "[GuidedPerf]") && mentions(report, "[GuidedPerfSplit]"),
         "the established summary line survives next to the new split line");
     check(
+        calls("VehiclePhysics", "connectPivot").contains("BearingLock.locked"),
+        "pivot rigidity is decided by the checked bearing policy, not by a literal axis list");
+    check(
         calls("VehiclePhysics", "stepVehicle").contains("ConsistRoutes.prepare"),
         "routing still follows the early return for an empty unit set");
     System.out.println(
