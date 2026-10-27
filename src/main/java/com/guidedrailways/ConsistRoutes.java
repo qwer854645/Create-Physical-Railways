@@ -183,9 +183,11 @@ final class ConsistRoutes {
   static List<Plan> prepare(ServerLevel level, Collection<VehiclePhysics.Unit> input) {
     var cached = CACHE.get(level);
     if (cached != null && cached.tick == level.getGameTime()) return cached.plans;
-    var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
+    var system = SubLevelPhysicsSystem.get(level);
+    var pipe = system.getPipeline();
     var units = new ArrayList<VehiclePhysics.Unit>();
-    for (var u : input) if (u.ready(level.getGameTime())) units.add(u);
+    for (var u : input)
+      if (u.ready(level.getGameTime()) && BodyGuard.readable(system, u)) units.add(u);
     var liveUnits = new HashSet<>(units);
     var graph = new HashMap<UUID, Set<UUID>>();
     var sockets = new HashMap<UUID, Vector3d>();

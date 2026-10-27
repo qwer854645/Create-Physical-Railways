@@ -140,8 +140,22 @@ public final class TrainRuntimeCheck {
         calls("VehiclePhysics", "connectPivot").contains("BearingLock.locked"),
         "pivot rigidity is decided by the checked bearing policy, not by a literal axis list");
     check(
-        calls("VehiclePhysics", "stepVehicle").contains("ConsistRoutes.prepare"),
+        calls("VehiclePhysics", "stepVehicle").contains("BodyGuard.beginStep"),
+        "a physics step opens the body guard before it reads any pose");
+    check(
+        calls("VehiclePhysics", "stepVehicle").contains("ConsistRoutes.prepare")
+            || (calls("VehiclePhysics", "stepVehicle").contains("VehiclePhysics.plans")
+                && calls("VehiclePhysics", "plans").contains("ConsistRoutes.prepare")),
         "routing still follows the early return for an empty unit set");
+    check(
+        calls("VehiclePhysics", "stepVehicle").contains("BodyGuard.readable"),
+        "a unit whose physics body is already gone is skipped instead of read");
+    check(
+        calls("ConsistRoutes", "prepare").contains("BodyGuard.readable"),
+        "routing filters unreadable bodies before it builds the consist graph");
+    check(
+        calls("BogiePairContacts", "step").contains("BodyGuard.readable"),
+        "the contact pass filters unreadable bodies before it reads their pose");
     System.out.println(
         "TrainRuntimeCheck: "
             + checks

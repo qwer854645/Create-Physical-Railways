@@ -490,6 +490,21 @@ public final class VehiclePhysics {
     }
   }
 
+  /**
+   * Routing reads poses of every connected body, so a carriage torn down inside this substep can
+   * still throw. Skipping the substep keeps the world alive; the next substep picks up whatever is
+   * left, and {@link BodyGuard} reports the body that caused it.
+   */
+  private static List<ConsistRoutes.Plan> plans(ServerLevel level, Collection<Unit> units) {
+    try {
+      return ConsistRoutes.prepare(level, units);
+    } catch (RuntimeException removed) {
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .warn("[BodyGone] routing skipped this substep: {}", removed.toString());
+      return List.of();
+    }
+  }
+
   private static void stepVehicle(SubLevelPhysicsSystem physics, double dt) {
     if (!(dt > 0 && Double.isFinite(dt))) return;
     var level = physics.getLevel();
@@ -497,12 +512,14 @@ public final class VehiclePhysics {
     var units = ACTIVE.get(level);
     if (units == null || units.isEmpty()) return;
     var pipe = physics.getPipeline();
+    BodyGuard.beginStep(level.getGameTime());
     long contactsStart = PerfCounters.begin();
     BogiePairContacts.step(physics, units.values(), dt);
     PerfCounters.contacts(level, PerfCounters.elapsed(contactsStart));
-    for (var plan : ConsistRoutes.prepare(level, units.values())) {
+    for (var plan : plans(level, units.values())) {
       var u = plan.unit();
       if (!u.ready(level.getGameTime())) continue;
+      if (!BodyGuard.readable(physics, u)) continue;
       var pose = pipe.readPose(u.bogie, new Pose3d());
       var heading = new Vector3d(0, 0, 1).rotate(pose.orientation());
       if (u.detached) {

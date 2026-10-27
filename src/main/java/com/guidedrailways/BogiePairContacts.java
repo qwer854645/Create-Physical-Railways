@@ -38,7 +38,7 @@ final class BogiePairContacts {
     var live = STATES.computeIfAbsent(level, k -> new HashMap<>());
     var bodies = new ArrayList<Body>();
     for (var u : units)
-      if (u.ready(level.getGameTime())) {
+      if (u.ready(level.getGameTime()) && BodyGuard.readable(physics, u)) {
         var state = level.getBlockState(u.bogie.getPlot().getCenterBlock());
         if (!state.is(Content.BOGIE.get())) continue;
         var variant = BogieBlock.variant(state);

@@ -52,6 +52,10 @@ neoForge {
 
         client {
             client()
+            // This dev client loads 200+ mods plus Sable physics. The default 2G heap produced
+            // repeated multi-hundred-ms GC pauses that read as stutter near carriages.
+            jvmArgument '-Xms2G'
+            jvmArgument '-Xmx6G'
             if (project.hasProperty('captureBogeys')) {
                 systemProperty 'guidedrailways.captureBogeys', 'true'
                 systemProperty 'guidedrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
@@ -401,6 +405,13 @@ tasks.register('checkSeamRules', JavaExec) {
     mainClass = 'com.guidedrailways.SeamRulesCheck'
 }
 tasks.named('check') { dependsOn 'checkSeamRules' }
+
+tasks.register('checkBodySkip', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.BodySkipCheck'
+}
+tasks.named('check') { dependsOn 'checkBodySkip' }
 
 tasks.register('checkLanguage', JavaExec) {
     dependsOn testClasses
