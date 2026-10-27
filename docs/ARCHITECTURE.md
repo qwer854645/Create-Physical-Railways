@@ -33,7 +33,9 @@ flowchart TD
 
 ### 平台与转向架
 
-`MountEntity` 保存下部物理体 UUID、载重及转盘参考等平台状态；`MountHandoff` 保存正常搬移的待完成交接。下部 Sable 物理体的用户数据通过 `BogieMountBinding` 保存所属平台的维度和位置。
+`MountEntity` 保存下部物理体 UUID、载重及转盘参考等平台状态；`MountHandoff` 保存正常搬移的待完成交接。下部 Sable 物理体的用户数据通过 `BogieMountBinding` 保存所属平台的维度和位置，以及 `MountOwnership` 的搬移版本。
+
+`MountOwnership` 是不依赖 Minecraft 的纯规则：位置可被后来的平台复用，版本不能，因此“A→B→A”读回的是版本 2，而不是最初那次占用。`MountHandoff` 同时保存授权时观察到的来源版本，提交即对归属做一次比较并交换：来源位置或版本不再吻合时拒绝，不覆盖更新的归属；版本缺失（旧存档、或授权时下部物理体尚未加载）仍按位置规则处理，避免把来不及观测的正常搬移判成副本。
 
 `VehiclePhysics.Unit` 只保存运行时物理体引用、关节、轨道采样和命令。活动注册表可以重建，不能替代持久归属。交接先提交归属，再恢复关节；再次搬移必须使用已提交的位置作为来源。平台副本不能凭复制的下部 UUID 接管原件。
 

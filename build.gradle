@@ -541,6 +541,13 @@ tasks.register('checkBogieMountBinding', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkBogieMountBinding' }
 
+tasks.register('checkMountOwnership', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.MountOwnershipCheck'
+}
+tasks.named('check') { dependsOn 'checkMountOwnership' }
+
 tasks.register('checkScheduleLifecycle', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath

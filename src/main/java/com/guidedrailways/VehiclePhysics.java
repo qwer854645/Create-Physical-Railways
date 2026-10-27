@@ -138,8 +138,22 @@ public final class VehiclePhysics {
         && level.getBlockEntity(mount.getBlockPos()) == mount;
   }
 
-  static BogieMountBinding.Location mountLocation(ServerLevel level, BlockPos pos) {
-    return new BogieMountBinding.Location(level.dimension().location().toString(), pos.asLong());
+  static MountOwnership.Location mountLocation(ServerLevel level, BlockPos pos) {
+    return new MountOwnership.Location(level.dimension().location().toString(), pos.asLong());
+  }
+
+  /**
+   * Revision of the bound lower body right now, or {@link MountOwnership#UNKNOWN_REVISION} when it
+   * is not observable. Authorizing a move with an unknown source keeps the legacy location-only
+   * behaviour instead of rejecting a plate whose body simply has not loaded yet.
+   */
+  static long mountRevision(ServerLevel level, UUID bogieId) {
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null
+        || !(container.getSubLevel(bogieId) instanceof ServerSubLevel bogie)
+        || bogie.isRemoved()) return MountOwnership.UNKNOWN_REVISION;
+    var owner = BogieMountBinding.owner(bogie.getUserDataTag());
+    return owner == null ? MountOwnership.UNKNOWN_REVISION : owner.revision();
   }
 
   private static boolean claimMount(ServerLevel level, MountEntity mount, ServerSubLevel bogie) {
@@ -162,8 +176,20 @@ public final class VehiclePhysics {
     var target = handoff.destination();
     if (BogieMountBinding.matches(saved, target)) return MountHandoff.Result.READY;
     var data = saved == null ? new net.minecraft.nbt.CompoundTag() : saved.copy();
-    if (!BogieMountBinding.move(data, handoff.source(), target))
+    var result =
+        BogieMountBinding.move(data, handoff.source(), target, handoff.sourceRevision());
+    if (result != MountOwnership.Result.APPLIED && result != MountOwnership.Result.REPLAYED) {
+      var current = BogieMountBinding.owner(saved);
+      org.slf4j.LoggerFactory.getLogger("guidedrailways")
+          .warn(
+              "[MountClaim] rejected handoff {} -> {}: {} (handoff revision {}, current {})",
+              handoff.source(),
+              target,
+              result,
+              handoff.sourceRevision(),
+              current == null ? "none" : current.revision());
       return MountHandoff.Result.REJECTED;
+    }
     bogie.setUserDataTag(data);
     return MountHandoff.Result.READY;
   }

@@ -142,7 +142,8 @@ public final class MountBlock extends ComponentBlock
               mount.handoff,
               VehiclePhysics.mountLocation(from, a),
               VehiclePhysics.mountLocation(to, b),
-              reference);
+              reference,
+              VehiclePhysics.mountRevision(from, mount.bogieId));
       mount.setChanged();
       // Assembly explicitly hands ownership to the destination plate, even before source teardown.
       VehiclePhysics.forget(mount);
