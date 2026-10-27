@@ -360,6 +360,10 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     tag.putBoolean("VisualActive", active);
     tag.putInt("VisualNotch", notch);
     tag.putBoolean("VisualEmergency", emergency);
+    // Resolved here as well, because a console nobody has touched may never have run the sync path
+    // that refreshes it, and the client would then draw no lamps at all.
+    bound = DriverControls.body(this) != null;
+    tag.putBoolean("VisualBound", bound);
     return tag;
   }
 
@@ -401,6 +405,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
       notch =
           Math.clamp(tag.getInt("VisualNotch"), -DriverModel.BRAKE_NOTCHES, DriverModel.MAX_NOTCH);
       emergency = tag.getBoolean("VisualEmergency");
+      bound = tag.getBoolean("VisualBound");
     } else {
       // Disk: the takeover session is never restored, but the lever setting is.
       active = false;
