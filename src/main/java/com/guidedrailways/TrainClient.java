@@ -92,21 +92,21 @@ public final class TrainClient {
       }
       pose.pushPose();
       pose.translate(.5, variant.renderY, .5);
-      if (BogieBlock.variant(entity.getBlockState()) != BogeyVariant.DEFAULT
-          && NativeBogeyModels.render(
-              BogieBlock.variant(entity.getBlockState()),
-              entity.bogeyData,
-              (float)
-                  (distance
-                      / BogieBlock.variant(entity.getBlockState()).tread
-                      / BogieBlock.variant(entity.getBlockState()).animationRatio
-                      * 180
-                      / Math.PI),
-              partial,
-              pose,
-              buffers,
-              light,
-              overlay)) {
+      long pathStart = TrainConfig.DETAILED_LOGGING.get() ? System.nanoTime() : 0;
+      boolean nativePath =
+          variant != BogeyVariant.DEFAULT
+              && NativeBogeyModels.render(
+                  variant,
+                  entity.bogeyData,
+                  (float) (distance / variant.tread / variant.animationRatio * 180 / Math.PI),
+                  partial,
+                  pose,
+                  buffers,
+                  light,
+                  overlay);
+      if (pathStart != 0)
+        path(nativePath ? "native" : "fallback", variant, System.nanoTime() - pathStart);
+      if (nativePath) {
         pose.popPose();
         return;
       }
@@ -121,6 +121,34 @@ public final class TrainClient {
           false);
       pose.popPose();
     }
+
+    /** Per-second worst of each draw path, so a report names one instead of "the bogie renderer". */
+    private void path(String which, BogeyVariant variant, long nanos) {
+      double ms = nanos / 1e6;
+      if (ms > worstPathMs) {
+        worstPathMs = ms;
+        worstPathName = which;
+        worstPathVariant = variant.id;
+      }
+      long now = System.currentTimeMillis();
+      if (now < nextPathLog) return;
+      nextPathLog = now + 1000;
+      if (worstPathMs >= 1.0)
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+            .info(
+                "[BogiePath] worst={} variant={} ms={}",
+                worstPathName == null ? "-" : worstPathName,
+                worstPathVariant == null ? "-" : worstPathVariant,
+                worstPathMs);
+      worstPathMs = 0;
+      worstPathName = null;
+      worstPathVariant = null;
+    }
+
+    private String worstPathName;
+    private String worstPathVariant;
+    private double worstPathMs;
+    private long nextPathLog;
 
     private void record(long nanos) {
       renderNanos += nanos;
