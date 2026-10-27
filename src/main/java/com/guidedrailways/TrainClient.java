@@ -14,6 +14,8 @@ public final class TrainClient {
     net.createmod.ponder.foundation.PonderIndex.addPlugin(new RailwayPonderPlugin());
     ItemDescriptions.register(bus);
     NativeBogeyCapture.register();
+    net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+        (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> BogiePrewarm.tick());
     NativeTrainClient.register();
     if (net.neoforged.fml.ModList.get().isLoaded("xaerominimap")) {
       try {
@@ -47,10 +49,28 @@ public final class TrainClient {
     private final StandardBogeyRenderer.Small renderer = new StandardBogeyRenderer.Small();
     private final CompoundTag data = new CompoundTag();
 
+    // Opt-in frame cost: tells whether a visible bogie is what drops the frame rate.
+    private long renderNanos, worstNanos, renderCount, nextLog;
+
     Renderer(BlockEntityRendererProvider.Context c) {}
 
     @Override
     public void render(
+        BogieEntity entity,
+        float partial,
+        PoseStack pose,
+        MultiBufferSource buffers,
+        int light,
+        int overlay) {
+      long start = TrainConfig.DETAILED_LOGGING.get() ? System.nanoTime() : 0;
+      try {
+        draw(entity, partial, pose, buffers, light, overlay);
+      } finally {
+        if (start != 0) record(System.nanoTime() - start);
+      }
+    }
+
+    private void draw(
         BogieEntity entity,
         float partial,
         PoseStack pose,
@@ -88,6 +108,22 @@ public final class TrainClient {
           overlay,
           false);
       pose.popPose();
+    }
+
+    private void record(long nanos) {
+      renderNanos += nanos;
+      worstNanos = Math.max(worstNanos, nanos);
+      renderCount++;
+      long now = System.currentTimeMillis();
+      if (now < nextLog) return;
+      nextLog = now + 1000;
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info(
+              "[BogieRender] frames={} meanMs={} maxMs={}",
+              renderCount,
+              renderNanos / (double) renderCount / 1e6,
+              worstNanos / 1e6);
+      renderNanos = worstNanos = renderCount = 0;
     }
 
     @Override

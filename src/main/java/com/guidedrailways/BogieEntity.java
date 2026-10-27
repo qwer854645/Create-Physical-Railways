@@ -19,6 +19,14 @@ public final class BogieEntity extends SmartBlockEntity {
   @Override
   public void addBehaviours(java.util.List<BlockEntityBehaviour> list) {}
 
+  @Override
+  public void onLoad() {
+    super.onLoad();
+    // Bake this style once while the chunk is still arriving, so its first visible frame is cheap.
+    if (level != null && level.isClientSide)
+      BogiePrewarm.request(BogieBlock.variant(getBlockState()));
+  }
+
   double animationDistance(float partial) {
     if (level == null) return distance;
     if (!wheelAnimation.ready()) wheelAnimation.accept(distance, speed, level.getGameTime());

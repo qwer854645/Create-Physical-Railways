@@ -23,9 +23,10 @@ def patchDevClientConfig = {
         text = text.replace('backend = "DEFAULT"', 'backend = "flywheel:instancing"')
         text = text.replace('backend = "OFF"', 'backend = "flywheel:instancing"')
         text = text.replace('backend = "flywheel:indirect"', 'backend = "flywheel:instancing"')
-        text = text.replace('workerThreads = -1', 'workerThreads = 0')
-        text = text.replace('workerThreads = 1', 'workerThreads = 0')
-        text = text.replace('workerThreads = 2', 'workerThreads = 0')
+        // Meshing on the render thread (0) makes every new model a visible hitch; measure with two
+        // worker threads instead. Set -PflywheelWorkers=0 to restore the old stability setting.
+        def workers = findProperty('flywheelWorkers') ?: '2'
+        text = text.replaceAll(/workerThreads = -?\d+/, 'workerThreads = ' + workers)
         flywheel.setText(text, 'UTF-8')
     }
 }
