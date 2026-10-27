@@ -52,6 +52,8 @@ public final class BogieEntity extends SmartBlockEntity {
 
   @Override
   protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean client) {
+
+      if (client) SyncWatch.note(BogieEntity.class);
     super.read(tag, registries, client);
     distance = tag.getDouble("WheelDistance");
     speed = tag.getDouble("LinearSpeed");

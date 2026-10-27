@@ -388,6 +388,8 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
 
   @Override
   protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+
+      SyncWatch.note(DriverConsoleEntity.class);
     super.loadAdditional(tag, registries);
     if (tag.hasUUID("ConsoleId")) consoleId = tag.getUUID("ConsoleId");
     placementOrder = Math.max(0, tag.getLong("PlacementOrder"));

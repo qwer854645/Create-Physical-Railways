@@ -70,6 +70,8 @@ public final class MountEntity extends KineticBlockEntity {
 
   @Override
   protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean client) {
+
+      if (client) SyncWatch.note(MountEntity.class);
     super.read(tag, registries, client);
     bogieId = tag.hasUUID("BogieBody") ? tag.getUUID("BogieBody") : null;
     handoff = MountHandoff.load(tag.getCompound("MountHandoff"));
