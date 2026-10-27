@@ -16,7 +16,10 @@ public final class TrainClient {
     NativeBogeyCapture.register();
     FrameWatch.register();
     net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
-        (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> BogiePrewarm.tick());
+        (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> {
+          BogiePrewarm.tick();
+          BerPerf.report();
+        });
     NativeTrainClient.register();
     if (net.neoforged.fml.ModList.get().isLoaded("xaerominimap")) {
       try {

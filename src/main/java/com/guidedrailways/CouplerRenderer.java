@@ -42,6 +42,21 @@ public final class CouplerRenderer implements BlockEntityRenderer<CouplerEntity>
       MultiBufferSource buffers,
       int light,
       int overlay) {
+    long berStart = BerPerf.start();
+    try {
+      draw(entity, partial, pose, buffers, light, overlay);
+    } finally {
+      BerPerf.record("coupler", berStart);
+    }
+  }
+
+  private void draw(
+      CouplerEntity entity,
+      float partial,
+      PoseStack pose,
+      MultiBufferSource buffers,
+      int light,
+      int overlay) {
     var e = entity.endpoint;
     var facing = e.getBlockState().getValue(CouplerBlock.FACING);
     var pivot = CouplerVisual.pivot(facing.getStepX(), facing.getStepZ());

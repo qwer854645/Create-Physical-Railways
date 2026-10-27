@@ -228,6 +228,16 @@ final class NativeCouplerRenderer<T extends BlockEntity> implements BlockEntityR
   @Override
   public void render(
       T owner, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    long berStart = BerPerf.start();
+    try {
+      draw(owner, partial, pose, buffers, light, overlay);
+    } finally {
+      BerPerf.record("nativeCoupler", berStart);
+    }
+  }
+
+  private void draw(
+      T owner, float partial, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
     var e = CouplerEndpoint.get(owner);
     if (e == null || !HardwareRenderData.ready) return;
     var own = body(e);

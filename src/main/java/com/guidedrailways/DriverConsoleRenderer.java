@@ -20,6 +20,21 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
       MultiBufferSource buffers,
       int light,
       int overlay) {
+    long berStart = BerPerf.start();
+    try {
+      draw(e, partial, pose, buffers, light, overlay);
+    } finally {
+      BerPerf.record("console", berStart);
+    }
+  }
+
+  private void draw(
+      DriverConsoleEntity e,
+      float partial,
+      PoseStack pose,
+      MultiBufferSource buffers,
+      int light,
+      int overlay) {
     var atlas = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS);
     var iron =
         atlas.apply(ResourceLocation.fromNamespaceAndPath("create", "block/industrial_iron_block"));
