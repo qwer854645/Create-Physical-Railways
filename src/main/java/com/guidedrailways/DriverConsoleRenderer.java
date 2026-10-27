@@ -135,10 +135,13 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
           vertices,
           sprite,
           x,
-          11.42 / 16d,
+          // The plate face is at 11.4/16. A tenth of a unit above it loses the depth test at any
+          // normal viewing distance, which is why the lamps were drawn and still invisible; they now
+          // stand proud of the panel like an indicator that is mounted on it.
+          11.45 / 16d,
           z,
           x + LAMP_SIZE,
-          11.50 / 16d,
+          11.95 / 16d,
           z + LAMP_SIZE,
           0xF000F0,
           overlay);
