@@ -50,6 +50,16 @@ public final class ConsoleAssetCheck {
     return "/assets/" + split[0] + "/textures/" + split[1] + ".png";
   }
 
+  /** The element whose from[] starts with these x/z values, or null. */
+  private static com.google.gson.JsonObject elementAt(com.google.gson.JsonObject model, double x, double z) {
+    for (var element : model.getAsJsonArray("elements")) {
+      var box = element.getAsJsonObject();
+      var from = box.getAsJsonArray("from");
+      if (Math.abs(from.get(0).getAsDouble() - x) < 1e-6
+          && Math.abs(from.get(2).getAsDouble() - z) < 1e-6) return box;
+    }
+    return null;
+  }
   public static void main(String[] args) {
     var blockstates = read("/assets/guidedrailways/blockstates/driver_console.json");
     check(blockstates != null, "the console block state file is packaged");
@@ -97,6 +107,23 @@ public final class ConsoleAssetCheck {
               .get("red")
               .getAsString();
       buttons.add(red);
+    }
+    // Pressed has to be both: lit and sunk. Checking only the texture let the sink be removed once
+    // already, and the player expects to see the button move as well as flash.
+    for (var model : models) {
+      if (!model.endsWith("_pressed")) continue;
+      var pressedJson = JsonParser.parseString(read(modelPath(model))).getAsJsonObject();
+      var plain =
+          JsonParser.parseString(read(modelPath(model.replace("_pressed", "")))).getAsJsonObject();
+      var pressedButton = elementAt(pressedJson, 3.5, 10.5);
+      var plainButton = elementAt(plain, 3.5, 10.5);
+      check(pressedButton != null && plainButton != null, model + " keeps its button element");
+      double pressedTop = pressedButton.getAsJsonArray("from").get(1).getAsDouble();
+      double plainTop = plainButton.getAsJsonArray("from").get(1).getAsDouble();
+      check(pressedTop < plainTop, model + " sinks the button when pressed");
+      check(
+          pressedTop > plainTop - 0.5,
+          model + " sinks the button by a visible but not exaggerated amount");
     }
     check(buttons.size() == 1, "every pressed variant lights the same button texture");
     check(

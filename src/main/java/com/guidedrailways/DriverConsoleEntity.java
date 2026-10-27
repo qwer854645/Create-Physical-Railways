@@ -146,45 +146,61 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   void updateVisual() {
     setChanged();
     if (level instanceof ServerLevel server && !isRemoved()) {
-      syncDisplay();
+      syncState();
       sendVisual(server);
       DriverNetwork.sync(this, active);
     }
   }
 
-  /** The display index lives in the block state, so the client only has to pick a model. */
-  private void syncDisplay() {
-    var state = getBlockState();
-    if (!state.hasProperty(DriverConsoleBlock.SCREEN)) return;
-    int want = ConsoleDisplay.index(emergency, active, observing, notch);
-    if (state.getValue(DriverConsoleBlock.SCREEN) == want) return;
-    level.setBlock(
-        worldPosition, state.setValue(DriverConsoleBlock.SCREEN, want), Block.UPDATE_CLIENTS);
-  }
-
-  /** Ticks the button stays visibly pressed. */
+  /** Ticks the button stays visibly lit. */
   private static final long PRESS_TICKS = 6;
 
-  /** Depresses the emergency button for a moment, so pressing it is visible to everyone nearby. */
+  /** Shortest gap between display updates, so a lever sweeping through neutral cannot spam updates. */
+  private static final long DISPLAY_INTERVAL = 5;
+
+  private long lastDisplaySync;
+
+  /**
+   * The single writer of the display block state.
+   *
+   * <p>The screen index and the pressed flag go out in one update: writing them from two places made
+   * the second write carry a stale value and clear the press that had just been set. Each write costs
+   * a client chunk rebuild, so a change is throttled unless it is the emergency state, which has to be
+   * immediate.
+   */
+  private void syncState() {
+    if (!(level instanceof ServerLevel)) return;
+    var state = getBlockState();
+    if (!state.hasProperty(DriverConsoleBlock.SCREEN) || !state.hasProperty(DriverConsoleBlock.PRESSED))
+      return;
+    long now = level.getGameTime();
+    int want = ConsoleDisplay.index(emergency, active, observing, notch);
+    boolean wantPressed = pressedUntil > now;
+    if (state.getValue(DriverConsoleBlock.SCREEN) == want
+        && state.getValue(DriverConsoleBlock.PRESSED) == wantPressed) return;
+    boolean displayChanged = state.getValue(DriverConsoleBlock.SCREEN) != want;
+    if (displayChanged
+        && want != ConsoleDisplay.EMERGENCY
+        && now - lastDisplaySync < DISPLAY_INTERVAL) return;
+    lastDisplaySync = now;
+    level.setBlock(
+        worldPosition,
+        state.setValue(DriverConsoleBlock.SCREEN, want).setValue(DriverConsoleBlock.PRESSED, wantPressed),
+        Block.UPDATE_CLIENTS);
+  }
+
+  /** Lights the emergency button for a moment, so pressing it is visible to everyone nearby. */
   void press() {
     if (level == null) return;
     pressedUntil = level.getGameTime() + PRESS_TICKS;
-    applyPressed(true);
+    syncState();
   }
 
-  /** Releases the button once its press animation is over. */
+  /** Releases the button once its press is over. */
   void clearPressIfDue() {
     if (pressedUntil == 0 || level == null || level.getGameTime() < pressedUntil) return;
     pressedUntil = 0;
-    applyPressed(false);
-  }
-
-  private void applyPressed(boolean pressed) {
-    var state = getBlockState();
-    if (!state.hasProperty(DriverConsoleBlock.PRESSED)) return;
-    if (state.getValue(DriverConsoleBlock.PRESSED) == pressed) return;
-    level.setBlock(
-        worldPosition, state.setValue(DriverConsoleBlock.PRESSED, pressed), Block.UPDATE_CLIENTS);
+    syncState();
   }
   /**
    * Sends the block entity payload only.
