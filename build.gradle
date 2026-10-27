@@ -413,6 +413,13 @@ tasks.register('checkBodySkip', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkBodySkip' }
 
+tasks.register('checkSwitchReservations', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.SwitchReservationsCheck'
+}
+tasks.named('check') { dependsOn 'checkSwitchReservations' }
+
 tasks.register('checkLanguage', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
