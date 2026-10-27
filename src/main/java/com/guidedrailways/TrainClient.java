@@ -83,11 +83,12 @@ public final class TrainClient {
         int overlay) {
       double distance = entity.animationDistance(partial);
       var variant = BogieBlock.variant(entity.getBlockState());
-      if (!BogiePrewarm.warmed(variant)) {
+      long warmKey = entity.getBlockPos().asLong();
+      if (!BogiePrewarm.warmed(warmKey)) {
         // The bake runs on the next client tick; one hidden frame is cheaper than a cold draw, which
         // was measured at up to 340 ms inside this renderer.
-        BogiePrewarm.request(variant, entity.bogeyData);
-        if (BogiePrewarm.pending(variant)) return;
+        BogiePrewarm.request(warmKey, variant, entity.bogeyData);
+        if (BogiePrewarm.pending(warmKey)) return;
       }
       pose.pushPose();
       pose.translate(.5, variant.renderY, .5);

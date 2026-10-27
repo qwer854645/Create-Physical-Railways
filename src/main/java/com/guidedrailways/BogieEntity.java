@@ -24,7 +24,7 @@ public final class BogieEntity extends SmartBlockEntity {
     super.onLoad();
     // Bake this style once while the chunk is still arriving, so its first visible frame is cheap.
     if (level != null && level.isClientSide)
-      BogiePrewarm.request(BogieBlock.variant(getBlockState()), bogeyData);
+      BogiePrewarm.request(worldPosition.asLong(), BogieBlock.variant(getBlockState()), bogeyData);
   }
 
   double animationDistance(float partial) {

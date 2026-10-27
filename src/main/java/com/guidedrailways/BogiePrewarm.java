@@ -26,32 +26,35 @@ final class BogiePrewarm {
   /** Ticks after which a never-baked style is drawn anyway, so a failure cannot hide a carriage. */
   private static final long GIVE_UP_TICKS = 40;
 
-  private static final Map<BogeyVariant, CompoundTag> PENDING = new IdentityHashMap<>();
-  private static final Map<BogeyVariant, Long> REQUESTED_AT = new IdentityHashMap<>();
-  private static final Map<BogeyVariant, Boolean> DONE = new IdentityHashMap<>();
+  private static final Map<Long, CompoundTag> PENDING = new java.util.HashMap<>();
+  private static final Map<Long, Long> REQUESTED_AT = new java.util.HashMap<>();
+  private static final Map<Long, Boolean> DONE = new java.util.HashMap<>();
+
+  /** Variant that each queued position needs; the bake needs both the style and the data. */
+  private static final Map<Long, BogeyVariant> VARIANTS = new java.util.HashMap<>();
 
   private static long warmNanos;
   private static int warmCount;
   private static long tick;
 
-  static void request(BogeyVariant variant, CompoundTag data) {
+  static void request(long key, BogeyVariant variant, CompoundTag data) {
     if (variant == null || variant == BogeyVariant.DEFAULT) return;
-    if (DONE.containsKey(variant)) return;
-    PENDING.putIfAbsent(variant, data == null ? new CompoundTag() : data.copy());
-    REQUESTED_AT.putIfAbsent(variant, tick);
+    if (DONE.containsKey(key)) return;
+    VARIANTS.putIfAbsent(key, variant);
+    PENDING.putIfAbsent(key, data == null ? new CompoundTag() : data.copy());
+    REQUESTED_AT.putIfAbsent(key, tick);
   }
 
   /** True when this style may be drawn without paying the first-draw cost. */
-  static boolean warmed(BogeyVariant variant) {
-    if (variant == BogeyVariant.DEFAULT) return true;
-    if (DONE.containsKey(variant)) return true;
-    var since = REQUESTED_AT.get(variant);
+  static boolean warmed(long key) {
+    if (DONE.containsKey(key)) return true;
+    var since = REQUESTED_AT.get(key);
     return since != null && tick - since >= GIVE_UP_TICKS;
   }
 
   /** True while a request is queued, so the renderer can skip a single frame. */
-  static boolean pending(BogeyVariant variant) {
-    return variant != null && PENDING.containsKey(variant);
+  static boolean pending(long key) {
+    return PENDING.containsKey(key);
   }
 
   /** Bakes queued styles until the per-tick budget is spent. */
@@ -60,17 +63,19 @@ final class BogiePrewarm {
     if (PENDING.isEmpty()) return;
     // Snapshot the keys first: IdentityHashMap invalidates map entries as soon as they are removed,
     // so reading a key back out of an entry after removal throws.
-    var queued = new java.util.ArrayList<>(PENDING.keySet());
+    var queued = new java.util.ArrayList<Long>(PENDING.keySet());
     long spent = 0;
-    for (var variant : queued) {
+    for (var key : queued) {
       if (spent >= BUDGET_NANOS) break;
-      var data = PENDING.remove(variant);
+      var data = PENDING.remove(key);
       if (data == null) continue;
-      spent += bake(variant, data);
+      var variant = VARIANTS.remove(key);
+      if (variant == null) continue;
+      spent += bake(key, variant, data);
     }
   }
 
-  private static long bake(BogeyVariant variant, CompoundTag data) {
+  private static long bake(long key, BogeyVariant variant, CompoundTag data) {
     long start = System.nanoTime();
     try {
       var pose = new PoseStack();
@@ -85,13 +90,13 @@ final class BogiePrewarm {
         byteBuffer.close();
       }
     } catch (RuntimeException failure) {
-      DONE.put(variant, Boolean.FALSE);
+      DONE.put(key, Boolean.FALSE);
       org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
           .warn("[BogiePrewarm] could not bake {}", variant.id, failure);
       return System.nanoTime() - start;
     }
     long nanos = System.nanoTime() - start;
-    DONE.put(variant, Boolean.TRUE);
+    DONE.put(key, Boolean.TRUE);
     warmNanos += nanos;
     warmCount++;
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
