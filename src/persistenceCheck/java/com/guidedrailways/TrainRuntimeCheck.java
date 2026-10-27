@@ -46,6 +46,15 @@ public final class TrainRuntimeCheck {
     if (!actual.equals(List.of(expected))) throw new AssertionError(method + ": " + actual);
   }
 
+  /** True when a method calls into an external class, which the internal-only helper cannot see. */
+  private static boolean callsExternal(String owner, String method, String target, String name)
+      throws Exception {
+    for (var instruction : method(owner, method).instructions)
+      if (instruction instanceof MethodInsnNode call
+          && call.owner.equals(target)
+          && call.name.equals(name)) return true;
+    return false;
+  }
   private static boolean mentions(MethodNode body, String text) {
     for (var instruction : body.instructions)
       if (instruction instanceof LdcInsnNode literal
@@ -156,6 +165,33 @@ public final class TrainRuntimeCheck {
     check(
         calls("BogiePairContacts", "step").contains("BodyGuard.readable"),
         "the contact pass filters unreadable bodies before it reads their pose");
+
+    // Visual-only block entity updates must not broadcast a block state packet: the client answers
+    // one by rebuilding that chunk section, and the lever changes several times per second.
+    check(
+        !callsExternal(
+                "DriverConsoleEntity",
+                "updateVisual",
+                "net/minecraft/world/level/Level",
+                "sendBlockUpdated")
+            && calls("DriverConsoleEntity", "updateVisual").contains("DriverConsoleEntity.sendVisual"),
+        "the console syncs its lever through the block entity payload, not a block update");
+    check(
+        callsExternal(
+            "DriverConsoleEntity",
+            "sendVisual",
+            "net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket",
+            "create"),
+        "the console payload carries VisualNotch to tracking players");
+    check(
+        !callsExternal(
+                "CouplerEndpoint", "syncVisual", "net/minecraft/world/level/Level", "sendBlockUpdated")
+            && callsExternal(
+                "CouplerEndpoint",
+                "syncVisual",
+                "net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket",
+                "create"),
+        "the coupler syncs its visual through the block entity payload as well");
     System.out.println(
         "TrainRuntimeCheck: "
             + checks

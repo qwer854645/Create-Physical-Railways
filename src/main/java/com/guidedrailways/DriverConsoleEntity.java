@@ -143,10 +143,26 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
 
   void updateVisual() {
     setChanged();
-    if (level != null && !level.isClientSide && !isRemoved()) {
-      level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+    if (level instanceof ServerLevel server && !isRemoved()) {
+      sendVisual(server);
       DriverNetwork.sync(this, active);
     }
+  }
+
+  /**
+   * Sends the block entity payload only.
+   *
+   * <p>{@code sendBlockUpdated(..., UPDATE_CLIENTS)} also broadcasts a block state packet, and the
+   * client answers a block state packet by rebuilding that chunk section. The lever changes every few
+   * ticks while a schedule runs, so that path rebuilt the section several times a second and showed up
+   * as periodic hundred-millisecond frames. The payload already carries {@code VisualNotch},
+   * {@code VisualActive} and {@code VisualEmergency}, which is everything the client draws.
+   */
+  private void sendVisual(ServerLevel server) {
+    var packet = net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    for (var player :
+        server.getChunkSource().chunkMap.getPlayers(new net.minecraft.world.level.ChunkPos(worldPosition), false))
+      player.connection.send(packet);
   }
 
   void leave() {

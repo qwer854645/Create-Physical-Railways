@@ -138,8 +138,14 @@ public final class CouplerEndpoint {
   }
 
   private void syncVisual() {
-    if (getLevel() != null && !getLevel().isClientSide && !isRemoved())
-      getLevel().sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 2);
+    // Payload only: a block state packet would make every tracking client rebuild that chunk section,
+    // and the coupling visual changes on every connect and release.
+    if (!(getLevel() instanceof net.minecraft.server.level.ServerLevel server) || isRemoved()) return;
+    var packet =
+        net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(owner);
+    var chunk = new net.minecraft.world.level.ChunkPos(getBlockPos());
+    for (var player : server.getChunkSource().chunkMap.getPlayers(chunk, false))
+      player.connection.send(packet);
   }
 
   void clientTick() {
