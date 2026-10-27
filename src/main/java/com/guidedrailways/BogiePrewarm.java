@@ -33,12 +33,16 @@ final class BogiePrewarm {
   /** Variant that each queued position needs; the bake needs both the style and the data. */
   private static final Map<Long, BogeyVariant> VARIANTS = new java.util.HashMap<>();
 
+  private static final com.simibubi.create.content.trains.bogey.StandardBogeyRenderer.Small
+      FALLBACK =
+          new com.simibubi.create.content.trains.bogey.StandardBogeyRenderer.Small();
+
   private static long warmNanos;
   private static int warmCount;
   private static long tick;
 
   static void request(long key, BogeyVariant variant, CompoundTag data) {
-    if (variant == null || variant == BogeyVariant.DEFAULT) return;
+    if (variant == null) return;
     if (DONE.containsKey(key)) return;
     VARIANTS.putIfAbsent(key, variant);
     PENDING.putIfAbsent(key, data == null ? new CompoundTag() : data.copy());
@@ -83,7 +87,10 @@ final class BogiePrewarm {
       var byteBuffer = new ByteBufferBuilder(8192);
       try {
         var buffers = MultiBufferSource.immediate(byteBuffer);
-        NativeBogeyModels.render(variant, data, 0, 0, pose, buffers, 0xF000F0, 0);
+        // Default bogeys render through Create's standard renderer, not the native style path, so the
+        // bake has to use the same one or it warms the wrong thing.
+        if (!NativeBogeyModels.render(variant, data, 0, 0, pose, buffers, 0xF000F0, 0))
+          FALLBACK.render(data, 0, 0, pose, buffers, 0xF000F0, 0, false);
         // Submit once so the shader pipeline and vertex upload happen here, not on a visible frame.
         buffers.endBatch();
       } finally {

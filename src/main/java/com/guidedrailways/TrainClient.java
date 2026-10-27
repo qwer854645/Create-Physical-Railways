@@ -110,6 +110,7 @@ public final class TrainClient {
         pose.popPose();
         return;
       }
+      long fallbackStart = TrainConfig.DETAILED_LOGGING.get() ? System.nanoTime() : 0;
       renderer.render(
           data,
           (float) (distance / BogieGeometry.TREAD_RADIUS * 180 / Math.PI),
@@ -119,6 +120,8 @@ public final class TrainClient {
           light,
           overlay,
           false);
+      if (fallbackStart != 0)
+        path("fallbackRender", variant, System.nanoTime() - fallbackStart);
       pose.popPose();
     }
 
