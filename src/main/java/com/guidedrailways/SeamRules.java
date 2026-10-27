@@ -25,5 +25,28 @@ final class SeamRules {
     return Math.abs(previousT - endT) <= WINDOW || distanceSquaredToEnd <= NEAR_SQUARED;
   }
 
+  /**
+   * Consecutive substeps an axle may fail to find its edge before the carriage is released.
+   *
+   * <p>A single miss is usually a projection that landed a few centimetres outside the accepted
+   * deviation while crossing a seam, not a derailment. Holding the previous guides for a couple of
+   * substeps lets the next projection recover; releasing on the first miss turns any one-frame
+   * glitch into a derailment.
+   */
+  static final int MISS_LIMIT = 3;
+
+  /**
+   * A node with exactly two connections is a plain seam: the edge that was entered from and one
+   * other edge. There is nothing to choose there, so refusing the only candidate because the
+   * upstream geometry helper dislikes the pair leaves the axle with no edge at all.
+   */
+  static boolean pureSeam(int connectionCount) {
+    return connectionCount == 2;
+  }
+
+  static boolean mayHold(int consecutiveMisses) {
+    return consecutiveMisses < MISS_LIMIT;
+  }
+
   private SeamRules() {}
 }

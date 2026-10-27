@@ -336,14 +336,20 @@ public final class TrackNetwork {
     var current = connections(live.network, enter).get(exit);
     if (current == null) return null;
     var options = new ArrayList<Branch>();
-    for (var entry : connections(live.network, exit).entrySet()) {
-      if (entry.getKey() == enter || entry.getValue().isInterDimensional()) continue;
-      if (!RailwaysCompat.geometry(current, entry.getValue())) continue;
-      var path = idx.paths.get(key(live.graph, exit.getNetId(), entry.getKey().getNetId()));
-      if (path == null
-          || !live(level, path)
-          || !path.supports(policy == null ? RailGauge.STANDARD : policy.gauge())) continue;
-      options.add(new Branch(entry.getKey(), entry.getValue(), path));
+    var exitLinks = connections(live.network, exit);
+    collect(options, idx, level, live, exit, enter, current, policy, true);
+    if (options.isEmpty() && SeamRules.pureSeam(exitLinks.size())) {
+      // Only one candidate exists at a two-way seam, so geometric compatibility cannot be choosing
+      // between branches here; refusing it would leave the axle without an edge. Gauge, loaded
+      // chunks and the projection radius are still checked before anything is accepted.
+      collect(options, idx, level, live, exit, enter, current, policy, false);
+      if (!options.isEmpty())
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+            .info(
+                "[SeamFallback] graph={} node={} entered={} used the only other connection",
+                live.graph,
+                exit.getNetId(),
+                enter.getNetId());
     }
     if (options.isEmpty()) return null;
     options.sort(Comparator.comparingInt(c -> c.node.getNetId()));
@@ -414,6 +420,32 @@ public final class TrackNetwork {
   }
 
   private record Branch(TrackNode node, TrackEdge edge, Path path) {}
+
+  /**
+   * Candidates at the exit node: everything but the edge that was entered from, inter-dimensional
+   * edges, edges the gauge cannot use. {@code requireGeometry} is false only for the two-way seam
+   * fallback, where compatibility cannot be choosing between branches.
+   */
+  private static void collect(
+      List<Branch> options,
+      Index idx,
+      ServerLevel level,
+      Path live,
+      TrackNode exit,
+      TrackNode enter,
+      TrackEdge current,
+      RoutePolicy policy,
+      boolean requireGeometry) {
+    for (var entry : connections(live.network, exit).entrySet()) {
+      if (entry.getKey() == enter || entry.getValue().isInterDimensional()) continue;
+      if (requireGeometry && !RailwaysCompat.geometry(current, entry.getValue())) continue;
+      var path = idx.paths.get(key(live.graph, exit.getNetId(), entry.getKey().getNetId()));
+      if (path == null
+          || !live(level, path)
+          || !path.supports(policy == null ? RailGauge.STANDARD : policy.gauge())) continue;
+      options.add(new Branch(entry.getKey(), entry.getValue(), path));
+    }
+  }
 
   /** Read ahead without committing route memory or moving a body. */
   static double switchDistance(

@@ -48,6 +48,22 @@ public final class SeamRulesCheck {
     check(
         SeamRules.canAdvance(.5, 1, SeamRules.NEAR_SQUARED),
         "the block window is inclusive");
+
+    // A seam between exactly two edges has no branch to choose, so the only candidate is accepted
+    // even when the upstream geometry helper dislikes the pair. Anything else stays strict.
+    check(SeamRules.pureSeam(2), "two connections are a plain seam");
+    check(!SeamRules.pureSeam(1), "a dead end is not a seam to fall back on");
+    check(!SeamRules.pureSeam(3), "a junction keeps requiring geometric compatibility");
+    check(!SeamRules.pureSeam(4), "a crossing keeps requiring geometric compatibility");
+
+    // One missing sample is usually a projection landing just outside the accepted deviation; a
+    // streak means the axle really lost its edge. The recorded releases released on the first miss.
+    check(SeamRules.mayHold(0), "a sample that was found needs no hold");
+    check(SeamRules.mayHold(1), "the first miss is held, not released");
+    check(SeamRules.mayHold(SeamRules.MISS_LIMIT - 1), "the last miss inside the limit is held");
+    check(
+        !SeamRules.mayHold(SeamRules.MISS_LIMIT), "a full streak releases the carriage as before");
+    check(!SeamRules.mayHold(SeamRules.MISS_LIMIT + 5), "a longer streak keeps releasing");
     System.out.println("SeamRulesCheck: " + checks + " seam gate checks passed");
   }
 }

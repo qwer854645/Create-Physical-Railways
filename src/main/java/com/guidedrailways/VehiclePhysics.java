@@ -39,9 +39,11 @@ public final class VehiclePhysics {
     final TrackNetwork.Sample[] samples = new TrackNetwork.Sample[2];
     final DerailmentModel.Exposure exposure = new DerailmentModel.Exposure();
     double mass, tractionMass, commandedForce, speed, curveRisk, lateralSpeed, electricWatts;
-    long lastSeen, nextLog, derailGraceUntil;
+    long lastSeen, nextLog, nextHoldLog, derailGraceUntil;
     boolean detached, reverseTravel, trainPowered, electricEquipped;
     int supports = 1;
+    /** Consecutive substeps without a track sample; a short streak is held, not released. */
+    int missStreak;
 
     Unit(MountEntity mount, ServerSubLevel carrier, ServerSubLevel bogie) {
       var variant =
@@ -557,6 +559,7 @@ public final class VehiclePhysics {
               level, atLead, heading, u.samples[lead], null, .8, reverse, plan.axle(lead));
       plan.axle(lead).followed(u.samples[lead]);
       if (u.samples[lead] == null) {
+        if (hold(u, "lead_axle")) continue;
         release(u, "track_missing_or_out_of_range");
         continue;
       }
@@ -572,9 +575,11 @@ public final class VehiclePhysics {
               reverse,
               plan.axle(trail));
       if (u.samples[trail] == null) {
+        if (hold(u, "trail_axle")) continue;
         release(u, "track_missing_or_out_of_range");
         continue;
       }
+      u.missStreak = 0;
       if (TrainConfig.DERAILMENT.get()
           && level.getGameTime() >= u.derailGraceUntil
           && checkDerailment(u, physics, dt)) continue;
@@ -637,6 +642,30 @@ public final class VehiclePhysics {
         u.mount.setChanged();
         u.mount.sendData();
       }
+  }
+
+  /**
+   * Holds a carriage for a couple of substeps when a sample goes missing.
+   *
+   * <p>Existing guides stay in place, so the body keeps being constrained to the last good samples;
+   * only a streak longer than {@link SeamRules#MISS_LIMIT} means the axle really lost its edge.
+   */
+  private static boolean hold(Unit u, String axle) {
+    u.missStreak++;
+    if (!SeamRules.mayHold(u.missStreak)) return false;
+    long tick = u.bogie.getLevel().getGameTime();
+    if (u.nextHoldLog <= tick) {
+      u.nextHoldLog = tick + 20;
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info(
+              "[GuideHeld] body={} axle={} miss={}/{} speed={}",
+              u.bogie.getUniqueId(),
+              axle,
+              u.missStreak,
+              SeamRules.MISS_LIMIT,
+              u.speed);
+    }
+    return true;
   }
 
   private static void release(Unit u, String reason) {
