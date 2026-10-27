@@ -30,6 +30,8 @@ final class FrameWatch {
   private static int ticks;
   private static Boolean enabled;
   private static long gcLast;
+  private static long lastGameTime = -1;
+  private static long lastGameSample;
   private static long stageStart;
   private static String stageName;
   private static String worstStage;
@@ -94,10 +96,24 @@ final class FrameWatch {
     if (now - windowStart < WINDOW_NANOS || frames == 0) return;
     double seconds = (now - windowStart) / 1e9;
     long gcTime = gcMillis();
+    // Server tick rate, measured from the client: the integrated server's tick counter over wall time.
+    // Frame time alone cannot distinguish "the client is slow" from "the world is ticking slowly".
+    double tps = -1;
+    var level = Minecraft.getInstance().level;
+    if (level != null) {
+      long gameTime = level.getGameTime();
+      if (lastGameTime >= 0 && lastGameSample > 0) {
+        double elapsed = (now - lastGameSample) / 1e9;
+        if (elapsed > 0.05) tps = (gameTime - lastGameTime) / elapsed;
+      }
+      lastGameTime = gameTime;
+      lastGameSample = now;
+    }
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
-            "[ClientPerf] fps={} frames={} frameAvgMs={} frameWorstMs={} tickAvgMs={} tickWorstMs={} gcMs={} worstStage={} worstStageMs={} focused={}",
+            "[ClientPerf] fps={} tps={} frames={} frameAvgMs={} frameWorstMs={} tickAvgMs={} tickWorstMs={} gcMs={} worstStage={} worstStageMs={} focused={}",
             Math.round(frames / seconds),
+            tps < 0 ? "?" : String.format(java.util.Locale.ROOT, "%.1f", tps),
             frames,
             frameTotal / (double) frames / 1e6,
             frameWorst / 1e6,
