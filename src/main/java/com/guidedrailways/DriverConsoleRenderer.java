@@ -92,9 +92,9 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
   /**
    * Draws the three indicator lamps over the recesses painted in the screen texture.
    *
-   * <p>The lamps used to be a block state variant, which made every change cost a client chunk rebuild
-   * and forced a throttle; a quickly moved lever then outran them. Drawn here, they follow the lever on
-   * the very next frame and cost three quads.
+   * <p>Thin boxes through the same helper the lever uses: a hand-emitted quad did not appear at all,
+   * and this path is already proven to render. The lamps used to be block state variants, which made
+   * every change cost a client chunk rebuild and forced a throttle the lever then outran.
    */
   private static void drawLamps(
       DriverConsoleEntity e,
@@ -104,44 +104,29 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
       int overlay) {
     int mask = ConsoleDisplay.lampMask(e.bound, e.emergency, e.notch);
     if (mask == 0) return;
-    var buffer =
-        buffers.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
-    var white =
-        atlas.apply(ResourceLocation.fromNamespaceAndPath("minecraft", "block/white_concrete"));
+    var vertices = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
     int[] slots = {ConsoleDisplay.LEFT, ConsoleDisplay.MIDDLE, ConsoleDisplay.RIGHT};
     for (int i = 0; i < slots.length; i++) {
       if ((mask & slots[i]) == 0) continue;
+      var sprite =
+          atlas.apply(
+              ResourceLocation.fromNamespaceAndPath(
+                  "minecraft", ConsoleDisplay.blockTexture(slots[i], e.emergency)));
       double x = 3 + (4 + i * 4) * 5 / 16d;
       double z = 4 + 11 * 5 / 16d;
-      lamp(pose.last(), buffer, white, x, z, x + LAMP_SIZE, z + LAMP_SIZE,
-          ConsoleDisplay.colour(slots[i], e.emergency), overlay);
+      CouplerRenderer.box(
+          pose.last(),
+          vertices,
+          sprite,
+          x,
+          11.42 / 16d,
+          z,
+          x + LAMP_SIZE,
+          11.50 / 16d,
+          z + LAMP_SIZE,
+          0xF000F0,
+          overlay);
     }
-  }
-
-  /** One flat, self-lit quad: full brightness so the lamp reads in an unlit shed. */
-  private static void lamp(
-      PoseStack.Pose pose,
-      VertexConsumer buffer,
-      net.minecraft.client.renderer.texture.TextureAtlasSprite sprite,
-      double x0,
-      double z0,
-      double x1,
-      double z1,
-      int rgb,
-      int overlay) {
-    float u = (sprite.getU0() + sprite.getU1()) / 2f;
-    float v = (sprite.getV0() + sprite.getV1()) / 2f;
-    int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
-    float y = 11.42f / 16f;
-    double[][] corners = {{x0, z0}, {x0, z1}, {x1, z1}, {x1, z0}};
-    for (var corner : corners)
-      buffer
-          .addVertex(pose, (float) corner[0], y, (float) corner[1])
-          .setColor(r, g, b, 255)
-          .setUv(u, v)
-          .setOverlay(overlay)
-          .setLight(0xF000F0)
-          .setNormal(pose, 0, 1, 0);
   }
   @Override
   public boolean shouldRenderOffScreen(DriverConsoleEntity e) {

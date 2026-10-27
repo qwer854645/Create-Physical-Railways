@@ -37,6 +37,38 @@ final class SteamRailways implements RailwaysCompat.Bridge {
     return f.isEnabled() || f.isAutomatic();
   }
 
+  /**
+   * Reports a refused passage once a second per junction.
+   *
+   * <p>A schedule that stops at a junction and never moves on is either a switched-out edge or another
+   * consist holding the passage; without this line both look identical in the log.
+   */
+  private static void diagnose(
+      ServerLevel level,
+      TrackNetwork.Path path,
+      int node,
+      int from,
+      int to,
+      UUID train,
+      String reason) {
+    long now = level.getGameTime();
+    var key = level.dimension().location() + "@" + node;
+    var last = DIAGNOSED.getOrDefault(key, Long.MIN_VALUE);
+    if (now - last < 20) return;
+    DIAGNOSED.put(key, now);
+    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+        .info(
+            "[SwitchBlocked] reason={} node={} from={} to={} train={} graph={}",
+            reason,
+            node,
+            from,
+            to,
+            train,
+            path.graph());
+  }
+
+  private static final java.util.Map<String, Long> DIAGNOSED = new java.util.HashMap<>();
+
   @Override
   public boolean pass(
       ServerLevel level,
@@ -55,8 +87,14 @@ final class SteamRailways implements RailwaysCompat.Bridge {
     var key = new SwitchReservations.Key(path.graph(), node);
     long now = level.getGameTime();
     if (claims.owns(key, train, from, to, now) && committed) return true;
-    if (!f.isEnabled() && !f.isAutomatic()) return false;
-    if (!claims.claim(key, train, from, to, now)) return false;
+    if (!f.isEnabled() && !f.isAutomatic()) {
+      diagnose(level, path, node, from, to, train, "switch_disabled");
+      return false;
+    }
+    if (!claims.claim(key, train, from, to, now)) {
+      diagnose(level, path, node, from, to, train, "held_by_another_consist");
+      return false;
+    }
     if (!f.isEnabled()) {
       f.setAutomaticallySelected();
       return false;

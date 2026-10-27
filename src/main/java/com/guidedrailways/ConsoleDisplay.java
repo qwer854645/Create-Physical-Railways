@@ -42,5 +42,18 @@ final class ConsoleDisplay {
     return RED;
   }
 
+  /**
+   * A vanilla block texture with the lamp colour.
+   *
+   * <p>The quads are tinted by a texture rather than by vertex colour, so the renderer can use the same
+   * box helper as the lever, which is the path that is known to draw.
+   */
+  static String blockTexture(int lamp, boolean emergency) {
+    if (emergency) return "block/red_concrete";
+    if ((lamp & LEFT) != 0) return "block/lime_concrete";
+    if ((lamp & MIDDLE) != 0) return "block/yellow_concrete";
+    return "block/red_concrete";
+  }
+
   private ConsoleDisplay() {}
 }
