@@ -45,6 +45,16 @@ public final class BodySkipCheck {
     }
     check(reporting.failures() == 25, "every unreadable read is counted");
 
+    // The physics step probes from three call sites and runs several substeps per tick, so a body
+    // that read fine once must not be probed again inside that tick.
+    var known = new BodySkip();
+    known.begin(10);
+    check(!known.known(first), "nothing is known before the first probe");
+    known.markKnown(first);
+    check(known.known(first), "a successful probe is remembered");
+    known.begin(11);
+    check(!known.known(first), "the next tick probes again");
+
     var cleared = new BodySkip();
     cleared.begin(7);
     cleared.mark(second);

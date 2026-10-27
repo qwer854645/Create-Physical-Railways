@@ -29,8 +29,13 @@ final class BodyGuard {
     if (body == null || body.isRemoved()) return false;
     var id = body.getUniqueId();
     if (SKIP.gone(id)) return false;
+    // The physics step calls this from three places and runs several substeps per tick, so a body that
+    // already read fine this tick must not be probed again: the probe allocates and crosses into native
+    // code, and nothing can have changed since.
+    if (SKIP.known(id)) return true;
     try {
       physics.getPipeline().readPose(body, new Pose3d());
+      SKIP.markKnown(id);
       return true;
     } catch (RuntimeException removed) {
       SKIP.mark(id);

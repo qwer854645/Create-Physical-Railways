@@ -15,6 +15,9 @@ final class BodySkip {
   private static final int REPORT_EVERY = 20;
 
   private final Set<UUID> gone = new HashSet<>();
+
+  /** Bodies already probed successfully this tick: probing again cannot learn anything new. */
+  private final Set<UUID> known = new HashSet<>();
   private long tick = Long.MIN_VALUE;
   private int failures;
 
@@ -23,10 +26,20 @@ final class BodySkip {
     if (now == tick) return;
     tick = now;
     gone.clear();
+    known.clear();
   }
 
   boolean gone(UUID body) {
     return gone.contains(body);
+  }
+
+  /** True when this body was already probed successfully during this tick. */
+  boolean known(UUID body) {
+    return known.contains(body);
+  }
+
+  void markKnown(UUID body) {
+    known.add(body);
   }
 
   /** Returns true when this body is newly unreadable, false when it was already known. */
