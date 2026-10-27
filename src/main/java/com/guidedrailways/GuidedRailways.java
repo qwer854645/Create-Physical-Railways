@@ -46,11 +46,13 @@ public final class GuidedRailways {
         (LevelTickEvent.Post e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
             TrainRuntime.afterTick(level);
+            TickWatch.post(level);
           }
         });
     NeoForge.EVENT_BUS.addListener(
         (LevelTickEvent.Pre e) -> {
           if (e.getLevel() instanceof ServerLevel level) {
+            TickWatch.pre(level);
             TrainRuntime.beforeTick(level);
           }
         });

@@ -14,6 +14,7 @@ public final class TrainClient {
     net.createmod.ponder.foundation.PonderIndex.addPlugin(new RailwayPonderPlugin());
     ItemDescriptions.register(bus);
     NativeBogeyCapture.register();
+    FrameWatch.register();
     net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.client.event.ClientTickEvent.Post e) -> BogiePrewarm.tick());
     NativeTrainClient.register();
