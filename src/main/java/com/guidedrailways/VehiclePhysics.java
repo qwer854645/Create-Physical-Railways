@@ -368,6 +368,19 @@ public final class VehiclePhysics {
                   counts.get(u.carrier.getUniqueId()),
                   TrainConfig.DETAILED_LOGGING.get() ? pivotSummary(u) : "off",
                   TrainConfig.DETAILED_LOGGING.get() ? anchorSummary(u) : "off");
+          // The lever position and the command that actually produces force are separate things: a train
+          // can show notch 8 and still be held. This names the command, which is what tells them apart.
+          org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+              .info(
+                  "[Traction] unit={} command={} notch={} hold={} emergency={} seated={} speed={} force={}",
+                  u.bogie.getUniqueId(),
+                  u.command == null ? "none" : u.command.mode(),
+                  u.command == null ? 0 : u.command.notch(),
+                  u.command != null && u.command.hold(),
+                  u.command != null && u.command.emergency(),
+                  u.driver != null,
+                  u.speed,
+                  u.commandedForce);
         }
       }
     }
