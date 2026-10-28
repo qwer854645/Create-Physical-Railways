@@ -144,11 +144,13 @@ final class CouplerJoint {
     }
     a.visualPeer(b);
     b.visualPeer(a);
+    // Diagnostics are gated before anything is computed: this runs on every physics substep, and
+    // building two world positions plus a player stream cost more than the values it printed.
     if (TrainConfig.DETAILED_LOGGING.get() && level.getGameTime() >= this.nextLog) {
       this.nextLog = level.getGameTime() + 20;
       var wa = VehiclePhysics.world(ba, blockOrigin(a).add(a.anchor));
       var wb = VehiclePhysics.world(bb, blockOrigin(b).add(b.anchor));
-      if (level.players().stream().anyMatch(p -> p.distanceToSqr(wa.x, wa.y, wa.z) < 4096)) {
+      if (nearPlayer(level, wa)) {
         var frameWorld = new Quaterniond(frame);
         var delta = new Vector3d(wb).sub(wa).rotate(frameWorld.conjugate());
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
@@ -213,4 +215,12 @@ final class CouplerJoint {
     live.ma = ma;
     live.mb = mb;
   }
+
+  /** Square-distance check without a stream, or a list copy, per substep. */
+  private static boolean nearPlayer(net.minecraft.server.level.ServerLevel level, org.joml.Vector3dc at) {
+    for (var player : level.players())
+      if (player.distanceToSqr(at.x(), at.y(), at.z()) < 4096) return true;
+    return false;
+  }
+
 }

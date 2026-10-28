@@ -49,6 +49,15 @@ public final class RouteMemory {
         .orElse(Objects.requireNonNull(carrier));
   }
 
+
+  /** True when this consist already recorded that passage, in either direction. */
+  public boolean recorded(Junction node, int from, int to) {
+    for (var p : history)
+      if (p.node.equals(node)
+          && (p.from == from && p.to == to || p.from == to && p.to == from)) return true;
+    return false;
+  }
+
   public record Active(Junction node, int from, int to) {}
 
   public List<Active> active() {

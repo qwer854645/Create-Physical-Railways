@@ -86,13 +86,9 @@ final class ConsistRoutes {
 
     @Override
     public boolean mayPass(TrackNetwork.Path path, int node, int from, int to) {
-      boolean recorded =
-          context.memory.active().stream()
-              .anyMatch(
-                  p ->
-                      p.node().equals(new RouteMemory.Junction(path.graph(), node))
-                          && (p.from() == from && p.to() == to
-                              || p.from() == to && p.to() == from));
+      // Called for every axle on every substep, so this asks the memory directly instead of building a
+      // list and a stream to look for one entry.
+      boolean recorded = context.memory.recorded(new RouteMemory.Junction(path.graph(), node), from, to);
       boolean allowed =
           RailwaysCompat.pass(context.level, path, node, from, to, context.identity, recorded);
       switchWaiting = !allowed;
