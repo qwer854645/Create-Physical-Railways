@@ -618,8 +618,12 @@ public final class VehiclePhysics {
         double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(sample.tangent());
         u.speed += speed * .5;
         double force = VehicleTraction.force(u, speed, dt);
-        force =
-            RailwayStopModel.force(speed, force, switchRoom, u.mass, TrainConfig.BRAKING.get(), dt);
+        // Standing on a switch leaves no room, and RailwayStopModel holds a train with no room. Refusing
+        // to move there is a deadlock: the only way to clear a switch is to move off it. Reproduced by
+        // driving up to a switch by hand and inserting a schedule at that spot. "No known limit" is
+        // already what the stop model understands as "apply traction".
+        double room = switchRoom <= .08 ? Double.NaN : switchRoom;
+        force = RailwayStopModel.force(speed, force, room, u.mass, TrainConfig.BRAKING.get(), dt);
         u.commandedForce += force * .5;
         var impulse =
             new Vector3d(sample.tangent())
