@@ -64,6 +64,19 @@ public final class SwitchReservationsCheck {
     check(fairness.claim(key, west, 1, 2, freed), "the oldest waiter is served when it is free");
     check(fairness.owns(key, west, 1, 2, freed), "the queued consist now owns the switch");
 
+    // A consist must not take a second branch while its axles are still crossing the first, but it must
+    // not hold a finished crossing against itself either: the recorded stall waited 264 ticks at one
+    // node because the claim it owned could not be used for the passage it needed.
+    var self = new SwitchReservations();
+    check(self.claim(key, east, 1, 2, 1000), "a consist takes its first passage");
+    check(!self.claim(key, east, 3, 4, 1001), "a fresh claim blocks a second branch");
+    check(self.claim(key, east, 1, 2, 1002), "the holder keeps refreshing its passage");
+    long stale = 1002 + SwitchReservations.HOLD_TICKS;
+    check(
+        self.claim(key, east, 3, 4, stale),
+        "a claim nobody refreshed for half its life yields to the consist's newer passage");
+    check(self.owns(key, east, 3, 4, stale), "the newer passage is the owned one");
+
     System.out.println(
         "SwitchReservationsCheck: " + checks + " switch passage and fairness checks passed");
   }
