@@ -12,6 +12,15 @@ import org.joml.Vector3d;
 
 /** Moving hardware is visual only; the native coupling joint remains authoritative. */
 public final class CouplerRenderer implements BlockEntityRenderer<CouplerEntity> {
+  // One ResourceLocation per material, resolved once: the render loop is per box per frame, and this
+  // used to concatenate a string and parse it for every box.
+  private static final net.minecraft.resources.ResourceLocation SPRITE_IRON =
+      net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("create", "block/industrial_iron_block");
+  private static final net.minecraft.resources.ResourceLocation SPRITE_DARK =
+      net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block");
+  private static final net.minecraft.resources.ResourceLocation SPRITE_BRASS =
+      net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("create", "block/brass_block");
+
   CouplerRenderer(BlockEntityRendererProvider.Context context) {}
 
   private static ClientSubLevelAccess body(CouplerEndpoint e) {
@@ -102,13 +111,15 @@ public final class CouplerRenderer implements BlockEntityRenderer<CouplerEntity>
     var atlas = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS);
     var consumer = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
     for (var box : layout.boxes()) {
-      String name =
-          switch (box.material()) {
-            case IRON -> "industrial_iron_block";
-            case DARK -> "dark_metal_block";
-            case BRASS -> "brass_block";
-          };
-      var sprite = atlas.apply(ResourceLocation.fromNamespaceAndPath("create", "block/" + name));
+      // Sprite ids are constants: this loop runs per box per frame, and it used to concatenate a string
+      // and parse it into a ResourceLocation for every box.
+      var sprite =
+          atlas.apply(
+              switch (box.material()) {
+                case IRON -> SPRITE_IRON;
+                case DARK -> SPRITE_DARK;
+                case BRASS -> SPRITE_BRASS;
+              });
       // Tile long drawbars in one-block sections, keeping atlas UVs inside their sprite.
       for (double z = box.z0(); z < box.z1() - 1e-8; z += 1)
         box(
