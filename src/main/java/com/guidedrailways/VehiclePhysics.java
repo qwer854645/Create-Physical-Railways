@@ -242,7 +242,8 @@ public final class VehiclePhysics {
   static Unit initialize(MountEntity mount) {
     if (!(mount.getLevel() instanceof ServerLevel level) || mount.bogieId == null) return null;
     if (!liveMount(level, mount)) return null;
-    if (MountBlock.pending(mount)) return null;
+    // Expires an abandoned handoff instead of leaving this plate unable to initialise forever.
+    if (mount.handoffPending(level.getGameTime())) return null;
     var container = SubLevelContainer.getContainer(level);
     if (container == null || SubLevelPhysicsSystem.get(level) == null) return null;
     if (!(SableCompanion.INSTANCE.getContaining(level, mount.getBlockPos())

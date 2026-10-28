@@ -9,6 +9,33 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class MountEntity extends KineticBlockEntity {
   UUID bogieId;
   MountHandoff handoff;
+
+  /**
+   * True while a handoff still blocks this plate from initialising.
+   *
+   * <p>A handoff that never resolves leaves the plate permanently uninitialised, which looks exactly like
+   * a train that will not move while everything else reports normal. A coupler handoff already expires
+   * after 600 ticks; this one had no notion of age at all.
+   */
+  boolean handoffPending(long now) {
+    if (handoff == null) return false;
+    if (handoffTick <= 0) return true;
+    if (now - handoffTick <= HANDOFF_TIMEOUT) return true;
+    long waited = now - handoffTick;
+    handoff = null;
+    handoffTick = 0;
+    setChanged();
+    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+        .info("[MountHandoffExpired] mount={} waited={}tick", getBlockPos(), waited);
+    return false;
+  }
+
+
+  /** Game time the current handoff was written; 0 when it came from an older save. */
+  long handoffTick;
+
+  /** Ticks a pending handoff may stay unresolved before it is abandoned. */
+  static final long HANDOFF_TIMEOUT = 200;
   boolean braking;
   double load;
   RailGauge gauge = RailGauge.STANDARD;
@@ -52,8 +79,13 @@ public final class MountEntity extends KineticBlockEntity {
   protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean client) {
     super.write(tag, registries, client);
     if (bogieId != null) tag.putUUID("BogieBody", bogieId);
-    if (handoff != null) tag.put("MountHandoff", handoff.save());
-    else tag.remove("MountHandoff");
+    if (handoff != null) {
+      tag.put("MountHandoff", handoff.save());
+      tag.putLong("HandoffTick", handoffTick);
+    } else {
+      tag.remove("MountHandoff");
+      tag.remove("HandoffTick");
+    }
     tag.putBoolean("ServiceBrake", braking);
     tag.putDouble("SupportedMass", load);
     tag.putString("RailGauge", gauge.name());
@@ -75,6 +107,7 @@ public final class MountEntity extends KineticBlockEntity {
     super.read(tag, registries, client);
     bogieId = tag.hasUUID("BogieBody") ? tag.getUUID("BogieBody") : null;
     handoff = MountHandoff.load(tag.getCompound("MountHandoff"));
+    handoffTick = tag.getLong("HandoffTick");
     braking = tag.getBoolean("ServiceBrake");
     load = tag.getDouble("SupportedMass");
     gauge = RailGauge.read(tag.getString("RailGauge"));

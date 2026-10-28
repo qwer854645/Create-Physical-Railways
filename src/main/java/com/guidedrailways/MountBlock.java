@@ -180,6 +180,7 @@ public final class MountBlock extends ComponentBlock
       var committed = handoff.ownershipCommitted();
       if (committed != handoff) {
         mount.handoff = handoff = committed;
+      mount.handoffTick = level.getGameTime();
         mount.setChanged();
       }
       if (handoff.worldReference() != null) {
@@ -198,9 +199,5 @@ public final class MountBlock extends ComponentBlock
       mount.handoff = null;
       mount.setChanged();
     }
-  }
-
-  static boolean pending(MountEntity mount) {
-    return mount.handoff != null;
   }
 }
