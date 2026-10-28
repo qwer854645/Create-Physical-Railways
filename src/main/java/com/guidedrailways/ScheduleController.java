@@ -718,8 +718,20 @@ final class ScheduleController {
     return context.getLong("CargoWaitStarted");
   }
 
+  /** Ticks between condition evaluations while a train waits. Conditions are states, not edges. */
+  private static final int CONDITION_INTERVAL = 5;
+
+  private long nextConditionCheck;
+
   private boolean conditionComplete(
       ServerLevel level, ScheduleWaitCondition condition, CompoundTag context) {
+    // This runs while a train waits at a station, and each call scans every player in the level and each
+    // carriage's containers (TrainPassengers.snapshot, CargoStorage.snapshot) plus the console's own
+    // containment lookup. Five evaluations per second is far more than a passenger or cargo condition
+    // can change, so the wait costs a fifth of what it did.
+    long now = level.getGameTime();
+    if (now < nextConditionCheck) return false;
+    nextConditionCheck = now + CONDITION_INTERVAL;
     if (condition.getClass() == PlayerPassengerCondition.class) {
       var passengers = TrainPassengers.snapshot(level, DriverControls.body(owner));
       if (!passengers.complete()
