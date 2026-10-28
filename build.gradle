@@ -54,8 +54,8 @@ neoForge {
             client()
             // This dev client loads 200+ mods plus Sable physics. The default 2G heap produced
             // repeated multi-hundred-ms GC pauses that read as stutter near carriages.
-            jvmArgument '-Xms2G'
-            jvmArgument '-Xmx6G'
+            jvmArgument '-Xms4G'
+            jvmArgument '-Xmx12G'
             if (project.hasProperty('captureBogeys')) {
                 systemProperty 'guidedrailways.captureBogeys', 'true'
                 systemProperty 'guidedrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
@@ -169,7 +169,6 @@ tasks.register('copyDevMods', Copy) {
     into file('run/mods')
     from('libs') {
         include '*.jar'
-
     }
     from configurations.devRuntimeMods
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
