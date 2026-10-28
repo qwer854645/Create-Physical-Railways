@@ -44,6 +44,8 @@ final class BogiePrewarm {
   static void request(long key, BogeyVariant variant, CompoundTag data) {
     if (variant == null) return;
     if (DONE.containsKey(key)) return;
+    // The renderer asks on every frame until the bake lands; the data copy below is not free.
+    if (PENDING.containsKey(key)) return;
     VARIANTS.putIfAbsent(key, variant);
     PENDING.putIfAbsent(key, data == null ? new CompoundTag() : data.copy());
     REQUESTED_AT.putIfAbsent(key, tick);

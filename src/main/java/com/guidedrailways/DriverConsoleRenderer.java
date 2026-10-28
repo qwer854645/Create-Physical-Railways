@@ -11,6 +11,18 @@ import net.minecraft.resources.ResourceLocation;
 
 /** One moving throttle/brake handle. Neither handle adds collision, joints or rigid bodies. */
 public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverConsoleEntity> {
+  // Sprite ids are constants: building a ResourceLocation on every frame and every lamp allocated a
+  // string plus a new instance for a value that never changes.
+  private static final ResourceLocation IRON =
+      ResourceLocation.fromNamespaceAndPath("create", "block/industrial_iron_block");
+  private static final ResourceLocation DARK =
+      ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block");
+  private static final ResourceLocation[] LAMP_SPRITES = {
+    ResourceLocation.fromNamespaceAndPath("minecraft", "block/lime_concrete"),
+    ResourceLocation.fromNamespaceAndPath("minecraft", "block/yellow_concrete"),
+    ResourceLocation.fromNamespaceAndPath("minecraft", "block/red_concrete")
+  };
+
   DriverConsoleRenderer(BlockEntityRendererProvider.Context context) {}
 
   @Override
@@ -37,10 +49,8 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
       int light,
       int overlay) {
     var atlas = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS);
-    var iron =
-        atlas.apply(ResourceLocation.fromNamespaceAndPath("create", "block/industrial_iron_block"));
-    var dark =
-        atlas.apply(ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block"));
+    var iron = atlas.apply(IRON);
+    var dark = atlas.apply(DARK);
     var vertices = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
     pose.pushPose();
     pose.translate(.5, 0, .5);
@@ -101,6 +111,12 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
   }
 
   private static long LAMP_LOG_AT;
+  private static ResourceLocation lampSprite(int lamp, boolean emergency) {
+    if (emergency || (lamp & ConsoleDisplay.RIGHT) != 0) return LAMP_SPRITES[2];
+    if ((lamp & ConsoleDisplay.LEFT) != 0) return LAMP_SPRITES[0];
+    return LAMP_SPRITES[1];
+  }
+
   /** Lamp recesses in the screen texture, mapped into the plate: u = 4, 8, 12 and v = 11, two texels. */
   private static final double LAMP_SIZE = 2 * 5 / 16d;
 
@@ -124,10 +140,8 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     int[] slots = {ConsoleDisplay.LEFT, ConsoleDisplay.MIDDLE, ConsoleDisplay.RIGHT};
     for (int i = 0; i < slots.length; i++) {
       if ((mask & slots[i]) == 0) continue;
-      var sprite =
-          atlas.apply(
-              ResourceLocation.fromNamespaceAndPath(
-                  "minecraft", ConsoleDisplay.blockTexture(slots[i], e.emergency)));
+      // Sprite ids are constants: building a ResourceLocation per lamp per frame allocated twice.
+      var sprite = atlas.apply(lampSprite(slots[i], e.emergency));
       // Model pixels, converted the way the lever boxes above convert theirs: this helper takes block
       // coordinates, and passing model units drew a lamp sixteen times too large.
       double x = (3 + (4 + i * 4) * 5 / 16d) / 16d;
