@@ -313,6 +313,10 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
       else if (DriverInputPolicy.notchCommand(command))
         notch = command - DriverInputPolicy.NOTCH_BASE;
       else return;
+      // Giving a notch by hand is the driver taking the train: a schedule start leaves the console with
+      // drive disabled, and without this the lever moved while the train never moved, which reads as a
+      // stuck train rather than as "press the drive key".
+      if (!observing) enabled = true;
       if (notch >= 0) VehiclePhysics.releaseMountBrakes(this);
     }
     if (oldNotch == notch
