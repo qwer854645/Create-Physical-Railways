@@ -187,9 +187,20 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   public boolean cargoReady() {
-    return !carriages.isEmpty()
-        && carriages.stream()
-            .allMatch(c -> c.storage instanceof PhysicalCargoManager cargo && cargo.ready());
+    // Every carriage has to report ready before cargo work starts, which is the same shape as the route
+    // passage that once locked a train onto one branch: a member that can never report holds everything.
+    // A carriage whose chunks are not loaded cannot report at all, and treating that as "not ready" stopped
+    // loading and unloading until the player happened to walk back. Unknown is not the same as unready, so
+    // only carriages that are loaded have to answer.
+    if (carriages.isEmpty()) return false;
+    boolean answered = false;
+    for (var carriage : carriages) {
+      if (!(carriage.storage instanceof PhysicalCargoManager cargo)) return false;
+      if (!cargo.loaded()) continue;
+      answered = true;
+      if (!cargo.ready()) return false;
+    }
+    return answered;
   }
 
   static void syncStation(

@@ -68,6 +68,19 @@ final class PhysicalCargoManager extends TrainCargoManager {
     return contents().ready();
   }
 
+  /**
+   * False when this carriage's chunks are not loaded, so its contents cannot be inspected at all.
+   *
+   * <p>Such a carriage can never answer, and a caller that waits for every carriage to answer waits forever.
+   */
+  boolean loaded() {
+    if (level == null) return false;
+    var container = dev.ryanhcode.sable.api.sublevel.SubLevelContainer.getContainer(level);
+    return container != null
+        && container.getSubLevel(body) instanceof dev.ryanhcode.sable.sublevel.ServerSubLevel sublevel
+        && !sublevel.getPlot().getLoadedChunks().isEmpty();
+  }
+
   private CargoStorage.Contents contents() {
     if (level == null) return CargoStorage.Contents.UNAVAILABLE;
     long tick = level.getGameTime();

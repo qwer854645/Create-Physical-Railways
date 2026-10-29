@@ -33,6 +33,9 @@ final class BogiePrewarm {
   /** Variant that each queued position needs; the bake needs both the style and the data. */
   private static final Map<Long, BogeyVariant> VARIANTS = new java.util.HashMap<>();
 
+  /** Entries kept before the prewarm bookkeeping is cleared. */
+  private static final int MAX_ENTRIES = 8192;
+
   private static final com.simibubi.create.content.trains.bogey.StandardBogeyRenderer.Small
       FALLBACK =
           new com.simibubi.create.content.trains.bogey.StandardBogeyRenderer.Small();
@@ -46,6 +49,14 @@ final class BogiePrewarm {
     if (DONE.containsKey(key)) return;
     // The renderer asks on every frame until the bake lands; the data copy below is not free.
     if (PENDING.containsKey(key)) return;
+    // These tables are keyed by block position and are only pruned when a bake lands or gives up, so a long
+    // session keeps one entry per bogie position ever seen. Clearing them costs a re-bake on the next sighting,
+    // which is what a fresh client pays anyway.
+    if (DONE.size() > MAX_ENTRIES) {
+      DONE.clear();
+      REQUESTED_AT.clear();
+      VARIANTS.clear();
+    }
     VARIANTS.putIfAbsent(key, variant);
     PENDING.putIfAbsent(key, data == null ? new CompoundTag() : data.copy());
     REQUESTED_AT.putIfAbsent(key, tick);
