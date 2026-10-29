@@ -577,6 +577,11 @@ final class ScheduleController {
   }
 
   void state(int next) {
+    // Logged, never blocked: the legal table is not known well enough to enforce, and the log is how it will be
+    // learned. See ScheduleTransitions for why the default is permissive.
+    if (TrainConfig.DETAILED_LOGGING.get() && ScheduleTransitions.unexpected(status, next))
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info("[ScheduleState] console={} from={} to={}", owner.getBlockPos(), status, next);
     if (status == next) return;
     status = next;
     owner.setChanged();
