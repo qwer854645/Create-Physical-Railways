@@ -84,6 +84,13 @@ final class ScheduleController {
     return entry;
   }
 
+  /** Scheduling priority, 0..SwitchQueue.MAX_PRIORITY, default when unspecified. */
+  private int priority = SwitchQueue.DEFAULT_PRIORITY;
+
+  int priority() {
+    return Math.max(0, Math.min(SwitchQueue.MAX_PRIORITY, priority));
+  }
+
   int status() {
     return status;
   }

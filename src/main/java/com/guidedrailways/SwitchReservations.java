@@ -16,6 +16,10 @@ final class SwitchReservations {
   static final long HOLD_TICKS = 40;
 
   boolean claim(Key key, UUID train, int from, int to, long now) {
+    return claim(key, train, from, to, now, SwitchQueue.DEFAULT_PRIORITY);
+  }
+
+  boolean claim(Key key, UUID train, int from, int to, long now, int priority) {
     claims.entrySet().removeIf(e -> e.getValue().expires <= now);
     var old = claims.get(key);
     if (old != null && old.train.equals(train)) {
@@ -35,7 +39,7 @@ final class SwitchReservations {
       return true;
     }
     if (old != null) {
-      queue.wait(key, train, from, to, now);
+      queue.wait(key, train, from, to, now, priority);
       report(key, train, now);
       return false;
     }
@@ -43,7 +47,7 @@ final class SwitchReservations {
     if (head != null && !head.train().equals(train)) {
       // The switch is free, but somebody has been waiting longer: keep the arrival order instead of
       // letting whoever asks first in the same tick jump the queue.
-      queue.wait(key, train, from, to, now);
+      queue.wait(key, train, from, to, now, priority);
       report(key, train, now);
       return false;
     }

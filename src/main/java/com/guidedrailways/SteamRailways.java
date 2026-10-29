@@ -94,7 +94,7 @@ final class SteamRailways implements RailwaysCompat.Bridge {
       diagnose(level, path, node, from, to, train, "switch_disabled");
       return false;
     }
-    if (!claims.claim(key, train, from, to, now)) {
+    if (!claims.claim(key, train, from, to, now, SchedulePriority.of(level, train))) {
       diagnose(level, path, node, from, to, train, "held_by_another_consist");
       return false;
     }

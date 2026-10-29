@@ -88,6 +88,8 @@ final class ConsistRoutes {
     public boolean mayPass(TrackNetwork.Path path, int node, int from, int to) {
       // Called for every axle on every substep, so this asks the memory directly instead of building a
       // list and a stream to look for one entry.
+      if (context.automatic != null)
+        SchedulePriority.record(context.level, context.identity, context.automatic.priority());
       boolean recorded = context.memory.recorded(new RouteMemory.Junction(path.graph(), node), from, to);
       var abandoned = context.memory.takeDropped();
       if (abandoned != null)
