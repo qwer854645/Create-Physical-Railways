@@ -91,10 +91,6 @@ final class ConsistRoutes {
       if (context.automatic != null)
         SchedulePriority.record(context.level, context.identity, context.automatic.priority());
       boolean recorded = context.memory.recorded(new RouteMemory.Junction(path.graph(), node), from, to);
-      var abandoned = context.memory.takeDropped();
-      if (abandoned != null)
-        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
-            .info("[RouteMemoryDropped] node={} got={}", abandoned, to);
       boolean allowed =
           RailwaysCompat.pass(context.level, path, node, from, to, context.identity, recorded);
       switchWaiting = !allowed;
@@ -154,7 +150,13 @@ final class ConsistRoutes {
               && context.automatic.plan() != null;
       int committed =
           context.memory.commit(
-              axle, new RouteMemory.Junction(path.graph(), node), from, exits, selected, planned);
+              axle,
+              new RouteMemory.Junction(path.graph(), node),
+              from,
+              exits,
+              selected,
+              planned,
+              context.level.getGameTime());
       if (committed != selected) return false;
       context.anchors.put(axle, new Vector3d(position));
       if (planned) {

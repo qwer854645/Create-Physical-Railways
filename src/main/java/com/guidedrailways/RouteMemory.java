@@ -1,58 +1,82 @@
 package com.guidedrailways;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 /**
- * Per-consist junction passages. Every axle consumes the same passage, including reverse retracing.
+ * Which branch a consist takes at a junction, in the order the consist actually meets it.
+ *
+ * <p>A junction keeps a queue of passages, oldest first, and every axle consumes them in that order. That ordering is
+ * why this class exists: a long consist meets the same junction several times, and the tail must take the branch the
+ * head committed to, in the order the head committed to it, never the newest one early.
+ *
+ * <p>Decisions, in order:
+ *
+ * <ol>
+ *   <li><b>An unconsumed passage wins.</b> The axle takes the branch of the oldest passage it has not consumed, in
+ *       whichever direction it crosses: entering from that passage's exit means retracing it, because a carriage
+ *       cannot uncross itself.
+ *   <li><b>A reverse still in progress wins.</b> After the whole consist has crossed, the queue is quiet and every
+ *       passage is consumed; a train that reverses back through the junction must still leave by the branch it
+ *       entered by, and stays bound to that until every axle has come back through. That is what separates
+ *       "reversing away from the junction" from "a fresh crossing from this side", which may follow the plan again.
+ *   <li><b>The plan wins over a fresh passage.</b> With nothing to consume and no reverse in progress, a new passage
+ *       opens using the planned exit when the route has one. The memory records the route; it does not overrule it.
+ *   <li><b>The last branch wins next</b>, so a manual train repeats a junction the way it left it and a second touch
+ *       of the same junction cannot silently switch branch.
+ *   <li><b>Otherwise the proposed branch is taken</b>, which is what the geometry suggests.
+ * </ol>
+ *
+ * <p>Passages expire. The previous design asked whether a passage was "complete", meaning every axle had passed, and
+ * any consist with an axle that never reaches the node left an entry that never completed and outranked every later
+ * plan for ever. A passage untouched for {@link #PASSAGE_TICKS} is dropped, so a stale entry costs one lap at most.
  */
 public final class RouteMemory {
   public record Axle(UUID bogie, int end) {}
 
   public record Junction(UUID graph, int node) {}
 
+  public record Active(Junction node, int from, int to) {}
+
+  /** Passages untouched for this long are dropped, so a stale entry cannot outlive its lap. */
+  static final long PASSAGE_TICKS = 200;
+
+  /** Passages remembered per junction. */
+  static final int MAX_PASSAGES = 64;
+
   private static final class Passage {
     final Junction node;
     final int from, to;
-    final Map<Axle, Boolean> after = new HashMap<>();
+    long touched;
+    final Set<Axle> used = new HashSet<>();
+    /** Axles that have come back through this passage from its exit side. */
+    final Set<Axle> back = new HashSet<>();
 
-    /** Times this still-open passage contradicted a plan that wanted another exit. */
-    int overrides;
-
-    Passage(Junction node, int from, int to, Set<Axle> members) {
+    Passage(Junction node, int from, int to, long now) {
       this.node = node;
       this.from = from;
       this.to = to;
-      for (var a : members) after.put(a, false);
+      this.touched = now;
     }
 
-    boolean complete() {
-      return after.values().stream().allMatch(Boolean::booleanValue);
+    boolean expired(long now) {
+      return now >= 0 && touched >= 0 && now - touched >= PASSAGE_TICKS;
     }
-  }
-
-  private record Repeat(Junction node, int from, int to) {}
-
-  /**
-   * How often an open passage may contradict a plan before it is abandoned.
-   *
-   * <p>A crossing asks this many times while it lasts, so a genuine passage never reaches the limit in one
-   * pass; a record whose axles will never all arrive reaches it and is dropped.
-   */
-  private static final int OVERRIDE_LIMIT = 240;
-
-  /** Node and branch of the last passage that was abandoned, for the caller to report. */
-  private String lastDropped;
-
-  /** Returns and clears the last abandoned passage description, or null when none was abandoned. */
-  public String takeDropped() {
-    var dropped = lastDropped;
-    lastDropped = null;
-    return dropped;
   }
 
   private final Set<Axle> members;
-  private final List<Passage> history = new ArrayList<>();
-  private final Map<Axle, Repeat> repeat = new HashMap<>();
+  private final Map<Junction, Deque<Passage>> passages = new HashMap<>();
+  private final Map<Junction, Integer> dropped = new HashMap<>();
+  private final Map<Axle, Map<Junction, Integer>> consumed = new HashMap<>();
+  private final Map<Axle, Map<Junction, Integer>> repeat = new HashMap<>();
 
   public RouteMemory(Set<Axle> members) {
     this.members = Set.copyOf(members);
@@ -70,32 +94,37 @@ public final class RouteMemory {
         .orElse(Objects.requireNonNull(carrier));
   }
 
-
   /** True when this consist already recorded that passage, in either direction. */
   public boolean recorded(Junction node, int from, int to) {
-    for (var p : history)
-      if (p.node.equals(node)
-          && (p.from == from && p.to == to || p.from == to && p.to == from)) return true;
+    var queue = passages.get(node);
+    if (queue != null)
+      for (var passage : queue)
+        if (passage.from == from && passage.to == to || passage.from == to && passage.to == from) return true;
+    for (var perNode : repeat.values()) {
+      var last = perNode.get(node);
+      if (last != null && (last == to || last == from)) return true;
+    }
     return false;
   }
 
-  public record Active(Junction node, int from, int to) {}
-
+  /** The passages still open at each junction. */
   public List<Active> active() {
-    return history.stream()
-        .filter(p -> !p.complete() || repeat.values().stream().anyMatch(r -> r.node.equals(p.node)))
-        .map(p -> new Active(p.node, p.from, p.to))
-        .toList();
+    var out = new ArrayList<Active>();
+    for (var queue : passages.values())
+      for (var passage : queue) out.add(new Active(passage.node, passage.from, passage.to));
+    return List.copyOf(out);
   }
 
   public RouteMemory copyFor(Set<Axle> next) {
     var copy = new RouteMemory(next);
-    for (var old : history) {
-      var p = new Passage(old.node, old.from, old.to, next);
-      for (var a : next) p.after.put(a, old.after.getOrDefault(a, old.complete()));
-      copy.history.add(p);
+    for (var entry : passages.entrySet()) copy.passages.put(entry.getKey(), new ArrayDeque<>(entry.getValue()));
+    copy.dropped.putAll(dropped);
+    for (var axle : next) {
+      var counters = consumed.get(axle);
+      if (counters != null) copy.consumed.put(axle, new HashMap<>(counters));
+      var perNode = repeat.get(axle);
+      if (perNode != null) copy.repeat.put(axle, new HashMap<>(perNode));
     }
-    for (var a : next) if (repeat.containsKey(a)) copy.repeat.put(a, repeat.get(a));
     return copy;
   }
 
@@ -103,14 +132,23 @@ public final class RouteMemory {
     repeat.remove(axle);
   }
 
+  public int preview(Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned) {
+    return select(axle, node, from, exits, proposed, false, planned, -1);
+  }
+
+  public int commit(Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned) {
+    return select(axle, node, from, exits, proposed, true, planned, -1);
+  }
+
+  /** Clocked variants: the clock is what lets a passage expire while an axle never arrives. */
   public int preview(
-      Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned) {
-    return select(axle, node, from, exits, proposed, false, planned);
+      Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned, long now) {
+    return select(axle, node, from, exits, proposed, false, planned, now);
   }
 
   public int commit(
-      Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned) {
-    return select(axle, node, from, exits, proposed, true, planned);
+      Axle axle, Junction node, int from, int[] exits, int proposed, boolean planned, long now) {
+    return select(axle, node, from, exits, proposed, true, planned, now);
   }
 
   private int select(
@@ -120,108 +158,98 @@ public final class RouteMemory {
       int[] exits,
       int proposed,
       boolean commit,
-      boolean planned) {
+      boolean planned,
+      long now) {
     if (!members.contains(axle)) throw new IllegalArgumentException("unknown axle");
-    var last = repeat.get(axle);
-    if (last != null
-        && last.node.equals(node)
-        && last.from == from
-        && !staleRepeat(node, from, last, proposed, planned))
-      return contains(exits, last.to) ? last.to : -1;
-    Passage choice = null;
-    boolean forward = true;
-    for (var p : history)
-      if (p.node.equals(node) && p.from == from && !p.after.getOrDefault(axle, true)) {
-        choice = p;
-        break;
+
+    var queue = passages.computeIfAbsent(node, key -> new ArrayDeque<>());
+    expire(node, queue, now);
+
+    int index = indexOf(axle, node);
+    while (index < queue.size()) {
+      var passage = passageAt(queue, index);
+      boolean forward = passage.from == from;
+      boolean backward = passage.to == from;
+      if (!forward && !backward) {
+        // Not this axle's passage: it met the junction from another direction, so it is skipped for good. Advancing
+        // the pointer keeps the ordering of the passages that do concern this axle.
+        if (commit) consume(axle, node, index + 1);
+        index++;
+        continue;
       }
-    if (choice == null)
-      for (int i = history.size() - 1; i >= 0; i--) {
-        var p = history.get(i);
-        if (p.node.equals(node) && p.to == from && p.after.getOrDefault(axle, false)) {
-          choice = p;
-          forward = false;
-          break;
-        }
-      }
-    // A fully cleared historical passage is not an active train-spanning lock. Automatic navigation
-    // may make a new trip instead of retracing that old visit, in either direction: a completed
-    // record that contradicts the planned exit would otherwise send the train back down its old
-    // branch on every lap and it would never reach a destination on the other side.
-    if (choice != null
-        && choice.complete()
-        && planned
-        && proposed >= 0
-        && proposed != (forward ? choice.to : choice.from))
-      choice = null;
-    // An open passage normally outranks the plan, because splitting a consist across two branches is
-    // worse than taking a wrong one. It can never complete, though, when one of its axles never reaches
-    // the node at all: reversing before the last axle passes, recoupling, or a shorter consist afterwards.
-    // Such a record then overrides every later plan forever. In game this showed up as node 22 planned 14
-    // and selected 31 on two passes, each reported as an automatic route mismatch.
-    if (choice != null
-        && !choice.complete()
-        && planned
-        && proposed >= 0
-        && proposed != (forward ? choice.to : choice.from)
-        && ++choice.overrides > OVERRIDE_LIMIT) {
-      history.remove(choice);
-      lastDropped = node.node() + ":" + choice.from + ">" + choice.to;
-      choice = null;
-    }
-    if (choice != null) {
-      int out = forward ? choice.to : choice.from;
-      if (!contains(exits, out)) return -1;
       if (commit) {
-        choice.after.put(axle, forward);
-        if (!forward && choice.after.values().stream().noneMatch(Boolean::booleanValue))
-          history.remove(choice);
-        repeat.put(axle, new Repeat(node, from, out));
+        passage.touched = now;
+        if (forward) passage.used.add(axle);
+        else passage.back.add(axle);
+        consume(axle, node, index + 1);
       }
-      return out;
+      int branch = forward ? passage.to : passage.from;
+      return contains(exits, branch) ? branch : -1;
     }
-    if (!contains(exits, proposed)) return -1;
-    if (!commit)
-      return history.size() < 4096 || history.stream().anyMatch(Passage::complete) ? proposed : -1;
-    if (history.size() >= 512) {
-      for (var it = history.iterator(); it.hasNext() && history.size() >= 512; )
-        if (it.next().complete()) it.remove();
+
+    var newest = queue.peekLast();
+    if (newest != null && newest.to == from && newest.back.size() < members.size()) {
+      // Reversing back through a junction this consist just crossed: it leaves by the branch it entered by, and stays
+      // bound to that until every axle has come back through.
+      if (commit) {
+        newest.touched = now;
+        newest.back.add(axle);
+        remember(axle, node, newest.from);
+      }
+      return contains(exits, newest.from) ? newest.from : -1;
     }
-    // Preserve incomplete passages rather than letting a long consist split between branches.
-    if (history.size() >= 4096) return -1;
-    var p = new Passage(node, from, proposed, members);
-    p.after.put(axle, true);
-    history.add(p);
-    repeat.put(axle, new Repeat(node, from, proposed));
-    return proposed;
+
+    int chosen;
+    if (planned && proposed >= 0) chosen = proposed;
+    else {
+      var last = repeat.getOrDefault(axle, Map.of()).get(node);
+      chosen = last != null ? last : proposed;
+    }
+    if (!contains(exits, chosen)) return -1;
+    if (!commit) return chosen;
+
+    var created = new Passage(node, from, chosen, now);
+    created.used.add(axle);
+    queue.addLast(created);
+    while (queue.size() > MAX_PASSAGES) {
+      queue.removeFirst();
+      dropped.merge(node, 1, Integer::sum);
+    }
+    consume(axle, node, queue.size());
+    remember(axle, node, chosen);
+    return chosen;
   }
 
-  private static boolean contains(int[] values, int needle) {
-    for (int v : values) if (v == needle) return true;
+  private void expire(Junction node, Deque<Passage> queue, long now) {
+    while (!queue.isEmpty() && queue.peekFirst().expired(now)) {
+      queue.removeFirst();
+      dropped.merge(node, 1, Integer::sum);
+    }
+  }
+
+  private int indexOf(Axle axle, Junction node) {
+    int absolute = consumed.getOrDefault(axle, Map.of()).getOrDefault(node, 0);
+    return Math.max(0, absolute - dropped.getOrDefault(node, 0));
+  }
+
+  private void consume(Axle axle, Junction node, int index) {
+    consumed
+        .computeIfAbsent(axle, key -> new HashMap<>())
+        .put(node, index + dropped.getOrDefault(node, 0));
+  }
+
+  private void remember(Axle axle, Junction node, int to) {
+    repeat.computeIfAbsent(axle, key -> new HashMap<>()).put(node, to);
+  }
+
+  private static Passage passageAt(Deque<Passage> queue, int index) {
+    int i = 0;
+    for (var passage : queue) if (i++ == index) return passage;
+    throw new IllegalArgumentException("passage index out of range");
+  }
+
+  private static boolean contains(int[] exits, int exit) {
+    for (int candidate : exits) if (candidate == exit) return true;
     return false;
-  }
-
-  /**
-   * A repeat record keeps a consist from splitting across points while it is still passing, so it
-   * only applies while that passage is incomplete. Once every axle has cleared it, an automatic plan
-   * that asks for another exit at the same node is a new trip, not a mid-passage change: honouring the
-   * record there made a train re-take its previous branch on every lap instead of following its route.
-   */
-  private boolean staleRepeat(
-      Junction node, int from, Repeat last, int proposed, boolean planned) {
-    if (!planned || proposed < 0 || proposed == last.to) return false;
-    for (var p : history)
-      if (p.node.equals(node) && p.from == from && p.to == last.to && !p.complete()) {
-        // An open passage normally outranks the plan, because its axles may still be crossing that branch.
-        // A passage that can never complete holds the consist on one branch forever, and it short-circuits
-        // the repeat before the history scan below ever runs, so it has to be counted here as well:
-        // measured as [AutomaticJunction] planned=14 selected=31 on every lap with no retry and no mismatch,
-        // because the repeat decided before the plan was consulted at all.
-        if (++p.overrides <= OVERRIDE_LIMIT) return false;
-        history.remove(p);
-        lastDropped = node.node() + ":" + p.from + ">" + p.to;
-        return true;
-      }
-    return true;
   }
 }
