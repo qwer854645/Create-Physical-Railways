@@ -157,7 +157,32 @@ final class ConsistRoutes {
               selected,
               planned,
               context.level.getGameTime());
-      if (committed != selected) return false;
+      if (committed != selected) {
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+            .info(
+                "[BranchChoice] rejected console=unknown node={} from={} chosen={} committed={} reason={}",
+                node,
+                from,
+                selected,
+                committed,
+                context.memory.lastDecision());
+        return false;
+      }
+      BranchWatch.record(context.level, context.identity, node, committed);
+      if (planned) {
+        // The plan's own choice for this junction, logged whenever the consist took something else: the reason says
+        // which rule decided, which is what makes an occasional wrong branch diagnosable after the fact.
+        int expected = context.automatic.plan().choose(path, node, from);
+        if (expected >= 0 && committed != expected)
+          org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+              .info(
+                  "[BranchChoice] off-plan node={} from={} planned={} chosen={} reason={}",
+                  node,
+                  from,
+                  expected,
+                  committed,
+                  context.memory.lastDecision());
+      }
       context.anchors.put(axle, new Vector3d(position));
       if (planned) {
         int expected = context.automatic.plan().choose(path, node, from);

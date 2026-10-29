@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
+public final class DriverConsoleEntity extends BlockEntity
+    implements MenuProvider,
+        com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation {
   final ScheduleController schedule = new ScheduleController(this);
   java.util.UUID consoleId = java.util.UUID.randomUUID();
   long placementOrder;
@@ -478,6 +480,38 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             bound);
   }
 
+
+  /**
+   * Goggles answer "what is this", in the same words the docking connector uses.
+   *
+   * <p>A block with goggles on says what it is, what it needs and what state it is in; the live reason a train is not
+   * moving belongs to the train, not to the block being inspected.
+   */
+  @Override
+  public boolean addToGoggleTooltip(
+      java.util.List<net.minecraft.network.chat.Component> tooltip, boolean sneaking) {
+    tooltip.add(
+        net.minecraft.network.chat.Component.translatable(
+            "message.guidedrailways.driver_console.title"));
+    var body = bound ? DriverControls.body(this) : null;
+    tooltip.add(
+        net.minecraft.network.chat.Component.translatable(
+            body == null
+                ? "message.guidedrailways.driver_console.unbound"
+                : "message.guidedrailways.driver_console.bound"));
+    if (body != null)
+      tooltip.add(
+          net.minecraft.network.chat.Component.translatable(
+              schedule.present()
+                  ? "message.guidedrailways.driver_console.scheduled"
+                  : "message.guidedrailways.driver_console.manual"));
+    if (body != null && sneaking)
+      tooltip.add(
+          net.minecraft.network.chat.Component.translatable(
+              "guidedrailways.console."
+                  + statusReason.name().toLowerCase(java.util.Locale.ROOT)));
+    return true;
+  }
 
   @Override
   public CompoundTag getUpdateTag(HolderLookup.Provider registries) {

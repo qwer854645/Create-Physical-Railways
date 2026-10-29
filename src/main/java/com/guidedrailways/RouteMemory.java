@@ -78,6 +78,13 @@ public final class RouteMemory {
   private final Map<Axle, Map<Junction, Integer>> consumed = new HashMap<>();
   private final Map<Axle, Map<Junction, Integer>> repeat = new HashMap<>();
 
+  /** Why the last decision went the way it did; the caller logs it when it disagrees with the plan. */
+  private String lastDecision = "none";
+
+  String lastDecision() {
+    return lastDecision;
+  }
+
   public RouteMemory(Set<Axle> members) {
     this.members = Set.copyOf(members);
   }
@@ -185,6 +192,7 @@ public final class RouteMemory {
         index++;
         continue;
       }
+      lastDecision = forward ? "open-passage" : "reverse-passage";
       int branch = forward ? passage.to : passage.from;
       // A branch that is not among the exits is not taken: returning -1 leaves the passage unconsumed, so the next
       // contact with this junction still finds it. Consuming here lost the branch the consist had committed to and
@@ -214,6 +222,7 @@ public final class RouteMemory {
         && newest.back.size() < members.size()) {
       // Reversing back through a junction this consist just crossed: it leaves by the branch it entered by, and stays
       // bound to that until every axle has come back through.
+      lastDecision = "retrace";
       if (commit) {
         newest.touched = now;
         newest.back.add(axle);
@@ -235,6 +244,7 @@ public final class RouteMemory {
       return contains(exits, newest.to) ? newest.to : -1;
     }
 
+    lastDecision = planned && proposed >= 0 ? "plan" : "repeat-or-proposed";
     int chosen;
     if (planned && proposed >= 0) chosen = proposed;
     else chosen = last != null ? last : proposed;

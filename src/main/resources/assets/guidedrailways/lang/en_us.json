@@ -340,5 +340,10 @@
   "guidedrailways.console.ready": "Ready",
   "guidedrailways.console.on_stop": "On stop",
   "gui.guidedrailways.align": "Align to stop",
-  "guidedrailways.console.offset": "%s blocks to stop"
+  "guidedrailways.console.offset": "%s blocks to stop",
+  "message.guidedrailways.driver_console.title": "Driver Console",
+  "message.guidedrailways.driver_console.unbound": "No bogeys installed",
+  "message.guidedrailways.driver_console.bound": "Bogeys installed",
+  "message.guidedrailways.driver_console.scheduled": "Schedule loaded",
+  "message.guidedrailways.driver_console.manual": "Manual control"
 }
