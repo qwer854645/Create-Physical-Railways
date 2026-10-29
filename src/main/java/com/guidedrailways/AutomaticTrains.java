@@ -270,7 +270,7 @@ final class AutomaticTrains {
       boolean hold) {
     // Auto align drives through the same command as a manual lever, but with its own ceiling: the lever only has
     // notches, and even the first notch creeps far above the speed alignment is permitted to use.
-    if (navigation == null && owner != null && owner.aligning()) {
+    if (navigation == null && owner != null && owner.intent() == ConsoleIntent.ALIGN) {
       double offset = owner.alignOffset();
       double speed = 0;
       for (var u : group) speed = Math.max(speed, Math.abs(u.speed));

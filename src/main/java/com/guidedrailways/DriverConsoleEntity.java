@@ -33,6 +33,16 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     return aligning;
   }
 
+  /**
+   * What this console is currently trying to do, derived from the flags it already keeps.
+   *
+   * <p>Derived rather than stored: storing it would create a second source of truth next to the flags, which is the
+   * arrangement this type exists to remove.
+   */
+  ConsoleIntent intent() {
+    return ConsoleIntent.of(bound, aligning, schedule.running(), observing, active);
+  }
+
   void stopAligning() {
     aligning = false;
   }
@@ -480,7 +490,12 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     if (now < nextStatusLog) return;
     nextStatusLog = now + 20;
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
-        .info("[ConsoleStatus] console={} reason={} bound={}", getBlockPos(), statusReason, bound);
+        .info(
+            "[ConsoleStatus] console={} reason={} intent={} bound={}",
+            getBlockPos(),
+            statusReason,
+            intent(),
+            bound);
   }
 
   @Override

@@ -237,6 +237,13 @@ tasks.register('checkAutoAlign', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkAutoAlign' }
 
+tasks.register('checkConsoleIntent', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ConsoleIntentCheck'
+}
+tasks.named('check') { dependsOn 'checkConsoleIntent' }
+
 tasks.register('checkStopOffset', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

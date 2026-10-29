@@ -216,7 +216,9 @@ public final class TrainRuntimeCheck {
     // drive the train while alignment is engaged, and alignment may not run without asking AutoAlign first.
     var binding = calls("AutomaticTrains", "bind");
     check(
-        binding.contains("DriverConsoleEntity.aligning") && binding.contains("AutoAlign.step"),
+        (binding.contains("DriverConsoleEntity.intent")
+                || binding.contains("DriverConsoleEntity.aligning"))
+            && binding.contains("AutoAlign.step"),
         "the command builder must consult auto align while a console is aligning");
 
     System.out.println(
