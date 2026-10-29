@@ -402,6 +402,7 @@ final class ScheduleController {
   }
 
   private void store(Player player, ItemStack stack) {
+    priority = SwitchQueue.DEFAULT_PRIORITY;
     item = stack.copyWithCount(1);
     program = null;
     var parsed = program();
@@ -434,6 +435,12 @@ final class ScheduleController {
     if (id != 32 && !DriverControls.isPrimary(owner)) {
       DriverControls.secondaryHint(player);
       return false;
+    }
+    if (id == 41) {
+      if (!present() || !DriverControls.stopped(owner)) return false;
+      priority = (priority() + 1) % (SwitchQueue.MAX_PRIORITY + 1);
+      owner.setChanged();
+      return true;
     }
     if (id == 31) {
       pause(PAUSED);
@@ -911,6 +918,7 @@ final class ScheduleController {
     var data = new CompoundTag();
     data.put("Item", item.save(registries));
     data.putInt("Entry", entry);
+    SchedulePriority.save(data, priority());
     data.putBoolean("Waiting", waiting);
     data.putInt("Version", 1);
     data.putBoolean("Running", running || resumePending);
@@ -938,6 +946,7 @@ final class ScheduleController {
   void load(CompoundTag tag, HolderLookup.Provider registries) {
     var data = tag.getCompound("PhysicalSchedule");
     item = ItemStack.parseOptional(registries, data.getCompound("Item"));
+    priority = SchedulePriority.load(data);
     program = null;
     throttle = SchedulePrelude.throttle(data.getDouble("Throttle"));
     currentTitle = data.getString("Title");

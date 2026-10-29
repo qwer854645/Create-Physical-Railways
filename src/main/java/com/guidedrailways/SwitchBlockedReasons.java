@@ -1,6 +1,6 @@
 package com.guidedrailways;
 
-import java.util.HashMap;
+import java.util.WeakHashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
@@ -20,27 +20,26 @@ final class SwitchBlockedReasons {
   /** Ticks a recorded reason stays current. The routing callback asks every substep. */
   static final long LIFETIME = 60;
 
-  private record Entry(String reason, long until) {}
-
-  private static final Map<String, Entry> RECORDED = new HashMap<>();
-
-  private static String key(ServerLevel level, UUID identity) {
-    return level.dimension().location() + "@" + identity;
-  }
+  private static final Map<ServerLevel, TickCache<UUID, String>> RECORDED = new WeakHashMap<>();
 
   static void record(ServerLevel level, UUID identity, String reason) {
-    RECORDED.put(key(level, identity), new Entry(reason, level.getGameTime() + LIFETIME));
+    RECORDED.computeIfAbsent(level, l -> new TickCache<>(LIFETIME))
+        .put(identity, reason, level.getGameTime());
   }
 
   /** The current reason, or null when there is none or it has aged out. */
   static String reason(ServerLevel level, UUID identity) {
-    var entry = RECORDED.get(key(level, identity));
-    if (entry == null) return null;
-    if (level.getGameTime() > entry.until()) {
-      RECORDED.remove(key(level, identity));
-      return null;
-    }
-    return entry.reason();
+    var cache = RECORDED.get(level);
+    return cache == null ? null : cache.get(identity, level.getGameTime());
+  }
+
+  static void tick(ServerLevel level) {
+    var cache = RECORDED.get(level);
+    if (cache != null) cache.tick(level.getGameTime());
+  }
+
+  static void unload(ServerLevel level) {
+    RECORDED.remove(level);
   }
 
   /**

@@ -11,6 +11,9 @@ final class TrainRuntime {
   static void beforeTick(ServerLevel level) {
     long start = PerfCounters.begin();
     try {
+      SchedulePriority.tick(level);
+      SwitchBlockedReasons.tick(level);
+      RailwaysCompat.tick(level);
       CargoStorage.tick(level);
       CouplerConnections.restoreLoaded(level);
       if (VehiclePhysics.hasVehicles(level)) TrackNetwork.refresh(level);
@@ -62,6 +65,8 @@ final class TrainRuntime {
     NativeTrainBridge.unload(level);
     CargoStorage.unload(level);
     RailwaysCompat.unload(level);
+    SchedulePriority.unload(level);
+    SwitchBlockedReasons.unload(level);
     TrainElectricity.unload(level);
   }
 }

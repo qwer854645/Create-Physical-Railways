@@ -23,7 +23,8 @@ public final class DriverMenu extends AbstractContainerMenu {
     OBSERVING,
     OPERATOR_AVAILABLE,
     MAX_SPEED,
-    CAN_CONFIGURE;
+    CAN_CONFIGURE,
+    SCHEDULE_PRIORITY;
   }
 
   private static final Field[] FIELDS = Field.values();
@@ -82,6 +83,7 @@ public final class DriverMenu extends AbstractContainerMenu {
                           : 0;
                   case MAX_SPEED -> console.maxSpeedTenths();
                   case CAN_CONFIGURE -> console.canConfigureView(inventory.player) ? 1 : 0;
+                  case SCHEDULE_PRIORITY -> console.schedule.priority();
                 };
               }
 
@@ -171,7 +173,7 @@ public final class DriverMenu extends AbstractContainerMenu {
   @Override
   public boolean clickMenuButton(Player player, int id) {
     if (console == null || !stillValid(player)) return false;
-    if (id >= 30 && id <= 34) {
+    if ((id >= 30 && id <= 34) || id == 41) {
       boolean result = console.schedule.action(player, id);
       nextDetails = 0;
       broadcastChanges();

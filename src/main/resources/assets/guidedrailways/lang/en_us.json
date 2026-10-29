@@ -1,4 +1,6 @@
 {
+  "gui.guidedrailways.driver.train_settings": "Train Settings",
+  "gui.guidedrailways.driver.schedule_priority": "Junction priority: %s (0–5)",
   "itemGroup.guidedrailways": "Create: Physical Railways",
   "item.guidedrailways.bogie": "Physical Bogey",
   "item.guidedrailways.coupler": "Train Coupler",

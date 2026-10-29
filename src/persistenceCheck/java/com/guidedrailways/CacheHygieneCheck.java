@@ -24,6 +24,8 @@ public final class CacheHygieneCheck {
   private static final List<Cache> CACHES =
       List.of(
           new Cache("SwitchReservations", "HOLD_TICKS"),
+          new Cache("SwitchReservations", "REPORT_TICKS"),
+          new Cache("SteamRailways", "DIAGNOSTIC_TICKS"),
           new Cache("SchedulePriority", "LIFETIME"),
           new Cache("ApproachRooms", "LIFETIME"),
           new Cache("SwitchBlockedReasons", "LIFETIME"),

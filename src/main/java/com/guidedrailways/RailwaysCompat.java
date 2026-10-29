@@ -24,6 +24,8 @@ final class RailwaysCompat {
 
     void unload(ServerLevel level);
 
+    default void tick(ServerLevel level) {}
+
     double[] buffers(TrackNetwork.Path path);
 
     boolean stationEnabled(com.simibubi.create.content.trains.station.GlobalStation station);
@@ -58,6 +60,10 @@ final class RailwaysCompat {
 
   static void unload(ServerLevel l) {
     if (bridge != null) bridge.unload(l);
+  }
+
+  static void tick(ServerLevel level) {
+    if (bridge != null) bridge.tick(level);
   }
 
   static double[] buffers(TrackNetwork.Path p) {

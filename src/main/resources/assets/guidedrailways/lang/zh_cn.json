@@ -1,4 +1,6 @@
 {
+  "gui.guidedrailways.driver.train_settings": "列车设置",
+  "gui.guidedrailways.driver.schedule_priority": "道岔优先级：%s（0–5）",
   "itemGroup.guidedrailways": "物理铁路",
   "item.guidedrailways.bogie": "物理转向架",
   "item.guidedrailways.coupler": "车钩",

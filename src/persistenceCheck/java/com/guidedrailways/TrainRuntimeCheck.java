@@ -72,6 +72,9 @@ public final class TrainRuntimeCheck {
   public static void main(String[] args) throws Exception {
     order(
         "beforeTick",
+        "SchedulePriority.tick",
+        "SwitchBlockedReasons.tick",
+        "RailwaysCompat.tick",
         "CargoStorage.tick",
         "CouplerConnections.restoreLoaded",
         "VehiclePhysics.hasVehicles",
@@ -100,6 +103,8 @@ public final class TrainRuntimeCheck {
         "NativeTrainBridge.unload",
         "CargoStorage.unload",
         "RailwaysCompat.unload",
+        "SchedulePriority.unload",
+        "SwitchBlockedReasons.unload",
         "TrainElectricity.unload");
     for (String owner : List.of("VehiclePhysics", "DriverControls"))
       for (var method : code(owner).methods)

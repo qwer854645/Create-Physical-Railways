@@ -230,6 +230,20 @@ tasks.register('checkSwitchPriority', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkSwitchPriority' }
 
+tasks.register('checkTickCache', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.TickCacheCheck'
+}
+tasks.named('check') { dependsOn 'checkTickCache' }
+
+tasks.register('checkJunctionState', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.JunctionStateCheck'
+}
+tasks.named('check') { dependsOn 'checkJunctionState' }
+
 tasks.register('checkAutoAlign', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

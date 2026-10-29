@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 
 /** Optional release-jar adapter; never constructs native trains or carriages. */
 final class SteamRailways implements RailwaysCompat.Bridge {
+  static final long DIAGNOSTIC_TICKS = 20;
   private final Map<ServerLevel, SwitchReservations> reservations = new WeakHashMap<>();
 
   static void register() {
@@ -55,10 +56,10 @@ final class SteamRailways implements RailwaysCompat.Bridge {
     // Recorded before the log throttle below: the console asks every time it syncs, and a reason delayed by
     // twenty ticks would be shown long after the junction was released.
     SwitchBlockedReasons.record(level, train, reason);
-    var key = level.dimension().location() + "@" + node;
-    var last = DIAGNOSED.getOrDefault(key, Long.MIN_VALUE);
-    if (now - last < 20) return;
-    DIAGNOSED.put(key, now);
+    var key = new SwitchReservations.Key(path.graph(), node);
+    var cache = DIAGNOSED.computeIfAbsent(level, l -> new TickCache<>(DIAGNOSTIC_TICKS - 1));
+    if (cache.get(key, now) != null) return;
+    cache.put(key, true, now);
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
             "[SwitchBlocked] reason={} node={} from={} to={} train={} graph={}",
@@ -70,7 +71,14 @@ final class SteamRailways implements RailwaysCompat.Bridge {
             path.graph());
   }
 
-  private static final java.util.Map<String, Long> DIAGNOSED = new java.util.HashMap<>();
+  private static final Map<ServerLevel, TickCache<SwitchReservations.Key, Boolean>> DIAGNOSED =
+      new WeakHashMap<>();
+
+  @Override
+  public void tick(ServerLevel level) {
+    var cache = DIAGNOSED.get(level);
+    if (cache != null) cache.tick(level.getGameTime());
+  }
 
   @Override
   public boolean pass(
@@ -115,6 +123,7 @@ final class SteamRailways implements RailwaysCompat.Bridge {
   @Override
   public void unload(ServerLevel level) {
     reservations.remove(level);
+    DIAGNOSED.remove(level);
   }
 
   @Override

@@ -10,7 +10,8 @@ final class SwitchReservations {
 
   private final Map<Key, Claim> claims = new HashMap<>();
   private final SwitchQueue queue = new SwitchQueue();
-  private static final Map<Key, Long> REPORTED = new HashMap<>();
+  static final long REPORT_TICKS = 60;
+  private final TickCache<Key, Boolean> reported = new TickCache<>(REPORT_TICKS - 1);
 
   /** Longest a claim survives without being refreshed; also the recovery path for a lost holder. */
   static final long HOLD_TICKS = 40;
@@ -20,6 +21,7 @@ final class SwitchReservations {
   }
 
   boolean claim(Key key, UUID train, int from, int to, long now, int priority) {
+    reported.tick(now);
     claims.entrySet().removeIf(e -> e.getValue().expires <= now);
     var old = claims.get(key);
     if (old != null && old.train.equals(train)) {
@@ -67,9 +69,8 @@ final class SwitchReservations {
     if (oldest < SwitchQueue.STARVE_TICKS) return;
     // Throttled per node: the passage is asked for every substep, and the point is one line per
     // stalled junction, not one per attempt.
-    var last = REPORTED.getOrDefault(key, Long.MIN_VALUE);
-    if (now - last < 60) return;
-    REPORTED.put(key, now);
+    if (reported.get(key, now) != null) return;
+    reported.put(key, true, now);
     var log = org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID);
     var head = queue.head(key, now);
     log.info(

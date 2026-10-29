@@ -65,6 +65,15 @@
 
 ## 缓存与过期
 
+`SchedulePriority`、`SwitchBlockedReasons` 按 `ServerLevel` 隔离，`TrainRuntime.beforeTick`
+逐刻调用 `TickCache.tick`，未再次查询的旧身份也会清除；世界卸载时显式移除整张表。
+时钟回退使未来记录失效。`TickCacheCheck` 覆盖首次查询、20/60 tick 日志间隔、
+未查询键的过期和时钟回退；`JunctionStateCheck` 检查实际生命周期接线。
+
+道岔诊断由 `SteamRailways.DIAGNOSTIC_TICKS`（20 tick）限流，按世界、轨道图和节点隔离，
+经可选兼容桥逐刻清理并在卸载时释放。排队诊断由 `SwitchReservations.REPORT_TICKS`
+（60 tick）限流，缓存属于预约实例，不再使用全局静态节点表。
+
 | 缓存 | 位置 | 上界 | 断言 |
 |---|---|---|---|
 | 道岔预约 | `SwitchReservations.HOLD_TICKS` | 40 tick | `SwitchReservationsCheck` |

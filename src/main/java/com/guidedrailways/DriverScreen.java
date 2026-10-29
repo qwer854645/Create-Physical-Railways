@@ -24,7 +24,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       gearTabButton,
       saveGears,
       nameTabButton,
-      saveName;
+      saveName,
+      schedulePriority;
   private final List<AbstractWidget> mainWidgets = new ArrayList<>();
   private final EditBox[] gears = new EditBox[DriverModel.MAX_NOTCH];
   private final int[] syncedGears = new int[DriverModel.MAX_NOTCH];
@@ -83,9 +84,14 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         command(Component.translatable("gui.guidedrailways.auto.remove"), 202, 190, 86, 32);
     // 56 wide, not 86: the confirm tick keeps the bottom-right corner, so this ends at 258.
     command(Component.translatable("gui.guidedrailways.align"), 202, 212, 56, 40);
+    schedulePriority = button(text("schedule_priority", SwitchQueue.DEFAULT_PRIORITY), 12, 178, 276,
+        b -> {
+          if (minecraft.gameMode != null)
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 41);
+        });
     nameTabButton =
         button(
-                text("train_name"),
+                text("train_settings"),
                 180,
                 8,
                 18,
@@ -447,6 +453,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     gearTabButton.setMessage(text(gearTab || nameTab ? "back_settings" : "gear_settings"));
     nameTabButton.visible = !gearTab;
     trainName.visible = saveName.visible = nameTab;
+    schedulePriority.visible = nameTab;
     trainName.setEditable(menu.value(CAN_CONFIGURE) != 0 && !namePending);
     saveName.active =
         menu.value(CAN_CONFIGURE) != 0
@@ -470,6 +477,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
             && enteredGears() != null;
     forward.active = reverse.active = menu.value(IS_OPERATOR) != 0 && menu.value(OBSERVING) == 0;
     boolean schedule = menu.value(HAS_SCHEDULE) != 0 && menu.value(IS_PRIMARY) != 0;
+    schedulePriority.setMessage(text("schedule_priority", menu.value(SCHEDULE_PRIORITY)));
+    schedulePriority.active = schedule && menu.value(STOPPED) != 0 && menu.value(CAN_CONFIGURE) != 0;
     autoStart.active = schedule && menu.value(SCHEDULE_RUNNING) == 0;
     autoPause.active = schedule && menu.value(SCHEDULE_RUNNING) != 0;
     autoSkip.active =
