@@ -211,7 +211,17 @@ public final class RouteMemory {
       Junction node, int from, Repeat last, int proposed, boolean planned) {
     if (!planned || proposed < 0 || proposed == last.to) return false;
     for (var p : history)
-      if (p.node.equals(node) && p.from == from && p.to == last.to && !p.complete()) return false;
+      if (p.node.equals(node) && p.from == from && p.to == last.to && !p.complete()) {
+        // An open passage normally outranks the plan, because its axles may still be crossing that branch.
+        // A passage that can never complete holds the consist on one branch forever, and it short-circuits
+        // the repeat before the history scan below ever runs, so it has to be counted here as well:
+        // measured as [AutomaticJunction] planned=14 selected=31 on every lap with no retry and no mismatch,
+        // because the repeat decided before the plan was consulted at all.
+        if (++p.overrides <= OVERRIDE_LIMIT) return false;
+        history.remove(p);
+        lastDropped = node.node() + ":" + p.from + ">" + p.to;
+        return true;
+      }
     return true;
   }
 }

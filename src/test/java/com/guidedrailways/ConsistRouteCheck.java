@@ -201,6 +201,19 @@ public final class ConsistRouteCheck {
       later = stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true);
     check(later == 31, "an unreachable passage eventually stops overriding the plan");
 
+    // The repeat short-circuits before the history scan, so an unreachable passage could hold the consist on one
+    // branch through the repeat alone: measured as planned=14 selected=31 every lap, with no mismatch reported
+    // because the repeat and the commit agreed. The same counter has to apply on this path.
+    var repeating = new RouteMemory(Set.of(stuckAxle, absent));
+    var repeatNode = new RouteMemory.Junction(UUID.randomUUID(), 31);
+    check(
+        repeating.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, false) == 31,
+        "the first pass records the branch that was actually taken");
+    int repeatLater = 31;
+    for (int attempt = 0; attempt < 300 && repeatLater != 14; attempt++)
+      repeatLater = repeating.preview(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true);
+    check(repeatLater == 14, "the repeat stops outranking the plan once its passage is abandoned");
+
     System.out.println("ConsistRouteCheck: " + checks + " assertions passed");
   }
 }
