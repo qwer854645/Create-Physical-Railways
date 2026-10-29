@@ -385,7 +385,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             schedule.status() == ScheduleController.NO_ROUTE,
             "switch_disabled".equals(blocked),
             "held_by_another_consist".equals(blocked),
-            false,
+            schedule.status() == ScheduleController.SIGNAL_WAIT,
             0,
             false,
             atStop,
