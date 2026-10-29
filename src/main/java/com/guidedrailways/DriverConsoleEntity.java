@@ -439,18 +439,6 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             atStop));
   }
 
-  /**
-   * The status as the short line drawn on the screen.
-   *
-   * <p>Translated on the client from the reason the server sent, so the surface stays a single string and the
-   * renderer never translates or allocates per frame.
-   */
-  String statusText() {
-    if (getLevel() == null || !getLevel().isClientSide) return "";
-    return net.minecraft.network.chat.Component.translatable(
-            "guidedrailways.console." + statusReason.name().toLowerCase(java.util.Locale.ROOT))
-        .getString();
-  }
 
   /**
    * Signed distance to the stop, from the room the physics step last used.
@@ -494,19 +482,6 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     driver.displayClientMessage(line, true);
   }
 
-  /** The offset as one short line, or empty when there is nothing to say. */
-  String offsetText() {
-    if (getLevel() == null || !getLevel().isClientSide) return "";
-    if (Double.compare(offsetTextSource, stopOffset) != 0) {
-      offsetTextSource = stopOffset;
-      offsetText =
-          StopOffset.band(stopOffset) == StopOffset.Band.ON
-              ? net.minecraft.network.chat.Component.translatable("guidedrailways.console.on_stop")
-                  .getString()
-              : String.format(java.util.Locale.ROOT, "%+.1f", stopOffset);
-    }
-    return offsetText;
-  }
 
   /** One line per second, so a train that will not move has a stated reason in the log. */
   private void reportStatus() {

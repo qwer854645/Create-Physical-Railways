@@ -81,7 +81,8 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     takeover = command(text("takeover"), 107, 190, 86, 35);
     autoRemove =
         command(Component.translatable("gui.guidedrailways.auto.remove"), 202, 190, 86, 32);
-    command(Component.translatable("gui.guidedrailways.align"), 202, 212, 86, 40);
+    // 56 wide, not 86: the confirm tick keeps the bottom-right corner, so this ends at 258.
+    command(Component.translatable("gui.guidedrailways.align"), 202, 212, 56, 40);
     nameTabButton =
         button(
                 text("train_name"),
@@ -151,7 +152,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     saveGears =
         button(text("apply_gears"), 12, 211, 248, b -> applyGears())
             .icon(AllIcons.I_CONFIRM, false);
-    button(text("close_settings"), 270, 20, 18, b -> onClose()).icon(AllIcons.I_CONFIRM, true);
+    button(text("close_settings"), 270, 211, 18, b -> onClose()).icon(AllIcons.I_CONFIRM, true);
   }
 
   private void selectGear(int gear) {

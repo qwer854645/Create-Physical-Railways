@@ -110,87 +110,8 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
             mask);
   }
 
-  /**
-   * Draws the status line on the screen plate.
-   *
-   * <p>Placed on the same panel as the lamps, using the plate's own coordinates so it cannot drift away from
-   * the screen texture. The text faces the same way as the panel: the scale flips the glyph plane, which is
-   * what puts the line on the outside of the plate rather than mirrored inside it.
-   */
-  private static void drawStatusText(
-      DriverConsoleEntity e, PoseStack pose, MultiBufferSource buffers, int light) {
-    // A reason the player can act on blinks, so a held junction is not mistaken for an idle train. The two
-    // colours are the same amber the screen already uses, one dimmed: no new hue, and readable at a glance.
-    boolean alert = e.statusReason.actionable();
-    boolean bright = e.getLevel() == null || (e.getLevel().getGameTime() / 8) % 2 == 0;
-    int colour = alert ? (bright ? 0xFFE8B14A : 0xFF8A6A2A) : 0xFFD8A34A;
-    drawLine(e.statusText(), 11.62 / 16d, colour, pose, buffers, light);
-    drawLine(e.offsetText(), 11.02 / 16d, 0xFF9FD8A0, pose, buffers, light);
-  }
 
-  /**
-   * Draws a small solid marker where the text origin is.
-   *
-   * <p>Font drawing has produced nothing at every offset and display mode tried so far. A marker on the proven box path
-   * separates the two possible faults: if it appears at the plate, the transform is right and the problem is the font
-   * batch; if it does not, the transform is wrong. Enabled only with detailed logging.
-   */
-  private static void drawTextMarker(
-      DriverConsoleEntity e, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
-    if (!TrainConfig.DETAILED_LOGGING.get()) return;
-    var vertices = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
-    var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(DARK);
-    // Flat on the panel, above the lamp row: the screen is a horizontal surface (the lamps are flat boxes in the X-Z
-    // plane at y = 11.45..11.95/16), which is why text drawn in the glyph plane ended up buried inside the console.
-    CouplerRenderer.box(
-        pose.last(),
-        vertices,
-        sprite,
-        5.0 / 16d,
-        11.96 / 16d,
-        8.0 / 16d,
-        9.0 / 16d,
-        12.20 / 16d,
-        11.0 / 16d,
-        light,
-        overlay);
-  }
 
-  /** One centred line on the panel; the caller chooses its height and colour. */
-  private static void drawLine(
-      String line,
-      double y,
-      int colour,
-      PoseStack pose,
-      MultiBufferSource buffers,
-      int light) {
-    if (line.isEmpty()) return;
-    var font = Minecraft.getInstance().font;
-    pose.pushPose();
-    // The plate is not centred in the block: its texture spans u = 0..16 from x = 6/16 to x = 11/16, so the text is
-    // centred at 8.5/16. The depth offset is 0.02 for the same reason the lamps need one - anything under about 0.01
-    // loses the depth test and the text is drawn behind the panel it belongs on.
-    // The panel is horizontal, so the glyph plane is rotated onto it rather than left vertical inside the console.
-    pose.translate(8.5 / 16d, 12.22 / 16d, (4 + 9.5 * 5 / 16d) / 16d);
-    pose.mulPose(Axis.XP.rotationDegrees(90));
-    pose.mulPose(Axis.ZP.rotationDegrees(180));
-    pose.scale(.012f, -.012f, .012f);
-    font.drawInBatch(
-        line,
-        -font.width(line) / 2f,
-        0,
-        colour,
-        false,
-        pose.last().pose(),
-        buffers,
-        // SEE_THROUGH, not NORMAL: the negative scale reverses the quad winding, and on this panel the glyphs lost
-        // the depth test against the plate regardless of how far they were offset. Drawing them without depth keeps
-        // them readable and is honest about the fact that they are decoration on a moving object.
-        net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH,
-        0,
-        light);
-    pose.popPose();
-  }
 
   private static long LAMP_LOG_AT;
   private static ResourceLocation lampSprite(int lamp, boolean emergency) {
