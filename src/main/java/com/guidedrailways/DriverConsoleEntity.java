@@ -11,7 +11,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
+public final class DriverConsoleEntity extends BlockEntity
+    implements MenuProvider, com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation {
   final ScheduleController schedule = new ScheduleController(this);
   java.util.UUID consoleId = java.util.UUID.randomUUID();
   long placementOrder;
@@ -457,30 +458,6 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         : StopOffset.ahead(room);
   }
 
-  /**
-   * Puts the status where the driver is already looking.
-   *
-   * <p>The panel text is decoration on a small tilted surface and has been unreliable; the action bar is always in
-   * view, costs a translatable component once a second, and reaches exactly the player who can act on it.
-   */
-  private void announceToDriver() {
-    if (!(getLevel() instanceof net.minecraft.server.level.ServerLevel server) || !bound || !active) return;
-    var driver = operator == null ? null : server.getPlayerByUUID(operator);
-    if (driver == null) return;
-    var reason =
-        net.minecraft.network.chat.Component.translatable(
-            "guidedrailways.console." + statusReason.name().toLowerCase(java.util.Locale.ROOT));
-    var line =
-        stopOffset == 0
-            ? reason
-            : reason.copy()
-                .append("  ")
-                .append(
-                    net.minecraft.network.chat.Component.translatable(
-                        "guidedrailways.console.offset",
-                        String.format(java.util.Locale.ROOT, "%+.1f", stopOffset)));
-    driver.displayClientMessage(line, true);
-  }
 
 
   /** One line per second, so a train that will not move has a stated reason in the log. */
@@ -492,7 +469,6 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     // Once per second is enough to catch a disagreement between the wait flag and the stage; the flag is a fold
     // candidate only while they agree.
     schedule.auditWaitFlag();
-    announceToDriver();
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
             "[ConsoleStatus] console={} reason={} intent={} stage={} bound={}",
@@ -501,6 +477,30 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             intent(),
             schedule.stage(),
             bound);
+  }
+
+  /**
+   * What the driver sees through Engineer's Goggles.
+   *
+   * <p>Goggles are the surface this belongs on: they are already how this mod reports state, they are read on purpose,
+   * and unlike a panel texture they do not depend on where the player stands.
+   */
+  @Override
+  public boolean addToGoggleTooltip(
+      java.util.List<net.minecraft.network.chat.Component> tooltip, boolean sneaking) {
+    tooltip.add(
+        net.minecraft.network.chat.Component.translatable("guidedrailways.console.goggles.header"));
+    tooltip.add(
+        net.minecraft.network.chat.Component.translatable(
+            "guidedrailways.console.goggles.status",
+            net.minecraft.network.chat.Component.translatable(
+                "guidedrailways.console." + statusReason.name().toLowerCase(java.util.Locale.ROOT))));
+    if (stopOffset != 0)
+      tooltip.add(
+          net.minecraft.network.chat.Component.translatable(
+              "guidedrailways.console.offset",
+              String.format(java.util.Locale.ROOT, "%+.1f", stopOffset)));
+    return true;
   }
 
   @Override

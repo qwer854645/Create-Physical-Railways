@@ -340,5 +340,7 @@
   "guidedrailways.console.ready": "Ready",
   "guidedrailways.console.on_stop": "On stop",
   "gui.guidedrailways.align": "Align to stop",
-  "guidedrailways.console.offset": "%s blocks to stop"
+  "guidedrailways.console.offset": "%s blocks to stop",
+  "guidedrailways.console.goggles.header": "Driver console",
+  "guidedrailways.console.goggles.status": "Status: %s"
 }
