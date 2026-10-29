@@ -112,7 +112,7 @@ public final class StationPresence {
       }
     }
     state.stops.keySet().removeIf(k -> !seen.contains(k));
-    reconcile(state, arrivals);
+    reconcile(level, state, arrivals);
   }
 
   private static void sample(
@@ -169,7 +169,21 @@ public final class StationPresence {
     }
   }
 
-  private static void reconcile(State state, Map<Key, Arrival> arrivals) {
+
+  /**
+   * True while the station's block entity still exists.
+   *
+   * <p>A station can be broken while a train stands at it. The binding then still names the global station,
+   * and calling into one that no longer has a block behind it touches removed state; the train side still has
+   * to be released, because otherwise the train keeps a station that no longer exists.
+   */
+  private static boolean live(ServerLevel level, GlobalStation station) {
+    return station.blockEntityPos != null
+        && level.getBlockEntity(station.blockEntityPos)
+            instanceof com.simibubi.create.content.trains.station.StationBlockEntity;
+  }
+
+  private static void reconcile(ServerLevel level, State state, Map<Key, Arrival> arrivals) {
     var candidates = new ArrayList<StationBindingSelection.Candidate>();
     var previous = new HashMap<UUID, UUID>();
     var blocked = new HashSet<UUID>();
@@ -184,13 +198,19 @@ public final class StationPresence {
     }
     var desired = StationBindingSelection.choose(candidates, previous, blocked);
     for (var old : List.copyOf(state.bindings.values())) {
+      if (!live(level, old.station)) {
+        // Nothing can arrive at a station whose block is gone, whatever the selection would prefer.
+        release(level, old);
+        state.bindings.remove(old.station.id);
+        continue;
+      }
       var next = arrivals.get(new Key(desired.get(old.station.id), old.station.id));
       if (next == null
           || next.station != old.station
           || next.train != old.train
           || old.station.getNearestTrain() != old.train
           || old.train.getCurrentStation() != old.station) {
-        release(old);
+        release(level, old);
         state.bindings.remove(old.station.id);
       }
     }
@@ -220,8 +240,12 @@ public final class StationPresence {
             .collect(java.util.stream.Collectors.toUnmodifiableSet());
   }
 
-  private static void release(Arrival binding) {
-    binding.station.trainDeparted(binding.train); // Cancels only this exact train's reservation.
+  private static void release(ServerLevel level, Arrival binding) {
+    // The station block can be broken while a train is standing at it, and then this binding points at a
+    // block entity that has already been removed from the level. Its own bookkeeping is meaningless by
+    // then, but the train side must still be cleared, or the train keeps a station that no longer exists.
+    if (live(level, binding.station))
+      binding.station.trainDeparted(binding.train); // Cancels only this exact train's reservation.
     if (binding.station.id.equals(binding.train.currentStation)) binding.train.station(null);
     NativeTrainBridge.sync(binding.train);
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
@@ -236,7 +260,7 @@ public final class StationPresence {
     if (state != null) {
       for (var binding : List.copyOf(state.bindings.values()))
         if (binding.train == train) {
-          release(binding);
+          release(level, binding);
           state.bindings.remove(binding.station.id);
         }
       refreshPresence(state);
@@ -248,6 +272,6 @@ public final class StationPresence {
 
   static void unload(ServerLevel level) {
     var state = STATES.remove(level);
-    if (state != null) for (var binding : state.bindings.values()) release(binding);
+    if (state != null) for (var binding : state.bindings.values()) release(level, binding);
   }
 }
