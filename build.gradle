@@ -670,6 +670,14 @@ tasks.register('checkTrainRuntime', JavaExec) {
     mainClass = 'com.guidedrailways.TrainRuntimeCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainRuntime' }
+tasks.register('checkCacheHygiene', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.CacheHygieneCheck'
+    systemProperty 'guidedrailways.classes', sourceSets.main.output.classesDirs.singleFile
+}
+tasks.named('check') { dependsOn 'checkCacheHygiene' }
+
 
 
 tasks.register('generateCollisionMetadata', JavaExec) {
