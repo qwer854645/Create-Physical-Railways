@@ -325,5 +325,17 @@
   "guidedrailways.ponder.shared.electric_limit": "档位设定的是目标速度；实际加速仍受电压、可供功率与载重限制，满档不保证达到目标速度",
   "guidedrailways.ponder.shared.electric_loss": "降弓或离开有电接触网后，电力牵引消失；排查不走时，依次检查接触、电压、制动与牵引档位",
   "guidedrailways.ponder.shared.electric_brake": "断电后制动仍然可用；驾驶时左击紧急制动，停车后对准驾驶台按住右键约一秒复位",
-  "guidedrailways.status.station_gone": "列车停靠的站台已被拆除"
+  "guidedrailways.status.station_gone": "列车停靠的站台已被拆除",
+  "guidedrailways.console.no_body": "未安装转向架",
+  "guidedrailways.console.station_gone": "站台已拆除",
+  "guidedrailways.console.no_route": "无可用路线",
+  "guidedrailways.console.switch_disabled": "道岔未启用",
+  "guidedrailways.console.switch_held": "岔口被占用",
+  "guidedrailways.console.signal_blocked": "信号未放行",
+  "guidedrailways.console.wait_passengers": "等待乘客",
+  "guidedrailways.console.wait_cargo": "等待货物",
+  "guidedrailways.console.wait_timer": "等待中",
+  "guidedrailways.console.hold_brake": "制动中",
+  "guidedrailways.console.arrived": "已到站",
+  "guidedrailways.console.ready": "可发车"
 }

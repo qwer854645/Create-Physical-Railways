@@ -393,6 +393,19 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             atStop));
   }
 
+  /**
+   * The status as the short line drawn on the screen.
+   *
+   * <p>Translated on the client from the reason the server sent, so the surface stays a single string and the
+   * renderer never translates or allocates per frame.
+   */
+  String statusText() {
+    if (getLevel() == null || !getLevel().isClientSide) return "";
+    return net.minecraft.network.chat.Component.translatable(
+            "guidedrailways.console." + statusReason.name().toLowerCase(java.util.Locale.ROOT))
+        .getString();
+  }
+
   /** One line per second, so a train that will not move has a stated reason in the log. */
   private void reportStatus() {
     if (!TrainConfig.DETAILED_LOGGING.get() || getLevel() == null) return;

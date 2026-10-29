@@ -110,6 +110,36 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
             mask);
   }
 
+  /**
+   * Draws the status line on the screen plate.
+   *
+   * <p>Placed on the same panel as the lamps, using the plate's own coordinates so it cannot drift away from
+   * the screen texture. The text faces the same way as the panel: the scale flips the glyph plane, which is
+   * what puts the line on the outside of the plate rather than mirrored inside it.
+   */
+  private static void drawStatusText(
+      DriverConsoleEntity e, PoseStack pose, MultiBufferSource buffers, int light) {
+    String line = e.statusText();
+    if (line.isEmpty()) return;
+    var font = Minecraft.getInstance().font;
+    pose.pushPose();
+    pose.translate(.5, 11.62 / 16d, (4 + 11 * 5 / 16d) / 16d - .002);
+    pose.mulPose(Axis.YP.rotationDegrees(180));
+    pose.scale(-.0075f, -.0075f, .0075f);
+    font.drawInBatch(
+        line,
+        -font.width(line) / 2f,
+        0,
+        0xFFD8A34A,
+        false,
+        pose.last().pose(),
+        buffers,
+        net.minecraft.client.gui.Font.DisplayMode.NORMAL,
+        0,
+        light);
+    pose.popPose();
+  }
+
   private static long LAMP_LOG_AT;
   private static ResourceLocation lampSprite(int lamp, boolean emergency) {
     if (emergency || (lamp & ConsoleDisplay.RIGHT) != 0) return LAMP_SPRITES[2];
