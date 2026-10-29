@@ -89,6 +89,10 @@ final class ConsistRoutes {
       // Called for every axle on every substep, so this asks the memory directly instead of building a
       // list and a stream to look for one entry.
       boolean recorded = context.memory.recorded(new RouteMemory.Junction(path.graph(), node), from, to);
+      var abandoned = context.memory.takeDropped();
+      if (abandoned != null)
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+            .info("[RouteMemoryDropped] node={} got={}", abandoned, to);
       boolean allowed =
           RailwaysCompat.pass(context.level, path, node, from, to, context.identity, recorded);
       switchWaiting = !allowed;

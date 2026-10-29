@@ -15,6 +15,9 @@ public final class RouteMemory {
     final int from, to;
     final Map<Axle, Boolean> after = new HashMap<>();
 
+    /** Times this still-open passage contradicted a plan that wanted another exit. */
+    int overrides;
+
     Passage(Junction node, int from, int to, Set<Axle> members) {
       this.node = node;
       this.from = from;
@@ -28,6 +31,24 @@ public final class RouteMemory {
   }
 
   private record Repeat(Junction node, int from, int to) {}
+
+  /**
+   * How often an open passage may contradict a plan before it is abandoned.
+   *
+   * <p>A crossing asks this many times while it lasts, so a genuine passage never reaches the limit in one
+   * pass; a record whose axles will never all arrive reaches it and is dropped.
+   */
+  private static final int OVERRIDE_LIMIT = 240;
+
+  /** Node and branch of the last passage that was abandoned, for the caller to report. */
+  private String lastDropped;
+
+  /** Returns and clears the last abandoned passage description, or null when none was abandoned. */
+  public String takeDropped() {
+    var dropped = lastDropped;
+    lastDropped = null;
+    return dropped;
+  }
 
   private final Set<Axle> members;
   private final List<Passage> history = new ArrayList<>();
@@ -133,6 +154,21 @@ public final class RouteMemory {
         && proposed >= 0
         && proposed != (forward ? choice.to : choice.from))
       choice = null;
+    // An open passage normally outranks the plan, because splitting a consist across two branches is
+    // worse than taking a wrong one. It can never complete, though, when one of its axles never reaches
+    // the node at all: reversing before the last axle passes, recoupling, or a shorter consist afterwards.
+    // Such a record then overrides every later plan forever. In game this showed up as node 22 planned 14
+    // and selected 31 on two passes, each reported as an automatic route mismatch.
+    if (choice != null
+        && !choice.complete()
+        && planned
+        && proposed >= 0
+        && proposed != (forward ? choice.to : choice.from)
+        && ++choice.overrides > OVERRIDE_LIMIT) {
+      history.remove(choice);
+      lastDropped = node.node() + ":" + choice.from + ">" + choice.to;
+      choice = null;
+    }
     if (choice != null) {
       int out = forward ? choice.to : choice.from;
       if (!contains(exits, out)) return -1;

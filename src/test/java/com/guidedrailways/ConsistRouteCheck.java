@@ -187,6 +187,20 @@ public final class ConsistRouteCheck {
             BranchSelect.choose(f, up, entries, BranchSelect.Steer.LEFT) == 2,
             "A selects leftmost relative to current travel direction");
       }
+    // A passage whose axles will never all arrive used to outrank every later plan, so a train kept taking
+    // the same branch while automatic navigation reported a mismatch each lap. It is now abandoned once it
+    // has contradicted that many plans.
+    var stuckAxle = new RouteMemory.Axle(UUID.randomUUID(), 0);
+    var absent = new RouteMemory.Axle(stuckAxle.bogie(), 1);
+    var stuck = new RouteMemory(Set.of(stuckAxle, absent));
+    var stuckNode = new RouteMemory.Junction(UUID.randomUUID(), 22);
+    check(stuck.commit(stuckAxle, stuckNode, 9, new int[] {14, 31}, 14, true) == 14, "first crossing takes the plan");
+    // The first axle crossed 9 -> 14; the second axle never reaches the node, so the record stays open.
+    int later = -1;
+    for (int attempt = 0; attempt < 300 && later != 31; attempt++)
+      later = stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true);
+    check(later == 31, "an unreachable passage eventually stops overriding the plan");
+
     System.out.println("ConsistRouteCheck: " + checks + " assertions passed");
   }
 }
