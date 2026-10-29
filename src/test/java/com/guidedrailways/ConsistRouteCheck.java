@@ -194,25 +194,34 @@ public final class ConsistRouteCheck {
     var absent = new RouteMemory.Axle(stuckAxle.bogie(), 1);
     var stuck = new RouteMemory(Set.of(stuckAxle, absent));
     var stuckNode = new RouteMemory.Junction(UUID.randomUUID(), 22);
-    check(stuck.commit(stuckAxle, stuckNode, 9, new int[] {14, 31}, 14, true) == 14, "first crossing takes the plan");
-    // The first axle crossed 9 -> 14; the second axle never reaches the node, so the record stays open.
-    int later = -1;
-    for (int attempt = 0; attempt < 300 && later != 31; attempt++)
-      later = stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true);
-    check(later == 31, "an unreachable passage eventually stops overriding the plan");
+    check(
+        stuck.commit(stuckAxle, stuckNode, 9, new int[] {14, 31}, 14, true, 0) == 14,
+        "first crossing takes the plan");
+    // The first axle crossed 9 -> 14; the second axle never reaches the node, so the entry stays open. While the
+    // consist may still be spanning the junction it keeps its branch, however the plan asks - that is the safety
+    // property. A passage nobody touches expires, which is what stops it from pinning the consist for ever.
+    check(
+        stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true, 10) == 14,
+        "a spanning consist keeps its branch against the plan");
+    check(
+        stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true, 10 + RouteMemory.PASSAGE_TICKS)
+            == 31,
+        "an untouched passage expires, so it cannot override the plan for ever");
 
-    // The repeat short-circuits before the history scan, so an unreachable passage could hold the consist on one
-    // branch through the repeat alone: measured as planned=14 selected=31 every lap, with no mismatch reported
-    // because the repeat and the commit agreed. The same counter has to apply on this path.
+    // The same on a train with no plan: the repeat carries the old branch, and expiry is what frees it.
     var repeating = new RouteMemory(Set.of(stuckAxle, absent));
     var repeatNode = new RouteMemory.Junction(UUID.randomUUID(), 31);
     check(
-        repeating.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, false) == 31,
+        repeating.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, false, 0) == 31,
         "the first pass records the branch that was actually taken");
-    int repeatLater = 31;
-    for (int attempt = 0; attempt < 300 && repeatLater != 14; attempt++)
-      repeatLater = repeating.preview(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true);
-    check(repeatLater == 14, "the repeat stops outranking the plan once its passage is abandoned");
+    check(
+        repeating.preview(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 10) == 31,
+        "the open passage outranks the plan while it is live");
+    check(
+        repeating.preview(
+                stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 10 + RouteMemory.PASSAGE_TICKS)
+            == 14,
+        "once it expires the plan wins again");
 
     System.out.println("ConsistRouteCheck: " + checks + " assertions passed");
   }
