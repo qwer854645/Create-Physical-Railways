@@ -144,7 +144,7 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     // loses the depth test and the text is drawn behind the panel it belongs on.
     pose.translate(8.5 / 16d, y, (4 + 11 * 5 / 16d) / 16d - .02);
     pose.mulPose(Axis.YP.rotationDegrees(180));
-    pose.scale(-.0075f, -.0075f, .0075f);
+    pose.scale(-.012f, -.012f, .012f);
     font.drawInBatch(
         line,
         -font.width(line) / 2f,
@@ -153,7 +153,10 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
         false,
         pose.last().pose(),
         buffers,
-        net.minecraft.client.gui.Font.DisplayMode.NORMAL,
+        // SEE_THROUGH, not NORMAL: the negative scale reverses the quad winding, and on this panel the glyphs lost
+        // the depth test against the plate regardless of how far they were offset. Drawing them without depth keeps
+        // them readable and is honest about the fact that they are decoration on a moving object.
+        net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH,
         0,
         light);
     pose.popPose();
