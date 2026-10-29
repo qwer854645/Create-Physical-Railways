@@ -469,6 +469,31 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         : StopOffset.ahead(room);
   }
 
+  /**
+   * Puts the status where the driver is already looking.
+   *
+   * <p>The panel text is decoration on a small tilted surface and has been unreliable; the action bar is always in
+   * view, costs a translatable component once a second, and reaches exactly the player who can act on it.
+   */
+  private void announceToDriver() {
+    if (!(getLevel() instanceof net.minecraft.server.level.ServerLevel server) || !bound || !active) return;
+    var driver = operator == null ? null : server.getPlayerByUUID(operator);
+    if (driver == null) return;
+    var reason =
+        net.minecraft.network.chat.Component.translatable(
+            "guidedrailways.console." + statusReason.name().toLowerCase(java.util.Locale.ROOT));
+    var line =
+        stopOffset == 0
+            ? reason
+            : reason.copy()
+                .append("  ")
+                .append(
+                    net.minecraft.network.chat.Component.translatable(
+                        "guidedrailways.console.offset",
+                        String.format(java.util.Locale.ROOT, "%+.1f", stopOffset)));
+    driver.displayClientMessage(line, true);
+  }
+
   /** The offset as one short line, or empty when there is nothing to say. */
   String offsetText() {
     if (getLevel() == null || !getLevel().isClientSide) return "";
@@ -492,6 +517,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     // Once per second is enough to catch a disagreement between the wait flag and the stage; the flag is a fold
     // candidate only while they agree.
     schedule.auditWaitFlag();
+    announceToDriver();
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
             "[ConsoleStatus] console={} reason={} intent={} stage={} bound={}",

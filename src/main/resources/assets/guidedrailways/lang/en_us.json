@@ -339,5 +339,6 @@
   "guidedrailways.console.arrived": "Arrived",
   "guidedrailways.console.ready": "Ready",
   "guidedrailways.console.on_stop": "On stop",
-  "gui.guidedrailways.align": "Align to stop"
+  "gui.guidedrailways.align": "Align to stop",
+  "guidedrailways.console.offset": "%s blocks to stop"
 }
