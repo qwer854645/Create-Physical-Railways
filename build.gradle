@@ -223,6 +223,13 @@ processResources {
 }
 
 
+tasks.register('checkAutoAlign', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.AutoAlignCheck'
+}
+tasks.named('check') { dependsOn 'checkAutoAlign' }
+
 tasks.register('checkStopOffset', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
