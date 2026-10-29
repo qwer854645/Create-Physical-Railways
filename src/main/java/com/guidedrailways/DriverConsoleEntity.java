@@ -491,10 +491,11 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     nextStatusLog = now + 20;
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
-            "[ConsoleStatus] console={} reason={} intent={} bound={}",
+            "[ConsoleStatus] console={} reason={} intent={} stage={} bound={}",
             getBlockPos(),
             statusReason,
             intent(),
+            schedule.stage(),
             bound);
   }
 

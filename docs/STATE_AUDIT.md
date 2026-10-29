@@ -29,6 +29,8 @@
 标志:   running manualOverride waiting releaseBrakes visualDirty routeRetry resumePending mailMonitored
 ```
 
+**阶段投影（已加入）**：`ScheduleStage` 把 16 个状态码映射为 `IDLE/COMPLETE/PLANNING/RUNNING/HOLDING/BLOCKED/WAITING` 七个阶段，`ScheduleStageCheck`（41 项）逐码断言，并规定：只有 `TRAVELLING` 允许列车按时刻表移动、`BLOCKED` 与"自愈型暂停"互斥、**未知状态码一律视为 BLOCKED**（不得当成健康）。目前它只是投影，存储与迁移未变；下一步才是把迁移收敛到阶段上。
+
 已知需要明确的组合（目前没有任何守卫）：
 
 | 组合 | 含义 | 谁来保证 |

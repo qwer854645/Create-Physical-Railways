@@ -237,6 +237,13 @@ tasks.register('checkAutoAlign', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkAutoAlign' }
 
+tasks.register('checkScheduleStage', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ScheduleStageCheck'
+}
+tasks.named('check') { dependsOn 'checkScheduleStage' }
+
 tasks.register('checkAlignDemand', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

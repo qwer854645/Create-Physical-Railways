@@ -91,6 +91,11 @@ final class ScheduleController {
     return Math.max(0, Math.min(SwitchQueue.MAX_PRIORITY, priority));
   }
 
+  /** The coarse stage this code means; a projection, so storage and transitions are unchanged. */
+  ScheduleStage stage() {
+    return ScheduleStage.of(status);
+  }
+
   int status() {
     return status;
   }
