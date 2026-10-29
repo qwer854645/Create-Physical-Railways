@@ -81,7 +81,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     takeover = command(text("takeover"), 107, 190, 86, 35);
     autoRemove =
         command(Component.translatable("gui.guidedrailways.auto.remove"), 202, 190, 86, 32);
-    command(Component.translatable("gui.guidedrailways.align"), 202, 212, 86, 40);
+    command(Component.translatable("gui.guidedrailways.align"), 107, 212, 86, 40);
     nameTabButton =
         button(
                 text("train_name"),

@@ -128,6 +128,23 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     drawLine(e.offsetText(), 11.02 / 16d, 0xFF9FD8A0, pose, buffers, light);
   }
 
+  /**
+   * Draws a small solid marker where the text origin is.
+   *
+   * <p>Font drawing has produced nothing at every offset and display mode tried so far. A marker on the proven box path
+   * separates the two possible faults: if it appears at the plate, the transform is right and the problem is the font
+   * batch; if it does not, the transform is wrong. Enabled only with detailed logging.
+   */
+  private static void drawTextMarker(
+      DriverConsoleEntity e, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    if (!TrainConfig.DETAILED_LOGGING.get()) return;
+    var vertices = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
+    var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(DARK);
+    double x = 8.5 / 16d, y = 10.55 / 16d, z = (4 + 11 * 5 / 16d) / 16d - .02;
+    CouplerRenderer.box(
+        pose.last(), vertices, sprite, x - .03, y - .03, z, x + .03, y + .03, z + .03, light, overlay);
+  }
+
   /** One centred line on the panel; the caller chooses its height and colour. */
   private static void drawLine(
       String line,
