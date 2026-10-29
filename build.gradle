@@ -223,6 +223,13 @@ processResources {
 }
 
 
+tasks.register('checkSwitchPriority', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.SwitchPriorityCheck'
+}
+tasks.named('check') { dependsOn 'checkSwitchPriority' }
+
 tasks.register('checkAutoAlign', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
