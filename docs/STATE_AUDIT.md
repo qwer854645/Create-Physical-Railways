@@ -50,6 +50,8 @@
 
 新增布尔字段必须同时更新该清单——这就是"不再有未审视的状态"的机械保证。
 
+**`waiting` 的收敛证据**：`waiting` 是三个 `STATE` 标志中最先可以折叠的一个，但前提是它与 `stage()==WAITING` 从不矛盾。与其假设，`ScheduleController.auditWaitFlag()` 每秒比较一次，矛盾时记 `[ScheduleWaitDisagrees]`。日志安静一段时间后即可把读取点改为派生查询；出现矛盾则说明"等待中但状态码不是 WAITING"是合法状态，该字段应降级为 `REQUEST` 而不是合并。
+
 ### 3. 岔口通行 `RouteMemory`
 
 - 每个节点一个**有序通行队列**，每根轴一个消费指针

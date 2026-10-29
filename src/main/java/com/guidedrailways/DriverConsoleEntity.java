@@ -489,6 +489,9 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     long now = getLevel().getGameTime();
     if (now < nextStatusLog) return;
     nextStatusLog = now + 20;
+    // Once per second is enough to catch a disagreement between the wait flag and the stage; the flag is a fold
+    // candidate only while they agree.
+    schedule.auditWaitFlag();
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
         .info(
             "[ConsoleStatus] console={} reason={} intent={} stage={} bound={}",

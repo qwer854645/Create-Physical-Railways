@@ -96,6 +96,25 @@ final class ScheduleController {
     return ScheduleStage.of(status);
   }
 
+  /**
+   * Whether the wait flag and the wait stage still agree.
+   *
+   * <p>{@code waiting} is the first of the three STATE flags that could be folded into the stage, but folding it is
+   * only safe if the two never disagree. This reports a disagreement instead of assuming one; when the log stays
+   * quiet across a session of stops, the flag can be replaced by {@code stage() == WAITING} with evidence.
+   */
+  void auditWaitFlag() {
+    boolean derived = stage() == ScheduleStage.WAITING;
+    if (waiting != derived && TrainConfig.DETAILED_LOGGING.get())
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info(
+              "[ScheduleWaitDisagrees] console={} waiting={} status={} derived={}",
+              owner.getBlockPos(),
+              waiting,
+              status,
+              derived);
+  }
+
   int status() {
     return status;
   }
