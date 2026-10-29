@@ -212,6 +212,13 @@ public final class TrainRuntimeCheck {
         rule >= 0 && limit > rule,
         "the reached-switch rule must run before the plan's own limit, or it clears a platform stop");
 
+    // Auto align must reach the command through the same gate as the schedule check: a manual lever may not
+    // drive the train while alignment is engaged, and alignment may not run without asking AutoAlign first.
+    var binding = calls("AutomaticTrains", "bind");
+    check(
+        binding.contains("DriverConsoleEntity.aligning") && binding.contains("AutoAlign.step"),
+        "the command builder must consult auto align while a console is aligning");
+
     System.out.println(
         "TrainRuntimeCheck: "
             + checks

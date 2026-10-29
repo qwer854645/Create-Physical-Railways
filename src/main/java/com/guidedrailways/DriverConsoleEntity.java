@@ -26,6 +26,23 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
 
   private long nextStatusLog;
 
+  /** True while auto align is allowed to creep the train to its stop. */
+  private boolean aligning;
+
+  boolean aligning() {
+    return aligning;
+  }
+
+  void stopAligning() {
+    aligning = false;
+  }
+
+  /** Signed distance to the stop for the align controller, or NaN when unknown. */
+  double alignOffset() {
+    double offset = resolveOffset();
+    return Double.isNaN(offset) ? Double.NaN : offset;
+  }
+
   /** Signed distance to the stop last sent to clients; zero when unknown. */
   double stopOffset;
 
@@ -319,6 +336,14 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
           }
           direction = next;
         }
+      } else if (command == 40) {
+        if (!bound) {
+          hint(player, "install");
+          return;
+        }
+        aligning = !aligning;
+        updateVisual();
+        return;
       } else if (command == 1) notch = DriverModel.step(notch, -1);
       else if (command == 2) notch = DriverModel.step(notch, 1);
       else if (command == 6) notch = 0;
