@@ -566,6 +566,12 @@ public final class VehiclePhysics {
               approachSpeed * approachSpeed / (2 * TrainConfig.BRAKING.get()) + nose + 8,
               nose);
       PerfCounters.switchQuery(level, PerfCounters.elapsed(switchStart));
+      // A switch the train already stands on reports zero room, and RailwayStopModel holds a train that has
+      // no room; since the train can only clear a switch by moving, that is a deadlock. It is cleared here,
+      // before the plan's own limit, and with +Infinity rather than NaN, so the Math.min inside limit()
+      // still keeps the platform stop distance. Clearing it after that call also cleared the stop that puts
+      // the train at a station, which made trains overrun their platforms.
+      if (switchRoom <= .08) switchRoom = Double.POSITIVE_INFINITY;
       switchRoom = plan.axle(lead).limit(switchRoom);
       var atLead = world(u.bogie, u.axle(lead));
       u.samples[lead] =
@@ -619,12 +625,7 @@ public final class VehiclePhysics {
         double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(sample.tangent());
         u.speed += speed * .5;
         double force = VehicleTraction.force(u, speed, dt);
-        // Standing on a switch leaves no room, and RailwayStopModel holds a train with no room. Refusing
-        // to move there is a deadlock: the only way to clear a switch is to move off it. Reproduced by
-        // driving up to a switch by hand and inserting a schedule at that spot. "No known limit" is
-        // already what the stop model understands as "apply traction".
-        double room = switchRoom <= .08 ? Double.NaN : switchRoom;
-        force = RailwayStopModel.force(speed, force, room, u.mass, TrainConfig.BRAKING.get(), dt);
+        force = RailwayStopModel.force(speed, force, switchRoom, u.mass, TrainConfig.BRAKING.get(), dt);
         u.commandedForce += force * .5;
         var impulse =
             new Vector3d(sample.tangent())
