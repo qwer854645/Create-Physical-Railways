@@ -170,6 +170,14 @@ public final class RouteMemory {
       var passage = passageAt(queue, index);
       boolean forward = passage.from == from;
       boolean backward = passage.to == from;
+      if (cleared(passage)) {
+        // Every axle of the consist has already passed this passage, so it no longer describes anything the consist
+        // is doing. Leaving it in the way would stop a scheduled train from taking a new exit at a junction it has
+        // fully cleared.
+        if (commit) consume(axle, node, index + 1);
+        index++;
+        continue;
+      }
       if (!forward && !backward) {
         // Not this axle's passage: it met the junction from another direction, so it is skipped for good. Advancing
         // the pointer keeps the ordering of the passages that do concern this axle.
@@ -177,18 +185,33 @@ public final class RouteMemory {
         index++;
         continue;
       }
+      int branch = forward ? passage.to : passage.from;
+      // A branch that is not among the exits is not taken: returning -1 leaves the passage unconsumed, so the next
+      // contact with this junction still finds it. Consuming here lost the branch the consist had committed to and
+      // let the following contact pick a new one.
+      if (!contains(exits, branch)) return -1;
       if (commit) {
         passage.touched = now;
         if (forward) passage.used.add(axle);
         else passage.back.add(axle);
         consume(axle, node, index + 1);
       }
-      int branch = forward ? passage.to : passage.from;
-      return contains(exits, branch) ? branch : -1;
+      return branch;
     }
 
     var newest = queue.peekLast();
-    if (newest != null && newest.to == from && newest.back.size() < members.size()) {
+    // Retracing is the rule for a train that is not following a route: it reverses away from a junction and must
+    // leave by the branch it entered by. A scheduled train is not reversing through the junction - it is starting a
+    // new trip - so the planned exit applies and a fully cleared junction does not pin it to the old branch.
+    // Two different situations both look like "entering from the far side":
+    //   - the consist still spans the junction, so some of its axles have not crossed yet. They must retrace, or a
+    //     carriage ends up straddling two branches. This applies whether or not the train follows a route.
+    //   - the consist has fully crossed. A train reversing away then must retrace, but a scheduled train starting a
+    //     new trip may take the planned exit, so the exemption is limited to planned moves.
+    if (newest != null
+        && newest.to == from
+        && (!cleared(newest) || !planned)
+        && newest.back.size() < members.size()) {
       // Reversing back through a junction this consist just crossed: it leaves by the branch it entered by, and stays
       // bound to that until every axle has come back through.
       if (commit) {
@@ -199,12 +222,22 @@ public final class RouteMemory {
       return contains(exits, newest.from) ? newest.from : -1;
     }
 
+    // The axle has already consumed every passage this junction holds, but the consist may still be spanning it: the
+    // same contact then keeps the branch it committed to, and no new passage is opened. Clearing the repeat is how a
+    // caller says "this is a later lap", and a later lap may choose again.
+    var last = repeat.getOrDefault(axle, Map.of()).get(node);
+    if (newest != null
+        && !cleared(newest)
+        && newest.from == from
+        && last != null
+        && last == newest.to) {
+      if (commit) newest.touched = now;
+      return contains(exits, newest.to) ? newest.to : -1;
+    }
+
     int chosen;
     if (planned && proposed >= 0) chosen = proposed;
-    else {
-      var last = repeat.getOrDefault(axle, Map.of()).get(node);
-      chosen = last != null ? last : proposed;
-    }
+    else chosen = last != null ? last : proposed;
     if (!contains(exits, chosen)) return -1;
     if (!commit) return chosen;
 
@@ -240,6 +273,13 @@ public final class RouteMemory {
 
   private void remember(Axle axle, Junction node, int to) {
     repeat.computeIfAbsent(axle, key -> new HashMap<>()).put(node, to);
+  }
+
+  /** True when every axle of the consist has passed this passage, in either direction. */
+  private boolean cleared(Passage passage) {
+    return passage.used.size() >= members.size()
+        || passage.back.size() >= members.size()
+        || passage.used.size() + passage.back.size() >= members.size();
   }
 
   private static Passage passageAt(Deque<Passage> queue, int index) {
