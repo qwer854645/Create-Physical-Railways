@@ -16,6 +16,16 @@
 
 **验收**：`checkConsoleStatus`（纯函数断言，覆盖每个原因与优先级）；日志 `[ConsoleStatus] reason=…` 每秒一次。
 
+**已完成**：`ConsoleStatus`（`1ffbb3c`）+ payload 下发与每秒日志（`b431fb2`），当前能报 `NO_BODY`、`NO_ROUTE`、`WAIT_TIMER`/`ARRIVED`、`HOLD_BRAKE`、`READY`。
+
+**接线事实（下一轮直接照这个做，别重新找）**：
+
+- 道岔拒绝发生在 `SteamRailways.diagnose(level, path, node, from, to, train, reason)`，`reason` 只有 `switch_disabled` 与 `held_by_another_consist`，已经每 20 tick 限流
+- 那里的 `train` 是**预约身份**，由 `ConsistRoutes:34` 的 `memory.reservationIdentity(carrier)` 得到
+- 控制台可以用 `DriverControls.body(this)` 拿到 carrier UUID，再算出同一身份
+- 所以接线方式：`diagnose` 把 `reason` 写入一个按 `(level, 身份)` 的小表（约 60 tick 过期），`DriverConsoleEntity.resolveStatus()` 用算出的身份查表，映射到 `SWITCH_DISABLED` / `SWITCH_HELD`
+- `STATION_GONE` 的精确判据：时刻表当前目标站 id 已不在铁路网络的站点集合里（`AutomaticNavigation` 里已有的遍历方式）
+
 ### 1.2 屏幕显示原因
 
 - 文本用 `Font` 在 BER 里绘制一次（不自造像素字库），只在状态变化时更新缓存字符串
