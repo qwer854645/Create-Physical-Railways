@@ -223,6 +223,13 @@ processResources {
 }
 
 
+tasks.register('checkStopOffset', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.StopOffsetCheck'
+}
+tasks.named('check') { dependsOn 'checkStopOffset' }
+
 tasks.register('checkConsoleStatus', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
