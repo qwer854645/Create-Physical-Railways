@@ -16,7 +16,7 @@
 
 **验收**：`checkConsoleStatus`（纯函数断言，覆盖每个原因与优先级）；日志 `[ConsoleStatus] reason=…` 每秒一次。
 
-**已完成**：`ConsoleStatus`（`1ffbb3c`）+ payload 下发与每秒日志（`b431fb2`），当前能报 `NO_BODY`、`NO_ROUTE`、`WAIT_TIMER`/`ARRIVED`、`HOLD_BRAKE`、`READY`。
+**已完成（全部标志）**：`ConsoleStatus`（`1ffbb3c`）+ payload 与日志（`b431fb2`）+ 道岔（`35637b2`）+ 信号（`5f53714`）+ 目标站失效（`a46e018`）。剩余两项均属其他小节：2.2 的对准控件、3.1 的闪烁已做。
 
 **接线事实（下一轮直接照这个做，别重新找）**：
 
