@@ -324,5 +324,6 @@
   "guidedrailways.ponder.shared.electric_drive": "对准驾驶台按住右键，向牵引档推杆；本模组把实际接收的电能分配给整列转向架，由驾驶台统一控制",
   "guidedrailways.ponder.shared.electric_limit": "档位设定的是目标速度；实际加速仍受电压、可供功率与载重限制，满档不保证达到目标速度",
   "guidedrailways.ponder.shared.electric_loss": "降弓或离开有电接触网后，电力牵引消失；排查不走时，依次检查接触、电压、制动与牵引档位",
-  "guidedrailways.ponder.shared.electric_brake": "断电后制动仍然可用；驾驶时左击紧急制动，停车后对准驾驶台按住右键约一秒复位"
+  "guidedrailways.ponder.shared.electric_brake": "断电后制动仍然可用；驾驶时左击紧急制动，停车后对准驾驶台按住右键约一秒复位",
+  "guidedrailways.status.station_gone": "列车停靠的站台已被拆除"
 }

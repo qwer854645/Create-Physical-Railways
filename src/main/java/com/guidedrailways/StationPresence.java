@@ -241,6 +241,10 @@ public final class StationPresence {
   }
 
   private static void release(ServerLevel level, Arrival binding) {
+    boolean broken = binding.station.blockEntityPos != null && !live(level, binding.station);
+    if (broken)
+      org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+          .info("[StationGone] station={} train={}", binding.station.id, binding.train.id);
     // The station block can be broken while a train is standing at it, and then this binding points at a
     // block entity that has already been removed from the level. Its own bookkeeping is meaningless by
     // then, but the train side must still be cleared, or the train keeps a station that no longer exists.
@@ -253,6 +257,22 @@ public final class StationPresence {
             "[PhysicalStation] station={} train={} present=false",
             binding.station.id,
             binding.train.id);
+    if (broken) notifyBrokenStation(level, binding);
+  }
+
+  /**
+   * Tells the players around a broken station what happened to their train.
+   *
+   * <p>Without this the train simply stopped being "at a station" and nothing said why, which is
+   * indistinguishable from a train that is stuck.
+   */
+  private static void notifyBrokenStation(ServerLevel level, Arrival binding) {
+    var message =
+        net.minecraft.network.chat.Component.translatable("guidedrailways.status.station_gone");
+    for (var player : level.players())
+      if (player.distanceToSqr(
+              binding.pos.getX() + .5, binding.pos.getY() + .5, binding.pos.getZ() + .5)
+          < 64 * 64) player.displayClientMessage(message, false);
   }
 
   static void releaseTrain(ServerLevel level, PhysicalTrainProxy train) {
