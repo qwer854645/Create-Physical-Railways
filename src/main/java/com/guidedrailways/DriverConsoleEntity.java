@@ -380,15 +380,19 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   ConsoleStatus resolveStatus() {
     boolean atStop = schedule.status() == ScheduleController.WAITING;
     var body = bound ? DriverControls.body(this) : null;
+    boolean stationGone = false;
     String blocked = null;
     if (body != null && getLevel() instanceof net.minecraft.server.level.ServerLevel server)
       blocked =
           SwitchBlockedReasons.reason(
               server, SwitchBlockedReasons.identityOf(server, body.getUniqueId()));
+    if (body != null && getLevel() instanceof net.minecraft.server.level.ServerLevel server2)
+      stationGone =
+          schedule.station() != null && !StationLookup.exists(server2, schedule.station());
     return ConsoleStatus.of(
         new ConsoleStatus.Inputs(
             bound,
-            false,
+            stationGone,
             schedule.status() == ScheduleController.NO_ROUTE,
             "switch_disabled".equals(blocked),
             "held_by_another_consist".equals(blocked),
