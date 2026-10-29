@@ -192,6 +192,26 @@ public final class TrainRuntimeCheck {
                 "net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket",
                 "create"),
         "the coupler syncs its visual through the block entity payload as well");
+    // The three guards below each close a defect that presented as a train that would not move or would not
+    // stop, so they are contracts rather than conventions.
+    check(
+        calls("StationPresence", "release").contains("StationPresence.live"),
+        "releasing a binding must ask whether its station still exists before touching it");
+    check(
+        calls("PhysicalTrainProxy", "cargoReady").contains("PhysicalCargoManager.loaded"),
+        "cargo readiness must skip a carriage whose chunks are not loaded");
+    var approach = calls("VehiclePhysics", "stepVehicle");
+    int rule = approach.indexOf("ApproachLimit.switchRoom");
+    int limit = -1;
+    for (int i = 0; i < approach.size(); i++)
+      if (approach.get(i).endsWith(".limit")) {
+        limit = i;
+        break;
+      }
+    check(
+        rule >= 0 && limit > rule,
+        "the reached-switch rule must run before the plan's own limit, or it clears a platform stop");
+
     System.out.println(
         "TrainRuntimeCheck: "
             + checks

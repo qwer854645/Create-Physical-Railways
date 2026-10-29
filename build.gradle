@@ -223,6 +223,13 @@ processResources {
 }
 
 
+tasks.register('checkApproachLimit', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ApproachLimitCheck'
+}
+tasks.named('check') { dependsOn 'checkApproachLimit' }
+
 tasks.register('checkDriveModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

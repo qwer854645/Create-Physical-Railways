@@ -566,12 +566,11 @@ public final class VehiclePhysics {
               approachSpeed * approachSpeed / (2 * TrainConfig.BRAKING.get()) + nose + 8,
               nose);
       PerfCounters.switchQuery(level, PerfCounters.elapsed(switchStart));
-      // A switch the train already stands on reports zero room, and RailwayStopModel holds a train that has
-      // no room; since the train can only clear a switch by moving, that is a deadlock. It is cleared here,
-      // before the plan's own limit, and with +Infinity rather than NaN, so the Math.min inside limit()
-      // still keeps the platform stop distance. Clearing it after that call also cleared the stop that puts
-      // the train at a station, which made trains overrun their platforms.
-      if (switchRoom <= .08) switchRoom = Double.POSITIVE_INFINITY;
+      // A switch the train already stands on reports zero room, and RailwayStopModel holds a train that has no
+      // room; since the train can only clear a switch by moving, that is a deadlock. The rule lives in
+      // ApproachLimit so that its own check can pin it, and it is applied before the plan's limit so that the
+      // plan keeps whatever stop it wanted.
+      switchRoom = ApproachLimit.switchRoom(switchRoom);
       switchRoom = plan.axle(lead).limit(switchRoom);
       var atLead = world(u.bogie, u.axle(lead));
       u.samples[lead] =
