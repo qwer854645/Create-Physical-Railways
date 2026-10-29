@@ -20,6 +20,11 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   long steerAt;
   boolean active, enabled, emergency, observing;
   int direction = 1, notch = -4;
+
+  /** Why this console's train is not moving; computed when the payload is sent. */
+  ConsoleStatus statusReason = ConsoleStatus.NO_BODY;
+
+  private long nextStatusLog;
   private long pressedUntil;
 
   /** Whether this console resolves to a live body; the lamps go dark when it does not. */
@@ -147,6 +152,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   }
 
   void updateVisual() {
+    reportStatus();
     setChanged();
     if (level instanceof ServerLevel server && !isRemoved()) {
       syncState();
@@ -358,6 +364,39 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
   }
 
+  /**
+   * Folds the console's own state into one reason.
+   *
+   * <p>Only what this entity can answer is filled in here; the switch and signal flags are set by the paths
+   * that decide them, because a console has no way to know why another consist is holding a junction.
+   */
+  ConsoleStatus resolveStatus() {
+    boolean atStop = schedule.status() == ScheduleController.WAITING;
+    return ConsoleStatus.of(
+        new ConsoleStatus.Inputs(
+            bound,
+            false,
+            schedule.status() == ScheduleController.NO_ROUTE,
+            false,
+            false,
+            false,
+            0,
+            false,
+            atStop,
+            emergency,
+            atStop));
+  }
+
+  /** One line per second, so a train that will not move has a stated reason in the log. */
+  private void reportStatus() {
+    if (!TrainConfig.DETAILED_LOGGING.get() || getLevel() == null) return;
+    long now = getLevel().getGameTime();
+    if (now < nextStatusLog) return;
+    nextStatusLog = now + 20;
+    org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
+        .info("[ConsoleStatus] console={} reason={} bound={}", getBlockPos(), statusReason, bound);
+  }
+
   @Override
   public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
     var tag = saveWithoutMetadata(registries);
@@ -368,6 +407,8 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     // that refreshes it, and the client would then draw no lamps at all.
     bound = DriverControls.body(this) != null;
     tag.putBoolean("VisualBound", bound);
+    statusReason = resolveStatus();
+    tag.putString("VisualStatus", statusReason.name());
     return tag;
   }
 
@@ -412,6 +453,10 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
           Math.clamp(tag.getInt("VisualNotch"), -DriverModel.BRAKE_NOTCHES, DriverModel.MAX_NOTCH);
       emergency = tag.getBoolean("VisualEmergency");
       bound = tag.getBoolean("VisualBound");
+    statusReason =
+        tag.contains("VisualStatus")
+            ? ConsoleStatus.valueOf(tag.getString("VisualStatus"))
+            : ConsoleStatus.NO_BODY;
     } else {
       // Disk: the takeover session is never restored, but the lever setting is.
       active = false;
