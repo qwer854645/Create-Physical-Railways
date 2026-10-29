@@ -119,7 +119,12 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
    */
   private static void drawStatusText(
       DriverConsoleEntity e, PoseStack pose, MultiBufferSource buffers, int light) {
-    drawLine(e.statusText(), 11.62 / 16d, 0xFFD8A34A, pose, buffers, light);
+    // A reason the player can act on blinks, so a held junction is not mistaken for an idle train. The two
+    // colours are the same amber the screen already uses, one dimmed: no new hue, and readable at a glance.
+    boolean alert = e.statusReason.actionable();
+    boolean bright = e.getLevel() == null || (e.getLevel().getGameTime() / 8) % 2 == 0;
+    int colour = alert ? (bright ? 0xFFE8B14A : 0xFF8A6A2A) : 0xFFD8A34A;
+    drawLine(e.statusText(), 11.62 / 16d, colour, pose, buffers, light);
     drawLine(e.offsetText(), 11.02 / 16d, 0xFF9FD8A0, pose, buffers, light);
   }
 
