@@ -40,6 +40,16 @@
 | `manualOverride=true` 且 `status=SCHEDULE 系列` | 司机接管期间的显示 | 部分（`manual()`） |
 | `routeRetry=true` | 请求重算路线 | 由 `AutomaticTrains` 消费并清除 |
 
+**布尔分类（已加入断言）**：`ScheduleFlagAudit` 要求控制器里每个布尔字段都在清单中登记并归类，否则构建失败：
+
+| 类别 | 字段 | 含义 |
+|---|---|---|
+| `STATE` | `running`、`manualOverride`、`waiting` | 属于"在做什么"，是收敛进阶段的候选 |
+| `REQUEST` | `releaseBrakes`、`visualDirty`、`routeRetry`、`resumePending` | 一次性指令，被消费后清除 |
+| `MONITOR` | `mailMonitored` | 观测簿记，不是列车状态 |
+
+新增布尔字段必须同时更新该清单——这就是"不再有未审视的状态"的机械保证。
+
 ### 3. 岔口通行 `RouteMemory`
 
 - 每个节点一个**有序通行队列**，每根轴一个消费指针

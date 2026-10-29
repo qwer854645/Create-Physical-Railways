@@ -698,6 +698,13 @@ tasks.register('checkCacheHygiene', JavaExec) {
     systemProperty 'guidedrailways.classes', sourceSets.main.output.classesDirs.singleFile
 }
 tasks.named('check') { dependsOn 'checkCacheHygiene' }
+tasks.register('checkScheduleFlags', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.ScheduleFlagAudit'
+}
+tasks.named('check') { dependsOn 'checkScheduleFlags' }
+
 
 
 
