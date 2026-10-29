@@ -11,8 +11,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class DriverConsoleEntity extends BlockEntity
-    implements MenuProvider, com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation {
+public final class DriverConsoleEntity extends BlockEntity implements MenuProvider {
   final ScheduleController schedule = new ScheduleController(this);
   java.util.UUID consoleId = java.util.UUID.randomUUID();
   long placementOrder;
@@ -479,29 +478,6 @@ public final class DriverConsoleEntity extends BlockEntity
             bound);
   }
 
-  /**
-   * What the driver sees through Engineer's Goggles.
-   *
-   * <p>Goggles are the surface this belongs on: they are already how this mod reports state, they are read on purpose,
-   * and unlike a panel texture they do not depend on where the player stands.
-   */
-  @Override
-  public boolean addToGoggleTooltip(
-      java.util.List<net.minecraft.network.chat.Component> tooltip, boolean sneaking) {
-    tooltip.add(
-        net.minecraft.network.chat.Component.translatable("guidedrailways.console.goggles.header"));
-    tooltip.add(
-        net.minecraft.network.chat.Component.translatable(
-            "guidedrailways.console.goggles.status",
-            net.minecraft.network.chat.Component.translatable(
-                "guidedrailways.console." + statusReason.name().toLowerCase(java.util.Locale.ROOT))));
-    if (stopOffset != 0)
-      tooltip.add(
-          net.minecraft.network.chat.Component.translatable(
-              "guidedrailways.console.offset",
-              String.format(java.util.Locale.ROOT, "%+.1f", stopOffset)));
-    return true;
-  }
 
   @Override
   public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
