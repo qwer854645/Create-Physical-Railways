@@ -139,7 +139,10 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     if (line.isEmpty()) return;
     var font = Minecraft.getInstance().font;
     pose.pushPose();
-    pose.translate(.5, y, (4 + 11 * 5 / 16d) / 16d - .002);
+    // The plate is not centred in the block: its texture spans u = 0..16 from x = 6/16 to x = 11/16, so the text is
+    // centred at 8.5/16. The depth offset is 0.02 for the same reason the lamps need one - anything under about 0.01
+    // loses the depth test and the text is drawn behind the panel it belongs on.
+    pose.translate(8.5 / 16d, y, (4 + 11 * 5 / 16d) / 16d - .02);
     pose.mulPose(Axis.YP.rotationDegrees(180));
     pose.scale(-.0075f, -.0075f, .0075f);
     font.drawInBatch(

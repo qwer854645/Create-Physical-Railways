@@ -514,6 +514,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     tag.putBoolean("VisualBound", bound);
     statusReason = resolveStatus();
     tag.putString("VisualStatus", statusReason.name());
+    tag.putBoolean("VisualAligning", aligning);
     stopOffset = resolveOffset();
     tag.putDouble("VisualOffset", stopOffset);
     return tag;
@@ -565,6 +566,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
             ? ConsoleStatus.valueOf(tag.getString("VisualStatus"))
             : ConsoleStatus.NO_BODY;
     stopOffset = tag.getDouble("VisualOffset");
+    aligning = tag.getBoolean("VisualAligning");
     } else {
       // Disk: the takeover session is never restored, but the lever setting is.
       active = false;

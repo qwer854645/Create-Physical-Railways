@@ -338,5 +338,6 @@
   "guidedrailways.console.hold_brake": "Brake on",
   "guidedrailways.console.arrived": "Arrived",
   "guidedrailways.console.ready": "Ready",
-  "guidedrailways.console.on_stop": "On stop"
+  "guidedrailways.console.on_stop": "On stop",
+  "gui.guidedrailways.align": "Align to stop"
 }
