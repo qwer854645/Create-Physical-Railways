@@ -25,6 +25,13 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
   ConsoleStatus statusReason = ConsoleStatus.NO_BODY;
 
   private long nextStatusLog;
+
+  /** Signed distance to the stop last sent to clients; zero when unknown. */
+  double stopOffset;
+
+  /** Cached text for the second screen line, rebuilt only when the offset moves enough to matter. */
+  private String offsetText = "";
+  private double offsetTextSource = Double.NaN;
   private long pressedUntil;
 
   /** Whether this console resolves to a live body; the lamps go dark when it does not. */
@@ -406,6 +413,37 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         .getString();
   }
 
+  /**
+   * Signed distance to the stop, from the room the physics step last used.
+   *
+   * <p>Positive means the stop is still ahead. A train that overshot reports negative, because "3 blocks to go"
+   * and "3 blocks past the platform" are opposite problems.
+   */
+  double resolveOffset() {
+    if (!(getLevel() instanceof net.minecraft.server.level.ServerLevel server) || !bound) return 0;
+    var body = DriverControls.body(this);
+    if (body == null) return 0;
+    double room = ApproachRooms.room(server, body.getUniqueId());
+    if (Double.isNaN(room)) return 0;
+    return schedule.status() == ScheduleController.OVERSHOOT
+        ? StopOffset.past(room)
+        : StopOffset.ahead(room);
+  }
+
+  /** The offset as one short line, or empty when there is nothing to say. */
+  String offsetText() {
+    if (getLevel() == null || !getLevel().isClientSide) return "";
+    if (Double.compare(offsetTextSource, stopOffset) != 0) {
+      offsetTextSource = stopOffset;
+      offsetText =
+          StopOffset.band(stopOffset) == StopOffset.Band.ON
+              ? net.minecraft.network.chat.Component.translatable("guidedrailways.console.on_stop")
+                  .getString()
+              : String.format(java.util.Locale.ROOT, "%+.1f", stopOffset);
+    }
+    return offsetText;
+  }
+
   /** One line per second, so a train that will not move has a stated reason in the log. */
   private void reportStatus() {
     if (!TrainConfig.DETAILED_LOGGING.get() || getLevel() == null) return;
@@ -428,6 +466,8 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
     tag.putBoolean("VisualBound", bound);
     statusReason = resolveStatus();
     tag.putString("VisualStatus", statusReason.name());
+    stopOffset = resolveOffset();
+    tag.putDouble("VisualOffset", stopOffset);
     return tag;
   }
 
@@ -476,6 +516,7 @@ public final class DriverConsoleEntity extends BlockEntity implements MenuProvid
         tag.contains("VisualStatus")
             ? ConsoleStatus.valueOf(tag.getString("VisualStatus"))
             : ConsoleStatus.NO_BODY;
+    stopOffset = tag.getDouble("VisualOffset");
     } else {
       // Disk: the takeover session is never restored, but the lever setting is.
       active = false;

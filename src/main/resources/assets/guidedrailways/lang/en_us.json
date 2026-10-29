@@ -337,5 +337,6 @@
   "guidedrailways.console.wait_timer": "Waiting",
   "guidedrailways.console.hold_brake": "Brake on",
   "guidedrailways.console.arrived": "Arrived",
-  "guidedrailways.console.ready": "Ready"
+  "guidedrailways.console.ready": "Ready",
+  "guidedrailways.console.on_stop": "On stop"
 }

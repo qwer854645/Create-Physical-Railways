@@ -119,18 +119,29 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
    */
   private static void drawStatusText(
       DriverConsoleEntity e, PoseStack pose, MultiBufferSource buffers, int light) {
-    String line = e.statusText();
+    drawLine(e.statusText(), 11.62 / 16d, 0xFFD8A34A, pose, buffers, light);
+    drawLine(e.offsetText(), 11.02 / 16d, 0xFF9FD8A0, pose, buffers, light);
+  }
+
+  /** One centred line on the panel; the caller chooses its height and colour. */
+  private static void drawLine(
+      String line,
+      double y,
+      int colour,
+      PoseStack pose,
+      MultiBufferSource buffers,
+      int light) {
     if (line.isEmpty()) return;
     var font = Minecraft.getInstance().font;
     pose.pushPose();
-    pose.translate(.5, 11.62 / 16d, (4 + 11 * 5 / 16d) / 16d - .002);
+    pose.translate(.5, y, (4 + 11 * 5 / 16d) / 16d - .002);
     pose.mulPose(Axis.YP.rotationDegrees(180));
     pose.scale(-.0075f, -.0075f, .0075f);
     font.drawInBatch(
         line,
         -font.width(line) / 2f,
         0,
-        0xFFD8A34A,
+        colour,
         false,
         pose.last().pose(),
         buffers,

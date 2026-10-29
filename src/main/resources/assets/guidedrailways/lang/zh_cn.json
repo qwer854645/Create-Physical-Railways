@@ -337,5 +337,6 @@
   "guidedrailways.console.wait_timer": "等待中",
   "guidedrailways.console.hold_brake": "制动中",
   "guidedrailways.console.arrived": "已到站",
-  "guidedrailways.console.ready": "可发车"
+  "guidedrailways.console.ready": "可发车",
+  "guidedrailways.console.on_stop": "已对准"
 }

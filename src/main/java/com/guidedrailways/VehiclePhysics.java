@@ -572,6 +572,7 @@ public final class VehiclePhysics {
       // plan keeps whatever stop it wanted.
       switchRoom = ApproachLimit.switchRoom(switchRoom);
       switchRoom = plan.axle(lead).limit(switchRoom);
+      ApproachRooms.record(level, u.carrier.getUniqueId(), switchRoom);
       var atLead = world(u.bogie, u.axle(lead));
       u.samples[lead] =
           TrackNetwork.follow(
