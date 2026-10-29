@@ -140,9 +140,20 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     if (!TrainConfig.DETAILED_LOGGING.get()) return;
     var vertices = buffers.getBuffer(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
     var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(DARK);
-    double x = 8.5 / 16d, y = 10.55 / 16d, z = (4 + 11 * 5 / 16d) / 16d - .02;
+    // Flat on the panel, above the lamp row: the screen is a horizontal surface (the lamps are flat boxes in the X-Z
+    // plane at y = 11.45..11.95/16), which is why text drawn in the glyph plane ended up buried inside the console.
     CouplerRenderer.box(
-        pose.last(), vertices, sprite, x - .03, y - .03, z, x + .03, y + .03, z + .03, light, overlay);
+        pose.last(),
+        vertices,
+        sprite,
+        5.0 / 16d,
+        11.96 / 16d,
+        8.0 / 16d,
+        9.0 / 16d,
+        12.20 / 16d,
+        11.0 / 16d,
+        light,
+        overlay);
   }
 
   /** One centred line on the panel; the caller chooses its height and colour. */
@@ -159,9 +170,11 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     // The plate is not centred in the block: its texture spans u = 0..16 from x = 6/16 to x = 11/16, so the text is
     // centred at 8.5/16. The depth offset is 0.02 for the same reason the lamps need one - anything under about 0.01
     // loses the depth test and the text is drawn behind the panel it belongs on.
-    pose.translate(8.5 / 16d, y, (4 + 11 * 5 / 16d) / 16d - .02);
-    pose.mulPose(Axis.YP.rotationDegrees(180));
-    pose.scale(-.012f, -.012f, .012f);
+    // The panel is horizontal, so the glyph plane is rotated onto it rather than left vertical inside the console.
+    pose.translate(8.5 / 16d, 12.22 / 16d, (4 + 9.5 * 5 / 16d) / 16d);
+    pose.mulPose(Axis.XP.rotationDegrees(90));
+    pose.mulPose(Axis.ZP.rotationDegrees(180));
+    pose.scale(.012f, -.012f, .012f);
     font.drawInBatch(
         line,
         -font.width(line) / 2f,
