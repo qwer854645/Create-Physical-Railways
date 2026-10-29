@@ -52,6 +52,9 @@ final class SteamRailways implements RailwaysCompat.Bridge {
       UUID train,
       String reason) {
     long now = level.getGameTime();
+    // Recorded before the log throttle below: the console asks every time it syncs, and a reason delayed by
+    // twenty ticks would be shown long after the junction was released.
+    SwitchBlockedReasons.record(level, train, reason);
     var key = level.dimension().location() + "@" + node;
     var last = DIAGNOSED.getOrDefault(key, Long.MIN_VALUE);
     if (now - last < 20) return;
