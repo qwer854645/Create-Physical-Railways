@@ -35,16 +35,21 @@ public final class GoggleInformationCheck {
     check(keys(GoggleText.console(false, true, ConsoleStatus.NO_BODY, true)).equals(
         List.of("message.guidedrailways.driver_console.unbound")), "unbound console has no false schedule claim");
     check(keys(GoggleText.console(true, false, ConsoleStatus.READY, false)).equals(List.of(
-        "message.guidedrailways.driver_console.bound", "message.guidedrailways.driver_console.manual")),
+        "message.guidedrailways.driver_console.bound", "message.guidedrailways.driver_console.manual",
+        "guidedrailways.console.ready")),
         "client synchronized bound state shows a manual console");
     for (var status : ConsoleStatus.values()) {
       var ordinary = GoggleText.console(true, true, status, false);
       var sneaking = GoggleText.console(true, true, status, true);
-      check(ordinary.size() == 2 && sneaking.size() == 3, "details only when sneaking");
+      check(ordinary.size() == 3 && sneaking.size() == 6, "compact summary; controls only when sneaking");
       check(keys(sneaking).get(1).endsWith(".scheduled"), "installed schedule recognized");
       check(keys(sneaking).get(2).equals("guidedrailways.console." + status.name().toLowerCase(java.util.Locale.ROOT)),
           "synchronized reason retained: " + status);
     }
+    var named = GoggleText.console(true, false, ConsoleStatus.READY, true, -1, 3, "Local train");
+    check(named.size() == 7 && keys(named).get(3).endsWith(".name"), "named details are limited to seven lines");
+    check(GoggleText.console(true, false, ConsoleStatus.READY, false, -1, 3, "Local train").size() == 3,
+        "name and controls never expand ordinary operation overlay");
     check(!calls("DriverConsoleEntity", "addToGoggleTooltip", "com/guidedrailways/DriverControls", "body"),
         "client goggles cannot query server-only body resolution");
     for (String owner : List.of("DriverConsoleEntity", "RailDockEntity", "mixin/RailwayCouplerMixin")) {

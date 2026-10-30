@@ -106,8 +106,23 @@ public final class RailDockCheck {
               .getAsJsonObject()
               .get("model")
               .getAsString()
-              .startsWith("simulated:block/docking_connector/"),
-          "reuse native models for every state");
+              .startsWith("guidedrailways:block/rail_dock/"),
+          "use corrected native geometry for every state");
+    for (String model : List.of("block", "item")) {
+      var elements = JsonParser.parseString(Files.readString(Path.of(
+          "src/main/resources/assets/guidedrailways/models/block/rail_dock/" + model + ".json")))
+          .getAsJsonObject().getAsJsonArray("elements");
+      for (int i = 1; i <= 8; i++) {
+        int axis = i <= 2 || i == 5 || i == 6 ? 2 : 0;
+        boolean negative = i <= 2 || i >= 7;
+        var element = elements.get(i).getAsJsonObject();
+        double a = element.getAsJsonArray("from").get(axis).getAsDouble();
+        double b = element.getAsJsonArray("to").get(axis).getAsDouble();
+        double surface = negative ? Math.min(a, b) : Math.max(a, b);
+        double clearance = negative ? -surface : surface - 16;
+        check(clearance >= .019 && clearance <= .021, "decoration clears base plane: " + model + "/" + i);
+      }
+    }
     var recipe =
         JsonParser.parseString(
                 Files.readString(

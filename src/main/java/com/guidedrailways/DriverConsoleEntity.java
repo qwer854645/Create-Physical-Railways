@@ -491,7 +491,8 @@ public final class DriverConsoleEntity extends BlockEntity
   public boolean addToGoggleTooltip(
       java.util.List<net.minecraft.network.chat.Component> tooltip, boolean sneaking) {
     // VisualBound is synchronized by the server; DriverControls.body only resolves ServerSubLevel.
-    for (var line : GoggleText.console(bound, schedule.present(), statusReason, sneaking))
+    for (var line : GoggleText.console(bound, schedule.present(), statusReason, sneaking,
+        direction, notch, trainName))
       GoggleText.add(tooltip, line);
     return true;
   }
