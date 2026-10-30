@@ -109,18 +109,22 @@ public final class RailDockCheck {
               .startsWith("guidedrailways:block/rail_dock/"),
           "use corrected native geometry for every state");
     for (String model : List.of("block", "item")) {
-      var elements = JsonParser.parseString(Files.readString(Path.of(
+      var root = JsonParser.parseString(Files.readString(Path.of(
           "src/main/resources/assets/guidedrailways/models/block/rail_dock/" + model + ".json")))
-          .getAsJsonObject().getAsJsonArray("elements");
+          .getAsJsonObject();
+      check(root.get("render_type").getAsString().equals("minecraft:cutout_mipped"),
+          "transparent casing holes use the native cutout layer: " + model);
+      var elements = root.getAsJsonArray("elements");
       for (int i = 1; i <= 8; i++) {
         int axis = i <= 2 || i == 5 || i == 6 ? 2 : 0;
         boolean negative = i <= 2 || i >= 7;
         var element = elements.get(i).getAsJsonObject();
         double a = element.getAsJsonArray("from").get(axis).getAsDouble();
         double b = element.getAsJsonArray("to").get(axis).getAsDouble();
-        double surface = negative ? Math.min(a, b) : Math.max(a, b);
-        double clearance = negative ? -surface : surface - 16;
-        check(clearance >= .019 && clearance <= .021, "decoration clears base plane: " + model + "/" + i);
+        // FaceBakery uses from for north/west and to for south/east, even on reversed boxes.
+        double surface = negative ? a : b;
+        check(Math.abs(surface - (negative ? 1 : 15)) < 1e-6,
+            "inset face remains behind the casing's transparent holes: " + model + "/" + i);
       }
     }
     var recipe =

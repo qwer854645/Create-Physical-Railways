@@ -43,7 +43,9 @@ final class BerPerf {
           .append(":mean=")
           .append(String.format(java.util.Locale.ROOT, "%.3f", s[1] / Math.max(1, s[2])))
           .append(",max=")
-          .append(String.format(java.util.Locale.ROOT, "%.2f", s[0]));
+          .append(String.format(java.util.Locale.ROOT, "%.2f", s[0]))
+          .append(",calls=")
+          .append((long) s[2]);
     }
     STATS.clear();
     org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info(line.toString());

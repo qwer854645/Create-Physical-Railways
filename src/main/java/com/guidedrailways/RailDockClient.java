@@ -28,6 +28,7 @@ final class RailDockClient {
 
   private static final class Timed implements BlockEntityRenderer<DockingConnectorBlockEntity> {
     private final DockingConnectorRenderer delegate;
+    private long lastSlowLog;
 
     Timed(BlockEntityRendererProvider.Context context) {
       delegate = new DockingConnectorRenderer(context);
@@ -46,6 +47,18 @@ final class RailDockClient {
         delegate.render(dock, partial, pose, buffers, light, overlay);
       } finally {
         BerPerf.record("dock", start);
+        if (start != 0) {
+          long now = System.nanoTime();
+          double ms = (now - start) / 1e6;
+          if (ms >= 20 && (lastSlowLog == 0 || now - lastSlowLog >= 1_000_000_000L)) {
+            lastSlowLog = now;
+            org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).info(
+                "[RailDockRenderSlow] ms={} pos={} facing={} extension={} feet={}",
+                ms, dock.getBlockPos(),
+                dock.getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING),
+                dock.getExtensionDistance(partial), dock.getFeetRotation(partial));
+          }
+        }
       }
     }
 
