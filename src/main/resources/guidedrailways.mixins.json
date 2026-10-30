@@ -39,6 +39,7 @@
   },
   "plugin": "com.guidedrailways.mixin.CargoCompatPlugin",
   "client": [
+    "ShaderSamplerLocationMixin",
     "PhysicalStationScreenMixin",
     "RailwayBogeyMenuMixin",
     "BlocksBogiesMenuMixin",

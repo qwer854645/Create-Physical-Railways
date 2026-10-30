@@ -251,6 +251,16 @@ tasks.register('checkGoggleInformation', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkGoggleInformation' }
 
+['checkShaderSamplerReuse', 'checkShaderSamplerReuseDisabled'].each { taskName ->
+    tasks.register(taskName, JavaExec) {
+        dependsOn classes, persistenceCheckClasses
+        classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+        mainClass = 'com.guidedrailways.ShaderSamplerReuseCheck'
+        if (taskName.endsWith('Disabled')) systemProperty 'guidedrailways.disableSamplerLocationReuse', 'true'
+    }
+    tasks.named('check') { dependsOn taskName }
+}
+
 tasks.register('checkAutoAlign', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
