@@ -244,6 +244,13 @@ tasks.register('checkJunctionState', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkJunctionState' }
 
+tasks.register('checkGoggleInformation', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.GoggleInformationCheck'
+}
+tasks.named('check') { dependsOn 'checkGoggleInformation' }
+
 tasks.register('checkAutoAlign', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath

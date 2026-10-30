@@ -198,6 +198,14 @@ final class RailDockEntity extends DockingConnectorBlockEntity implements IHaveG
 
   @Override
   public boolean addToGoggleTooltip(List<Component> tooltip, boolean sneaking) {
+    var lines = new java.util.ArrayList<Component>();
+    addInformation(lines);
+    for (var line : lines) GoggleText.add(tooltip, line);
+    return true;
+  }
+
+  /** Shared information, without client-only goggles formatting, for server-side chat inspection. */
+  void addInformation(List<Component> tooltip) {
     if (trainSide)
       tooltip.add(
           infoReady
@@ -216,7 +224,6 @@ final class RailDockEntity extends DockingConnectorBlockEntity implements IHaveG
                   ? "message.guidedrailways.rail_dock.unbound"
                   : "message.guidedrailways.rail_dock.unready"));
     tooltip.add(stateText());
-    return true;
   }
 
   @Override

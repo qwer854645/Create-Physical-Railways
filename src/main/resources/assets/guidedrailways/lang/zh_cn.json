@@ -343,8 +343,8 @@
   "guidedrailways.console.on_stop": "已对准",
   "gui.guidedrailways.align": "对准停车点",
   "guidedrailways.console.offset": "%s 格到停车点",
-  "message.guidedrailways.driver_console.unbound": "未安装转向架",
-  "message.guidedrailways.driver_console.bound": "已安装转向架",
+  "message.guidedrailways.driver_console.unbound": "未连接物理车体",
+  "message.guidedrailways.driver_console.bound": "已安装在物理车体上",
   "message.guidedrailways.driver_console.scheduled": "已载入时刻表",
   "message.guidedrailways.driver_console.manual": "手动驾驶"
 }

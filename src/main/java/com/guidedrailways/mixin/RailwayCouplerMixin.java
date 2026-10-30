@@ -90,7 +90,7 @@ public abstract class RailwayCouplerMixin {
   private void guidedrailways$goggles(
       List<Component> tooltip, boolean sneaking, CallbackInfoReturnable<Boolean> cir) {
     if (guidedrailways$mask < 0) return;
-    tooltip.add(
+    com.guidedrailways.GoggleText.add(tooltip,
         Component.translatable(
             "message.guidedrailways.rail_coupler."
                 + (guidedrailways$mode == 1

@@ -67,7 +67,7 @@ final class RailDockInteractions {
       } else {
         dock.updateInfo();
         var lines = new java.util.ArrayList<Component>();
-        dock.addToGoggleTooltip(lines, false);
+        dock.addInformation(lines);
         for (var line : lines) player.displayClientMessage(line, false);
       }
       handled(event, player);

@@ -490,25 +490,9 @@ public final class DriverConsoleEntity extends BlockEntity
   @Override
   public boolean addToGoggleTooltip(
       java.util.List<net.minecraft.network.chat.Component> tooltip, boolean sneaking) {
-    // No title line: Create draws its goggles icon at the top of the tooltip box, and a title collides with it.
-    // The docking connector in this mod starts straight from its message for the same reason.
-    var body = bound ? DriverControls.body(this) : null;
-    tooltip.add(
-        net.minecraft.network.chat.Component.translatable(
-            body == null
-                ? "message.guidedrailways.driver_console.unbound"
-                : "message.guidedrailways.driver_console.bound"));
-    if (body != null)
-      tooltip.add(
-          net.minecraft.network.chat.Component.translatable(
-              schedule.present()
-                  ? "message.guidedrailways.driver_console.scheduled"
-                  : "message.guidedrailways.driver_console.manual"));
-    if (body != null && sneaking)
-      tooltip.add(
-          net.minecraft.network.chat.Component.translatable(
-              "guidedrailways.console."
-                  + statusReason.name().toLowerCase(java.util.Locale.ROOT)));
+    // VisualBound is synchronized by the server; DriverControls.body only resolves ServerSubLevel.
+    for (var line : GoggleText.console(bound, schedule.present(), statusReason, sneaking))
+      GoggleText.add(tooltip, line);
     return true;
   }
 
