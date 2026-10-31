@@ -251,6 +251,16 @@ tasks.register('checkGoggleInformation', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkGoggleInformation' }
 
+['checkVeilFramebufferSnapshot', 'checkVeilFramebufferSnapshotDisabled'].each { taskName ->
+    tasks.register(taskName, JavaExec) {
+        dependsOn classes, persistenceCheckClasses
+        classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+        mainClass = 'com.guidedrailways.VeilFramebufferSnapshotCheck'
+        if (taskName.endsWith('Disabled')) systemProperty 'guidedrailways.disableFramebufferSnapshotReuse', 'true'
+    }
+    tasks.named('check') { dependsOn taskName }
+}
+
 ['checkVeilFramebufferReuse', 'checkVeilFramebufferReuseDisabled'].each { taskName ->
     tasks.register(taskName, JavaExec) {
         dependsOn classes, persistenceCheckClasses

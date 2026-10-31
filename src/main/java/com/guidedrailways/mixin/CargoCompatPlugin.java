@@ -47,6 +47,16 @@ public final class CargoCompatPlugin implements IMixinConfigPlugin {
 
   @Override
   public boolean shouldApplyMixin(String target, String mixin) {
+    if (mixin.endsWith(".VeilFramebufferSnapshotMixin")) {
+      try {
+        var node = MixinService.getService().getBytecodeProvider().getClassNode(target);
+        if (com.guidedrailways.FramebufferSnapshotSupport.matches(node)) return true;
+        org.slf4j.LoggerFactory.getLogger("guidedrailways")
+            .warn("Framebuffer snapshot reuse disabled: unsupported Veil snapshot sequence");
+      } catch (ClassNotFoundException | java.io.IOException ignored) {
+      }
+      return false;
+    }
     var expected = METHODS.get(mixin.substring(mixin.lastIndexOf('.') + 1));
     if (expected == null) return true;
     try {

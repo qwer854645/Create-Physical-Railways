@@ -41,6 +41,7 @@
   "client": [
     "ShaderSamplerLocationMixin",
     "VeilFramebufferRegistrationMixin",
+    "VeilFramebufferSnapshotMixin",
     "PhysicalStationScreenMixin",
     "RailwayBogeyMenuMixin",
     "BlocksBogiesMenuMixin",

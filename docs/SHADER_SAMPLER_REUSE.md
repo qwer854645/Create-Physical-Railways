@@ -49,3 +49,19 @@ Minecraft 1.21.1 的 `ShaderInstance.updateLocations` 在链接阶段已建立�
 `checkVeilFramebufferReuse` / `checkVeilFramebufferReuseDisabled` 检查实际注入方法的
 重复注册、转换、替换和重载处理，并读取安装依赖字节码核对方法副作用清单；
 离线通过仍不代表 Mixin 在客户端实际应用成功或卡顿已消除。
+
+## 同一次状态快照中的重复查询
+
+Veil 4.3.2 的 `FramebufferStack.push` 按 36006、36010、36006 查询绑定；
+36006 同时表示 `GL_FRAMEBUFFER_BINDING` / `GL_DRAW_FRAMEBUFFER_BINDING`，中间没有切换绑定。
+`VeilFramebufferSnapshotMixin` 通过 MixinExtras `@Share` 在本次 `push` 的局部变量中保存
+第一次 36006 的结果，第二次复用；36010 的读绑定与视口依旧独立读取。
+不跨帧、不跨调用保存结果，默认帧缓冲 0 也可复用。
+
+运行时插件先用 `FramebufferSnapshotSupport` 识别这段查询序列；目标版本或其他转换引入
+未知调用/写状态时跳过本项优化。该检查针对已知序列，不能保证所有第三方渲染组合兼容。
+另可在启动时加 `-Dguidedrailways.disableFramebufferSnapshotReuse=true` 单独关闭本项。
+
+`checkVeilFramebufferSnapshot` 与 Disabled 变体检查三次变两次查询、读/绘制绑定不同、
+帧缓冲 0、调用隔离，并读取嵌入 Veil 字节码验证序列；模拟新增绑定操作后守卫必须拒绝。
+客户端仍需验证实际注入、资源重载、窗口缩放、手部、后处理和物理车体显示。
