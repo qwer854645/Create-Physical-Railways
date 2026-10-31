@@ -226,6 +226,19 @@ public final class TrainRuntimeCheck {
             && (binding.contains("AlignDemand.of") || binding.contains("AutoAlign.step")),
         "the command builder must consult auto align while a console is aligning");
 
+    // The preview must expire history at the same game time as commit. Otherwise preview can
+    // select an expired old exit and commit then treats that stale selection as the new plan.
+    check(Arrays.stream(method("ConsistRoutes$Cursor", "choose").instructions.toArray())
+            .anyMatch(i -> i instanceof MethodInsnNode call
+                && call.owner.equals("com/guidedrailways/RouteMemory")
+                && call.name.equals("preview") && call.desc.endsWith("ZJ)I")),
+        "junction preview must use the clocked route-memory overload");
+    check(Arrays.stream(method("ConsistRoutes", "prepare").instructions.toArray())
+            .anyMatch(i -> i instanceof MethodInsnNode call
+                && call.owner.equals("com/guidedrailways/RouteMemory")
+                && call.name.equals("active") && call.desc.startsWith("(J)")),
+        "switch reservation refresh must expire abandoned passages before holding them");
+
     System.out.println(
         "TrainRuntimeCheck: "
             + checks

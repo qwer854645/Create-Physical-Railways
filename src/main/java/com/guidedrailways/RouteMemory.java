@@ -116,9 +116,18 @@ public final class RouteMemory {
 
   /** The passages still open at each junction. */
   public List<Active> active() {
+    return active(-1);
+  }
+
+  /** Only unfinished, live passages reserve a switch; completed laps must release it. */
+  public List<Active> active(long now) {
     var out = new ArrayList<Active>();
-    for (var queue : passages.values())
-      for (var passage : queue) out.add(new Active(passage.node, passage.from, passage.to));
+    for (var entry : passages.entrySet()) {
+      var queue = entry.getValue();
+      expire(entry.getKey(), queue, now);
+      for (var passage : queue)
+        if (!cleared(passage)) out.add(new Active(passage.node, passage.from, passage.to));
+    }
     return List.copyOf(out);
   }
 

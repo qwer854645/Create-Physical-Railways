@@ -223,6 +223,25 @@ public final class ConsistRouteCheck {
             == 14,
         "once it expires the plan wins again");
 
+    // Reservation refreshes run before selection each tick. They must keep a live crossing, release
+    // a completed one, and stop reviving an abandoned crossing on every subsequent lap.
+    var held = new RouteMemory(Set.of(stuckAxle, absent));
+    held.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
+    check(held.active(1).size() == 1, "a following axle still needs the reserved branch");
+    held.commit(absent, repeatNode, 9, new int[] {14, 31}, 31, false, 1);
+    check(held.active(2).isEmpty(), "a completed crossing must stop refreshing its reservation");
+    int next = held.preview(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 2);
+    check(next == 14, "the next trip can plan a different exit after the consist clears");
+    check(held.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, next, true, 2) == 14,
+        "committing the selected exit preserves the new trip's plan");
+    check(held.active(2 + RouteMemory.PASSAGE_TICKS - 1).size() == 1,
+        "an unfinished passage stays reserved until its expiry");
+    check(held.active(2 + RouteMemory.PASSAGE_TICKS).isEmpty(),
+        "abandoned passages stop reserving a switch at the expiry boundary");
+    check(held.preview(absent, repeatNode, 9, new int[] {14, 31}, 31, true,
+        2 + RouteMemory.PASSAGE_TICKS) == 31,
+        "reservation cleanup leaves a following axle free to use the current plan");
+
     System.out.println("ConsistRouteCheck: " + checks + " assertions passed");
   }
 }

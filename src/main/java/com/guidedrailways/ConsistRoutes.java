@@ -137,7 +137,13 @@ final class ConsistRoutes {
         }
       }
       return context.memory.preview(
-          axle, new RouteMemory.Junction(path.graph(), node), from, exits, proposed, planned);
+          axle,
+          new RouteMemory.Junction(path.graph(), node),
+          from,
+          exits,
+          proposed,
+          planned,
+          context.level.getGameTime());
     }
 
     @Override
@@ -336,7 +342,7 @@ final class ConsistRoutes {
           for (var a : axleIds)
             if (previous.anchors.containsKey(a)) context.anchors.put(a, previous.anchors.get(a));
       }
-      for (var passage : context.memory.active())
+      for (var passage : context.memory.active(level.getGameTime()))
         RailwaysCompat.hold(level, passage, context.identity);
       context.automatic = null;
       for (var u : group)
