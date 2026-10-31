@@ -47,13 +47,22 @@ public final class CargoCompatPlugin implements IMixinConfigPlugin {
 
   @Override
   public boolean shouldApplyMixin(String target, String mixin) {
-    if (mixin.endsWith(".VeilFramebufferSnapshotMixin")) {
+    String simpleName = mixin.substring(mixin.lastIndexOf('.') + 1);
+    if (com.guidedrailways.RenderOptimizationSupport.option(simpleName) != null) {
+      var logger = org.slf4j.LoggerFactory.getLogger("guidedrailways");
+      if (com.guidedrailways.RenderOptimizationSupport.disabled(simpleName)) {
+        logger.info("[RenderCompat] {} skipped: disabled by startup option", simpleName);
+        return false;
+      }
       try {
         var node = MixinService.getService().getBytecodeProvider().getClassNode(target);
-        if (com.guidedrailways.FramebufferSnapshotSupport.matches(node)) return true;
-        org.slf4j.LoggerFactory.getLogger("guidedrailways")
-            .warn("Framebuffer snapshot reuse disabled: unsupported Veil snapshot sequence");
-      } catch (ClassNotFoundException | java.io.IOException ignored) {
+        if (com.guidedrailways.RenderOptimizationSupport.matches(simpleName, node)) {
+          logger.info("[RenderCompat] {} eligible: supported target structure", simpleName);
+          return true;
+        }
+        logger.warn("[RenderCompat] {} skipped: unsupported or replaced target", simpleName);
+      } catch (ClassNotFoundException | java.io.IOException | RuntimeException error) {
+        logger.warn("[RenderCompat] {} skipped: target inspection failed ({})", simpleName, error.getClass().getSimpleName());
       }
       return false;
     }

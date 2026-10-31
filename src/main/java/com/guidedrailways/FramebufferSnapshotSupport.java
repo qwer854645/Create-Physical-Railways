@@ -25,7 +25,8 @@ public final class FramebufferSnapshotSupport {
           } else if (between) return false;
         }
         // Unknown side effects within the snapshot must not be hidden by the optimization.
-        if (between && (insn instanceof InvokeDynamicInsnNode
+        if (between && (insn instanceof InvokeDynamicInsnNode || insn instanceof JumpInsnNode
+            || insn instanceof TableSwitchInsnNode || insn instanceof LookupSwitchInsnNode
             || insn instanceof FieldInsnNode field && (field.getOpcode() == org.objectweb.asm.Opcodes.PUTSTATIC
                 || field.getOpcode() == org.objectweb.asm.Opcodes.PUTFIELD)))
           return false;
