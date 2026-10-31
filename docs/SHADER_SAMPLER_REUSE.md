@@ -26,3 +26,26 @@ Minecraft 1.21.1 的 `ShaderInstance.updateLocations` 在链接阶段已建立�
 游戏内待验收：相同世界与位置，分别观察连接器、地形、物理转向架；检查材质、光照与动画，
 并执行资源重载。重新采集 JFR 和 FrameSpike，比较稳定运行阶段长帧次数与峰值，
 检查 `apply` 的重复查询栈是否减少；必要时使用关闭参数做对照。只在用户明确请求时启动客户端。
+
+## 2026-10-31 复测与 Veil 后续试验
+
+新 JFR 在稳定阶段未再采到重复 `glGetUniformLocation`，但仍有 85–190 ms 长帧。
+190/136 ms 帧采到 Veil `FramebufferStack.push → glGetIntegerv`，172/85 ms 帧采到
+`FramebufferManager.setFramebuffer → VeilDebug.objectLabel → glObjectLabel`。
+因此不能将“消除一个查询热点”等同于“整体卡顿解决”；各 OpenGL 调用也可能遇到共同的驱动等待。
+
+已检查嵌入的 Veil 4.3.2：`VeilFirstPersonRenderer.bind` 每帧调用 `setFramebuffer`；后者即使
+同名同对象已经注册，也会重新设置调试标签。`VeilFramebufferRegistrationMixin` 只在
+原生 `manualFramebuffers` 已含该名称、且 `framebuffers` 的值为同一 Java 对象时跳过重复方法。
+不另外保存对象/GL ID，不改变渲染绑定和帧缓冲恢复；定义缓冲转手动缓冲、新对象注册、
+资源重载后重新注册均执行原方法。如果同一 Java 对象内部重新创建 GL ID，跳过重复标签
+可能使新 GL 对象暂时缺少调试名称，但不影响绘制。
+
+`glGetIntegerv` 是状态快照的一部分，尚未修改。下一轮要检查调试命名栈是否消失、
+剩余状态查询长帧是否变化，以及窗口缩放、重载和手部画面是否正常。
+`-Dguidedrailways.disableFramebufferRegistrationReuse=true` 在启动时关闭本轮试验，
+与前一轮采样器优化的关闭参数相互独立。
+
+`checkVeilFramebufferReuse` / `checkVeilFramebufferReuseDisabled` 检查实际注入方法的
+重复注册、转换、替换和重载处理，并读取安装依赖字节码核对方法副作用清单；
+离线通过仍不代表 Mixin 在客户端实际应用成功或卡顿已消除。
