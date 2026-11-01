@@ -5,6 +5,7 @@ import com.simibubi.create.content.trains.graph.DiscoveredPath;
 import com.simibubi.create.content.trains.graph.EdgePointType;
 import com.simibubi.create.content.trains.schedule.*;
 import com.simibubi.create.content.trains.schedule.destination.DestinationInstruction;
+import com.simibubi.create.content.trains.schedule.destination.ChangeTitleInstruction;
 import java.util.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.*;
@@ -17,6 +18,10 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
   private CompoundTag program;
   private UUID predictionStation;
   private int arrivalTicks = -1;
+  private List<ScheduleForecast.Step> forecastSteps = List.of();
+  private List<ScheduleForecast.Stop> futureStops = List.of();
+  private int forecastEntry = -1;
+  private String forecastTitle = "";
 
   PhysicalScheduleRuntime(PhysicalTrainProxy train) {
     super(train);
@@ -38,6 +43,23 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
                   error);
         }
       }
+      forecastSteps = schedule == null ? List.of() : schedule.entries.stream().map(entry -> {
+        var instruction = entry.instruction;
+        if (instruction instanceof DestinationInstruction destination) {
+          try {
+            return new ScheduleForecast.Step(ScheduleForecast.Kind.DESTINATION,
+                destination.getFilter(), net.createmod.catnip.data.Glob.toRegexPattern(destination.getFilter()));
+          } catch (java.util.regex.PatternSyntaxException invalid) {
+            // Old saves and externally supplied query data may contain an invalid later glob.
+            // Stop forecasting at that entry rather than failing identity/display updates.
+            return new ScheduleForecast.Step(ScheduleForecast.Kind.DESTINATION, destination.getFilter(), "[");
+          }
+        }
+        if (instruction instanceof ChangeTitleInstruction title)
+          return new ScheduleForecast.Step(ScheduleForecast.Kind.TITLE, title.getScheduleTitle(), "");
+        return new ScheduleForecast.Step(ScheduleForecast.Kind.OTHER, "", "");
+      }).toList();
+      forecastEntry = -1;
     }
     paused = schedule == null || tag.getBoolean("Paused");
     completed = schedule != null && tag.getBoolean("Completed");
@@ -49,6 +71,12 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
             ? State.POST_TRANSIT
             : train.navigation.isActive() ? State.IN_TRANSIT : State.PRE_TRANSIT;
     currentTitle = tag.getString("Title");
+    if (forecastEntry != currentEntry || !forecastTitle.equals(currentTitle)) {
+      futureStops = schedule == null ? List.of()
+          : ScheduleForecast.future(forecastSteps, currentEntry, schedule.cyclic, currentTitle);
+      forecastEntry = currentEntry;
+      forecastTitle = currentTitle;
+    }
     conditionProgress.clear();
     conditionContext.clear();
     if (state == State.POST_TRANSIT) {
@@ -133,20 +161,33 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
       if (!train.navigation.isActive() || train.navigation.destination != station) return List.of();
       ticks = arrivalTicks < 0 ? -1 : Math.max(1, arrivalTicks);
     }
-    return List.of(new TrainDeparturePrediction(train, ticks, predictionTitle(), station.name));
+    var out = new ArrayList<TrainDeparturePrediction>();
+    out.add(new TrainDeparturePrediction(train, ticks, predictionTitle(), station.name));
+    if (futureStops.isEmpty()) return out;
+    var seen = new HashSet<String>();
+    seen.add(station.name);
+    var dimensions = train.getPresentDimensions();
+    var stations = new LinkedHashMap<String, com.simibubi.create.content.trains.station.GlobalStation>();
+    for (var stop : train.graph.getPoints(EdgePointType.STATION)) {
+      var dimension = stop.getBlockEntityDimension();
+      if (!stop.assembling && dimension != null && dimensions.contains(dimension) && RailwaysCompat.stationEnabled(stop))
+        stations.putIfAbsent(stop.name, stop);
+    }
+    for (var future : futureStops) {
+      var candidates = future.literal() ? stations.containsKey(future.filter())
+          ? List.of(stations.get(future.filter())) : List.<com.simibubi.create.content.trains.station.GlobalStation>of()
+          : stations.values();
+      for (var stop : candidates) {
+        if (out.size() >= ScheduleForecast.MAX_STOPS) return out;
+        if (!future.literal() && !future.pattern().matcher(stop.name).matches() || !seen.add(stop.name)) continue;
+        out.add(new TrainDeparturePrediction(train, -1, UserText.userInput(future.title()), stop.name));
+      }
+    }
+    return out;
   }
 
   private MutableComponent predictionTitle() {
-    if (!currentTitle.isBlank()) return UserText.userInput(currentTitle);
-    // Match Create's fallback: the next scheduled destination supplies a blank journey title.
-    for (int i = 1; i < schedule.entries.size(); i++) {
-      int entry = currentEntry + i;
-      if (entry >= schedule.entries.size() && !schedule.cyclic) break;
-      var instruction = schedule.entries.get(entry % schedule.entries.size()).instruction;
-      if (instruction instanceof DestinationInstruction destination)
-        return UserText.userInput(destination.getFilter().replace("*", "").trim());
-    }
-    return Component.empty();
+    return UserText.userInput(ScheduleForecast.title(forecastSteps, currentEntry, schedule.cyclic, currentTitle));
   }
 
   @Override

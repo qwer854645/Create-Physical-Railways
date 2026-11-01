@@ -999,6 +999,13 @@ tasks.register('checkTrainSnapshotSync', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkTrainSnapshotSync' }
 
+tasks.register('checkScheduleForecast', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ScheduleForecastCheck'
+}
+tasks.named('check') { dependsOn 'checkScheduleForecast' }
+
 // Opt-in server fixtures are a separate development mod and never enter the release jar.
 if (project.hasProperty('signalServerTests')) {
     sourceSets {
