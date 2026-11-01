@@ -28,6 +28,7 @@ public final class CacheHygieneCheck {
           new Cache("SteamRailways", "DIAGNOSTIC_TICKS"),
           new Cache("SchedulePriority", "LIFETIME"),
           new Cache("ApproachRooms", "LIFETIME"),
+          new Cache("BranchWatch", "WINDOW"),
           new Cache("SwitchBlockedReasons", "LIFETIME"),
           new Cache("RouteMemory", "PASSAGE_TICKS"),
           new Cache("RouteMemory", "MAX_PASSAGES"),

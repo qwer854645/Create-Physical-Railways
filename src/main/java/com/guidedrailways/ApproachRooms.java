@@ -1,8 +1,8 @@
 package com.guidedrailways;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
 
 /**
@@ -16,27 +16,27 @@ final class ApproachRooms {
   /** Ticks a recorded room stays usable. The step records it several times per tick. */
   static final long LIFETIME = 10;
 
-  private record Entry(double room, long until) {}
-
-  private static final Map<String, Entry> ROOMS = new HashMap<>();
-
-  private static String key(ServerLevel level, UUID carrier) {
-    return level.dimension().location() + "@" + carrier;
-  }
+  private static final Map<ServerLevel, TickCache<UUID, Double>> ROOMS = new WeakHashMap<>();
 
   static void record(ServerLevel level, UUID carrier, double room) {
-    ROOMS.put(key(level, carrier), new Entry(room, level.getGameTime() + LIFETIME));
+    ROOMS.computeIfAbsent(level, l -> new TickCache<>(LIFETIME))
+        .put(carrier, room, level.getGameTime());
   }
 
   /** The last recorded room, or {@code NaN} when there is none that is still current. */
   static double room(ServerLevel level, UUID carrier) {
-    var entry = ROOMS.get(key(level, carrier));
-    if (entry == null) return Double.NaN;
-    if (level.getGameTime() > entry.until()) {
-      ROOMS.remove(key(level, carrier));
-      return Double.NaN;
-    }
-    return entry.room();
+    var cache = ROOMS.get(level);
+    var value = cache == null ? null : cache.get(carrier, level.getGameTime());
+    return value == null ? Double.NaN : value;
+  }
+
+  static void tick(ServerLevel level) {
+    var cache = ROOMS.get(level);
+    if (cache != null) cache.tick(level.getGameTime());
+  }
+
+  static void unload(ServerLevel level) {
+    ROOMS.remove(level);
   }
 
   private ApproachRooms() {}

@@ -65,10 +65,11 @@
 
 ## 缓存与过期
 
-`SchedulePriority`、`SwitchBlockedReasons` 按 `ServerLevel` 隔离，`TrainRuntime.beforeTick`
+`SchedulePriority`、`SwitchBlockedReasons`、`ApproachRooms`、`BranchWatch` 按 `ServerLevel` 隔离，`TrainRuntime.beforeTick`
 逐刻调用 `TickCache.tick`，未再次查询的旧身份也会清除；世界卸载时显式移除整张表。
 时钟回退使未来记录失效。`TickCacheCheck` 覆盖首次查询、20/60 tick 日志间隔、
-未查询键的过期和时钟回退；`JunctionStateCheck` 检查实际生命周期接线。
+未查询键的过期和时钟回退；`JunctionStateCheck` 与 `TrainRuntimeCheck` 检查实际生命周期接线。
+接近距离与岔口诊断不再使用跨存档的维度字符串键；同维度的不同存档实例不会共享数据。
 
 道岔诊断由 `SteamRailways.DIAGNOSTIC_TICKS`（20 tick）限流，按世界、轨道图和节点隔离，
 经可选兼容桥逐刻清理并在卸载时释放。排队诊断由 `SwitchReservations.REPORT_TICKS`
@@ -79,6 +80,7 @@
 | 道岔预约 | `SwitchReservations.HOLD_TICKS` | 40 tick | `SwitchReservationsCheck` |
 | 时刻表优先级 | `SchedulePriority.LIFETIME` | 40 tick | `CacheHygieneCheck` |
 | 接近限距 | `ApproachRooms.LIFETIME` | 10 tick | `CacheHygieneCheck` |
+| 岔口诊断 | `BranchWatch.WINDOW` | 40 tick | `TrainRuntimeCheck` / `CacheHygieneCheck` |
 | 道岔拒绝原因 | `SwitchBlockedReasons.LIFETIME` | 60 tick | `CacheHygieneCheck` |
 | 岔口通行 | `RouteMemory.PASSAGE_TICKS` / `MAX_PASSAGES` | 200 tick / 64 | `ConsistRouteCheck` |
 | 转向架交接 | `MountEntity.HANDOFF_TIMEOUT` | 200 tick | `TrainRuntimeCheck` |
@@ -86,6 +88,11 @@
 | 车钩待定 | `CouplerConnections` 内联常量 | 600 tick | 无（见下） |
 
 ### 已知不合规项
+
+岔口通行的 200 tick 是失去有效观测后的租期，不是强制通行时限。`ConsistRoutes.prepare`
+仅在成员仍就绪、未脱轨、每轴具有同一铁路图上的有效轨段且采样点距实际轴位置不超过 0.8 格时，
+续约尚未完成的通行；整列通过立即停止保留。缺轴、无效图、偏离导向或失去观测不能续约，
+已经过期的记录不能复活。物理子步前的检查先续约，再做过期与预约刷新。
 
 - `CouplerConnections` 的 600 tick 是**内联字面量**，没有命名常量，因此未纳入 `CacheHygieneCheck`。原因是它同时决定所有权语义（`protectsSource`），改名需要一并复核所有权规则，留待专门一轮处理。
 - `CargoStorage` 的快照缓存同样使用内联数值。
@@ -95,6 +102,8 @@
 ### 驾驶台只读显示快照（2026-11-02）
 
 `ConsoleReadout` 是每个驾驶台单独持有的客户端显示快照，包含时刻表状态、目的地、行程项、剩余距离和实际速度。它不参与驾驶、选路或状态迁移，仅随 `VisualReadout` payload 下发，不写入磁盘存档。未知距离和速度以 -1 表示；读档时清空，避免把旧显示当作当前读数。`DriverControls.publish` 每 20 tick 比较一次，变化时通过现有方块实体数据包发送，不修改方块状态或触发区块重建；客户端只读取快照，不解析服务端物理车体。覆盖检查为 `GoggleInformationCheck`。
+
+变化比较同时包含 `ConsoleStatus`。每次比较前重新解析绑定与等待原因；即使速度、距离和行程均未变化，道岔等待原因的出现或消失仍会同步。完全不变时继续跳过重复发送。
 
 1. 任何 `static final Map/Set` 缓存都必须有命名常量表达其过期或上限，并登记到 `CacheHygieneCheck.CACHES`
 2. 任何"多个布尔共同表达一个状态"的结构，要么收敛成枚举（派生而非存储），要么在此登记合法组合

@@ -13,6 +13,8 @@ final class TrainRuntime {
     try {
       SchedulePriority.tick(level);
       SwitchBlockedReasons.tick(level);
+      ApproachRooms.tick(level);
+      BranchWatch.tick(level);
       RailwaysCompat.tick(level);
       CargoStorage.tick(level);
       CouplerConnections.restoreLoaded(level);
@@ -67,6 +69,8 @@ final class TrainRuntime {
     RailwaysCompat.unload(level);
     SchedulePriority.unload(level);
     SwitchBlockedReasons.unload(level);
+    ApproachRooms.unload(level);
+    BranchWatch.unload(level);
     TrainElectricity.unload(level);
   }
 }

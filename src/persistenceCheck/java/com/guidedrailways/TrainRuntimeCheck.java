@@ -74,6 +74,8 @@ public final class TrainRuntimeCheck {
         "beforeTick",
         "SchedulePriority.tick",
         "SwitchBlockedReasons.tick",
+        "ApproachRooms.tick",
+        "BranchWatch.tick",
         "RailwaysCompat.tick",
         "CargoStorage.tick",
         "CouplerConnections.restoreLoaded",
@@ -105,6 +107,8 @@ public final class TrainRuntimeCheck {
         "RailwaysCompat.unload",
         "SchedulePriority.unload",
         "SwitchBlockedReasons.unload",
+        "ApproachRooms.unload",
+        "BranchWatch.unload",
         "TrainElectricity.unload");
     for (String owner : List.of("VehiclePhysics", "DriverControls"))
       for (var method : code(owner).methods)
@@ -238,6 +242,24 @@ public final class TrainRuntimeCheck {
                 && call.owner.equals("com/guidedrailways/RouteMemory")
                 && call.name.equals("active") && call.desc.startsWith("(J)")),
         "switch reservation refresh must expire abandoned passages before holding them");
+
+    var prepared = calls("ConsistRoutes", "prepare");
+    check(prepared.indexOf("RouteMemory.keepAlive") >= 0
+            && prepared.indexOf("RouteMemory.keepAlive") < prepared.indexOf("RouteMemory.active"),
+        "valid live axle guides must renew a crossing before expiry and reservation refresh");
+    check(prepared.contains("TrackNetwork.live") && prepared.contains("VehiclePhysics.world"),
+        "route renewal verifies live track and physical guide proximity");
+    for (String cache : List.of("ApproachRooms", "BranchWatch")) {
+      check(calls("TrainRuntime", "beforeTick").contains(cache + ".tick"),
+          cache + " sweeps abandoned keys even when nobody queries them");
+      check(calls("TrainRuntime", "unload").contains(cache + ".unload"),
+          cache + " releases its world on unload");
+      check(code(cache).fields.stream().anyMatch(f -> f.signature != null
+              && f.signature.contains("Lnet/minecraft/server/level/ServerLevel;")),
+          cache + " isolates separate saves using the actual world instance");
+      check(calls(cache, "tick").contains("TickCache.tick"),
+          cache + " runs real expiry rather than only declaring a lifetime constant");
+    }
 
     int retainedQueries = 0;
     for (var instruction : method("VehiclePhysics", "stepVehicle").instructions) {
