@@ -88,7 +88,7 @@ public final class TrainOwnerCodecCheck {
     var proxy = code("com/guidedrailways/PhysicalTrainProxy");
     check(
         java.util.stream.StreamSupport.stream(
-                method(proxy, "apply").instructions.spliterator(), false)
+                method(proxy, "applyOwned").instructions.spliterator(), false)
             .anyMatch(
                 i ->
                     i instanceof FieldInsnNode f

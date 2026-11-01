@@ -88,9 +88,9 @@ final class NativeTrainClient {
           }
           if (Minecraft.getInstance().level == null) return;
           if (previous instanceof PhysicalTrainProxy p && tag.contains("SyncRevision")
-              && p.snapshot().getLong("SyncRevision") >= tag.getLong("SyncRevision")) return;
-          var complete = TrainSnapshotSync.accept(
-              previous instanceof PhysicalTrainProxy p ? p.snapshot() : null, tag);
+              && p.snapshotRevision() >= tag.getLong("SyncRevision")) return;
+          var complete = previous instanceof PhysicalTrainProxy p ? p.receiveSnapshot(tag)
+              : TrainSnapshotSync.accept(null, tag);
           if (complete == null) {
             // A missing baseline must not leave a stale route/station query active. The next
             // periodic full heartbeat recreates the proxy without guessing missing fields.
@@ -116,7 +116,7 @@ final class NativeTrainClient {
               .toString()
               .equals(tag.getString("Dimension"))) proxy.signals.resetClient();
           var oldStation = proxy.getCurrentStation();
-          proxy.apply(tag, manager.trackNetworks, Minecraft.getInstance().level.registryAccess());
+          proxy.applyOwned(tag, manager.trackNetworks, Minecraft.getInstance().level.registryAccess());
           PhysicalTrainProxy.syncStation(proxy, oldStation);
           manager.trains.put(id, proxy);
           applyPending(id);

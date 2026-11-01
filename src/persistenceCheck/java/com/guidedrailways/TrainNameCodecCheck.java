@@ -96,7 +96,7 @@ public final class TrainNameCodecCheck {
             .anyMatch(c -> c.name.equals("stillValid")),
         "rename remains bound to accessible open menu");
     check(
-        calls(method(code("PhysicalTrainProxy"), "apply")).stream()
+          calls(method(code("PhysicalTrainProxy"), "applyOwned")).stream()
             .anyMatch(c -> c.owner.endsWith("/TrainName") && c.name.equals("normalize")),
         "both native registries consume bounded plain names");
     System.out.println(

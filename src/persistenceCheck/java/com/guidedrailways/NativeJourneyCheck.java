@@ -175,8 +175,27 @@ public final class NativeJourneyCheck {
         "snapshot publication does not plan or execute a second journey");
     var proxy = code("com/guidedrailways/PhysicalTrainProxy");
     check(
-        calls(method(proxy, "apply")).stream().filter(c -> c.name.equals("project")).count() == 2,
+        calls(method(proxy, "applyOwned")).stream().filter(c -> c.name.equals("project")).count() == 2,
         "both native views refreshed by the same packet");
+    check(calls(method(proxy, "apply")).stream().anyMatch(c -> c.name.equals("copy"))
+            && calls(method(proxy, "apply")).stream().anyMatch(c -> c.name.equals("applyOwned"))
+            && calls(method(proxy, "snapshot")).stream().anyMatch(c -> c.name.equals("copy")),
+        "ordinary apply and public snapshot still defend against caller mutation");
+    check(calls(method(proxy, "applyOwned")).stream().noneMatch(c -> c.name.equals("copy")),
+        "owned network snapshot is not deep-copied again during projection");
+    check(calls(method(proxy, "receiveSnapshot")).stream().anyMatch(c -> c.name.equals("accept"))
+            && calls(method(proxy, "receiveSnapshot")).stream().noneMatch(c -> c.name.equals("copy"))
+            && calls(method(proxy, "snapshotRevision")).stream().noneMatch(c -> c.name.equals("copy")),
+        "baseline decoding and revision queries access private state without preparatory copies");
+    var client = code("com/guidedrailways/NativeTrainClient");
+    check(client.methods.stream().flatMap(m -> calls(m).stream()).noneMatch(c ->
+            c.owner.equals("com/guidedrailways/PhysicalTrainProxy") && c.name.equals("snapshot")),
+        "client revision checks and decoding never request a defensive full snapshot");
+    check(client.methods.stream().flatMap(m -> calls(m).stream()).anyMatch(c ->
+            c.owner.equals("com/guidedrailways/PhysicalTrainProxy") && c.name.equals("applyOwned"))
+            && client.methods.stream().flatMap(m -> calls(m).stream()).noneMatch(c ->
+                c.owner.equals("com/guidedrailways/PhysicalTrainProxy") && c.name.equals("apply")),
+        "client uses the owned projection entry rather than copying again through ordinary apply");
     check(
         calls(method(proxy, "clearJourney")).stream().filter(c -> c.name.equals("project")).count()
             == 2,

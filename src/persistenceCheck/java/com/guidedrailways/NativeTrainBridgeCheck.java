@@ -108,7 +108,7 @@ public final class NativeTrainBridgeCheck {
             .noneMatch(i -> i instanceof MethodInsnNode),
         "logical carriage never creates entities");
     // Unit conversion is checked against the actual compiled native update instruction.
-    var apply = node.methods.stream().filter(m -> m.name.equals("apply")).findFirst().orElseThrow();
+    var apply = node.methods.stream().filter(m -> m.name.equals("applyOwned")).findFirst().orElseThrow();
     check(
         java.util.stream.StreamSupport.stream(apply.instructions.spliterator(), false)
             .anyMatch(

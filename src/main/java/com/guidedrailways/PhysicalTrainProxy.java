@@ -52,6 +52,14 @@ public final class PhysicalTrainProxy extends Train {
     return snapshot.copy();
   }
 
+  long snapshotRevision() {
+    return snapshot.getLong("SyncRevision");
+  }
+
+  CompoundTag receiveSnapshot(CompoundTag packet) {
+    return TrainSnapshotSync.accept(snapshot, packet);
+  }
+
   /** Prefer live physical carriage positions; unloaded bodies use the existing query snapshot. */
   Vec3 mapPosition(Level level) {
     if (!dimension.equals(level.dimension()) || carriages.isEmpty()) return null;
@@ -83,7 +91,7 @@ public final class PhysicalTrainProxy extends Train {
     var previousStation = getCurrentStation();
     if (graph != resolved
         || resolved != null && carriages.stream().anyMatch(c -> ((LogicalCarriage) c).unresolved()))
-      apply(snapshot, graphs, registries);
+      applyOwned(snapshot, graphs, registries);
     // Graph synchronization may also reset a station's weak reservation on the same graph.
     syncStation(this, previousStation);
   }
@@ -92,7 +100,15 @@ public final class PhysicalTrainProxy extends Train {
       CompoundTag data,
       Map<UUID, TrackGraph> graphs,
       net.minecraft.core.HolderLookup.Provider registries) {
-    snapshot = data.copy();
+    applyOwned(data.copy(), graphs, registries);
+  }
+
+  /** Internal ownership transfer: caller must supply a private snapshot and retain no writer. */
+  void applyOwned(
+      CompoundTag data,
+      Map<UUID, TrackGraph> graphs,
+      net.minecraft.core.HolderLookup.Provider registries) {
+    snapshot = data;
     trainOwner =
         new TrainOwner(
             data.hasUUID("Owner") ? data.getUUID("Owner") : null, data.getString("OwnerName"));
