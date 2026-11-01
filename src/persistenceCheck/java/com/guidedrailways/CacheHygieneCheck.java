@@ -29,6 +29,8 @@ public final class CacheHygieneCheck {
           new Cache("SchedulePriority", "LIFETIME"),
           new Cache("ApproachRooms", "LIFETIME"),
           new Cache("BranchWatch", "WINDOW"),
+          new Cache("TrackNetwork", "AUDIT_TICKS"),
+          new Cache("TrainSnapshotSync", "HEARTBEAT_TICKS"),
           new Cache("SwitchBlockedReasons", "LIFETIME"),
           new Cache("RouteMemory", "PASSAGE_TICKS"),
           new Cache("RouteMemory", "MAX_PASSAGES"),

@@ -65,6 +65,13 @@
 
 ## 缓存与过期
 
+2026-11-02 同步与索引优化：`TrainSnapshotSync` 随代理生命周期释放，每列仅保留上次发送的
+私有完整基线和递增版本，100 tick 完整心跳；信号帧仍独立。`TrackNetwork.Index` 按世界持有
+轨道图槽位，200～219 tick 后启动分批审计，每刻最多 512 个节点/边/空间采样步骤并采用约
+1 ms 的软预算；发布、图表登记和关键同步查询不受该软预算保证。空间单元只登记图槽位，
+读取活动分片；过期引用另按每刻最多 512 项清理，避免长期保留旧图快照。移除图后立即
+使活动分片失效，世界卸载仍释放整个索引。`TrackTopology` 的逐图计数使用弱键，避免跨世界保留图。
+
 `SchedulePriority`、`SwitchBlockedReasons`、`ApproachRooms`、`BranchWatch` 按 `ServerLevel` 隔离，`TrainRuntime.beforeTick`
 逐刻调用 `TickCache.tick`，未再次查询的旧身份也会清除；世界卸载时显式移除整张表。
 时钟回退使未来记录失效。`TickCacheCheck` 覆盖首次查询、20/60 tick 日志间隔、

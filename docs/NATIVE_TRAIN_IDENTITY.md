@@ -88,6 +88,11 @@ ArrivalEstimate 每五 tick 读取实际剩余路程与物理车体速度，以�
 
 ## 2026-11-02 原版显示连接器接口核对
 
+同步补充：身份协议现为 3。完整基线、逐字段增量和每 100 tick 的完整心跳共同维持同一套
+全局原生查询身份；信号包继续独立同步。登录使用最后一次广播的基线版本，缺少基线时等待
+完整恢复，不把不完整数据发布为原生列车。暂停、到站、名称等查询语义和显示连接器入口保持原样。
+详见 `STUTTER_INVESTIGATION.md` 的 2026-11-02 实现与回退参数。
+
 以本地 Create 6.0.10-280 的实际类核对三个原生数据源，不新增显示系统或运行器：
 
 - `StationSummaryDisplaySource` 经 `GlobalTrainDisplayData.prepare` 读取全局预测；`refresh` 会遍历已登记列车并调用 `runtime.submitPredictions`。物理代理由现有 `PhysicalScheduleRuntime` 提供当前确认目的站、行程标题和到站估算。原生显示接受 -1 待定值；接近到站时显示“即将到达”不等于物理列车已完成到站判定。
