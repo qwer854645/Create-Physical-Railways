@@ -6,6 +6,10 @@ import net.minecraft.nbt.CompoundTag;
 record ConsoleReadout(String target, int state, int entry, int total, int remaining, int speed) {
   static final ConsoleReadout EMPTY = new ConsoleReadout("", -1, 0, 0, -1, -1);
 
+  boolean changedFrom(ConsoleReadout previous, ConsoleStatus previousReason, ConsoleStatus reason) {
+    return !equals(previous) || previousReason != reason;
+  }
+
   static ConsoleReadout of(String target, int state, int entry, int total,
       double remaining, double speed) {
     return new ConsoleReadout(target, state, Math.clamp(entry, 0, total), total,

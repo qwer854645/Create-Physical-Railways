@@ -63,6 +63,17 @@ public final class GoggleInformationCheck {
     check(!calls("RailDockEntity", "addInformation", "com/guidedrailways/GoggleText", "add"),
         "server chat never accesses the client font");
     var readout = ConsoleReadout.of("Central", 1, 2, 4, 123.45, -2.46);
+    check(!readout.changedFrom(readout, ConsoleStatus.READY, ConsoleStatus.READY),
+        "unchanged information does not trigger redundant synchronization");
+    check(readout.changedFrom(readout, ConsoleStatus.READY, ConsoleStatus.SWITCH_HELD),
+        "a stopped train synchronizes a new waiting reason even when every reading stays unchanged");
+    check(readout.changedFrom(readout, ConsoleStatus.SWITCH_HELD, ConsoleStatus.READY),
+        "clearing a waiting reason also triggers synchronization without movement");
+    check(readout.changedFrom(ConsoleReadout.EMPTY, ConsoleStatus.READY, ConsoleStatus.READY),
+        "numeric and journey changes still trigger synchronization");
+    check(calls("DriverConsoleEntity", "refreshReadout", "com/guidedrailways/DriverConsoleEntity", "resolveStatus")
+        && calls("DriverConsoleEntity", "refreshReadout", "com/guidedrailways/ConsoleReadout", "changedFrom"),
+        "periodic synchronization includes current waiting reasons in its change decision");
     check(ConsoleReadout.read(readout.write()).equals(readout), "display snapshot survives its client payload");
     check(ConsoleReadout.read(new net.minecraft.nbt.CompoundTag()).equals(ConsoleReadout.EMPTY),
         "old payloads have no invented distance or speed");

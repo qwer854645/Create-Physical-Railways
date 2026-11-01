@@ -38,9 +38,12 @@ public final class DriverConsoleEntity extends BlockEntity
   /** Refresh moving information at most once a second, without block-state or chunk updates. */
   void refreshReadout(ServerLevel server) {
     if (server.getGameTime() % 20 != 0) return;
+    bound = DriverControls.body(this) != null;
     var next = currentReadout();
-    if (readout.equals(next)) return;
+    var reason = resolveStatus();
+    if (!next.changedFrom(readout, statusReason, reason)) return;
     readout = next;
+    statusReason = reason;
     sendVisual(server);
   }
 
