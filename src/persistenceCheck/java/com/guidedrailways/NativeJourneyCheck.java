@@ -215,6 +215,26 @@ public final class NativeJourneyCheck {
             .flatMap(m -> calls(m).stream())
             .anyMatch(c -> c.name.equals("prepare")),
         "installed station summary reads native train display data");
+    // Both single-line sources should consume the same native identity/runtime as the summary.
+    var statusSource =
+        code("com/simibubi/create/content/redstone/displayLink/source/TrainStatusDisplaySource");
+    var statusLine = method(statusSource, "provideLine");
+    check(calls(statusLine).stream().anyMatch(c -> c.name.equals("getPresentTrain"))
+            && calls(statusLine).stream().anyMatch(c -> c.name.equals("getWaitingStatus")),
+        "native station status consumes the present train and its runtime wait description");
+    check(calls(method(code("com/guidedrailways/PhysicalScheduleRuntime"), "getWaitingStatus"))
+            .stream().anyMatch(c -> c.owner.endsWith("/ScheduleRuntime") && c.name.equals("getWaitingStatus")),
+        "physical station wait descriptions delegate to native schedule condition formatting");
+    var observedLine = method(code("com/simibubi/create/content/redstone/displayLink/source/ObservedTrainNameSource"),
+        "provideLine");
+    check(calls(observedLine).stream().anyMatch(c -> c.name.equals("getCurrentTrain")),
+        "native observed-name source consumes the observer's train identity");
+    check(Arrays.stream(observedLine.instructions.toArray()).anyMatch(i -> i instanceof FieldInsnNode f
+            && f.getOpcode() == Opcodes.GETFIELD && f.owner.endsWith("/Train") && f.name.equals("name")),
+        "native observed-name source uses the synchronized native train name");
+    check(calls(method(code("com/guidedrailways/PhysicalObservers$Context"), "cover"))
+            .stream().anyMatch(c -> c.name.equals("keepAlive") && c.desc.contains("/Train;")),
+        "physical observation supplies train identity rather than only a redstone pulse");
     var unknown =
         new com.simibubi.create.content.trains.display.GlobalTrainDisplayData
             .TrainDeparturePrediction(
