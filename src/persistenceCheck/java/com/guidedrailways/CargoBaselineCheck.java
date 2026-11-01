@@ -107,6 +107,12 @@ public final class CargoBaselineCheck {
     check(
         ScheduleController.cargoWaitStart(context, 5) == 5,
         "clock rollback starts a fresh interval");
+    var sampled = new CompoundTag();
+    for (int tick = 0; tick <= 100; tick += 5)
+      check(ScheduleController.cargoWaitStart(sampled, tick, 5) == 0,
+          "valid five-tick cargo observations retain the real idle start");
+    check(ScheduleController.cargoWaitStart(sampled, 106, 5) == 106,
+        "missing a scheduled observation restarts idle instead of counting unknown time");
     System.out.println(
         "CargoBaselineCheck: stale reads, interrupted idle, readback reset, unchanged cargo, split, deletion and expiry passed");
   }

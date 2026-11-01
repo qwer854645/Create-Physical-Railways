@@ -281,6 +281,10 @@ final class ScheduleController {
       if (!travelInstruction(entry.instruction)
           && type != ChangeThrottleInstruction.class
           && type != ChangeTitleInstruction.class) return entry.instruction.getId().toString();
+      if (entry.instruction instanceof DestinationInstruction destination) {
+        try { java.util.regex.Pattern.compile(net.createmod.catnip.data.Glob.toRegexPattern(destination.getFilter())); }
+        catch (java.util.regex.PatternSyntaxException invalid) { return destination.getId().toString(); }
+      }
       if (!travelInstruction(entry.instruction)) continue;
       for (var branch : entry.conditions)
         for (var c : branch) if (!supportedCondition(c)) return c.getId().toString();
@@ -293,6 +297,7 @@ final class ScheduleController {
         && (c.getClass() == ScheduledDelay.class
             || c.getClass() == TimeOfDayCondition.class
             || c.getClass() == StationPoweredCondition.class
+            || c.getClass() == StationUnloadedCondition.class
             || c.getClass() == RedstoneLinkCondition.class
             || c.getClass() == ItemThresholdCondition.class
             || c.getClass() == FluidThresholdCondition.class
@@ -685,6 +690,7 @@ final class ScheduleController {
   }
 
   void resetConditions() {
+    nextConditionCheck = 0;
     progress.clear();
     contexts.clear();
     nextMail = 0;
@@ -707,6 +713,9 @@ final class ScheduleController {
 
   boolean tickConditions(ServerLevel level) {
     conditionState = WAITING;
+    long now = level.getGameTime();
+    boolean sampleExpensive = now >= nextConditionCheck || now < nextConditionCheck - CONDITION_INTERVAL;
+    if (sampleExpensive) nextConditionCheck = now + CONDITION_INTERVAL;
     var branches = program().entries.get(entry).conditions;
     if (branches.isEmpty()) return true;
     if (progress.size() != branches.size()) {
@@ -726,7 +735,7 @@ final class ScheduleController {
         pause(UNSUPPORTED);
         return false;
       }
-      if (conditionComplete(level, c, contexts.get(i))) {
+      if (conditionComplete(level, c, contexts.get(i), sampleExpensive)) {
         progress.set(i, index + 1);
         contexts.set(i, new CompoundTag());
         owner.setChanged();
@@ -753,33 +762,43 @@ final class ScheduleController {
 
   /** Only consecutive, valid observations can establish a cargo idle interval. */
   static long cargoWaitStart(CompoundTag context, long tick) {
+    return cargoWaitStart(context, tick, 1);
+  }
+
+  static long cargoWaitStart(CompoundTag context, long tick, int interval) {
     long previous = context.getLong("CargoLastObserved");
-    if (!context.contains("CargoLastObserved") || tick < previous || tick - previous > 1)
+    if (!context.contains("CargoLastObserved") || tick < previous || tick - previous > interval)
       resetCargoObservation(context);
     context.putLong("CargoLastObserved", tick);
     if (!context.contains("CargoWaitStarted")) context.putLong("CargoWaitStarted", tick);
     return context.getLong("CargoWaitStarted");
   }
 
-  /** Ticks between condition evaluations while a train waits. Conditions are states, not edges. */
+  /** Ticks between expensive player/container observations; timers and redstone remain per-tick. */
   private static final int CONDITION_INTERVAL = 5;
 
   private long nextConditionCheck;
 
   private boolean conditionComplete(
-      ServerLevel level, ScheduleWaitCondition condition, CompoundTag context) {
-    // This runs while a train waits at a station, and each call scans every player in the level and each
-    // carriage's containers (TrainPassengers.snapshot, CargoStorage.snapshot) plus the console's own
-    // containment lookup. Five evaluations per second is far more than a passenger or cargo condition
-    // can change, so the wait costs a fifth of what it did.
-    long now = level.getGameTime();
-    if (now < nextConditionCheck) return false;
-    nextConditionCheck = now + CONDITION_INTERVAL;
+      ServerLevel level, ScheduleWaitCondition condition, CompoundTag context, boolean sampleExpensive) {
+    // Only player/container observations are throttled. Timers and redstone run every tick;
+    // all OR branches share the same sampling decision, so the first cannot starve the others.
+    boolean expensive = condition.getClass() == PlayerPassengerCondition.class
+        || condition.getClass() == ItemThresholdCondition.class
+        || condition.getClass() == FluidThresholdCondition.class
+        || condition.getClass() == IdleCargoCondition.class;
+    if (expensive && !sampleExpensive) {
+      int previousState = context.getInt("PhysicalWaitState");
+      if (previousState == UNLOADED || previousState == CARGO_CONNECTOR) conditionState = previousState;
+      return false;
+    }
+    context.remove("PhysicalWaitState");
     if (condition.getClass() == PlayerPassengerCondition.class) {
       var passengers = TrainPassengers.snapshot(level, DriverControls.body(owner));
       if (!passengers.complete()
           || cargoBodies != null && !cargoBodies.equals(passengers.bodies())) {
         conditionState = UNLOADED;
+        context.putInt("PhysicalWaitState", UNLOADED);
         return false;
       }
       if (cargoBodies == null) {
@@ -809,6 +828,7 @@ final class ScheduleController {
       var snapshot = CargoStorage.snapshot(level, DriverControls.body(owner));
       if (!snapshot.complete() || cargoBodies != null && !cargoBodies.equals(snapshot.bodies())) {
         conditionState = UNLOADED;
+        context.putInt("PhysicalWaitState", UNLOADED);
         resetCargoObservation(context);
         return false;
       }
@@ -819,10 +839,11 @@ final class ScheduleController {
       if (condition.getClass() == IdleCargoCondition.class) {
         if (!snapshot.monitored() && !mailMonitored) {
           conditionState = CARGO_CONNECTOR;
+          context.putInt("PhysicalWaitState", CARGO_CONNECTOR);
           resetCargoObservation(context);
           return false;
         }
-        long since = cargoWaitStart(context, level.getGameTime());
+        long since = cargoWaitStart(context, level.getGameTime(), CONDITION_INTERVAL);
         return CargoStorage.idle(
             level,
             snapshot,
@@ -871,6 +892,18 @@ final class ScheduleController {
             && world.getBlockEntity(pos)
                 instanceof com.simibubi.create.content.trains.station.StationBlockEntity
             && world.hasNeighborSignal(pos);
+      }
+      return false;
+    }
+    if (condition.getClass() == StationUnloadedCondition.class) {
+      if (station == null) return false;
+      for (var graph : com.simibubi.create.Create.RAILWAYS.sided(level).trackNetworks.values()) {
+        var stop = graph.getPoint(com.simibubi.create.content.trains.graph.EdgePointType.STATION, station);
+        if (stop == null) continue;
+        var world = level.getServer().getLevel(stop.getBlockEntityDimension());
+        var pos = stop.getBlockEntityPos();
+        // Match Create: loaded-but-not-entity-ticking also counts as unloaded. Never load a chunk.
+        return world != null && pos != null && !world.isPositionEntityTicking(pos);
       }
       return false;
     }
