@@ -342,6 +342,19 @@ final class ConsistRoutes {
           for (var a : axleIds)
             if (previous.anchors.containsKey(a)) context.anchors.put(a, previous.anchors.get(a));
       }
+      if (context.memory.hasOpenPassages()) {
+        var guided = new HashMap<RouteMemory.Axle, UUID>();
+        for (var u : group) {
+          if (u.detached) continue;
+          for (int i = 0; i < 2; i++) {
+            var sample = u.samples[i];
+            if (sample != null && TrackNetwork.live(level, sample.path())
+                && sample.position().distanceSquared(VehiclePhysics.world(u.bogie, u.axle(i))) <= .64)
+              guided.put(new RouteMemory.Axle(u.bogie.getUniqueId(), i), sample.path().graph());
+          }
+        }
+        context.memory.keepAlive(guided, level.getGameTime());
+      }
       for (var passage : context.memory.active(level.getGameTime()))
         RailwaysCompat.hold(level, passage, context.identity);
       context.automatic = null;

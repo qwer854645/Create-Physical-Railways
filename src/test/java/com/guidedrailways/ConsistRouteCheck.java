@@ -242,6 +242,30 @@ public final class ConsistRouteCheck {
         2 + RouteMemory.PASSAGE_TICKS) == 31,
         "reservation cleanup leaves a following axle free to use the current plan");
 
+    var protectedMemory = new RouteMemory(Set.of(stuckAxle, absent));
+    protectedMemory.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
+    var liveGuides = Map.of(stuckAxle, repeatNode.graph(), absent, repeatNode.graph());
+    for (long now = 20; now <= 1200; now += 20) {
+      protectedMemory.keepAlive(liveGuides, now);
+      check(protectedMemory.active(now).size() == 1, "live long/parked crossing retains its reservation");
+    }
+    check(protectedMemory.commit(absent, repeatNode, 9, new int[] {14, 31}, 14, false, 1201) == 31,
+        "after a minute parked over the junction, the tail still follows the leading branch");
+    check(protectedMemory.active(1201).isEmpty(), "completion releases a renewed crossing immediately");
+    check(protectedMemory.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 1202) == 14,
+        "renewal does not pin a later trip to the old branch");
+    protectedMemory.keepAlive(Map.of(stuckAxle, repeatNode.graph()), 1210);
+    check(protectedMemory.active(1402).isEmpty(), "a missing member cannot renew an abandoned passage");
+
+    var wrongGraph = new RouteMemory(Set.of(stuckAxle, absent));
+    wrongGraph.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
+    wrongGraph.keepAlive(Map.of(stuckAxle, UUID.randomUUID(), absent, repeatNode.graph()), 199);
+    check(wrongGraph.active(200).isEmpty(), "guides on another graph cannot renew an old crossing");
+    var expired = new RouteMemory(Set.of(stuckAxle, absent));
+    expired.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
+    expired.keepAlive(liveGuides, 200);
+    check(expired.active(200).isEmpty(), "late observations cannot resurrect expired history");
+
     System.out.println("ConsistRouteCheck: " + checks + " assertions passed");
   }
 }

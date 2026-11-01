@@ -37,7 +37,8 @@ import java.util.UUID;
  *
  * <p>Passages expire. The previous design asked whether a passage was "complete", meaning every axle had passed, and
  * any consist with an axle that never reaches the node left an entry that never completed and outranked every later
- * plan for ever. A passage untouched for {@link #PASSAGE_TICKS} is dropped, so a stale entry costs one lap at most.
+ * plan for ever. A passage without valid live observations for {@link #PASSAGE_TICKS} is dropped;
+ * an unfinished crossing with a fully guided consist renews its lease even while stationary.
  */
 public final class RouteMemory {
   public record Axle(UUID bogie, int end) {}
@@ -68,7 +69,7 @@ public final class RouteMemory {
     }
 
     boolean expired(long now) {
-      return now >= 0 && touched >= 0 && now - touched >= PASSAGE_TICKS;
+      return now >= 0 && touched >= 0 && (now < touched || now - touched >= PASSAGE_TICKS);
     }
   }
 
@@ -129,6 +130,28 @@ public final class RouteMemory {
         if (!cleared(passage)) out.add(new Active(passage.node, passage.from, passage.to));
     }
     return List.copyOf(out);
+  }
+
+  public boolean hasOpenPassages() {
+    for (var queue : passages.values())
+      for (var passage : queue) if (!cleared(passage)) return true;
+    return false;
+  }
+
+  /** Renew unfinished crossings only while every member has a valid guide on their graph. */
+  public void keepAlive(Map<Axle, UUID> guided, long now) {
+    if (now < 0 || members.isEmpty()) return;
+    for (var queue : passages.values())
+      for (var passage : queue) {
+        if (cleared(passage) || passage.expired(now)) continue;
+        boolean complete = true;
+        for (var axle : members)
+          if (!passage.node.graph().equals(guided.get(axle))) {
+            complete = false;
+            break;
+          }
+        if (complete) passage.touched = now;
+      }
   }
 
   public RouteMemory copyFor(Set<Axle> next) {
