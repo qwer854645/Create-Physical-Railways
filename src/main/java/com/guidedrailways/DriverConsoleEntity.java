@@ -25,6 +25,24 @@ public final class DriverConsoleEntity extends BlockEntity
 
   /** Why this console's train is not moving; computed when the payload is sent. */
   ConsoleStatus statusReason = ConsoleStatus.NO_BODY;
+  private ConsoleReadout readout = ConsoleReadout.EMPTY;
+
+  private ConsoleReadout currentReadout() {
+    if (DriverControls.body(this) == null) return ConsoleReadout.EMPTY;
+    boolean primary = DriverControls.primaryView(this);
+    return ConsoleReadout.of(primary ? schedule.target() : "", primary ? schedule.status() : 15,
+        Math.min(schedule.entry() + 1, schedule.total()), schedule.total(),
+        primary && schedule.plan() != null ? schedule.remaining() : Double.NaN, actual);
+  }
+
+  /** Refresh moving information at most once a second, without block-state or chunk updates. */
+  void refreshReadout(ServerLevel server) {
+    if (server.getGameTime() % 20 != 0) return;
+    var next = currentReadout();
+    if (readout.equals(next)) return;
+    readout = next;
+    sendVisual(server);
+  }
 
   private long nextStatusLog;
 
@@ -492,7 +510,7 @@ public final class DriverConsoleEntity extends BlockEntity
       java.util.List<net.minecraft.network.chat.Component> tooltip, boolean sneaking) {
     // VisualBound is synchronized by the server; DriverControls.body only resolves ServerSubLevel.
     for (var line : GoggleText.console(bound, schedule.present(), statusReason, sneaking,
-        direction, notch, trainName))
+        direction, notch, trainName, readout))
       GoggleText.add(tooltip, line);
     return true;
   }
@@ -512,6 +530,8 @@ public final class DriverConsoleEntity extends BlockEntity
     tag.putBoolean("VisualAligning", aligning);
     stopOffset = resolveOffset();
     tag.putDouble("VisualOffset", stopOffset);
+    readout = currentReadout();
+    tag.put("VisualReadout", readout.write());
     return tag;
   }
 
@@ -562,7 +582,9 @@ public final class DriverConsoleEntity extends BlockEntity
             : ConsoleStatus.NO_BODY;
     stopOffset = tag.getDouble("VisualOffset");
     aligning = tag.getBoolean("VisualAligning");
+    readout = ConsoleReadout.read(tag.getCompound("VisualReadout"));
     } else {
+      readout = ConsoleReadout.EMPTY;
       // Disk: the takeover session is never restored, but the lever setting is.
       active = false;
       enabled = false;

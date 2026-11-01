@@ -243,6 +243,7 @@ public final class DriverControls {
 
   static void publish(ServerLevel level) {
     for (var e : CONSOLES.getOrDefault(level, Map.of()).values()) {
+      e.refreshReadout(level);
       var body = body(e);
       if (body == null) continue;
       if (e.active && level.getGameTime() % 5 == 0) DriverNetwork.sync(e, true);

@@ -1,4 +1,6 @@
 {
+  "message.guidedrailways.driver_console.actual_speed": "Actual speed: %s blocks/s",
+  "message.guidedrailways.driver_console.journey": "Entry: %s/%s · Remaining: %s blocks",
   "message.guidedrailways.driver_console.name": "Train: %s",
   "message.guidedrailways.driver_console.controls": "Direction: %s · Notch: %s",
   "message.guidedrailways.driver_console.direction.forward": "Forward",

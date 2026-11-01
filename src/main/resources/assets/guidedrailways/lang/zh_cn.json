@@ -1,4 +1,6 @@
 {
+  "message.guidedrailways.driver_console.actual_speed": "实际速度：%s 格/秒",
+  "message.guidedrailways.driver_console.journey": "行程：%s/%s · 剩余：%s 格",
   "message.guidedrailways.driver_console.name": "列车：%s",
   "message.guidedrailways.driver_console.controls": "方向：%s · 档位：%s",
   "message.guidedrailways.driver_console.direction.forward": "前进",
