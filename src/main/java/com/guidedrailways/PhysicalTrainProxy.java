@@ -29,6 +29,7 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   final NativeTrainJourney journey = new NativeTrainJourney();
+  final TrainSnapshotSync snapshotSync = new TrainSnapshotSync();
   final ObserverFilterCache observerFilters = new ObserverFilterCache();
   final NativeSignalState signals = new NativeSignalState(this);
 

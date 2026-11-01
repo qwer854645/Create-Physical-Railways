@@ -87,6 +87,22 @@ final class NativeTrainClient {
             return;
           }
           if (Minecraft.getInstance().level == null) return;
+          if (previous instanceof PhysicalTrainProxy p && tag.contains("SyncRevision")
+              && p.snapshot().getLong("SyncRevision") >= tag.getLong("SyncRevision")) return;
+          var complete = TrainSnapshotSync.accept(
+              previous instanceof PhysicalTrainProxy p ? p.snapshot() : null, tag);
+          if (complete == null) {
+            // A missing baseline must not leave a stale route/station query active. The next
+            // periodic full heartbeat recreates the proxy without guessing missing fields.
+            if (previous instanceof PhysicalTrainProxy p) {
+              var signals = p.signals.packet();
+              release(p);
+              manager.trains.remove(id);
+              signal(signals);
+            }
+            return;
+          }
+          tag = complete;
           if (previous != null && !(previous instanceof PhysicalTrainProxy)) {
             org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
                 .error("Native train UUID collision on client: {}", id);

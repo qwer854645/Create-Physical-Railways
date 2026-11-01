@@ -19,7 +19,11 @@ public final class NativeTrainNetwork {
         new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "train_identity"));
     static final StreamCodec<RegistryFriendlyByteBuf, Update> CODEC =
         StreamCodec.of(
-            (b, value) -> b.writeNbt(value.data),
+            (b, value) -> {
+              int start = b.writerIndex();
+              b.writeNbt(value.data);
+              TrainSyncMetrics.encoded(value.data, b.writerIndex() - start);
+            },
             b -> new Update(java.util.Objects.requireNonNull(b.readNbt())));
 
     @Override
@@ -30,7 +34,7 @@ public final class NativeTrainNetwork {
 
   static void register(RegisterPayloadHandlersEvent event) {
     event
-        .registrar("2")
+        .registrar("3")
         .playToClient(
             Update.TYPE,
             Update.CODEC,

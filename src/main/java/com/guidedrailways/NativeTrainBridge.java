@@ -44,6 +44,7 @@ public final class NativeTrainBridge {
   }
 
   static void tick(ServerLevel level) {
+    TrainSyncMetrics.report(level);
     if (level.getGameTime() % 5 != 0 || SubLevelPhysicsSystem.get(level) == null) return;
     var groups =
         TrainConsists.get(level).groups().stream()
@@ -118,8 +119,10 @@ public final class NativeTrainBridge {
                 proxy.carriages.size(),
                 level.dimension().location());
       }
-      if (created || level.getGameTime() % 10 == 0)
-        PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(snapshot));
+      if (created || level.getGameTime() % 10 == 0) {
+        var packet = proxy.snapshotSync.next(snapshot, level.getGameTime(), created);
+        if (packet != null) PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(packet));
+      }
     }
     for (var id : List.copyOf(live.keySet())) if (!seen.contains(id)) remove(level, live, id);
     BY_BOGEY.put(level, Map.copyOf(byBogie));
@@ -152,7 +155,8 @@ public final class NativeTrainBridge {
   }
 
   static void sync(PhysicalTrainProxy proxy) {
-    PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(proxy.snapshot()));
+    PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(
+        proxy.snapshotSync.force(proxy.snapshot())));
   }
 
   private static void remove(ServerLevel level, Map<UUID, PhysicalTrainProxy> live, UUID id) {
@@ -169,6 +173,7 @@ public final class NativeTrainBridge {
   }
 
   static void unload(ServerLevel level) {
+    TrainSyncMetrics.reset(level);
     WARNED.remove(level);
     BY_BOGEY.remove(level);
     var live = LIVE.remove(level);
@@ -178,7 +183,8 @@ public final class NativeTrainBridge {
   static void login(net.minecraft.server.level.ServerPlayer player) {
     for (var live : LIVE.values())
       for (var proxy : live.values()) {
-        PacketDistributor.sendToPlayer(player, new NativeTrainNetwork.Update(proxy.snapshot()));
+        var baseline = proxy.snapshotSync.baseline();
+        if (baseline != null) PacketDistributor.sendToPlayer(player, new NativeTrainNetwork.Update(baseline));
         PacketDistributor.sendToPlayer(
             player, new NativeTrainNetwork.Update(proxy.signals.packet()));
       }
