@@ -106,6 +106,12 @@
 - `CouplerConnections` 的 600 tick 是**内联字面量**，没有命名常量，因此未纳入 `CacheHygieneCheck`。原因是它同时决定所有权语义（`protectsSource`），改名需要一并复核所有权规则，留待专门一轮处理。
 - `CargoStorage` 的快照缓存同样使用内联数值。
 
+## 时刻表后续站与条件观察（2026-11-02）
+
+`PhysicalScheduleRuntime` 的 `forecastSteps` 和 `futureStops` 是每列查询代理的派生数据，不参与任务推进，不写入存档或新增网络字段。程序、项目或标题变化时重建后续筛选，程序移除时清空；每次原版显示查询重新匹配当前车站，因此不会保留已改名或删除的站点。`ScheduleForecast.MAX_ENTRIES=128` 限制向后查看的项目数，`MAX_STOPS=32` 同时限制后续目的项目和最终展开的记录数，已登记到 `CacheHygieneCheck`。非循环到结尾停止，循环最多余下一圈，同名站去重。原版执行器仍为空操作。
+
+`ScheduleController.nextConditionCheck` 只节流乘客与容器观察；所有或分支使用同一个采样决定。重置条件时清零，时钟回退时重新采样。每个条件上下文的 `PhysicalWaitState` 只缓存上次观察到的未加载或缺少连接器原因，供两个采样之间显示；不能使条件完成，重新采样即清除并重算。装卸空闲观察允许正常的 5 tick 采样间隔，缺失采样或时钟回退会重新开始连续观察；现有逐 tick 调用仍保持原来的连续性要求。
+
 ## 约定
 
 ### 驾驶台只读显示快照（2026-11-02）

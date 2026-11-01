@@ -36,7 +36,11 @@ StationPresence 根据实际停稳位置关联 GlobalStation，旗帜和比较�
 
 当前接受的指令：DestinationInstruction、ChangeThrottleInstruction、ChangeTitleInstruction、FetchPackagesInstruction、DeliverPackagesInstruction；包裹指令需要相应可选兼容可用。
 
-当前接受的等待条件：ScheduledDelay、TimeOfDayCondition、StationPoweredCondition、RedstoneLinkCondition、ItemThresholdCondition、FluidThresholdCondition、IdleCargoCondition、PlayerPassengerCondition。
+当前接受的等待条件：ScheduledDelay、TimeOfDayCondition、StationPoweredCondition、StationUnloadedCondition、RedstoneLinkCondition、ItemThresholdCondition、FluidThresholdCondition、IdleCargoCondition、PlayerPassengerCondition。已覆盖当前 Create 6.0.10 的全部具体等待条件与指令；包裹运输仍需要对应的物理对接兼容。
+
+车站卸载按原版的“车站所在位置不再进行实体 tick”判断，不强制加载区块，缺少车站或维度不视为卸载成功。计时和红石每 tick 检查；乘客、容器等昂贵观察每 5 tick 统一检查所有或分支，避免计时变慢或后面的分支得不到检查。
+
+原版显示连接器可以读取当前已确认目的站及后续普通目的站。当前段保留实际运动估算，后续站统一使用原版待定时间，并跟随行程标题；只读展开不执行指令、寻路或预约。通配符展开的是可能匹配的站，不承诺逐个停靠。每列最多 32 条记录、向后最多检查 128 个项目，同名站去重。运行时才确定地址的包裹任务不预先虚构目的站。
 
 任务实际运行、等待进度和恢复由 ScheduleController 管理，原生 ScheduleRuntime 仅提供查询视图。时刻表物品仍实际存放在驾驶台；车站自动发放和取回入口当前保持隔离，不会把时刻表写入空的原生执行器。本项是当前明确的交互边界，不是应删除的旧实现。
 
@@ -61,7 +65,7 @@ PhysicalSignals 负责真实物理编组的区段覆盖、保守车体延伸、�
 ## 仍未实现或不在当前范围
 
 - 跨维度整列迁移：导航跳过跨维度边，车钩在跨维度移动时解挂
-- StationUnloadedCondition 等当前白名单以外的时刻表内容
+- 第三方新增且未适配的时刻表指令或等待条件
 - 任意原版列车编辑 / 控制写入口，以及所有第三方铁路、地图和 ComputerCraft 集成
 - 原版可移式接口直接装卸物理容器、离线邮箱写入及跨维度旅客迁移
 - 拥堵绕行、预约公平队列与通用死锁恢复

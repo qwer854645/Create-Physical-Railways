@@ -92,6 +92,18 @@
 
 上述实车结果只证明低速、单车厢、直线、普通信号下的两个追踪方向。没有实测相向会车、交叉口与链式信号出口预约、弯道、高速制动、长编组车尾几何、卸载重载以及客户端地图同步。不能将其写成“信号混跑全部通过”或“完全兼容所有铁路模组”。其余场景仍按 NATIVE_TRAIN_IDENTITY.md 的验收清单执行。
 
+## 2026-11-02 时刻表条件与后续站接口
+
+新增 `ScheduleFeatureServerTests.nativeConditionsAndFutureDisplays`，在独立世界创建真实驾驶台、Create 铁路图、车站和已登记的只读列车代理：
+
+- 枚举当前 Create 注册的全部原生具体指令与等待条件，核对支持入口；包裹指令仅允许已有可选对接要求。
+- 一个永不满足的乘客分支与计时分支并列，每个真实服务端 tick 与原版 ScheduledDelay 比较完成结果，1 秒条件均在第 21 次检查完成，防止分支饥饿或计时被节流。
+- 已进行实体 tick 的车站、未加载的远处区块、缺失车站与缺失维度；卸载条件与原版一致，查询不会加载远处区块。
+- 通过真实 `submitPredictions` 和 `GlobalTrainDisplayData.refresh/prepare` 检查当前段估算、后续待定、标题指令、通配符及同名去重；另查车站改名、移除、暂停、完成、非循环末站、循环下一圈、到站双向关联及取消关联。
+- 展开 40 个通配符候选站，验证总记录最多 32 条；损坏的后续筛选不能破坏当前记录，并在安装校验时被拒绝；取出时刻表清空所有记录。
+
+这是服务端接口和状态测试，使用反射设置控制器及代理查询数据；没有驾驶物理列车完成真实多站行程，也没有检查客户端显示板画面。另有 `ScheduleForecastCheck` 的 13 项纯逻辑检查、货运连续观察及缓存上限检查。完整命令为 `gradlew.bat build runSignalValidation -PsignalServerTests --offline`；本机日志 `build-schedule-feature-final-20261102.log` 不提交。最终运行输出 `SCHEDULE_FEATURE_PASS nativeDelayTicks=21 stationUnload=true futureDisplays=true`、`All 6 required tests passed`，完整构建及既有信号、岔口、轨道索引和直轨混跑回归均通过，`BUILD SUCCESSFUL in 1m 38s`。
+
 ## 复现与隔离
 
     gradlew.bat runSignalValidation -PsignalServerTests --offline
