@@ -26,6 +26,11 @@ final class ApproachLimit {
     return distance <= CREEP ? Double.POSITIVE_INFINITY : distance;
   }
 
+  /** A denied passage remains a stop even when the axle has reached the switch. */
+  static double switchRoom(double distance, boolean blocked) {
+    return blocked ? distance : switchRoom(distance);
+  }
+
   /**
    * The room the stop model is given, given the switch distance and the plan's own limit.
    *

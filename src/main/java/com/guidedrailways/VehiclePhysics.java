@@ -570,21 +570,24 @@ public final class VehiclePhysics {
       // room; since the train can only clear a switch by moving, that is a deadlock. The rule lives in
       // ApproachLimit so that its own check can pin it, and it is applied before the plan's limit so that the
       // plan keeps whatever stop it wanted.
-      switchRoom = ApproachLimit.switchRoom(switchRoom);
+      switchRoom = ApproachLimit.switchRoom(switchRoom, plan.axle(lead).blocked());
       switchRoom = plan.axle(lead).limit(switchRoom);
       ApproachRooms.record(level, u.carrier.getUniqueId(), switchRoom);
       var atLead = world(u.bogie, u.axle(lead));
-      u.samples[lead] =
+      var leadSample =
           TrackNetwork.follow(
               level, atLead, heading, u.samples[lead], null, .8, reverse, plan.axle(lead));
-      plan.axle(lead).followed(u.samples[lead]);
-      if (u.samples[lead] == null) {
+      if (leadSample == null) {
         if (hold(u, "lead_axle")) continue;
         release(u, "track_missing_or_out_of_range");
         continue;
       }
+      // Keep the previous edge during a held miss. Clearing it would let the next substep
+      // reacquire the nearest branch without asking the route policy or switch reservation.
+      u.samples[lead] = leadSample;
+      plan.axle(lead).followed(leadSample);
       var atTrail = world(u.bogie, u.axle(trail));
-      u.samples[trail] =
+      var trailSample =
           TrackNetwork.follow(
               level,
               atTrail,
@@ -594,11 +597,12 @@ public final class VehiclePhysics {
               .8,
               reverse,
               plan.axle(trail));
-      if (u.samples[trail] == null) {
+      if (trailSample == null) {
         if (hold(u, "trail_axle")) continue;
         release(u, "track_missing_or_out_of_range");
         continue;
       }
+      u.samples[trail] = trailSample;
       u.missStreak = 0;
       if (TrainConfig.DERAILMENT.get()
           && level.getGameTime() >= u.derailGraceUntil

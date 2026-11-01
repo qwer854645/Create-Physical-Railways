@@ -44,6 +44,13 @@ public final class ApproachLimitCheck {
     // The threshold itself is part of the contract: the physics step passes room through unchanged above it.
     check(ApproachLimit.CREEP > 0, "the creep band is positive");
 
+    for (double distance : new double[] {0, .05, .08, .09, 20}) {
+      close(ApproachLimit.switchRoom(distance, true), distance,
+          "a denied passage never loses its braking limit");
+      close(ApproachLimit.switchRoom(distance, false), ApproachLimit.switchRoom(distance),
+          "an allowed passage retains the existing clearance rule");
+    }
+
     System.out.println("ApproachLimitCheck: " + checks + " approach limit decisions passed");
   }
 }

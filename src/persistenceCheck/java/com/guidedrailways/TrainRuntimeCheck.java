@@ -239,6 +239,24 @@ public final class TrainRuntimeCheck {
                 && call.name.equals("active") && call.desc.startsWith("(J)")),
         "switch reservation refresh must expire abandoned passages before holding them");
 
+    int retainedQueries = 0;
+    for (var instruction : method("VehiclePhysics", "stepVehicle").instructions) {
+      if (!(instruction instanceof MethodInsnNode call)
+          || !call.owner.equals("com/guidedrailways/TrackNetwork")
+          || !call.name.equals("follow")) continue;
+      var next = instruction.getNext();
+      while (next != null && next.getOpcode() < 0) next = next.getNext();
+      check(next != null && next.getOpcode() == org.objectweb.asm.Opcodes.ASTORE,
+          "a failed follow must be checked before replacing the retained axle sample");
+      retainedQueries++;
+    }
+    check(retainedQueries == 2, "both leading and trailing axles retain history on a held miss");
+    check(Arrays.stream(method("VehiclePhysics", "stepVehicle").instructions.toArray())
+            .anyMatch(i -> i instanceof MethodInsnNode call
+                && call.owner.equals("com/guidedrailways/ApproachLimit")
+                && call.name.equals("switchRoom") && call.desc.equals("(DZ)D")),
+        "the switch clearance rule must receive the denied-passage state");
+
     System.out.println(
         "TrainRuntimeCheck: "
             + checks
