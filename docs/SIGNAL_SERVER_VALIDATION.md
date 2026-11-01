@@ -19,6 +19,16 @@
 
 ## 真实车辆追踪验证
 
+### 2026-11-02 驾驶台读数与岔口图验证
+
+对 `14a9ea1` 新增的显示快照扩充既有实车测试：每 20 tick 从真实驾驶台取得 `getUpdateTag`，核对绑定、实际速度、当前时刻表状态、目的地、行程项与有效剩余距离，再由独立驾驶台实例执行客户端使用的 `loadWithComponents`，确认读数一致；同时核对磁盘保存不包含 `VisualReadout`，重新载入磁盘数据会清空显示快照。未注入物理速度或显示状态。
+
+两组分别获得 `CONSOLE_READOUT_PASS nativeLeader=false samples=15 moving=true signalWait=false` 和 `nativeLeader=true samples=19 moving=true signalWait=true`。后者确实覆盖物理后车等待红灯，前者不要求原版后车的等待状态出现在物理前车上。此验证覆盖实际实体序列化与读取，不是有连接客户端接收数据包或字体排版的验证，也不单独证明同步频率。
+
+新增 `JunctionServerTests` 在真实服务端注册独立 Create 轨道图，调用生产 `TrackNetwork.follow` 和 `RouteMemory`。8 轮交替选取两个出口，每轮重复拒绝 3 次，再允许通行，并以相反提议检查后轴是否跟随前轴；每轮整列通过后检查通行记录已释放。结果为 `JUNCTION_GRAPH_PASS laps=8 checks=48`。图、节点和通行许可由夹具提供，没有铺设物理岔轨、运行车辆、执行真实时刻表规划或模拟两列车竞争预约，不能称实车岔口往返通过。
+
+复现：`gradlew.bat runSignalValidation -PsignalServerTests checkGoggleInformation checkLanguage --offline`。结果为 `All 4 required tests passed`、`BUILD SUCCESSFUL in 40s`；护目镜离线检查与语言检查（4044 项）也通过。本机日志为 `build-console-junction-validation-20261102.log`，不提交。测试世界仍使用独立构建目录，服务端已正常退出；日志中仍存在前述可选 Railway 战利品表错误。
+
 新增 StraightMixedRunTests，两组场景使用真实的 181 格 Create 直轨、两座车站和 60 / 100 / 140 格处的普通信号。原版列车由车站组装，带真实座椅、村民乘务员和前向控制器；物理列车由转向架正常放置入口生成，使用 Sable 刚体、32 RPM 创造马达与驾驶台。两类车辆均由实际时刻表开往 20 格处的终点，测试不注入速度、物理信号占用或预约。
 
 - 原版前车、物理后车：前车约在 81 格停车，后车从约 130.5 格起步，驶至约 102.6 格停稳；前车启动并清空 60–100 格区段后，后车恢复行驶并越过 100 格信号

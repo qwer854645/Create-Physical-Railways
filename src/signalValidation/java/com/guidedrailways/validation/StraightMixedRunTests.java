@@ -97,6 +97,38 @@ public final class StraightMixedRunTests {
     double minimumGap = Double.POSITIVE_INFINITY;
     final Set<Long> forcedChunks = new HashSet<>();
     double initialFollower, releaseLeader;
+    int readoutChecks;
+    boolean sawReadoutMoving, sawReadoutSignal;
+
+    void verifyReadout() throws Exception {
+      var payload = driver.getUpdateTag(level.registryAccess());
+      var display = payload.getCompound("VisualReadout");
+      helper.assertTrue(payload.getBoolean("VisualBound"), "real vehicle console reports bound");
+      int expectedSpeed = (int) Math.round(Math.abs(((Number) get(driver, "actual")).doubleValue()) * 10);
+      helper.assertTrue(display.getInt("Speed") == expectedSpeed, "payload uses real physical speed");
+      helper.assertTrue(display.getInt("State") == ((Number) get(get(driver, "schedule"), "status")).intValue(),
+          "payload preserves real schedule state");
+      sawReadoutMoving |= display.getInt("Speed") > 10;
+      sawReadoutSignal |= display.getInt("State") == 16;
+      if (display.getInt("State") == 3 || display.getInt("State") == 16) {
+        helper.assertTrue(display.getString("Target").equals("Destination"), "real target station reaches payload");
+        helper.assertTrue(display.getInt("Entry") == 1 && display.getInt("Total") == 1,
+            "real schedule progress reaches payload");
+        helper.assertTrue(display.getInt("Remaining") >= 0, "planned journey exposes a known remaining distance");
+      }
+      var constructor = DriverConsoleEntity.class.getDeclaredConstructor(BlockPos.class, BlockState.class);
+      constructor.setAccessible(true);
+      var replica = constructor.newInstance(driver.getBlockPos(), driver.getBlockState());
+      replica.loadWithComponents(payload, level.registryAccess());
+      helper.assertTrue(get(replica, "readout").equals(get(driver, "readout")),
+          "client-side block entity decoding preserves the live display snapshot");
+      var disk = driver.saveWithoutMetadata(level.registryAccess());
+      helper.assertTrue(!disk.contains("VisualReadout"), "display-only state never enters the world save");
+      replica.loadWithComponents(disk, level.registryAccess());
+      helper.assertTrue(((Number) get(get(replica, "readout"), "state")).intValue() == -1,
+          "disk reload clears stale display state");
+      readoutChecks++;
+    }
 
     Run(GameTestHelper helper, boolean nativeLeader) {
       this.helper = helper;
@@ -381,6 +413,7 @@ public final class StraightMixedRunTests {
 
     void observe() throws Exception {
       tick++;
+      if (tick % 20 == 0) verifyReadout();
       double follower = nativeLeader ? physicalZ() : nativeZ(),
           leader = nativeLeader ? nativeZ() : physicalZ();
       double speed =
@@ -438,6 +471,10 @@ public final class StraightMixedRunTests {
         LOG.info("MOVING_LEADER_RELEASED tick={}", tick);
       }
       if (released && tailCleared && releaseLeader - leader > 10 && follower < 96) {
+        helper.assertTrue(readoutChecks > 2 && sawReadoutMoving, "readout observed on a real moving vehicle");
+        helper.assertTrue(!nativeLeader || sawReadoutSignal, "physical follower reports its real signal wait");
+        LOG.info("CONSOLE_READOUT_PASS nativeLeader={} samples={} moving={} signalWait={}",
+            nativeLeader, readoutChecks, sawReadoutMoving, sawReadoutSignal);
         LOG.info(
             "MOVING_MIXED_PASS nativeLeader={} tick={} leader={} follower={} minimumGap={}",
             nativeLeader,
