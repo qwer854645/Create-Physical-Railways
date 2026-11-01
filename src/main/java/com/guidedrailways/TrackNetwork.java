@@ -71,12 +71,120 @@ public final class TrackNetwork {
 
   private record PathKey(UUID graph, int a, int b) {}
 
+  static final long AUDIT_TICKS = 200;
+  static final int INDEX_WORK = 512;
+  static final long INDEX_NANOS = 1_000_000;
+
+  private record GraphIndex(Map<PathKey, Path> paths, Map<Long, Set<Path>> cells, int memberships) {}
+
+  private static final class GraphSlot {
+    TrackGraph source;
+    GraphIndex active;
+    Build build;
+    long version, next;
+    boolean queued, cleanupQueued;
+    Iterator<Long> cleanup;
+    final Set<Long> references = new HashSet<>();
+  }
+
+  private static final class Cell {
+    final Set<GraphSlot> graphs = new HashSet<>();
+    long generation = -1;
+    List<Path> cached = List.of();
+  }
+
   private static final class Index {
-    long next, generation, revision = Long.MIN_VALUE;
-    final Map<UUID, List<Path>> byGraph = new HashMap<>();
-    final Map<UUID, TrackGraph> sources = new HashMap<>();
-    final Map<Long, Set<Path>> cells = new HashMap<>();
+    long generation, tick = Long.MIN_VALUE;
+    final Map<UUID, GraphSlot> slots = new LinkedHashMap<>();
+    final Map<Long, Cell> cells = new HashMap<>();
+    final ArrayDeque<GraphSlot> pending = new ArrayDeque<>();
+    final ArrayDeque<GraphSlot> cleanup = new ArrayDeque<>();
+
+    void clean(GraphSlot slot) {
+      slot.cleanup = slot.references.iterator();
+      if (!slot.cleanupQueued) { cleanup.add(slot); slot.cleanupQueued = true; }
+    }
+
+    Path path(PathKey key) {
+      var slot = slots.get(key.graph);
+      return slot == null || slot.active == null ? null : slot.active.paths.get(key);
+    }
+
+    List<Path> candidates(long key) {
+      var cell = cells.get(key);
+      if (cell == null) return List.of();
+      if (cell.generation != generation) {
+        var paths = new ArrayList<Path>();
+        for (var slot : cell.graphs)
+          if (slot.active != null) paths.addAll(slot.active.cells.getOrDefault(key, Set.of()));
+        cell.cached = List.copyOf(paths);
+        cell.generation = generation;
+      }
+      return cell.cached;
+    }
+  }
+
+  /** Staging never changes active query data. Each step visits one node, edge or spatial sample. */
+  private static final class Build {
+    final TrackGraph graph;
+    final long version;
+    final Iterator<TrackNodeLocation> nodes;
     final Map<PathKey, Path> paths = new HashMap<>();
+    final Map<Long, Set<Path>> cells = new HashMap<>();
+    Iterator<Map.Entry<TrackNode, TrackEdge>> edges = Collections.emptyIterator();
+    TrackNode node;
+    Path spatial;
+    int sample, samples, memberships;
+    boolean changed;
+
+    Build(TrackGraph graph) {
+      this.graph = graph;
+      version = TrackTopology.revision(graph);
+      nodes = graph.getNodes().iterator();
+    }
+
+    boolean step(ServerLevel level, Index index, GraphSlot slot) {
+      if (spatial != null) {
+        var p = spatial.at((double) sample / samples);
+        for (int dx = -1; dx <= 1; dx++)
+          for (int dz = -1; dz <= 1; dz++) {
+            long key = cell(p.x + dx * 16, p.z + dz * 16);
+            if (cells.computeIfAbsent(key, k -> new HashSet<>()).add(spatial)) {
+              memberships++;
+              if (slot.active == null || !slot.active.cells.getOrDefault(key, Set.of()).contains(spatial)) changed = true;
+            }
+            if (slot.references.add(key)) {
+              var bucket = index.cells.computeIfAbsent(key, k -> new Cell());
+              bucket.graphs.add(slot);
+              bucket.generation = -1;
+            }
+          }
+        if (++sample > samples) spatial = null;
+        return false;
+      }
+      if (edges.hasNext()) {
+        var edge = edges.next();
+        var other = edge.getKey();
+        if (node.getNetId() < other.getNetId() && !edge.getValue().isInterDimensional()) {
+          var key = key(graph.id, node.getNetId(), other.getNetId());
+          var old = slot.active == null ? null : slot.active.paths.get(key);
+          spatial = old != null && old.network == graph && old.edge == edge.getValue()
+              ? old : new Path(graph.id, key.a, key.b, graph, edge.getValue());
+          if (spatial != old) changed = true;
+          paths.put(key, spatial);
+          sample = 0;
+          samples = Math.max(1, (int) Math.ceil(spatial.edge.getLength() / 4));
+        }
+        return false;
+      }
+      if (nodes.hasNext()) {
+        var location = nodes.next();
+        node = location.dimension.equals(level.dimension()) ? graph.locateNode(location) : null;
+        edges = connections(graph, node).entrySet().iterator();
+        return false;
+      }
+      return true;
+    }
   }
 
   private static final Map<ServerLevel, Index> INDEX = new WeakHashMap<>();
@@ -95,69 +203,116 @@ public final class TrackNetwork {
   }
 
   public static void refresh(ServerLevel level) {
+    refresh(level, false);
+  }
+
+  private static void refresh(ServerLevel level, boolean force) {
     var idx = INDEX.computeIfAbsent(level, l -> new Index());
+    long now = level.getGameTime();
+    if (!force && idx.tick == now) return;
+    idx.tick = now;
+    boolean synchronous = force || idx.slots.isEmpty() || Boolean.getBoolean("guidedrailways.fullTrackIndex");
     var graphs = Create.RAILWAYS.sided(level).trackNetworks;
-    long revision = TrackTopology.revision();
-    boolean same = graphs.size() == idx.sources.size();
-    if (same)
-      for (var entry : graphs.entrySet())
-        if (idx.sources.get(entry.getKey()) != entry.getValue()) {
-          same = false;
-          break;
-        }
-    if (same && idx.revision == revision && level.getGameTime() < idx.next) return;
-    // Interactive refreshNow still forces a full audit; unobserved third-party edits are audited
-    // every 10 seconds.
-    idx.next = level.getGameTime() + 200;
-    idx.revision = revision;
-    idx.sources.clear();
-    idx.sources.putAll(graphs);
     long start = TrainConfig.PERFORMANCE_LOGGING.get() ? System.nanoTime() : 0;
-    var next = new HashMap<PathKey, Path>();
-    boolean changed = false;
-    for (var graph : Create.RAILWAYS.sided(level).trackNetworks.values())
-      for (var loc : graph.getNodes()) {
-        if (!loc.dimension.equals(level.dimension())) continue;
-        var node = graph.locateNode(loc);
-        if (node == null) continue;
-        for (var entry : connections(graph, node).entrySet()) {
-          var other = entry.getKey();
-          var edge = entry.getValue();
-          if (node.getNetId() >= other.getNetId() || edge.isInterDimensional()) continue;
-          var key = new PathKey(graph.id, node.getNetId(), other.getNetId());
-          var old = idx.paths.get(key);
-          if (old != null && old.network == graph && old.edge == edge) next.put(key, old);
-          else {
-            next.put(key, new Path(graph.id, key.a, key.b, graph, edge));
-            changed = true;
+    boolean published = false;
+    for (var entry : List.copyOf(idx.slots.entrySet()))
+      if (!graphs.containsKey(entry.getKey())) {
+        var slot = idx.slots.remove(entry.getKey());
+        slot.active = null;
+        slot.build = null;
+        idx.pending.remove(slot);
+        slot.queued = false;
+        idx.clean(slot);
+        idx.generation++;
+        published = true;
+      }
+    for (var graph : graphs.values()) {
+      var slot = idx.slots.computeIfAbsent(graph.id, k -> new GraphSlot());
+      long version = TrackTopology.revision(graph);
+      boolean dirty = force || slot.active == null || slot.version != version || now < slot.next - AUDIT_TICKS - 20
+          || now >= slot.next || slot.source != graph;
+      if (dirty && (slot.build == null || slot.build.graph != graph || slot.build.version != version || force)) {
+        slot.build = new Build(graph);
+        if (!slot.queued) { idx.pending.add(slot); slot.queued = true; }
+      }
+    }
+    long deadline = synchronous ? Long.MAX_VALUE : System.nanoTime() + INDEX_NANOS;
+    int work = synchronous ? Integer.MAX_VALUE : INDEX_WORK;
+    while (!idx.pending.isEmpty() && work-- > 0 && System.nanoTime() < deadline) {
+      var slot = idx.pending.removeFirst();
+      slot.queued = false;
+      var build = slot.build;
+      try {
+        if (build.step(level, idx, slot)) {
+          published |= publish(idx, slot, now);
+        } else { idx.pending.addLast(slot); slot.queued = true; }
+      } catch (ConcurrentModificationException changed) {
+        // Uninstrumented third-party edits may invalidate iterators between ticks. Retry a clean
+        // staging build; live() continues rejecting deleted/replaced edges in the active index.
+        slot.build = null;
+        slot.next = now;
+      }
+    }
+    int cleanup = synchronous ? Integer.MAX_VALUE : INDEX_WORK;
+    while (!idx.cleanup.isEmpty() && cleanup-- > 0) {
+      var slot = idx.cleanup.removeFirst();
+      if (slot.build != null) { idx.cleanup.addLast(slot); continue; }
+      try {
+        if (!slot.cleanup.hasNext()) { slot.cleanupQueued = false; continue; }
+        long key = slot.cleanup.next();
+        var bucket = idx.cells.get(key);
+        if (bucket != null) { bucket.cached = List.of(); bucket.generation = -1; }
+        if (slot.active == null || !slot.active.cells.containsKey(key)) {
+          if (bucket != null) {
+            bucket.graphs.remove(slot);
+            if (bucket.graphs.isEmpty()) idx.cells.remove(key);
           }
+          slot.cleanup.remove();
         }
-      }
-    if (next.size() != idx.paths.size()) changed = true;
-    if (!changed) {
-      if (start != 0) PerfCounters.index(level, System.nanoTime() - start, false);
-      return;
+      } catch (ConcurrentModificationException changed) { slot.cleanup = slot.references.iterator(); }
+      idx.cleanup.addLast(slot);
     }
-    idx.paths.clear();
-    idx.paths.putAll(next);
-    idx.cells.clear();
-    idx.byGraph.clear();
-    idx.generation++;
-    for (var path : idx.paths.values())
-      idx.byGraph.computeIfAbsent(path.graph(), key -> new ArrayList<>()).add(path);
-    idx.byGraph.replaceAll((key, paths) -> List.copyOf(paths));
-    for (var path : idx.paths.values()) {
-      int n = Math.max(1, (int) Math.ceil(path.edge.getLength() / 4));
-      for (int i = 0; i <= n; i++) {
-        var p = path.at((double) i / n);
-        for (int dx = -1; dx <= 1; dx++)
-          for (int dz = -1; dz <= 1; dz++)
-            idx.cells
-                .computeIfAbsent(cell(p.x + dx * 16, p.z + dz * 16), v -> new HashSet<>())
-                .add(path);
-      }
+    if (start != 0) PerfCounters.index(level, System.nanoTime() - start, published);
+  }
+
+  private static boolean publish(Index index, GraphSlot slot, long now) {
+    var build = slot.build;
+    slot.version = build.version;
+    slot.source = build.graph;
+    slot.next = now + AUDIT_TICKS + Math.floorMod(build.graph.id.hashCode(), 20);
+    boolean changed = slot.active == null || build.changed || slot.active.paths.size() != build.paths.size()
+        || slot.active.memberships != build.memberships;
+    if (changed) {
+      slot.active = new GraphIndex(Collections.unmodifiableMap(build.paths),
+          Collections.unmodifiableMap(build.cells), build.memberships);
+      index.generation++;
     }
-    if (start != 0) PerfCounters.index(level, System.nanoTime() - start, true);
+    slot.build = null;
+    index.clean(slot);
+    return changed;
+  }
+
+  /** Preserve immediate navigation/guide semantics after a known edit. Complete only this graph;
+   * an ordinary periodic audit of an unchanged graph remains in the background. */
+  private static void ensureReady(ServerLevel level, UUID id) {
+    var graph = Create.RAILWAYS.sided(level).trackNetworks.get(id);
+    if (graph == null) return;
+    var index = INDEX.computeIfAbsent(level, l -> new Index());
+    var slot = index.slots.computeIfAbsent(id, k -> new GraphSlot());
+    long version = TrackTopology.revision(graph);
+    if (slot.active != null && slot.source == graph && slot.version == version) return;
+    if (slot.build == null || slot.build.graph != graph || slot.build.version != version) slot.build = new Build(graph);
+    index.pending.remove(slot);
+    slot.queued = false;
+    long start = TrainConfig.PERFORMANCE_LOGGING.get() ? System.nanoTime() : 0;
+    try {
+      while (!slot.build.step(level, index, slot)) {}
+      boolean changed = publish(index, slot, level.getGameTime());
+      if (start != 0) PerfCounters.index(level, System.nanoTime() - start, changed);
+    } catch (ConcurrentModificationException changed) {
+      slot.build = null;
+      slot.next = level.getGameTime();
+    }
   }
 
   /** Create may remove a node or its adjacency map before our throttled index is rebuilt. */
@@ -171,7 +326,7 @@ public final class TrackNetwork {
     var index = INDEX.get(level);
     return path != null
         && index != null
-        && index.paths.get(key(path)) == path
+        && index.path(key(path)) == path
         && Create.RAILWAYS.sided(level).trackNetworks.get(path.graph) == path.network
         && connections(path.network, path.network.getNode(path.a)).get(path.network.getNode(path.b))
             == path.edge;
@@ -183,10 +338,12 @@ public final class TrackNetwork {
   }
 
   static Collection<Path> paths(ServerLevel level, UUID graph) {
+    ensureReady(level, graph);
     var index = INDEX.get(level);
-    return index == null
+    var slot = index == null ? null : index.slots.get(graph);
+    return slot == null || slot.active == null
         ? List.of()
-        : index.byGraph.getOrDefault(graph, List.of()).stream()
+        : slot.active.paths.values().stream()
             .filter(p -> live(level, p))
             .toList();
   }
@@ -270,7 +427,11 @@ public final class TrackNetwork {
     PerfCounters.query(level);
     var idx = INDEX.get(level);
     if (previous != null && idx != null) {
-      var live = idx.paths.get(key(previous.path));
+      var live = idx.path(key(previous.path));
+      if (live == null || !live(level, live)) {
+        ensureReady(level, previous.path.graph);
+        live = idx.path(key(previous.path));
+      }
       if (live != null
           && live(level, live)
           && live.supports(policy == null ? RailGauge.STANDARD : policy.gauge())) {
@@ -324,6 +485,7 @@ public final class TrackNetwork {
       double radius,
       boolean reverse,
       RoutePolicy policy) {
+    ensureReady(level, live.graph);
     var increasing = PathGeometry.tangent(live::at, previous.t);
     boolean alongIncreasing = BranchSelect.exitsIncreasing(increasing, heading, reverse);
     double endT = alongIncreasing ? 1 : 0;
@@ -439,7 +601,7 @@ public final class TrackNetwork {
     for (var entry : connections(live.network, exit).entrySet()) {
       if (entry.getKey() == enter || entry.getValue().isInterDimensional()) continue;
       if (requireGeometry && !RailwaysCompat.geometry(current, entry.getValue())) continue;
-      var path = idx.paths.get(key(live.graph, exit.getNetId(), entry.getKey().getNetId()));
+      var path = idx.path(key(live.graph, exit.getNetId(), entry.getKey().getNetId()));
       if (path == null
           || !live(level, path)
           || !path.supports(policy == null ? RailGauge.STANDARD : policy.gauge())) continue;
@@ -456,6 +618,7 @@ public final class TrackNetwork {
       RoutePolicy policy,
       double horizon,
       double clearance) {
+    if (sample != null) ensureReady(level, sample.path.graph);
     if (RailwaysCompat.bridge == null || sample == null || !live(level, sample.path))
       return Double.POSITIVE_INFINITY;
     Path path = sample.path;
@@ -485,7 +648,7 @@ public final class TrackNetwork {
         if (entry.getKey() == enter
             || entry.getValue().isInterDimensional()
             || !RailwaysCompat.geometry(incoming, entry.getValue())) continue;
-        var next = idx.paths.get(key(path.graph, node, entry.getKey().getNetId()));
+        var next = idx.path(key(path.graph, node, entry.getKey().getNetId()));
         if (next != null && live(level, next) && next.supports(policy.gauge()))
           options.add(new Branch(entry.getKey(), entry.getValue(), next));
       }
@@ -579,10 +742,10 @@ public final class TrackNetwork {
       RailGauge gauge) {
     var idx = INDEX.get(level);
     if (idx == null) return null;
-    var candidates = idx.cells.getOrDefault(cell(point.x(), point.z()), Set.of());
+    var candidates = idx.candidates(cell(point.x(), point.z()));
     Sample best = null;
     double score = Double.POSITIVE_INFINITY;
-    Path live = previous == null ? null : idx.paths.get(key(previous));
+    Path live = previous == null ? null : idx.path(key(previous));
     for (var p : candidates) {
       if (!live(level, p) || !p.supports(gauge)) continue;
       if (live != null && !p.equals(live) && !p.adjacent(live)) continue;
@@ -607,8 +770,7 @@ public final class TrackNetwork {
 
   /** Interactive actions must not use the half-second background index throttle. */
   public static void refreshNow(ServerLevel level) {
-    INDEX.computeIfAbsent(level, l -> new Index()).next = 0;
-    refresh(level);
+    refresh(level, true);
   }
 
   static Sample pick(net.minecraft.server.level.ServerPlayer player, RailGauge gauge) {
@@ -635,7 +797,7 @@ public final class TrackNetwork {
     var candidates = new HashSet<Path>();
     for (int i = 0; i <= 16; i++) {
       var q = new Vector3d(a).lerp(b, i / 16.0);
-      candidates.addAll(idx.cells.getOrDefault(cell(q.x, q.z), Set.of()));
+      candidates.addAll(idx.candidates(cell(q.x, q.z)));
     }
     Sample best = null;
     double score = Double.POSITIVE_INFINITY;
@@ -781,7 +943,7 @@ public final class TrackNetwork {
         if (e.getKey() == entry
             || e.getValue().isInterDimensional()
             || !incoming.canTravelTo(e.getValue())) continue;
-        var p = idx.paths.get(key(span.path.graph, exitId, e.getKey().getNetId()));
+        var p = idx.path(key(span.path.graph, exitId, e.getKey().getNetId()));
         if (p == null || gauges.stream().anyMatch(g -> !p.supports(g))) continue;
         var dir = PathGeometry.tangent(p::at, p.a == exitId ? 0 : 1).mul(p.a == exitId ? 1 : -1);
         double dot = dir.dot(wanted);

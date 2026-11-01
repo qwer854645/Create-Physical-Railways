@@ -12,7 +12,7 @@ public abstract class TrackTopologyMixin {
       method = {"addNode", "disconnectNodes", "transfer", "transferAll", "setId"},
       at = @At("RETURN"))
   private void guidedrailways$changed(CallbackInfo ci) {
-    TrackTopology.changed();
+    TrackTopology.changed((TrackGraph) (Object) this);
   }
 
   // putConnection may replace an existing edge while returning false; every completed write attempt
@@ -21,6 +21,6 @@ public abstract class TrackTopologyMixin {
       method = {"removeNode", "putConnection", "addNodeIfAbsent"},
       at = @At("RETURN"))
   private void guidedrailways$changedResult(CallbackInfoReturnable<Boolean> ci) {
-    TrackTopology.changed();
+    TrackTopology.changed((TrackGraph) (Object) this);
   }
 }
