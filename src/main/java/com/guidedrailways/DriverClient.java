@@ -3,7 +3,6 @@ package com.guidedrailways;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.common.NeoForge;
@@ -25,7 +24,6 @@ public final class DriverClient {
     NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, DriverClient::turn);
     NeoForge.EVENT_BUS.addListener(DriverClient::scroll);
     NeoForge.EVENT_BUS.addListener(DriverClient::tick);
-    NeoForge.EVENT_BUS.addListener(DriverClient::hud);
     NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> clear());
   }
   private static void accept(DriverNetwork.State state) {
@@ -122,26 +120,6 @@ public final class DriverClient {
     if (!console.emergency && Math.abs(event.getScrollDeltaY()) > .01) {
       requestedNotch = DriverModel.step(requestedNotch, event.getScrollDeltaY() > 0 ? 1 : -1);
       send(held, DriverInputPolicy.NOTCH_BASE + requestedNotch);
-    }
-  }
-  private static void hud(RenderGuiEvent.Post event) {
-    var mc = Minecraft.getInstance(); var console = target();
-    if (console == null || mc.options.hideGui || !mc.player.getMainHandItem().isEmpty()) return;
-    var aimed = held != null ? part : pick(console);
-    String key = aimed == ConsoleInteraction.Part.LEVER ? "direct_lever"
-        : aimed == ConsoleInteraction.Part.EMERGENCY ? console.emergency ? "direct_reset" : "direct_emergency"
-        : aimed.route() ? console.routeAutomatic ? "route_automatic"
-        : aimed == ConsoleInteraction.Part.ROUTE_LEFT ? "direct_route_left"
-        : aimed == ConsoleInteraction.Part.ROUTE_RIGHT ? "direct_route_right" : "direct_route_default" : null;
-    if (key == null) return;
-    int selection = console.routeSelection.intent();
-    var selected = Component.translatable("gui.guidedrailways.driver." +
-        (selection < 0 ? "steer_left" : selection > 0 ? "steer_right" : "steer_default"));
-    var label = Component.translatable("gui.guidedrailways.driver." + key, selected);
-    int y = mc.getWindow().getGuiScaledHeight() / 2 + 18;
-    for (var row : mc.font.split(label, Math.max(40, mc.getWindow().getGuiScaledWidth() - 24))) {
-      event.getGuiGraphics().drawString(mc.font, row, (mc.getWindow().getGuiScaledWidth() - mc.font.width(row)) / 2, y, CreateGuiTheme.TEXT);
-      y += mc.font.lineHeight + 2;
     }
   }
 }

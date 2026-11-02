@@ -349,13 +349,7 @@
   "message.guidedrailways.driver_console.scheduled": "Schedule loaded",
   "message.guidedrailways.driver_console.manual": "Manual control",
   "gui.guidedrailways.driver.pause_first": "Pause the Schedule before changing direction",
-  "gui.guidedrailways.driver.direct_lever": "Handle: hold right-click and drag or scroll; release to keep the notch",
-  "gui.guidedrailways.driver.direct_emergency": "Emergency button: right-click to stop",
-  "gui.guidedrailways.driver.direct_reset": "Emergency button: stop, then hold right-click for one second to reset",
-  "gui.guidedrailways.driver.direct_route_left": "R-Click to preselect left · %s",
-  "gui.guidedrailways.driver.direct_route_right": "R-Click to preselect right · %s",
   "block.guidedrailways.driver_console.tooltip.condition6": "When right-clicking the route selector",
   "gui.guidedrailways.driver.route_automatic": "The Schedule controls automatic routing; manual preselection is unavailable",
-  "gui.guidedrailways.driver.direct_route_default": "R-Click to cancel preselection · %s",
   "block.guidedrailways.driver_console.tooltip.behaviour6": "Left and right preselect a branch; the center cancels. The selector centers after the leader locks a new junction"
 }
