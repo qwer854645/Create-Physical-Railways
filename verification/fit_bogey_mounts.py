@@ -2,7 +2,7 @@
 import json, math, copy
 from pathlib import Path
 
-ROOT = Path('src/main/resources/assets/guidedrailways')
+ROOT = Path('src/main/resources/assets/physicalrailways')
 HIDDEN_STEM = 5.742566 / 16
 
 def measure_bearing(frames):
@@ -65,7 +65,7 @@ def fit_compact(row):
 
 def write_models(rows):
     template = json.loads((ROOT / 'models/block/bogie_mount.json').read_text())
-    variants = {'style=0': {'model': 'guidedrailways:block/bogie_mount'}}
+    variants = {'style=0': {'model': 'physicalrailways:block/bogie_mount'}}
     for row in rows:
         model = copy.deepcopy(template)
         stem = model['elements'][0]
@@ -74,7 +74,7 @@ def write_models(rows):
             stem['faces'][face]['uv'] = [5, 0, 11, min(16, (12 - stem['from'][1]))]
         name = f'bogie_mount_{row["index"]}'
         (ROOT / f'models/block/{name}.json').write_text(json.dumps(model, separators=(',', ':'))+'\n', encoding='utf-8')
-        variants[f'style={row["index"]},compact=false'] = {'model': f'guidedrailways:block/{name}'}
+        variants[f'style={row["index"]},compact=false'] = {'model': f'physicalrailways:block/{name}'}
         compact = fit_compact(row)
         row['compactMountTop'] = compact['top']
         row['compactPlate'] = compact['boxes']
@@ -96,10 +96,10 @@ def write_models(rows):
             model['elements'] = [model['elements'][0]] + pieces + model['elements'][2:]
             name += '_compact'
             (ROOT / f'models/block/{name}.json').write_text(json.dumps(model, separators=(',', ':'))+'\n', encoding='utf-8')
-        variants[f'style={row["index"]},compact=true'] = {'model': f'guidedrailways:block/{name}'}
+        variants[f'style={row["index"]},compact=true'] = {'model': f'physicalrailways:block/{name}'}
     variants.pop('style=0')
     for value in ('false','true'):
-        variants[f'style=0,compact={value}'] = {'model': 'guidedrailways:block/bogie_mount'}
+        variants[f'style=0,compact={value}'] = {'model': 'physicalrailways:block/bogie_mount'}
     (ROOT / 'blockstates/bogie_mount.json').write_text(json.dumps({'variants': variants}, indent=2)+'\n', encoding='utf-8')
 
 if __name__ == '__main__':

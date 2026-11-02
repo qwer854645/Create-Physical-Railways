@@ -108,6 +108,6 @@
 
     gradlew.bat runSignalValidation -PsignalServerTests --offline
 
-构建配置仅在显式启用该参数时加入独立的 guidedrailways_signal_validation 开发模组，源码和结构位于 src/signalValidation。默认 build、check 和客户端启动不会运行服务端测试，测试类与测试元数据不进入发行 jar。
+构建配置仅在显式启用该参数时加入独立的 physicalrailways_signal_validation 开发模组，源码和结构位于 src/signalValidation。默认 build、check 和客户端启动不会运行服务端测试，测试类与测试元数据不进入发行 jar。
 
 服务端工作目录是 build/signal-validation-run，不使用 run/saves，不打开或复制用户存档。每次显式运行前，prepareSignalValidationWorld 仅清理该构建目录下的 world 子目录，避免上一次保存的列车污染占用判断；任务会核对规范路径，不能指向用户世界。测试完成后自动保存并停止，日志保留。连接器、时刻表和原版列车的真实游戏存档保持原样。

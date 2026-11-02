@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "physicalrailways:block/coupler"
+    },
+    "facing=east": {
+      "model": "physicalrailways:block/coupler",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "physicalrailways:block/coupler",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "physicalrailways:block/coupler",
+      "y": 270
+    }
+  }
+}

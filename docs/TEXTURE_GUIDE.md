@@ -75,4 +75,4 @@
 - [ ] 是否与相邻方块并排同一套色温
 - [ ] 是否重复烘焙了方向光（顶面过亮、底面死黑）
 - [ ] 是否引用了可用的 Create 原版材质而没有自造
-- [ ] 贴图文件名与模型引用一致，路径在 `assets/guidedrailways/textures/block/` 下
+- [ ] 贴图文件名与模型引用一致，路径在 `assets/physicalrailways/textures/block/` 下

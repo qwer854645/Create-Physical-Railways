@@ -23,7 +23,7 @@ the tutorial. The normal Create Shift description and Ponder entry coexist.
 
 ## Resources and behavior
 
-`assets/guidedrailways/ponder/*.nbt` are self-contained original 9 by 7 by 9 vanilla
+`assets/physicalrailways/ponder/*.nbt` are self-contained original 9 by 7 by 9 vanilla
 structure templates. Regenerate them with
 `python verification/generate_ponder_scenes.py`; no world or game process is needed.
 The script writes only these four templates, with deterministic gzip metadata.
@@ -35,8 +35,8 @@ visual notch data. Docking only animates native extension/feet and a visual lock
 it never pairs live connectors, requests Sable constraints or transfers real items.
 The sections illustrate the operation without invoking the gameplay backend.
 
-Header keys are `guidedrailways.ponder.<scene>.header`. Stable shared captions use
-`guidedrailways.ponder.shared.<caption>`, registered from the English resource as
+Header keys are `physicalrailways.ponder.<scene>.header`. Stable shared captions use
+`physicalrailways.ponder.shared.<caption>`, registered from the English resource as
 fallback text. Chinese and English are maintained together in the normal language
 resources; default-language changes do not require duplicating captions in Java.
 

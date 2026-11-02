@@ -4,7 +4,7 @@
 
 ## 世界执行入口
 
-`GuidedRailways` 注册事件，`TrainRuntime` 负责跨模块的推进顺序。物品放置、查询接口和单个方块实体恢复不能推进整列车的世界更新。
+`PhysicalRailways` 注册事件，`TrainRuntime` 负责跨模块的推进顺序。物品放置、查询接口和单个方块实体恢复不能推进整列车的世界更新。
 
 ```mermaid
 flowchart TD

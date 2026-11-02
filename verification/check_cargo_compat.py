@@ -60,7 +60,7 @@ def main():
     if args.railways:
         archives['railways'] = ZipFile(args.railways)
     root = Path(__file__).resolve().parents[1]
-    source = root / 'src/main/java/com/guidedrailways/mixin'
+    source = root / 'src/main/java/com/physicalrailways/mixin'
     plugin = (source / 'CargoCompatPlugin.java').read_text('utf-8')
     count = 0
     def check(cls, expected):

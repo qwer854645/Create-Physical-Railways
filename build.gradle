@@ -65,12 +65,12 @@ neoForge {
             // A/B switch for the three render mixins: run with -PnoRenderOpt to boot without them and compare the
             // [FrameSpike] positions that keep repeating. Faster than guessing which of the three is responsible.
             if (project.hasProperty('noRenderOpt'))
-                jvmArgument '-Dguidedrailways.disableRenderOptimizations=true'
+                jvmArgument '-Dphysicalrailways.disableRenderOptimizations=true'
             if (project.hasProperty('lagProbe'))
-                jvmArgument '-Dguidedrailways.lagProbe=true'
+                jvmArgument '-Dphysicalrailways.lagProbe=true'
             if (project.hasProperty('captureBogeys')) {
-                systemProperty 'guidedrailways.captureBogeys', 'true'
-                systemProperty 'guidedrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
+                systemProperty 'physicalrailways.captureBogeys', 'true'
+                systemProperty 'physicalrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
             }
             gameDirectory = file('run')
             taskBefore tasks.named('prepareDevClientConfig')
@@ -90,7 +90,7 @@ neoForge {
     }
 
     mods {
-        guidedrailways {
+        physicalrailways {
             sourceSet sourceSets.main
         }
     }
@@ -238,35 +238,35 @@ processResources {
 tasks.register('checkSwitchPriority', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.SwitchPriorityCheck'
+    mainClass = 'com.physicalrailways.SwitchPriorityCheck'
 }
 tasks.named('check') { dependsOn 'checkSwitchPriority' }
 
 tasks.register('checkTickCache', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.TickCacheCheck'
+    mainClass = 'com.physicalrailways.TickCacheCheck'
 }
 tasks.named('check') { dependsOn 'checkTickCache' }
 
 tasks.register('checkJunctionState', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.JunctionStateCheck'
+    mainClass = 'com.physicalrailways.JunctionStateCheck'
 }
 tasks.named('check') { dependsOn 'checkJunctionState' }
 
 tasks.register('checkGoggleInformation', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.GoggleInformationCheck'
+    mainClass = 'com.physicalrailways.GoggleInformationCheck'
 }
 tasks.named('check') { dependsOn 'checkGoggleInformation' }
 
 tasks.register('checkRenderOptimizationCompat', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.RenderOptimizationCompatCheck'
+    mainClass = 'com.physicalrailways.RenderOptimizationCompatCheck'
 }
 tasks.named('check') { dependsOn 'checkRenderOptimizationCompat' }
 
@@ -274,8 +274,8 @@ tasks.named('check') { dependsOn 'checkRenderOptimizationCompat' }
     tasks.register(taskName, JavaExec) {
         dependsOn classes, persistenceCheckClasses
         classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-        mainClass = 'com.guidedrailways.VeilFramebufferSnapshotCheck'
-        if (taskName.endsWith('Disabled')) systemProperty 'guidedrailways.disableFramebufferSnapshotReuse', 'true'
+        mainClass = 'com.physicalrailways.VeilFramebufferSnapshotCheck'
+        if (taskName.endsWith('Disabled')) systemProperty 'physicalrailways.disableFramebufferSnapshotReuse', 'true'
     }
     tasks.named('check') { dependsOn taskName }
 }
@@ -284,8 +284,8 @@ tasks.named('check') { dependsOn 'checkRenderOptimizationCompat' }
     tasks.register(taskName, JavaExec) {
         dependsOn classes, persistenceCheckClasses
         classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-        mainClass = 'com.guidedrailways.VeilFramebufferReuseCheck'
-        if (taskName.endsWith('Disabled')) systemProperty 'guidedrailways.disableFramebufferRegistrationReuse', 'true'
+        mainClass = 'com.physicalrailways.VeilFramebufferReuseCheck'
+        if (taskName.endsWith('Disabled')) systemProperty 'physicalrailways.disableFramebufferRegistrationReuse', 'true'
     }
     tasks.named('check') { dependsOn taskName }
 }
@@ -294,8 +294,8 @@ tasks.named('check') { dependsOn 'checkRenderOptimizationCompat' }
     tasks.register(taskName, JavaExec) {
         dependsOn classes, persistenceCheckClasses
         classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-        mainClass = 'com.guidedrailways.ShaderSamplerReuseCheck'
-        if (taskName.endsWith('Disabled')) systemProperty 'guidedrailways.disableSamplerLocationReuse', 'true'
+        mainClass = 'com.physicalrailways.ShaderSamplerReuseCheck'
+        if (taskName.endsWith('Disabled')) systemProperty 'physicalrailways.disableSamplerLocationReuse', 'true'
     }
     tasks.named('check') { dependsOn taskName }
 }
@@ -303,63 +303,63 @@ tasks.named('check') { dependsOn 'checkRenderOptimizationCompat' }
 tasks.register('checkAutoAlign', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.AutoAlignCheck'
+    mainClass = 'com.physicalrailways.AutoAlignCheck'
 }
 tasks.named('check') { dependsOn 'checkAutoAlign' }
 
 tasks.register('checkScheduleTransitions', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ScheduleTransitionsCheck'
+    mainClass = 'com.physicalrailways.ScheduleTransitionsCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleTransitions' }
 
 tasks.register('checkScheduleStage', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ScheduleStageCheck'
+    mainClass = 'com.physicalrailways.ScheduleStageCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleStage' }
 
 tasks.register('checkAlignDemand', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.AlignDemandCheck'
+    mainClass = 'com.physicalrailways.AlignDemandCheck'
 }
 tasks.named('check') { dependsOn 'checkAlignDemand' }
 
 tasks.register('checkConsoleIntent', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConsoleIntentCheck'
+    mainClass = 'com.physicalrailways.ConsoleIntentCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleIntent' }
 
 tasks.register('checkStopOffset', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.StopOffsetCheck'
+    mainClass = 'com.physicalrailways.StopOffsetCheck'
 }
 tasks.named('check') { dependsOn 'checkStopOffset' }
 
 tasks.register('checkConsoleStatus', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConsoleStatusCheck'
+    mainClass = 'com.physicalrailways.ConsoleStatusCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleStatus' }
 
 tasks.register('checkApproachLimit', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ApproachLimitCheck'
+    mainClass = 'com.physicalrailways.ApproachLimitCheck'
 }
 tasks.named('check') { dependsOn 'checkApproachLimit' }
 
 tasks.register('checkDriveModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.DriveModelCheck'
+    mainClass = 'com.physicalrailways.DriveModelCheck'
 }
 tasks.named('check') { dependsOn 'checkDriveModel' }
 
@@ -369,35 +369,35 @@ tasks.named('test') { failOnNoDiscoveredTests = false }
 tasks.register('checkConstructionTransaction', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConstructionTransactionCheck'
+    mainClass = 'com.physicalrailways.ConstructionTransactionCheck'
 }
 tasks.named('check') { dependsOn 'checkConstructionTransaction' }
 
 tasks.register('checkConsoleIdentity', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConsoleIdentityCheck'
+    mainClass = 'com.physicalrailways.ConsoleIdentityCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleIdentity' }
 
 tasks.register('checkCargoSnapshotIdentity', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CargoSnapshotIdentityCheck'
+    mainClass = 'com.physicalrailways.CargoSnapshotIdentityCheck'
 }
 tasks.named('check') { dependsOn 'checkCargoSnapshotIdentity' }
 
 tasks.register('checkIncrementalSnapshot', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.IncrementalSnapshotCheck'
+    mainClass = 'com.physicalrailways.IncrementalSnapshotCheck'
 }
 tasks.named('check') { dependsOn 'checkIncrementalSnapshot' }
 
 tasks.register('checkNativeCouplerModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.NativeCouplerModelCheck'
+    mainClass = 'com.physicalrailways.NativeCouplerModelCheck'
     args file(providers.gradleProperty('railways_api_jar').getOrElse("libs/railways-${railways_version}.jar")).absolutePath
 }
 tasks.named('check') { dependsOn 'checkNativeCouplerModel' }
@@ -405,21 +405,21 @@ tasks.named('check') { dependsOn 'checkNativeCouplerModel' }
 tasks.register('checkLifecycleReplay', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.LifecycleReplayCheck'
+    mainClass = 'com.physicalrailways.LifecycleReplayCheck'
 }
 tasks.named('check') { dependsOn 'checkLifecycleReplay' }
 
 tasks.register('checkPathGeometry', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.PathGeometryCheck'
+    mainClass = 'com.physicalrailways.PathGeometryCheck'
 }
 tasks.named('check') { dependsOn 'checkPathGeometry' }
 
 tasks.register('checkBogieCollision', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogieCollisionCheck'
+    mainClass = 'com.physicalrailways.BogieCollisionCheck'
     doFirst { args configurations.compileClasspath.files.find { it.name.startsWith('create-1.21.1-') && it.name.endsWith('-slim.jar') }.absolutePath }
 }
 tasks.named('check') { dependsOn 'checkBogieCollision' }
@@ -427,63 +427,63 @@ tasks.named('check') { dependsOn 'checkBogieCollision' }
 tasks.register('checkDerailmentModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.DerailmentModelCheck'
+    mainClass = 'com.physicalrailways.DerailmentModelCheck'
 }
 tasks.named('check') { dependsOn 'checkDerailmentModel' }
 
 tasks.register('checkBranchSelect', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.BranchSelectCheck'
+    mainClass = 'com.physicalrailways.BranchSelectCheck'
 }
 tasks.named('check') { dependsOn 'checkBranchSelect' }
 
 tasks.register('checkMoveBatch', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.MoveBatchCheck'
+    mainClass = 'com.physicalrailways.MoveBatchCheck'
 }
 tasks.named('check') { dependsOn 'checkMoveBatch' }
 
 tasks.register('checkRailPlacement', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.RailPlacementCheck'
+    mainClass = 'com.physicalrailways.RailPlacementCheck'
 }
 tasks.named('check') { dependsOn 'checkRailPlacement' }
 
 tasks.register('checkCoupler', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CouplerCheck'
+    mainClass = 'com.physicalrailways.CouplerCheck'
 }
 tasks.named('check') { dependsOn 'checkCoupler' }
 
 tasks.register('checkCouplerVisual', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CouplerVisualCheck'
+    mainClass = 'com.physicalrailways.CouplerVisualCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerVisual' }
 
 tasks.register('checkDriverModel', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.DriverModelCheck'
+    mainClass = 'com.physicalrailways.DriverModelCheck'
 }
 tasks.named('check') { dependsOn 'checkDriverModel' }
 
 tasks.register('checkConsistRoutes', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConsistRouteCheck'
+    mainClass = 'com.physicalrailways.ConsistRouteCheck'
 }
 tasks.named('check') { dependsOn 'checkConsistRoutes' }
 
 tasks.register('checkDriverInput', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.DriverInputCheck'
+    mainClass = 'com.physicalrailways.DriverInputCheck'
 }
 tasks.named('check') { dependsOn 'checkDriverInput' }
 
@@ -491,7 +491,7 @@ tasks.named('check') { dependsOn 'checkDriverInput' }
 tasks.register('checkAutomaticSchedule', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.AutomaticScheduleCheck'
+    mainClass = 'com.physicalrailways.AutomaticScheduleCheck'
 }
 tasks.named('check') { dependsOn 'checkAutomaticSchedule' }
 
@@ -499,182 +499,182 @@ tasks.named('check') { dependsOn 'checkAutomaticSchedule' }
 tasks.register('checkTrainIntegration', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.TrainIntegrationCheck'
+    mainClass = 'com.physicalrailways.TrainIntegrationCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainIntegration' }
 
 tasks.register('checkSpeedSetting', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.SpeedSettingCheck'
+    mainClass = 'com.physicalrailways.SpeedSettingCheck'
 }
 tasks.named('check') { dependsOn 'checkSpeedSetting' }
 
 tasks.register('checkGearEditor', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.GearEditorCheck'
+    mainClass = 'com.physicalrailways.GearEditorCheck'
 }
 tasks.named('check') { dependsOn 'checkGearEditor' }
 
 tasks.register('checkBogieYaw', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogieYawCheck'
+    mainClass = 'com.physicalrailways.BogieYawCheck'
 }
 tasks.named('check') { dependsOn 'checkBogieYaw' }
 
 tasks.register('checkFrames', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.FramesCheck'
+    mainClass = 'com.physicalrailways.FramesCheck'
 }
 tasks.named('check') { dependsOn 'checkFrames' }
 
 tasks.register('checkSeamRules', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.SeamRulesCheck'
+    mainClass = 'com.physicalrailways.SeamRulesCheck'
 }
 tasks.named('check') { dependsOn 'checkSeamRules' }
 
 tasks.register('checkBodySkip', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.BodySkipCheck'
+    mainClass = 'com.physicalrailways.BodySkipCheck'
 }
 tasks.named('check') { dependsOn 'checkBodySkip' }
 
 tasks.register('checkSwitchReservations', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.SwitchReservationsCheck'
+    mainClass = 'com.physicalrailways.SwitchReservationsCheck'
 }
 tasks.named('check') { dependsOn 'checkSwitchReservations' }
 
 tasks.register('checkConsoleDisplay', JavaExec) {
     dependsOn testClasses, processResources
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConsoleDisplayCheck'
+    mainClass = 'com.physicalrailways.ConsoleDisplayCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleDisplay' }
 
 tasks.register('checkConsoleAssets', JavaExec) {
     dependsOn testClasses, processResources
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ConsoleAssetCheck'
+    mainClass = 'com.physicalrailways.ConsoleAssetCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleAssets' }
 
 tasks.register('checkLanguage', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.LanguageCheck'
+    mainClass = 'com.physicalrailways.LanguageCheck'
 }
 tasks.named('check') { dependsOn 'checkLanguage' }
 
 tasks.register('checkSignals', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.SignalCheck'
+    mainClass = 'com.physicalrailways.SignalCheck'
 }
 tasks.named('check') { dependsOn 'checkSignals' }
 
 tasks.register('checkBogiePairContact', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogiePairContactCheck'
+    mainClass = 'com.physicalrailways.BogiePairContactCheck'
 }
 tasks.named('check') { dependsOn 'checkBogiePairContact' }
 
 tasks.register('checkScheduleReload', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ScheduleReloadCheck'
+    mainClass = 'com.physicalrailways.ScheduleReloadCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleReload' }
 
 tasks.register('checkObserverSpan', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ObserverSpanCheck'
+    mainClass = 'com.physicalrailways.ObserverSpanCheck'
 }
 tasks.named('check') { dependsOn 'checkObserverSpan' }
 
 tasks.register('checkSchedulePrelude', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.SchedulePreludeCheck'
+    mainClass = 'com.physicalrailways.SchedulePreludeCheck'
 }
 tasks.named('check') { dependsOn 'checkSchedulePrelude' }
 
 tasks.register('checkCargoClock', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CargoClockCheck'
+    mainClass = 'com.physicalrailways.CargoClockCheck'
 }
 tasks.named('check') { dependsOn 'checkCargoClock' }
 
 tasks.register('checkPassengerManifest', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.PassengerManifestCheck'
+    mainClass = 'com.physicalrailways.PassengerManifestCheck'
 }
 tasks.named('check') { dependsOn 'checkPassengerManifest' }
 
 tasks.register('checkPackageMail', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.PackageMailCheck'
+    mainClass = 'com.physicalrailways.PackageMailCheck'
 }
 tasks.named('check') { dependsOn 'checkPackageMail' }
 
 tasks.register('checkPlatformHeight', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.PlatformHeightCheck'
+    mainClass = 'com.physicalrailways.PlatformHeightCheck'
 }
 tasks.named('check') { dependsOn 'checkPlatformHeight' }
 
 tasks.register('checkRailDock', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.RailDockCheck'
+    mainClass = 'com.physicalrailways.RailDockCheck'
 }
 tasks.named('check') { dependsOn 'checkRailDock' }
 
 tasks.register('checkRailways', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.RailwaysCheck'
+    mainClass = 'com.physicalrailways.RailwaysCheck'
 }
 tasks.named('check') { dependsOn 'checkRailways' }
 
 tasks.register('checkNativeContact', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.NativeContactCheck'
+    mainClass = 'com.physicalrailways.NativeContactCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeContact' }
 
 tasks.register('checkCouplerMechanism', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CouplerMechanismCheck'
+    mainClass = 'com.physicalrailways.CouplerMechanismCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerMechanism' }
 
 tasks.register('checkCouplerMating', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CouplerMatingCheck'
+    mainClass = 'com.physicalrailways.CouplerMatingCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerMating' }
 
 tasks.register('checkBogeyVariant', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogeyVariantCheck'
+    mainClass = 'com.physicalrailways.BogeyVariantCheck'
 }
 tasks.named('check') { dependsOn 'checkBogeyVariant' }
 
@@ -688,90 +688,90 @@ sourceSets {
 tasks.register('checkCouplerPersistence', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.CouplerPersistenceCheck'
+    mainClass = 'com.physicalrailways.CouplerPersistenceCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerPersistence' }
 
 tasks.register('checkCouplerOwnership', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.CouplerOwnershipCheck'
+    mainClass = 'com.physicalrailways.CouplerOwnershipCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerOwnership' }
 
 tasks.register('checkCouplerLifecycle', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.CouplerLifecycleCheck'
+    mainClass = 'com.physicalrailways.CouplerLifecycleCheck'
 }
 tasks.named('check') { dependsOn 'checkCouplerLifecycle' }
 
 tasks.register('checkRerailSpace', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.RerailSpaceCheck'
+    mainClass = 'com.physicalrailways.RerailSpaceCheck'
 }
 tasks.named('check') { dependsOn 'checkRerailSpace' }
 
 tasks.register('checkBogieMountBinding', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogieMountBindingCheck'
+    mainClass = 'com.physicalrailways.BogieMountBindingCheck'
 }
 tasks.named('check') { dependsOn 'checkBogieMountBinding' }
 
 tasks.register('checkMountOwnership', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.MountOwnershipCheck'
+    mainClass = 'com.physicalrailways.MountOwnershipCheck'
 }
 tasks.named('check') { dependsOn 'checkMountOwnership' }
 
 tasks.register('checkScheduleLifecycle', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.ScheduleLifecycleCheck'
+    mainClass = 'com.physicalrailways.ScheduleLifecycleCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleLifecycle' }
 
 tasks.register('checkRecoveryBoundary', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.RecoveryBoundaryCheck'
+    mainClass = 'com.physicalrailways.RecoveryBoundaryCheck'
 }
 tasks.named('check') { dependsOn 'checkRecoveryBoundary' }
 
 tasks.register('checkCargoIdentityHooks', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.CargoIdentityHookCheck'
+    mainClass = 'com.physicalrailways.CargoIdentityHookCheck'
 }
 tasks.named('check') { dependsOn 'checkCargoIdentityHooks' }
 
 tasks.register('checkCargoBaseline', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.CargoBaselineCheck'
+    mainClass = 'com.physicalrailways.CargoBaselineCheck'
 }
 tasks.named('check') { dependsOn 'checkCargoBaseline' }
 
 tasks.register('checkTrainRuntime', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.TrainRuntimeCheck'
+    mainClass = 'com.physicalrailways.TrainRuntimeCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainRuntime' }
 tasks.register('checkCacheHygiene', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.CacheHygieneCheck'
-    systemProperty 'guidedrailways.classes', sourceSets.main.output.classesDirs.singleFile
+    mainClass = 'com.physicalrailways.CacheHygieneCheck'
+    systemProperty 'physicalrailways.classes', sourceSets.main.output.classesDirs.singleFile
 }
 tasks.named('check') { dependsOn 'checkCacheHygiene' }
 tasks.register('checkScheduleFlags', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.ScheduleFlagAudit'
+    mainClass = 'com.physicalrailways.ScheduleFlagAudit'
 }
 tasks.named('check') { dependsOn 'checkScheduleFlags' }
 
@@ -781,48 +781,48 @@ tasks.named('check') { dependsOn 'checkScheduleFlags' }
 tasks.register('generateCollisionMetadata', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CollisionCatalogCheck'
+    mainClass = 'com.physicalrailways.CollisionCatalogCheck'
     args '--write'
 }
 tasks.register('checkCollisionCatalog', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.CollisionCatalogCheck'
+    mainClass = 'com.physicalrailways.CollisionCatalogCheck'
 }
 tasks.named('check') { dependsOn 'checkCollisionCatalog' }
 
 tasks.register('checkCollisionShapes', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.CollisionShapeCheck'
+    mainClass = 'com.physicalrailways.CollisionShapeCheck'
 }
 tasks.named('check') { dependsOn 'checkCollisionShapes' }
 
 tasks.register('checkNativeCouplerAnimation', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.NativeCouplerAnimationCheck'
+    mainClass = 'com.physicalrailways.NativeCouplerAnimationCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeCouplerAnimation' }
 
 tasks.register('checkNearbyPairs', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.NearbyPairsCheck'
+    mainClass = 'com.physicalrailways.NearbyPairsCheck'
 }
 tasks.named('check') { dependsOn 'checkNearbyPairs' }
 
 tasks.register('checkBoxUnion', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.BoxUnionCheck'
+    mainClass = 'com.physicalrailways.BoxUnionCheck'
 }
 tasks.named('check') { dependsOn 'checkBoxUnion' }
 
 tasks.register('checkBogieVisibility', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogieVisibilityCheck'
+    mainClass = 'com.physicalrailways.BogieVisibilityCheck'
 }
 tasks.named('check') { dependsOn 'checkBogieVisibility' }
 
@@ -830,7 +830,7 @@ tasks.named('check') { dependsOn 'checkBogieVisibility' }
 tasks.register('checkMotionSync', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.MotionSyncCheck'
+    mainClass = 'com.physicalrailways.MotionSyncCheck'
 }
 tasks.named('check') { dependsOn 'checkMotionSync' }
 
@@ -838,7 +838,7 @@ tasks.named('check') { dependsOn 'checkMotionSync' }
 tasks.register('checkElectricDrive', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ElectricDriveCheck'
+    mainClass = 'com.physicalrailways.ElectricDriveCheck'
 }
 tasks.named('check') { dependsOn 'checkElectricDrive' }
 
@@ -846,7 +846,7 @@ tasks.named('check') { dependsOn 'checkElectricDrive' }
 tasks.register('checkElectricCircuit', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + files('libs/electroenergetics-1.21.1-1.1.4.jar')
-    mainClass = 'com.guidedrailways.ElectricCircuitCheck'
+    mainClass = 'com.physicalrailways.ElectricCircuitCheck'
 }
 tasks.named('check') { dependsOn 'checkElectricCircuit' }
 
@@ -854,14 +854,14 @@ tasks.named('check') { dependsOn 'checkElectricCircuit' }
 tasks.register('checkBogeySelectionCodec', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.BogeySelectionCodecCheck'
+    mainClass = 'com.physicalrailways.BogeySelectionCodecCheck'
 }
 tasks.named('check') { dependsOn 'checkBogeySelectionCodec' }
 
 tasks.register('checkDependencyRanges', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.DependencyRangeCheck'
+    mainClass = 'com.physicalrailways.DependencyRangeCheck'
 }
 
 tasks.named('check') { dependsOn 'checkDependencyRanges' }
@@ -869,7 +869,7 @@ tasks.named('check') { dependsOn 'checkDependencyRanges' }
 tasks.register('checkWheelAnimation', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.WheelAnimationCheck'
+    mainClass = 'com.physicalrailways.WheelAnimationCheck'
 }
 
 tasks.named('check') { dependsOn 'checkWheelAnimation' }
@@ -877,7 +877,7 @@ tasks.named('check') { dependsOn 'checkWheelAnimation' }
 tasks.register('checkMountSurface', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.MountSurfaceCheck'
+    mainClass = 'com.physicalrailways.MountSurfaceCheck'
 }
 
 tasks.named('check') { dependsOn 'checkMountSurface' }
@@ -885,7 +885,7 @@ tasks.named('check') { dependsOn 'checkMountSurface' }
 tasks.register('checkPlatformBuilding', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.PlatformBuildingCheck'
+    mainClass = 'com.physicalrailways.PlatformBuildingCheck'
 }
 
 tasks.named('check') { dependsOn 'checkPlatformBuilding' }
@@ -894,14 +894,14 @@ tasks.named('check') { dependsOn 'checkPlatformBuilding' }
 tasks.register('checkTrainIdentity', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.TrainIdentityCheck'
+    mainClass = 'com.physicalrailways.TrainIdentityCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainIdentity' }
 
 tasks.register('checkNativeTrainBridge', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.NativeTrainBridgeCheck'
+    mainClass = 'com.physicalrailways.NativeTrainBridgeCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeTrainBridge' }
 
@@ -909,73 +909,73 @@ tasks.named('check') { dependsOn 'checkNativeTrainBridge' }
 tasks.register('checkStationBinding', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.StationBindingCheck'
+    mainClass = 'com.physicalrailways.StationBindingCheck'
 }
 tasks.named('check') { dependsOn 'checkStationBinding' }
 
 tasks.register('checkNativeStationContract', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.NativeStationContractCheck'
+    mainClass = 'com.physicalrailways.NativeStationContractCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeStationContract' }
 
 tasks.register('checkPonderAssets', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.PonderAssetCheck'
+    mainClass = 'com.physicalrailways.PonderAssetCheck'
 }
 tasks.named('check') { dependsOn 'checkPonderAssets' }
 
 tasks.register('checkMinimapBridge', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.MinimapBridgeCheck'
+    mainClass = 'com.physicalrailways.MinimapBridgeCheck'
 }
 tasks.named('check') { dependsOn 'checkMinimapBridge' }
 
 tasks.register('checkNativeJourney', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.NativeJourneyCheck'
+    mainClass = 'com.physicalrailways.NativeJourneyCheck'
 }
 tasks.named('check') { dependsOn 'checkNativeJourney' }
 
 tasks.register('checkArrivalEstimate', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ArrivalEstimateCheck'
+    mainClass = 'com.physicalrailways.ArrivalEstimateCheck'
 }
 tasks.named('check') { dependsOn 'checkArrivalEstimate' }
 
 tasks.register('checkTrainName', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.TrainNameCheck'
+    mainClass = 'com.physicalrailways.TrainNameCheck'
 }
 tasks.register('checkTrainNameCodec', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.TrainNameCodecCheck'
+    mainClass = 'com.physicalrailways.TrainNameCodecCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainName', 'checkTrainNameCodec' }
 
 tasks.register('checkTrainOwner', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.TrainOwnerCheck'
+    mainClass = 'com.physicalrailways.TrainOwnerCheck'
 }
 tasks.register('checkTrainOwnerCodec', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.TrainOwnerCodecCheck'
+    mainClass = 'com.physicalrailways.TrainOwnerCodecCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainOwner', 'checkTrainOwnerCodec' }
 
 tasks.register('checkNativeCargo', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.NativeCargoCheck'
+    mainClass = 'com.physicalrailways.NativeCargoCheck'
 }
 
 tasks.named('check') { dependsOn 'checkNativeCargo' }
@@ -983,7 +983,7 @@ tasks.named('check') { dependsOn 'checkNativeCargo' }
 tasks.register('checkObserverFilterCache', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ObserverFilterCacheCheck'
+    mainClass = 'com.physicalrailways.ObserverFilterCacheCheck'
 }
 
 tasks.named('check') { dependsOn 'checkObserverFilterCache' }
@@ -991,7 +991,7 @@ tasks.named('check') { dependsOn 'checkObserverFilterCache' }
 tasks.register('checkCargoBoundary', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.CargoBoundaryCheck'
+    mainClass = 'com.physicalrailways.CargoBoundaryCheck'
 }
 
 tasks.named('check') { dependsOn 'checkCargoBoundary' }
@@ -999,7 +999,7 @@ tasks.named('check') { dependsOn 'checkCargoBoundary' }
 tasks.register('checkClientSignals', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.ClientSignalCheck'
+    mainClass = 'com.physicalrailways.ClientSignalCheck'
 }
 
 tasks.named('check') { dependsOn 'checkClientSignals' }
@@ -1007,27 +1007,27 @@ tasks.named('check') { dependsOn 'checkClientSignals' }
 tasks.register('checkTrainSnapshotSync', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.TrainSnapshotSyncCheck'
+    mainClass = 'com.physicalrailways.TrainSnapshotSyncCheck'
 }
 tasks.named('check') { dependsOn 'checkTrainSnapshotSync' }
 
 tasks.register('checkScheduleForecast', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ScheduleForecastCheck'
+    mainClass = 'com.physicalrailways.ScheduleForecastCheck'
 }
 tasks.named('check') { dependsOn 'checkScheduleForecast' }
 
 tasks.register('checkLagProbe', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.LagProbeCheck'
+    mainClass = 'com.physicalrailways.LagProbeCheck'
 }
 tasks.register('checkLagProbeEnabled', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.LagProbeCheck'
-    systemProperty 'guidedrailways.lagProbe', 'true'
+    mainClass = 'com.physicalrailways.LagProbeCheck'
+    systemProperty 'physicalrailways.lagProbe', 'true'
 }
 tasks.named('check') { dependsOn 'checkLagProbe', 'checkLagProbeEnabled' }
 
@@ -1042,13 +1042,13 @@ if (project.hasProperty('signalServerTests')) {
     }
     neoForge {
         mods {
-            guidedrailways_signal_validation { sourceSet sourceSets.signalValidation }
+            physicalrailways_signal_validation { sourceSet sourceSets.signalValidation }
         }
         runs {
             signalValidation {
                 type = 'gameTestServer'
                 gameDirectory = file('build/signal-validation-run')
-                systemProperty 'neoforge.enabledGameTestNamespaces', 'guidedrailways_signal_validation'
+                systemProperty 'neoforge.enabledGameTestNamespaces', 'physicalrailways_signal_validation'
             }
         }
     }
@@ -1076,13 +1076,13 @@ if (project.hasProperty('signalServerTests')) {
 tasks.register('checkConsoleInteraction', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.ConsoleInteractionCheck'
+    mainClass = 'com.physicalrailways.ConsoleInteractionCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleInteraction' }
 
 tasks.register('checkManualRouteSelection', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.ManualRouteSelectionCheck'
+    mainClass = 'com.physicalrailways.ManualRouteSelectionCheck'
 }
 tasks.named('check') { dependsOn 'checkManualRouteSelection' }

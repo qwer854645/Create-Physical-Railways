@@ -1,0 +1,812 @@
+package com.physicalrailways;
+
+import dev.ryanhcode.sable.api.physics.constraint.*;
+import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
+import dev.ryanhcode.sable.companion.SableCompanion;
+import dev.ryanhcode.sable.companion.math.Pose3d;
+import dev.ryanhcode.sable.sublevel.ServerSubLevel;
+import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
+import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
+import java.util.*;
+import net.minecraft.core.*;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import org.joml.Quaterniond;
+import org.joml.Vector3d;
+import org.joml.Vector3dc;
+
+/** Independently written guided-body prototype. No per-wheel bodies or patched native library. */
+public final class VehiclePhysics {
+  /** Mount plate underside, flush with the top of its block so blocks above sit on it. */
+  private static final double PLATE_BOTTOM = BogieGeometry.MOUNT_UNDERSIDE;
+
+  private static final Quaterniond ANCHOR_ROT = new Quaterniond().rotateY(-Math.PI / 2);
+  private static final Map<ServerLevel, Map<BlockPos, MountEntity>> INPUTS = new WeakHashMap<>();
+  private static final Map<ServerLevel, Map<UUID, Unit>> ACTIVE = new WeakHashMap<>();
+
+  static final class Unit {
+    final MountEntity mount;
+    final ServerSubLevel carrier, bogie;
+    final Vector3d localCenter;
+    DriverConsoleEntity driver;
+    TrainCommand command;
+    GenericConstraintHandle pivot;
+    final GenericConstraintHandle[] guides = new GenericConstraintHandle[2];
+    final TrackNetwork.Sample[] samples = new TrackNetwork.Sample[2];
+    final DerailmentModel.Exposure exposure = new DerailmentModel.Exposure();
+    double mass, tractionMass, commandedForce, speed, curveRisk, lateralSpeed, electricWatts;
+    long lastSeen, nextLog, nextHoldLog, derailGraceUntil;
+    boolean detached, reverseTravel, trainPowered, electricEquipped;
+    int supports = 1;
+    /** Consecutive substeps without a track sample; a short streak is held, not released. */
+    int missStreak;
+
+    Unit(MountEntity mount, ServerSubLevel carrier, ServerSubLevel bogie) {
+      var variant =
+          BogieBlock.variant(bogie.getLevel().getBlockState(bogie.getPlot().getCenterBlock()));
+      if (mount.variant != variant) {
+        mount.variant = variant;
+        mount.setChanged();
+      }
+      MountBlock.updateStyle(mount);
+      this.mount = mount;
+      this.carrier = carrier;
+      this.bogie = bogie;
+      localCenter = center(bogie);
+      var tag = bogie.getUserDataTag();
+      detached = tag != null && tag.getBoolean("GuidedDerailed");
+    }
+
+    /** Shared liveness cutoff for topology, route preparation and physics contacts. */
+    boolean ready(long tick) {
+      return !carrier.isRemoved()
+          && !bogie.isRemoved()
+          && !mount.isRemoved()
+          && lastSeen + 2 >= tick;
+    }
+
+    Vector3d axle(int i) {
+      return new Vector3d(localCenter)
+          .add(0, -mount.variant.ride, i == 0 ? mount.variant.half : -mount.variant.half);
+    }
+
+    void clearGuides() {
+      for (int i = 0; i < 2; i++) {
+        if (guides[i] != null && guides[i].isValid()) guides[i].remove();
+        guides[i] = null;
+      }
+    }
+
+    void close() {
+      clearGuides();
+      if (pivot != null && pivot.isValid()) pivot.remove();
+    }
+  }
+
+  private VehiclePhysics() {}
+
+  static Collection<MountEntity> mounts(ServerLevel level) {
+    return List.copyOf(INPUTS.getOrDefault(level, Map.of()).values());
+  }
+
+  static Unit unit(ServerLevel level, UUID id) {
+    return ACTIVE.getOrDefault(level, Map.of()).get(id);
+  }
+
+  static Collection<Unit> cargoUnits(ServerLevel level) {
+    return List.copyOf(ACTIVE.getOrDefault(level, Map.of()).values());
+  }
+
+  static Vector3d center(ServerSubLevel body) {
+    var p = body.getPlot().getCenterBlock();
+    return new Vector3d(p.getX() + .5, p.getY() + .5, p.getZ() + .5);
+  }
+
+  static Vector3d world(ServerSubLevel body, Vector3dc local) {
+    var pose =
+        SubLevelPhysicsSystem.get(body.getLevel()).getPipeline().readPose(body, new Pose3d());
+    return new Vector3d(local)
+        .sub(body.logicalPose().rotationPoint())
+        .rotate(pose.orientation())
+        .add(pose.position());
+  }
+
+  static double coupledMass(ServerSubLevel carrier) {
+    double mass = carrier.getMassTracker().getMass();
+    for (var u : ACTIVE.getOrDefault(carrier.getLevel(), Map.of()).values())
+      if (u.carrier == carrier && !u.bogie.isRemoved()) mass += u.bogie.getMassTracker().getMass();
+    return mass;
+  }
+
+  static boolean hasVehicles(ServerLevel level) {
+    return !INPUTS.getOrDefault(level, Map.of()).isEmpty()
+        || !ACTIVE.getOrDefault(level, Map.of()).isEmpty();
+  }
+
+  /** Loaded guided units right now; the performance window reports this instead of a stale list. */
+  static int activeCount(ServerLevel level) {
+    var units = ACTIVE.get(level);
+    return units == null ? 0 : units.size();
+  }
+
+  static void register(MountEntity mount) {
+    if (mount.getLevel() instanceof ServerLevel level && mount.bogieId != null)
+      INPUTS
+          .computeIfAbsent(level, l -> new HashMap<>())
+          .put(mount.getBlockPos().immutable(), mount);
+  }
+
+  private static boolean liveMount(ServerLevel level, MountEntity mount) {
+    return !mount.isRemoved()
+        && level.hasChunkAt(mount.getBlockPos())
+        && level.getBlockEntity(mount.getBlockPos()) == mount;
+  }
+
+  static MountOwnership.Location mountLocation(ServerLevel level, BlockPos pos) {
+    return new MountOwnership.Location(level.dimension().location().toString(), pos.asLong());
+  }
+
+  /**
+   * Revision of the bound lower body right now, or {@link MountOwnership#UNKNOWN_REVISION} when it
+   * is not observable. Authorizing a move with an unknown source keeps the legacy location-only
+   * behaviour instead of rejecting a plate whose body simply has not loaded yet.
+   */
+  static long mountRevision(ServerLevel level, UUID bogieId) {
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null
+        || !(container.getSubLevel(bogieId) instanceof ServerSubLevel bogie)
+        || bogie.isRemoved()) return MountOwnership.UNKNOWN_REVISION;
+    var owner = BogieMountBinding.owner(bogie.getUserDataTag());
+    return owner == null ? MountOwnership.UNKNOWN_REVISION : owner.revision();
+  }
+
+  private static boolean claimMount(ServerLevel level, MountEntity mount, ServerSubLevel bogie) {
+    var owner = mountLocation(level, mount.getBlockPos());
+    var saved = bogie.getUserDataTag();
+    if (saved != null && saved.contains(BogieMountBinding.KEY))
+      return BogieMountBinding.matches(saved, owner);
+    var data = saved == null ? new net.minecraft.nbt.CompoundTag() : saved.copy();
+    if (!BogieMountBinding.claim(data, owner)) return false;
+    bogie.setUserDataTag(data);
+    return true;
+  }
+
+  static MountHandoff.Result transferMount(ServerLevel level, UUID bogieId, MountHandoff handoff) {
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null
+        || !(container.getSubLevel(bogieId) instanceof ServerSubLevel bogie)
+        || bogie.isRemoved()) return MountHandoff.Result.WAITING;
+    var saved = bogie.getUserDataTag();
+    var target = handoff.destination();
+    if (BogieMountBinding.matches(saved, target)) return MountHandoff.Result.READY;
+    var data = saved == null ? new net.minecraft.nbt.CompoundTag() : saved.copy();
+    var result =
+        BogieMountBinding.move(data, handoff.source(), target, handoff.sourceRevision());
+    if (result != MountOwnership.Result.APPLIED && result != MountOwnership.Result.REPLAYED) {
+      var current = BogieMountBinding.owner(saved);
+      org.slf4j.LoggerFactory.getLogger("physicalrailways")
+          .warn(
+              "[MountClaim] rejected handoff {} -> {}: {} (handoff revision {}, current {})",
+              handoff.source(),
+              target,
+              result,
+              handoff.sourceRevision(),
+              current == null ? "none" : current.revision());
+      return MountHandoff.Result.REJECTED;
+    }
+    bogie.setUserDataTag(data);
+    return MountHandoff.Result.READY;
+  }
+
+  private static boolean ownsMount(Unit unit) {
+    return BogieMountBinding.matches(
+        unit.bogie.getUserDataTag(),
+        mountLocation(unit.bogie.getLevel(), unit.mount.getBlockPos()));
+  }
+
+  static void unlinkMount(MountEntity mount) {
+    closeMount(mount);
+    mount.bogieId = null;
+    mount.handoff = null;
+    mount.pivotReferenceKnown = false;
+    mount.setLoad(0);
+    if (mount.hasNetwork())
+      mount.getOrCreateNetwork().updateStressFor(mount, mount.calculateStressApplied());
+    mount.setChanged();
+    mount.sendData();
+  }
+
+  static void forget(MountEntity mount) {
+    if (!(mount.getLevel() instanceof ServerLevel level)) return;
+    var inputs = INPUTS.get(level);
+    if (inputs != null) inputs.remove(mount.getBlockPos(), mount);
+    closeMount(mount);
+  }
+
+  private static void closeMount(MountEntity mount) {
+    if (!(mount.getLevel() instanceof ServerLevel level)) return;
+    var units = ACTIVE.get(level);
+    var unit = units == null ? null : units.get(mount.bogieId);
+    if (unit != null && unit.mount == mount) {
+      units.remove(mount.bogieId);
+      unit.close();
+    }
+    TrainConsists.invalidate(level);
+  }
+
+  /** Initialize one support without advancing schedules, signals or animation clocks. */
+  static Unit initialize(MountEntity mount) {
+    if (!(mount.getLevel() instanceof ServerLevel level) || mount.bogieId == null) return null;
+    if (!liveMount(level, mount)) return null;
+    // Expires an abandoned handoff instead of leaving this plate unable to initialise forever.
+    if (mount.handoffPending(level.getGameTime())) return null;
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null || SubLevelPhysicsSystem.get(level) == null) return null;
+    if (!(SableCompanion.INSTANCE.getContaining(level, mount.getBlockPos())
+            instanceof ServerSubLevel carrier)
+        || carrier.isRemoved()) return null;
+    if (!(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
+        || bogie.isRemoved()
+        || bogie == carrier) return null;
+    var centre = bogie.getPlot().getCenterBlock();
+    if (container.getChunkHolder(new ChunkPos(centre)) == null) return null;
+    if (!level.getBlockState(centre).is(Content.BOGIE.get())) {
+      unlinkMount(mount);
+      return null;
+    }
+    var units = ACTIVE.computeIfAbsent(level, l -> new HashMap<>());
+    var unit = units.get(mount.bogieId);
+    if (unit != null && unit.mount != mount && liveMount(level, unit.mount)) {
+      // A copied plate must never steal a still-live plate's lower body.
+      unlinkMount(mount);
+      return null;
+    }
+    if (!claimMount(level, mount, bogie)) {
+      unlinkMount(mount);
+      return null;
+    }
+    if (!CollisionAssembler.populate(bogie, true)) return null;
+    if (unit == null || unit.carrier != carrier || unit.mount != mount) {
+      if (unit != null) unit.close();
+      unit = new Unit(mount, carrier, bogie);
+      try {
+        connectPivot(unit);
+      } catch (RuntimeException error) {
+        unit.close();
+        throw error;
+      }
+      units.put(mount.bogieId, unit);
+      TrainConsists.invalidate(level);
+    }
+    unit.lastSeen = level.getGameTime();
+    return unit;
+  }
+
+  static Collection<Unit> refresh(ServerLevel level) {
+    var inputs = INPUTS.computeIfAbsent(level, l -> new HashMap<>());
+    inputs
+        .values()
+        .removeIf(
+            m -> m.isRemoved() || m.bogieId == null || level.getBlockEntity(m.getBlockPos()) != m);
+    var units = ACTIVE.computeIfAbsent(level, l -> new HashMap<>());
+    for (var mount : inputs.values()) initialize(mount);
+    units
+        .entrySet()
+        .removeIf(
+            e -> {
+              var u = e.getValue();
+              if (u.carrier.isRemoved()
+                  || u.bogie.isRemoved()
+                  || level.getGameTime() - u.lastSeen > 40) {
+                u.close();
+                return true;
+              }
+              return false;
+            });
+    return List.copyOf(units.values());
+  }
+
+  static void update(ServerLevel level, Collection<Unit> units) {
+    var system = SubLevelPhysicsSystem.get(level);
+    var counts = new HashMap<UUID, Integer>();
+    for (var u : units) counts.merge(u.carrier.getUniqueId(), 1, Integer::sum);
+    for (var u : units) {
+      int supports = counts.get(u.carrier.getUniqueId());
+      if (u.supports != supports) {
+        if (u.pivot != null && u.pivot.isValid()) u.pivot.remove();
+        u.supports = supports;
+        connectPivot(u);
+      }
+      u.mass = u.carrier.getMassTracker().getMass() / supports + u.bogie.getMassTracker().getMass();
+      u.mount.setLoad(u.mass);
+    }
+    VehicleTraction.allocate(level);
+    for (var u : units) {
+      if (level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual) {
+        visual.speed = u.speed;
+        visual.distance += u.speed / 20;
+        if (visual.motionSync.update(level.getGameTime(), visual.speed, visual.distance))
+          visual.sendData();
+      }
+      if (TrainConfig.DETAILED_LOGGING.get() && level.getGameTime() >= u.nextLog) {
+        u.nextLog = level.getGameTime() + 20;
+        var pos = world(u.bogie, u.localCenter);
+        if (level.players().stream().anyMatch(p -> p.distanceToSqr(pos.x, pos.y, pos.z) < 4096)) {
+          var pipeline = system.getPipeline();
+          double verticalSpeed = pipeline.getLinearVelocity(u.bogie, new Vector3d()).y,
+              angularSpeed = pipeline.getAngularVelocity(u.bogie, new Vector3d()).length();
+          org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+              .info(
+                  "[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} tractionMass={} commandedForce={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",
+                  u.bogie.getUniqueId(),
+                  u.speed,
+                  u.driver == null
+                      ? u.mount.getSpeed() * TrainConfig.speedPerRpm()
+                      : VehicleTraction.requestedSpeed(u),
+                  u.mount.getSpeed(),
+                  u.mass,
+                  u.tractionMass,
+                  u.commandedForce,
+                  u.mount.braking
+                      || (u.command != null
+                          ? u.command.hold() || u.command.emergency() || u.command.notch() < 0
+                          : u.driver != null
+                              && (!u.driver.enabled
+                                  || u.driver.emergency
+                                  || u.driver.notch < 0
+                                  || u.driver.powered == 0)),
+                  !u.detached,
+                  u.reverseTravel ? "reverse" : "forward",
+                  verticalSpeed,
+                  angularSpeed,
+                  u.curveRisk,
+                  u.lateralSpeed,
+                  u.carrier.getUniqueId(),
+                  counts.get(u.carrier.getUniqueId()),
+                  TrainConfig.DETAILED_LOGGING.get() ? pivotSummary(u) : "off",
+                  TrainConfig.DETAILED_LOGGING.get() ? anchorSummary(u) : "off");
+          // The lever position and the command that actually produces force are separate things: a train
+          // can show notch 8 and still be held. This names the command, which is what tells them apart.
+          org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+              .info(
+                  "[Traction] unit={} command={} notch={} hold={} emergency={} seated={} speed={} force={}",
+                  u.bogie.getUniqueId(),
+                  u.command == null ? "none" : u.command.mode(),
+                  u.command == null ? 0 : u.command.notch(),
+                  u.command != null && u.command.hold(),
+                  u.command != null && u.command.emergency(),
+                  u.driver != null,
+                  u.speed,
+                  u.commandedForce);
+        }
+      }
+    }
+  }
+
+  private static String pivotSummary(Unit u) {
+    var pipe = SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
+    var upper =
+        new Vector3d(
+            u.mount.getBlockPos().getX() + .5,
+            u.mount.getBlockPos().getY() + PLATE_BOTTOM,
+            u.mount.getBlockPos().getZ() + .5);
+    var lower = new Vector3d(u.localCenter).add(0, u.mount.pivotHeight(), 0);
+    var a = pipe.readPose(u.carrier, new Pose3d());
+    var b = pipe.readPose(u.bogie, new Pose3d());
+    var relative =
+        new Quaterniond(b.orientation())
+            .conjugate()
+            .mul(a.orientation())
+            .mul(u.mount.pivotReference);
+    var rate =
+        pipe.getAngularVelocity(u.carrier, new Vector3d())
+            .sub(pipe.getAngularVelocity(u.bogie, new Vector3d()))
+            .rotate(new Quaterniond(b.orientation()).conjugate());
+    var up = new Vector3d(0, 1, 0).rotate(relative);
+    double tilt = Math.toDegrees(Math.acos(Math.clamp(up.y, -1, 1)));
+    var neutral = new Quaterniond(a.orientation()).mul(u.mount.pivotReference);
+    var yawForward = new Vector3d(0, 0, 1).rotate(b.orientation()).rotate(neutral.conjugate());
+    double yawError = Math.toDegrees(Math.atan2(yawForward.x, yawForward.z));
+    return String.format(
+        java.util.Locale.ROOT,
+        "anchorError=%.5f,tiltDeg=%.3f,yawErrorDeg=%.3f,yawRateDeg=%.3f,pitchRateDeg=%.3f,rollRateDeg=%.3f,mode=%s",
+        world(u.carrier, upper).distance(world(u.bogie, lower)),
+        tilt,
+        yawError,
+        Math.toDegrees(rate.y),
+        Math.toDegrees(rate.x),
+        Math.toDegrees(rate.z),
+        u.supports == 1 ? "stable" : "articulated");
+  }
+
+  private static String anchorSummary(Unit u) {
+    var text = new StringBuilder();
+    var pipe = SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
+    var forward = new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
+    for (int i = 0; i < 2; i++) {
+      if (i > 0) text.append(';');
+      var s = u.samples[i];
+      if (s == null) {
+        text.append("missing");
+        continue;
+      }
+      text.append(
+          String.format(
+              java.util.Locale.ROOT,
+              "%s:%d-%d,t=%.4f,curve=%s,error=%.5f,align=%.4f,joint=%s",
+              i == 0 ? "front" : "rear",
+              s.path().a(),
+              s.path().b(),
+              s.t(),
+              s.path().edge().isTurn(),
+              world(u.bogie, u.axle(i)).distance(s.position()),
+              forward.dot(s.tangent()),
+              u.guides[i] != null && u.guides[i].isValid()));
+    }
+    return text.toString();
+  }
+
+  private static void connectPivot(Unit u) {
+    var pipe = SubLevelPhysicsSystem.get(u.bogie.getLevel()).getPipeline();
+    var upper =
+        new Vector3d(
+            u.mount.getBlockPos().getX() + .5,
+            u.mount.getBlockPos().getY() + PLATE_BOTTOM,
+            u.mount.getBlockPos().getZ() + .5);
+    var lower = new Vector3d(u.localCenter).add(0, u.mount.pivotHeight(), 0);
+    var locks =
+        EnumSet.of(
+            ConstraintJointAxis.LINEAR_X,
+            ConstraintJointAxis.LINEAR_Y,
+            ConstraintJointAxis.LINEAR_Z);
+    for (var axis : BearingLock.locked(u.supports))
+      locks.add(
+          switch (axis) {
+            case ROLL -> ConstraintJointAxis.ANGULAR_X;
+            case PITCH -> ConstraintJointAxis.ANGULAR_Z;
+            case YAW -> ConstraintJointAxis.ANGULAR_Y;
+          });
+    if (!u.mount.pivotReferenceKnown) {
+      var carrier = pipe.readPose(u.carrier, new Pose3d());
+      var bogie = pipe.readPose(u.bogie, new Pose3d());
+      u.mount.pivotReference.set(
+          BogieYawModel.reference(carrier.orientation(), bogie.orientation()));
+      u.mount.pivotReferenceKnown = true;
+      u.mount.setChanged();
+    }
+    u.pivot =
+        pipe.addConstraint(
+            u.carrier,
+            u.bogie,
+            new GenericConstraintConfiguration(
+                upper, lower, u.mount.pivotReference, new Quaterniond(), locks));
+    u.pivot.setContactsEnabled(false);
+    // Yaw stays free: a bearing has to articulate under the body. It is only centred, with the
+    // budget shared between the bogies of one carrier.
+    var spring = BogieYawModel.spring(u.supports);
+    u.pivot.setMotor(
+        ConstraintJointAxis.ANGULAR_Y,
+        0,
+        spring.stiffness(),
+        spring.damping(),
+        true,
+        spring.maxTorque());
+  }
+
+  static void step(SubLevelPhysicsSystem physics, double dt) {
+    long start = PerfCounters.begin();
+    try {
+      stepVehicle(physics, dt);
+    } finally {
+      PerfCounters.step(physics.getLevel(), PerfCounters.elapsed(start));
+    }
+  }
+
+  /**
+   * Routing reads poses of every connected body, so a carriage torn down inside this substep can
+   * still throw. Skipping the substep keeps the world alive; the next substep picks up whatever is
+   * left, and {@link BodyGuard} reports the body that caused it.
+   */
+  private static List<ConsistRoutes.Plan> plans(ServerLevel level, Collection<Unit> units) {
+    try {
+      return ConsistRoutes.prepare(level, units);
+    } catch (RuntimeException removed) {
+      org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+          .warn("[BodyGone] routing skipped this substep: {}", removed.toString());
+      return List.of();
+    }
+  }
+
+  private static void stepVehicle(SubLevelPhysicsSystem physics, double dt) {
+    if (!(dt > 0 && Double.isFinite(dt))) return;
+    var level = physics.getLevel();
+    // No loaded bogie means no contact pass, no routing pass and no native reads this substep.
+    var units = ACTIVE.get(level);
+    if (units == null || units.isEmpty()) return;
+    var pipe = physics.getPipeline();
+    BodyGuard.beginStep(level.getGameTime());
+    long contactsStart = PerfCounters.begin();
+    BogiePairContacts.step(physics, units.values(), dt);
+    PerfCounters.contacts(level, PerfCounters.elapsed(contactsStart));
+    for (var plan : plans(level, units.values())) {
+      var u = plan.unit();
+      if (!u.ready(level.getGameTime())) continue;
+      if (!BodyGuard.readable(physics, u)) continue;
+      var pose = pipe.readPose(u.bogie, new Pose3d());
+      var heading = new Vector3d(0, 0, 1).rotate(pose.orientation());
+      if (u.detached) {
+        u.speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading);
+        continue;
+      }
+      // Leading axle steers at junctions (Create TravellingPoint.steer); trailing axle follows it.
+      u.reverseTravel =
+          BranchSelect.reverseTravel(
+              pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading),
+              VehicleTraction.requestedSpeed(u),
+              u.reverseTravel);
+      boolean reverse = u.reverseTravel;
+      int lead = reverse ? 1 : 0, trail = 1 - lead;
+      double approachSpeed = Math.abs(pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading));
+      double nose =
+          PhysicalSignals.nose(
+                  u, world(u.bogie, u.axle(lead)), new Vector3d(heading).mul(reverse ? -1 : 1))
+              + .25;
+      long switchStart = PerfCounters.begin();
+      double switchRoom =
+          TrackNetwork.switchDistance(
+              level,
+              u.samples[lead],
+              heading,
+              reverse,
+              plan.axle(lead),
+              approachSpeed * approachSpeed / (2 * TrainConfig.BRAKING.get()) + nose + 8,
+              nose);
+      PerfCounters.switchQuery(level, PerfCounters.elapsed(switchStart));
+      // A switch the train already stands on reports zero room, and RailwayStopModel holds a train that has no
+      // room; since the train can only clear a switch by moving, that is a deadlock. The rule lives in
+      // ApproachLimit so that its own check can pin it, and it is applied before the plan's limit so that the
+      // plan keeps whatever stop it wanted.
+      switchRoom = ApproachLimit.switchRoom(switchRoom, plan.axle(lead).blocked());
+      switchRoom = plan.axle(lead).limit(switchRoom);
+      ApproachRooms.record(level, u.carrier.getUniqueId(), switchRoom);
+      var atLead = world(u.bogie, u.axle(lead));
+      var leadSample =
+          TrackNetwork.follow(
+              level, atLead, heading, u.samples[lead], null, .8, reverse, plan.axle(lead));
+      if (leadSample == null) {
+        if (hold(u, "lead_axle")) continue;
+        release(u, "track_missing_or_out_of_range");
+        continue;
+      }
+      // Keep the previous edge during a held miss. Clearing it would let the next substep
+      // reacquire the nearest branch without asking the route policy or switch reservation.
+      u.samples[lead] = leadSample;
+      plan.axle(lead).followed(leadSample);
+      var atTrail = world(u.bogie, u.axle(trail));
+      var trailSample =
+          TrackNetwork.follow(
+              level,
+              atTrail,
+              heading,
+              u.samples[trail],
+              u.samples[lead],
+              .8,
+              reverse,
+              plan.axle(trail));
+      if (trailSample == null) {
+        if (hold(u, "trail_axle")) continue;
+        release(u, "track_missing_or_out_of_range");
+        continue;
+      }
+      u.samples[trail] = trailSample;
+      u.missStreak = 0;
+      if (TrainConfig.DERAILMENT.get()
+          && level.getGameTime() >= u.derailGraceUntil
+          && checkDerailment(u, physics, dt)) continue;
+      u.speed = 0;
+      u.commandedForce = 0;
+      for (int i = 0; i < 2; i++) {
+        var sample = u.samples[i];
+        var q = sample.orientation();
+        if (u.guides[i] == null || !u.guides[i].isValid()) {
+          // Two point guides already constrain pitch/yaw. A single roll lock is sufficient.
+          var locks = EnumSet.of(ConstraintJointAxis.LINEAR_Y, ConstraintJointAxis.LINEAR_Z);
+          if (i == 0) locks.add(ConstraintJointAxis.ANGULAR_X);
+          u.guides[i] =
+              pipe.addConstraint(
+                  null,
+                  u.bogie,
+                  new GenericConstraintConfiguration(
+                      sample.position(), u.axle(i), q, ANCHOR_ROT, locks));
+          u.guides[i].setContactsEnabled(false);
+        } else u.guides[i].setFrame1(sample.position(), q);
+        // Longitudinal translation is not locked: the solver never sets the vehicle's forward
+        // position.
+        double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(sample.tangent());
+        u.speed += speed * .5;
+        double force = VehicleTraction.force(u, speed, dt);
+        force = RailwayStopModel.force(speed, force, switchRoom, u.mass, TrainConfig.BRAKING.get(), dt);
+        u.commandedForce += force * .5;
+        var impulse =
+            new Vector3d(sample.tangent())
+                .mul(force * dt * .5)
+                .rotate(new Quaterniond(pose.orientation()).conjugate());
+        // Apply traction at the frame centre height, with front/rear positions distributed along
+        // its length.
+        var point =
+            new Vector3d(u.localCenter)
+                .add(0, 0, i == 0 ? u.mount.variant.half : -u.mount.variant.half);
+        pipe.applyImpulse(u.bogie, point, impulse);
+      }
+    }
+  }
+
+  static void consoleRemoved(DriverConsoleEntity console) {
+    for (var u : ACTIVE.getOrDefault(console.getLevel(), Map.of()).values())
+      if (u.driver == console
+          && !u.carrier.isRemoved()
+          && !u.mount.isRemoved()
+          && console.getLevel().hasChunkAt(u.mount.getBlockPos())
+          && console.getLevel().getBlockEntity(u.mount.getBlockPos()) == u.mount) {
+        u.mount.braking = true;
+        u.mount.setChanged();
+        u.mount.sendData();
+      }
+  }
+
+  static void releaseMountBrakes(DriverConsoleEntity console) {
+    for (var u : ACTIVE.getOrDefault(console.getLevel(), Map.of()).values())
+      if (u.driver == console || u.command != null && u.command.owner() == console) {
+        u.mount.braking = false;
+        u.mount.setChanged();
+        u.mount.sendData();
+      }
+  }
+
+  /**
+   * Holds a carriage for a couple of substeps when a sample goes missing.
+   *
+   * <p>Existing guides stay in place, so the body keeps being constrained to the last good samples;
+   * only a streak longer than {@link SeamRules#MISS_LIMIT} means the axle really lost its edge.
+   */
+  private static boolean hold(Unit u, String axle) {
+    u.missStreak++;
+    if (!SeamRules.mayHold(u.missStreak)) return false;
+    long tick = u.bogie.getLevel().getGameTime();
+    if (u.nextHoldLog <= tick) {
+      u.nextHoldLog = tick + 20;
+      org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+          .info(
+              "[GuideHeld] body={} axle={} miss={}/{} speed={}",
+              u.bogie.getUniqueId(),
+              axle,
+              u.missStreak,
+              SeamRules.MISS_LIMIT,
+              u.speed);
+    }
+    return true;
+  }
+
+  private static void release(Unit u, String reason) {
+    // Keep current velocity and the carrier bearing; remove only world-to-track constraints.
+    var anchors = anchorSummary(u);
+    u.clearGuides();
+    u.detached = true;
+    var tag = u.bogie.getUserDataTag();
+    if (tag == null) tag = new net.minecraft.nbt.CompoundTag();
+    tag.putBoolean("GuidedDerailed", true);
+    u.bogie.setUserDataTag(tag);
+    org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+        .info(
+            "[GuideReleased] body={} reason={} speed={} curveRisk={} lateralSpeed={} curveSeconds={} impactSeconds={} anchors={}",
+            u.bogie.getUniqueId(),
+            reason,
+            u.speed,
+            u.curveRisk,
+            u.lateralSpeed,
+            u.exposure.curveSeconds,
+            u.exposure.impactSeconds,
+            anchors);
+  }
+
+  private static boolean checkDerailment(Unit u, SubLevelPhysicsSystem physics, double dt) {
+    var pipe = physics.getPipeline();
+    var velocity = pipe.getLinearVelocity(u.bogie, new Vector3d());
+    var angular = pipe.getAngularVelocity(u.bogie, new Vector3d());
+    var bogieCom = world(u.bogie, u.bogie.logicalPose().rotationPoint());
+    var carrierCom = world(u.carrier, u.carrier.logicalPose().rotationPoint());
+    double lowerMass = u.bogie.getMassTracker().getMass(),
+        upperMass = u.carrier.getMassTracker().getMass() / u.supports;
+    var supportedCom =
+        new Vector3d(bogieCom)
+            .mul(lowerMass)
+            .fma(upperMass, carrierCom)
+            .div(Math.max(.001, lowerMass + upperMass));
+    u.curveRisk = 0;
+    u.lateralSpeed = 0;
+    u.speed = 0;
+    for (int i = 0; i < 2; i++) {
+      var sample = u.samples[i];
+      double speed = velocity.dot(sample.tangent());
+      u.speed += speed * .5;
+      double height = new Vector3d(supportedCom).sub(sample.position()).dot(sample.up());
+      u.curveRisk =
+          Math.max(
+              u.curveRisk,
+              DerailmentModel.curveRisk(
+                  speed, sample.lateralCurvature(), height, TrainConfig.DERAIL_LATERAL.get()));
+      // Use axle point velocity, including yaw, so normal turning is not a side impact.
+      var lever = world(u.bogie, u.axle(i)).sub(bogieCom);
+      var pointVelocity = new Vector3d(angular).cross(lever).add(velocity);
+      var side = new Vector3d(sample.tangent()).cross(sample.up()).normalize();
+      u.lateralSpeed = Math.max(u.lateralSpeed, Math.abs(pointVelocity.dot(side)));
+    }
+    var reason =
+        u.exposure.update(
+            u.curveRisk,
+            u.lateralSpeed,
+            TrainConfig.DERAIL_IMPACT.get(),
+            TrainConfig.DERAIL_DELAY.get(),
+            dt);
+    if (reason == null) return false;
+    release(u, reason);
+    return true;
+  }
+
+  static Unit owner(Level level, BlockPos pos) {
+    if (!(level instanceof ServerLevel server)) return null;
+    var units = ACTIVE.getOrDefault(server, Map.of());
+    if (level.getBlockEntity(pos) instanceof MountEntity mount && mount.bogieId != null) {
+      var unit = units.get(mount.bogieId);
+      return unit != null && unit.mount == mount && liveMount(server, mount) && ownsMount(unit)
+          ? unit
+          : null;
+    }
+    if (SableCompanion.INSTANCE.getContaining(level, pos) instanceof ServerSubLevel b)
+      return units.get(b.getUniqueId());
+    return null;
+  }
+
+  static void dismantle(Unit u, Player player) {
+    var level = u.bogie.getLevel();
+    if (ACTIVE.getOrDefault(level, Map.of()).get(u.bogie.getUniqueId()) != u
+        || !liveMount(level, u.mount)
+        || !ownsMount(u)) return;
+    u.close();
+    ACTIVE.getOrDefault(level, Map.of()).remove(u.bogie.getUniqueId());
+    var container = SubLevelContainer.getContainer(level);
+    container.removeSubLevel(u.bogie, SubLevelRemovalReason.REMOVED);
+    u.mount.bogieId = null;
+    level.setBlock(u.mount.getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+    // Removing the final mount can already remove the carrier's native body.
+    if (!u.carrier.isRemoved()) {
+      u.carrier.buildMassTracker();
+      u.carrier.updateMergedMassData(1);
+      if (u.carrier.getMassTracker().getMass() <= .001) {
+        if (!u.carrier.isRemoved())
+          container.removeSubLevel(u.carrier, SubLevelRemovalReason.REMOVED);
+      } else if (!u.carrier.isRemoved())
+        SubLevelPhysicsSystem.get(level).getPipeline().onStatsChanged(u.carrier);
+    }
+    if (!player.getAbilities().instabuild) {
+      var stack = Content.bogieItem();
+      if (!player.getInventory().add(stack)) player.drop(stack, false);
+    }
+  }
+
+  static void unload(ServerLevel level) {
+    VehiclePlacement.unload(level);
+    BogiePairContacts.unload(level);
+    var units = ACTIVE.remove(level);
+    if (units != null) {
+      units.values().forEach(Unit::close);
+    }
+    INPUTS.remove(level);
+    PerfCounters.unload(level);
+    ConsistRoutes.unload(level);
+  }
+}

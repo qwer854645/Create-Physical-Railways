@@ -23,7 +23,7 @@
 
 ### 名称与术语
 
-项目正式名称：物理铁路 / Create: Physical Railways。内部 `guidedrailways` 标识保留用于存档和资源兼容，不用于替代玩家可见名称
+项目正式名称：物理铁路 / Create: Physical Railways。内部 `physicalrailways` 标识保留用于存档和资源兼容，不用于替代玩家可见名称
 
 名称描述部件本身，不带“原型”“测试版”等开发阶段字样。同一功能保持一个名称，完整名称用于物品和首次介绍，短称用于上下文明确的按钮、状态与说明。
 
@@ -56,7 +56,7 @@
 
 玩家文案使用翻译键，并同时维护 `zh_cn.json`、`en_us.json`。两种语言键集合及格式参数类型、数量和顺序一致，允许按语言习惯重写句子，不逐字硬译。
 
-使用 `itemGroup`、`item`、`block`、`tooltip`、`gui`、`message`、`config` 对应的 `guidedrailways` 键前缀。文件使用 UTF-8，新增文件采用 LF。JSON 字符串的 `\n` 应解析成实际换行，经 `UserText` 按行展开，不能让玩家看到字面量反斜杠 n。
+使用 `itemGroup`、`item`、`block`、`tooltip`、`gui`、`message`、`config` 对应的 `physicalrailways` 键前缀。文件使用 UTF-8，新增文件采用 LF。JSON 字符串的 `\n` 应解析成实际换行，经 `UserText` 按行展开，不能让玩家看到字面量反斜杠 n。
 
 交互异常经 `UserText.error` 转换为翻译组件。未知技术异常写日志，玩家收到简短通用提示。Sable 默认物理体命名接口只接收字符串，因此使用创建时服务端语言，这是现有接口限制。
 
@@ -94,7 +94,7 @@
 
 ### 物品思索教程
 
-使用 Create / Ponder 原生场景、输入图示、文本框与高亮。翻译使用原生 `guidedrailways.ponder.<场景>.header` 与 `guidedrailways.ponder.shared.<说明>` 键；中英文同步，英文资源作为缺省文本。按实际操作顺序分步说明，明确查看与接管、选择与执行、停稳与锁定，不把示意动画当作真实物理运行。可选部件仅在对应依赖可用时注册教程。
+使用 Create / Ponder 原生场景、输入图示、文本框与高亮。翻译使用原生 `physicalrailways.ponder.<场景>.header` 与 `physicalrailways.ponder.shared.<说明>` 键；中英文同步，英文资源作为缺省文本。按实际操作顺序分步说明，明确查看与接管、选择与执行、停稳与锁定，不把示意动画当作真实物理运行。可选部件仅在对应依赖可用时注册教程。
 
 ## 修改与验证流程
 

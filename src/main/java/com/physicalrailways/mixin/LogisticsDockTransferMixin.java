@@ -1,0 +1,35 @@
+package com.physicalrailways.mixin;
+
+import com.physicalrailways.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.injection.*;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Pseudo
+@Mixin(
+    targets = "net.sprocketgames.create_aeronautics_automated_logistics.dock.DockTransferSnapshot",
+    remap = false)
+public abstract class LogisticsDockTransferMixin {
+  @Inject(method = "handoffLocalItem", at = @At("HEAD"), cancellable = true)
+  private static void physicalrailways$address(
+      @Coerce Object source, @Coerce Object destination, CallbackInfoReturnable<Integer> cir) {
+    if (!RailDocks.allowsHandoff((BlockEntity) source, (BlockEntity) destination))
+      cir.setReturnValue(0);
+  }
+
+  @Inject(method = "captureConnector", at = @At("RETURN"), cancellable = true)
+  private static void physicalrailways$activity(
+      @Coerce Object connector, CallbackInfoReturnable<Object> cir) {
+    cir.setReturnValue(LogisticsCargoBridge.stamp((BlockEntity) connector, cir.getReturnValue()));
+  }
+
+  @Inject(method = "handoffLocalItem", at = @At("RETURN"))
+  private static void physicalrailways$handoff(
+      @Coerce Object source, @Coerce Object destination, CallbackInfoReturnable<Integer> cir) {
+    if (cir.getReturnValue() > 0) {
+      CargoTransfers.changed((BlockEntity) source);
+      CargoTransfers.changed((BlockEntity) destination);
+    }
+  }
+}

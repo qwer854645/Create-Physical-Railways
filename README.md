@@ -1,5 +1,7 @@
 # 物理铁路 / Create: Physical Railways
 
+模组 ID：`physicalrailways`；源码包：`com.physicalrailways`。
+
 基于 Sable 物理系统的机械动力铁路扩展，让你自由搭建车体，在 Create 轨道上驾驶和编组物理列车。
 
 ## 功能

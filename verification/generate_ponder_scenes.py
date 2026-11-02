@@ -5,7 +5,7 @@ import struct
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / "src/main/resources/assets/guidedrailways/ponder"
+DEST = ROOT / "src/main/resources/assets/physicalrailways/ponder"
 
 
 def tag_type(value):
@@ -50,9 +50,9 @@ def build(name):
             block((x, 0, z), "minecraft:smooth_stone")
     for z in range(9):
         block((4, 1, z), "create:track", {"shape": "zo", "turn": "false", "waterlogged": "false"})
-    block((4, 5, 4), "guidedrailways:bogie_frame", {"style": "0"},
-          {"id": "guidedrailways:bogie_frame", "WheelDistance": 0.0, "LinearSpeed": 0.0})
-    block((4, 2, 4), "guidedrailways:bogie_mount", {"style": "0", "compact": "false"})
+    block((4, 5, 4), "physicalrailways:bogie_frame", {"style": "0"},
+          {"id": "physicalrailways:bogie_frame", "WheelDistance": 0.0, "LinearSpeed": 0.0})
+    block((4, 2, 4), "physicalrailways:bogie_mount", {"style": "0", "compact": "false"})
     for x in range(3, 6):
         for z in range(3, 6):
             block((x, 3, z), "minecraft:oak_planks")
@@ -61,8 +61,8 @@ def build(name):
         block((4, 4, 4), "create:creative_motor", {"facing": "down"},
               {"id": "create:creative_motor", "Speed": 64.0})
     if name != "physical_bogey":
-        block((4, 4, 3), "guidedrailways:driver_console", {"facing": "south"},
-              {"id": "guidedrailways:driver_console", "VisualNotch": -4, "Direction": 1})
+        block((4, 4, 3), "physicalrailways:driver_console", {"facing": "south"},
+              {"id": "physicalrailways:driver_console", "VisualNotch": -4, "Direction": 1})
     if name == "electric_controls":
         for z, facing in [(4, "north"), (5, "south")]:
             block((4, 4, z), "electroenergetics:pantograph", {"facing": facing, "double": "true"},
@@ -77,9 +77,9 @@ def build(name):
     if name == "rail_transfer":
         for y in range(1, 4):
             block((1, y, 4), "create:andesite_casing")
-        block((1, 4, 4), "guidedrailways:rail_docking_connector",
+        block((1, 4, 4), "physicalrailways:rail_docking_connector",
               {"facing": "east", "extended": "false", "powered": "false"})
-        block((3, 4, 4), "guidedrailways:rail_docking_connector",
+        block((3, 4, 4), "physicalrailways:rail_docking_connector",
               {"facing": "west", "extended": "false", "powered": "false"})
         block((1, 1, 6), "create:track_station")
         block((1, 1, 7), "create:white_postbox", {"facing": "south", "open": "false", "waterlogged": "false"})

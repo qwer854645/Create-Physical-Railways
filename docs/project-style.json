@@ -1,6 +1,6 @@
 {
   "$schema": "./project-style.schema.json",
-  "id": "guidedrailways.create-style",
+  "id": "physicalrailways.create-style",
   "version": "1.0.2",
   "status": "default",
   "scope": [
@@ -172,14 +172,14 @@
     "lineBreak": "LF",
     "placeholderStyle": "Minecraft translatable format; keep argument types and order equivalent across locales",
     "keyPrefixes": [
-      "itemGroup.guidedrailways.",
-      "item.guidedrailways.",
-      "block.guidedrailways.",
-      "tooltip.guidedrailways.",
-      "gui.guidedrailways.",
-      "message.guidedrailways.",
-      "config.guidedrailways.",
-      "guidedrailways.ponder."
+      "itemGroup.physicalrailways.",
+      "item.physicalrailways.",
+      "block.physicalrailways.",
+      "tooltip.physicalrailways.",
+      "gui.physicalrailways.",
+      "message.physicalrailways.",
+      "config.physicalrailways.",
+      "physicalrailways.ponder."
     ],
     "rules": [
       {
@@ -272,9 +272,9 @@
     ]
   },
   "ui": {
-    "themeClass": "src/main/java/com/guidedrailways/CreateGuiTheme.java",
-    "buttonClass": "src/main/java/com/guidedrailways/CreateActionButton.java",
-    "textClass": "src/main/java/com/guidedrailways/UserText.java",
+    "themeClass": "src/main/java/com/physicalrailways/CreateGuiTheme.java",
+    "buttonClass": "src/main/java/com/physicalrailways/CreateActionButton.java",
+    "textClass": "src/main/java/com/physicalrailways/UserText.java",
     "palette": {
       "TEXT": "#FFC6C6C6",
       "DIM": "#FF9B9B9B",

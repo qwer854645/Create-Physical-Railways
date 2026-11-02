@@ -46,7 +46,7 @@ for name, url, sha in FILES:
             count += len(members)
 with ZipFile(a.artifact) as z:
     assert not any(n.startswith(('com/weido/', 'com/george_vi/')) for n in z.namelist())
-    rows = json.loads(z.read('assets/guidedrailways/geometry/all_bogeys.json'))
+    rows = json.loads(z.read('assets/physicalrailways/geometry/all_bogeys.json'))
     assert len(rows) == 135 and sum(r['id'].startswith('create_bb:') for r in rows) == 96
     assert [r['index'] for r in rows] == list(range(1, 136))
     toml = z.read('META-INF/neoforge.mods.toml').decode()

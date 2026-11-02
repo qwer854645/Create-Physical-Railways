@@ -51,7 +51,7 @@ python verification/prepare_dependencies.py
 完整的候选发布包接口检查：
 
 ```powershell
-python verification/check_dependency_matrix.py --artifact build/libs/guidedrailways-0.2.8.jar --download
+python verification/check_dependency_matrix.py --artifact build/libs/physicalrailways-0.2.8.jar --download
 ```
 
 候选包保存在忽略的 build/dependency-matrix，不复制到 run/mods。检查 81 个发布包，覆盖实际字节码引用、父类成员、Mixin 目标、反射接口和模型资源。结果写入 build/dependency-matrix-report.json；`dependency-policy.json` 中列入支持的版本必须全部通过，不兼容候选可失败并报告原因

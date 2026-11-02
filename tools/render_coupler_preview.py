@@ -20,7 +20,7 @@ def write_models():
     textures['particle']=textures['iron']
     base=[element([3,4,12],[13,12,16],'dark'),element([4,5,8],[12,11,14],'iron')]
     model={'textures':textures,'elements':base}
-    path=ROOT/'src/main/resources/assets/guidedrailways/models'
+    path=ROOT/'src/main/resources/assets/physicalrailways/models'
     (path/'block/coupler.json').write_text(json.dumps(model,indent=2)+'\n')
     full=list(base)
     for box in json.loads((OUT/'coupler-rest.json').read_text()):

@@ -1,0 +1,108 @@
+{
+  "variants": {
+    "extended=false,facing=down,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 180
+    },
+    "extended=false,facing=down,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 180
+    },
+    "extended=true,facing=down,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 180
+    },
+    "extended=true,facing=down,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 180
+    },
+    "extended=false,facing=east,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90,
+      "y": 90
+    },
+    "extended=false,facing=east,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90,
+      "y": 90
+    },
+    "extended=true,facing=east,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90,
+      "y": 90
+    },
+    "extended=true,facing=east,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90,
+      "y": 90
+    },
+    "extended=false,facing=north,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90
+    },
+    "extended=false,facing=north,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90
+    },
+    "extended=true,facing=north,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90
+    },
+    "extended=true,facing=north,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90
+    },
+    "extended=false,facing=south,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90,
+      "y": 180
+    },
+    "extended=false,facing=south,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90,
+      "y": 180
+    },
+    "extended=true,facing=south,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90,
+      "y": 180
+    },
+    "extended=true,facing=south,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90,
+      "y": 180
+    },
+    "extended=false,facing=up,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block"
+    },
+    "extended=false,facing=up,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered"
+    },
+    "extended=true,facing=up,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block"
+    },
+    "extended=true,facing=up,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered"
+    },
+    "extended=false,facing=west,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90,
+      "y": 270
+    },
+    "extended=false,facing=west,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90,
+      "y": 270
+    },
+    "extended=true,facing=west,powered=false": {
+      "model": "physicalrailways:block/rail_dock/block",
+      "x": 90,
+      "y": 270
+    },
+    "extended=true,facing=west,powered=true": {
+      "model": "physicalrailways:block/rail_dock/block_powered",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

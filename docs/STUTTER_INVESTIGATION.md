@@ -10,7 +10,7 @@
 暂存最近信号帧，等待完整心跳恢复，不以缺失字段填出半列车。
 
 身份网络协议由 2 升为 3，客户端与服务端必须一起升级。恢复开关为 JVM 参数
-`-Dguidedrailways.fullTrainSnapshots=true`，仍使用协议 3，但每次发送完整快照。
+`-Dphysicalrailways.fullTrainSnapshots=true`，仍使用协议 3，但每次发送完整快照。
 开启现有 `performanceLogging` 后，编码路径报告 `[TrainSyncPerf]` 的实际 NBT payload 字节数
 及完整/增量/信号帧数量（不含传输头）；保持默认关闭，不重复编码以统计大小。
 
@@ -28,7 +28,7 @@
 软预算，完成后一次切换活动图分片；空间单元按图槽位查询，旧引用另行分批回收。
 实际删除/替换的边仍由 `live()` 立即拒绝。导航、前向道岔检查和轮轴遇到已知修改时，可
 同步完成所在图以保持原有即时查询语义；首次建立索引和明确的 `refreshNow` 保留同步全量路径。
-JVM 参数 `-Dguidedrailways.fullTrackIndex=true` 可将应当执行的图构建恢复为同步完成。
+JVM 参数 `-Dphysicalrailways.fullTrackIndex=true` 可将应当执行的图构建恢复为同步完成。
 
 离线 NBT 用例包含较大静态时刻表/路径/车厢数据，完整样本 14,156 字节，移动差分 279 字节；
 这是字段拆分检查，不是实际多人服带宽或 FPS 基准。真实服务端验证采用独立测试世界，
@@ -37,7 +37,7 @@ JVM 参数 `-Dguidedrailways.fullTrackIndex=true` 可将应当执行的图构建
 
 版本：0.2.24 起，2026-10-27 / 28 实测。本文只记录**有数据支撑**的结论，以及**已被排除**的方向，避免重复劳动。
 
-排查工具全部是可开关的探针，默认关闭（`run/config/guidedrailways-server.toml` 的 `detailedLogging` / `performanceLogging`）。它们留在代码里，因为它们各自回答了一个别的东西回答不了的问题。
+排查工具全部是可开关的探针，默认关闭（`run/config/physicalrailways-server.toml` 的 `detailedLogging` / `performanceLogging`）。它们留在代码里，因为它们各自回答了一个别的东西回答不了的问题。
 
 ## 探针与它们回答的问题
 
@@ -84,7 +84,7 @@ JVM 参数 `-Dguidedrailways.fullTrackIndex=true` 可将应当执行的图构建
 | Flywheel 实例化后端 | 关掉（`flywheel:off`）后反而更慢（转向架峰值 133 → 334 ms） |
 | 本模组的四个渲染器 | `[BerPerf]` 实测 bogie ≤31.8（首帧后 1~3）、coupler ≤4.3、console ≤0.8、dock ≤1.8 ms |
 | 日志写入 | JFR 采样中渲染线程**没有**任何日志/IO 栈帧 |
-| 本模组的 Java 热点 | JFR 的 457 个渲染线程样本里，最高自身耗时只有 54 个样本（≈1.1 s，分散在几百帧）；栈内出现 `com.guidedrailways` 的样本只有 1 个 |
+| 本模组的 Java 热点 | JFR 的 457 个渲染线程样本里，最高自身耗时只有 54 个样本（≈1.1 s，分散在几百帧）；栈内出现 `com.physicalrailways` 的样本只有 1 个 |
 | 线程阻塞 | JFR 的 `ThreadPark` / `JavaMonitorEnter` 中渲染线程没有长阻塞 |
 
 ## Xaero 小地图：保留，但需要降开销

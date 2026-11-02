@@ -15,7 +15,7 @@ Minecraft 1.21.1 的 `ShaderInstance.updateLocations` 在链接阶段已建立�
 - program 不匹配、采样器未知、列表未完成或长度不匹配时调用原查询/其他包装器。
 - 注入只在客户端生效。`require=0` 允许其他优化模组先移除这一调用时跳过本优化；
   这不代表任意第三方着色器组合已验收。
-- 启动参数 `-Dguidedrailways.disableSamplerLocationReuse=true` 恢复原查询，便于同场景对照。
+- 启动参数 `-Dphysicalrailways.disableSamplerLocationReuse=true` 恢复原查询，便于同场景对照。
   此参数在进程启动时读取；不能在游戏运行中切换。
 
 离线验证：`checkShaderSamplerReuse` 与 `checkShaderSamplerReuseDisabled` 直接调用包装方法，
@@ -43,7 +43,7 @@ Minecraft 1.21.1 的 `ShaderInstance.updateLocations` 在链接阶段已建立�
 
 `glGetIntegerv` 是状态快照的一部分，尚未修改。下一轮要检查调试命名栈是否消失、
 剩余状态查询长帧是否变化，以及窗口缩放、重载和手部画面是否正常。
-`-Dguidedrailways.disableFramebufferRegistrationReuse=true` 在启动时关闭本轮试验，
+`-Dphysicalrailways.disableFramebufferRegistrationReuse=true` 在启动时关闭本轮试验，
 与前一轮采样器优化的关闭参数相互独立。
 
 `checkVeilFramebufferReuse` / `checkVeilFramebufferReuseDisabled` 检查实际注入方法的
@@ -60,7 +60,7 @@ Veil 4.3.2 的 `FramebufferStack.push` 按 36006、36010、36006 查询绑定；
 
 运行时插件先用 `FramebufferSnapshotSupport` 识别这段查询序列；目标版本或其他转换引入
 未知调用/写状态时跳过本项优化。该检查针对已知序列，不能保证所有第三方渲染组合兼容。
-另可在启动时加 `-Dguidedrailways.disableFramebufferSnapshotReuse=true` 单独关闭本项。
+另可在启动时加 `-Dphysicalrailways.disableFramebufferSnapshotReuse=true` 单独关闭本项。
 
 `checkVeilFramebufferSnapshot` 与 Disabled 变体检查三次变两次查询、读/绘制绑定不同、
 帧缓冲 0、调用隔离，并读取嵌入 Veil 字节码验证序列；模拟新增绑定操作后守卫必须拒绝。
@@ -73,7 +73,7 @@ Veil 4.3.2 的 `FramebufferStack.push` 按 36006、36010、36006 查询绑定；
 快照路径还拒绝两次查询之间新增的分支、未知调用和写状态。
 这些检查只反映检查时可见的目标，无法保证随后应用的其他 Mixin 一定兼容。
 
-启动参数 `-Dguidedrailways.disableRenderOptimizations=true` 可在注入前关闭三项优化，
+启动参数 `-Dphysicalrailways.disableRenderOptimizations=true` 可在注入前关闭三项优化，
 各自独立的关闭参数仍有效。与只在运行时回退不同，这也避免加载对应优化的 Shadow 字段。
 日志 `[RenderCompat]` 记录目标符合条件或跳过原因；eligible 仅说明允许尝试注入，
 不代表实际注入、后续其他模组行为或画面已经验收。

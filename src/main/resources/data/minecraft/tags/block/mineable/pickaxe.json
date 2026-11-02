@@ -1,13 +1,13 @@
 {
   "replace": false,
   "values": [
-    "guidedrailways:bogie_mount",
-    "guidedrailways:bogie_frame",
-    "guidedrailways:bogie_collision",
-    "guidedrailways:coupler",
-    "guidedrailways:driver_console",
+    "physicalrailways:bogie_mount",
+    "physicalrailways:bogie_frame",
+    "physicalrailways:bogie_collision",
+    "physicalrailways:coupler",
+    "physicalrailways:driver_console",
     {
-      "id": "guidedrailways:rail_docking_connector",
+      "id": "physicalrailways:rail_docking_connector",
       "required": false
     }
   ]

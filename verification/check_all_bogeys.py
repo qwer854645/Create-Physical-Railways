@@ -2,7 +2,7 @@
 import argparse,json,hashlib,math,itertools
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--capture');a=p.parse_args()
-rows=json.loads(Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json').read_text())
+rows=json.loads(Path('src/main/resources/assets/physicalrailways/geometry/all_bogeys.json').read_text())
 sha=hashlib.sha256(Path('libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar').read_bytes()).hexdigest()
 assert len(rows)==135
 keys=set()

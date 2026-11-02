@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "physicalrailways:block/bogie_frame" }
+  }
+}

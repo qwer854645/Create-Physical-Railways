@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "facing=north,pressed=false": {
+      "model": "physicalrailways:block/driver_console",
+      "y": 0
+    },
+    "facing=north,pressed=true": {
+      "model": "physicalrailways:block/driver_console_pressed",
+      "y": 0
+    },
+    "facing=east,pressed=false": {
+      "model": "physicalrailways:block/driver_console",
+      "y": 90
+    },
+    "facing=east,pressed=true": {
+      "model": "physicalrailways:block/driver_console_pressed",
+      "y": 90
+    },
+    "facing=south,pressed=false": {
+      "model": "physicalrailways:block/driver_console",
+      "y": 180
+    },
+    "facing=south,pressed=true": {
+      "model": "physicalrailways:block/driver_console_pressed",
+      "y": 180
+    },
+    "facing=west,pressed=false": {
+      "model": "physicalrailways:block/driver_console",
+      "y": 270
+    },
+    "facing=west,pressed=true": {
+      "model": "physicalrailways:block/driver_console_pressed",
+      "y": 270
+    }
+  }
+}

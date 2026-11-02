@@ -20,6 +20,6 @@
 
 用户明确要求打开客户端后，使用 `gradlew.bat runClient --offline -PlagProbe`。普通启动不应用 LagProbe 客户端 Mixin；诊断只计时，目标签名不支持则跳过对应探针。
 
-保留的阶段为 WORLD_REBUILD、CHUNK_UPLOAD_BATCH、VBO_BIND、VBO_UPLOAD、VBO_CLOSE、SABLE_RENDER_RELEASE、PHYSICS_PROPERTY_SYNC 和 BOGIE_REMOVE。物理属性包计时包围实际任务执行。5 ms 以上操作可写入 JFR 事件 `guidedrailways.LagSpan`，`elapsedNanos` 是实测耗时，事件时间为结束时刻；40 ms 以上打印日志，每阶段最多每秒一条。嵌套阶段不能相加当作总耗时。
+保留的阶段为 WORLD_REBUILD、CHUNK_UPLOAD_BATCH、VBO_BIND、VBO_UPLOAD、VBO_CLOSE、SABLE_RENDER_RELEASE、PHYSICS_PROPERTY_SYNC 和 BOGIE_REMOVE。物理属性包计时包围实际任务执行。5 ms 以上操作可写入 JFR 事件 `physicalrailways.LagSpan`，`elapsedNanos` 是实测耗时，事件时间为结束时刻；40 ms 以上打印日志，每阶段最多每秒一条。嵌套阶段不能相加当作总耗时。
 
 对实际客户端 PID 录制 JFR，分别测量首次加载后的静止、驾驶和创建/拆除转向架，动作之间留出间隔。检查服务端拆除计时与客户端释放/上传是否同窗，再决定修复位置。离线检查覆盖默认关闭、Minecraft/Sable 方法签名、包装调用与异常保持，以及真实 JFR 记录。

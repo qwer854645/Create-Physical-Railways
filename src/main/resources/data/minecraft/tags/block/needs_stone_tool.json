@@ -1,6 +1,6 @@
 {
   "replace": false,
   "values": [
-    "guidedrailways:driver_console"
+    "physicalrailways:driver_console"
   ]
 }

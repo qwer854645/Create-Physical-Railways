@@ -6,7 +6,7 @@ from fit_bogey_mounts import fit_mount, write_models, measure_bearing
 p=argparse.ArgumentParser();p.add_argument('--input',default='build/bogey-capture.json');p.add_argument('--append-namespace');a=p.parse_args()
 rows=json.loads(Path(a.input).read_text());out=[]
 if a.append_namespace:
-    out=json.loads(Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json').read_text())
+    out=json.loads(Path('src/main/resources/assets/physicalrailways/geometry/all_bogeys.json').read_text())
     old={(r['id'],r['size']) for r in out}
     rows=[r for r in rows if r['id'].startswith(a.append_namespace+':') and (r['id'],r['size']) not in old]
 start=len(out)+1
@@ -76,7 +76,7 @@ for index,row in enumerate(rows,start):
     row.update(index=index,renderY=RENDER_Y,tread=round(max(.05,tread),7),ride=round(ride,7),half=round(half,7),mountTop=top,animationRatio=2 if row['id']=='railways:handcar' else 1,sourceJarSha256=hashlib.sha256(Path('libs/create_bb-1.0.8-1.21.1.jar' if row['id'].startswith('create_bb:') else 'libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar').read_bytes()).hexdigest(),boxes=boxes)
     fit_mount(row)
     out.append(row);print(index,row['id'],row['size'],'ride',round(ride,3),'tread',round(tread,3),'half',half,'cells',len(cells),'boxes',len(boxes))
-dest=Path('src/main/resources/assets/guidedrailways/geometry/all_bogeys.json');dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')
+dest=Path('src/main/resources/assets/physicalrailways/geometry/all_bogeys.json');dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')
 print('Wrote',len(out),'native style/size profiles',dest)
 write_models(out)
 dest.write_text(json.dumps(out,separators=(',',':'))+'\n','utf-8')

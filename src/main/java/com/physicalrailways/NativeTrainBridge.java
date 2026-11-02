@@ -1,0 +1,347 @@
+package com.physicalrailways;
+
+import com.simibubi.create.Create;
+import com.simibubi.create.content.trains.entity.Train;
+import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
+import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
+import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
+import java.util.*;
+import net.minecraft.nbt.*;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.joml.Vector3d;
+
+/** Maintains native query objects. Does not issue motion, schedule, station or signal commands. */
+public final class NativeTrainBridge {
+  private record Registration(PhysicalTrainProxy train, Set<UUID> members) {}
+
+  private static final Map<ServerLevel, Map<UUID, Registration>> BY_BOGEY = new WeakHashMap<>();
+  private static final Map<ServerLevel, Set<UUID>> WARNED = new WeakHashMap<>();
+  private static final Map<ServerLevel, Map<UUID, PhysicalTrainProxy>> LIVE = new WeakHashMap<>();
+
+  public static Map<UUID, Train> nativeOnly(Map<UUID, Train> trains) {
+    if (trains.values().stream().noneMatch(PhysicalTrainProxy.class::isInstance)) return trains;
+    // Collision queries are hot: use a filtered view, not a copied registry per carriage.
+    return Collections.unmodifiableMap(
+        com.google.common.collect.Maps.filterValues(
+            trains, train -> !(train instanceof PhysicalTrainProxy)));
+  }
+
+  static void observe(SubLevelContainer container) {
+    container.addObserver(
+        new dev.ryanhcode.sable.api.sublevel.SubLevelObserver() {
+          @Override
+          public void onSubLevelRemoved(
+              dev.ryanhcode.sable.sublevel.SubLevel body, SubLevelRemovalReason reason) {
+            if (reason != SubLevelRemovalReason.REMOVED
+                || !(body.getLevel() instanceof ServerLevel level)) return;
+            var data = TrainIdentityData.get(level);
+            var before = Map.copyOf(data.ledger.records);
+            data.ledger.removed(body.getUniqueId());
+            if (!before.equals(data.ledger.records)) data.setDirty();
+          }
+        });
+  }
+
+  static void tick(ServerLevel level) {
+    TrainSyncMetrics.report(level);
+    if (level.getGameTime() % 5 != 0 || SubLevelPhysicsSystem.get(level) == null) return;
+    var groups =
+        TrainConsists.get(level).groups().stream()
+            .filter(
+                g ->
+                    !g.units().isEmpty()
+                        && g.bodies().values().stream()
+                            .noneMatch(dev.ryanhcode.sable.sublevel.SubLevel::isRemoved)
+                        && g.units().stream()
+                            .noneMatch(u -> u.bogie.isRemoved() || u.mount.isRemoved())
+                        && CouplerConnections.cargoComplete(level, g.members()))
+            .toList();
+    var data = TrainIdentityData.get(level);
+    var before = Map.copyOf(data.ledger.records);
+    var memberships =
+        groups.stream()
+            .map(
+                g ->
+                    g.units().stream()
+                        .map(u -> u.bogie.getUniqueId())
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet()))
+            .toList();
+    var eligible = new HashSet<Set<UUID>>();
+    for (int i = 0; i < groups.size(); i++)
+      if (hasConsole(level, groups.get(i))) eligible.add(memberships.get(i));
+    // Keep uncontrolled groups in topology reconciliation: a detached unpowered trailer is not
+    // an unloaded half of its former train. Only publication requires a primary console.
+    var identities = data.ledger.reconcile(memberships, eligible);
+    if (!before.equals(data.ledger.records)) data.setDirty();
+    var live = LIVE.computeIfAbsent(level, l -> new HashMap<>());
+    var seen = new HashSet<UUID>();
+    var byBogie = new HashMap<UUID, Registration>();
+    var warned = WARNED.computeIfAbsent(level, l -> new HashSet<>());
+    warned.retainAll(identities.values());
+    for (int i = 0; i < groups.size(); i++) {
+      if (!eligible.contains(memberships.get(i))) continue;
+      var id = identities.get(memberships.get(i));
+      if (id == null) continue;
+      var snapshot = snapshot(level, id, groups.get(i));
+      if (snapshot == null) {
+        if (warned.add(id))
+          org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+              .warn(
+                  "[NativeTrainIdentity] query proxy deferred id={}; a linear consist with bogey-supported carriages is required",
+                  id);
+        continue;
+      }
+      warned.remove(id);
+      seen.add(id);
+      var proxy = live.get(id);
+      boolean created = proxy == null;
+      if (created) {
+        proxy = new PhysicalTrainProxy(id);
+        live.put(id, proxy);
+      }
+      if (proxy.currentStation != null && !snapshot.getBoolean("Derailed"))
+        snapshot.putUUID("Station", proxy.currentStation);
+      snapshot.put("Journey", proxy.journey.capture(groups.get(i), snapshot));
+      proxy.apply(snapshot, Create.RAILWAYS.trackNetworks, level.registryAccess());
+      proxy.bindCargo(level, groups.get(i));
+      var registration = new Registration(proxy, memberships.get(i));
+      for (var member : registration.members()) byBogie.put(member, registration);
+      var previous = Create.RAILWAYS.trains.get(id);
+      if (previous != proxy) {
+        if (previous != null)
+          throw new IllegalStateException("Physical train identity collision: " + id);
+        Create.RAILWAYS.addTrain(proxy);
+        org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+            .info(
+                "[NativeTrainIdentity] registered id={} carriages={} dimension={}",
+                id,
+                proxy.carriages.size(),
+                level.dimension().location());
+      }
+      if (created || level.getGameTime() % 10 == 0) {
+        var packet = proxy.snapshotSync.next(snapshot, level.getGameTime(), created);
+        if (packet != null) PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(packet));
+      }
+    }
+    for (var id : List.copyOf(live.keySet())) if (!seen.contains(id)) remove(level, live, id);
+    BY_BOGEY.put(level, Map.copyOf(byBogie));
+  }
+
+  private static boolean hasConsole(ServerLevel level, TrainConsists.Group group) {
+    for (var unit : group.units()) {
+      var driver = unit.driver;
+      if (driver == null
+          || driver.isRemoved()
+          || driver.getLevel() != level
+          || !level.hasChunkAt(driver.getBlockPos())
+          || level.getBlockEntity(driver.getBlockPos()) != driver) continue;
+      var body = DriverControls.body(driver);
+      if (body != null && group.members().contains(body.getUniqueId())) return true;
+    }
+    return false;
+  }
+
+  static PhysicalTrainProxy registered(ServerLevel level, TrainConsists.Group group) {
+    if (group == null || group.units().isEmpty() || !hasConsole(level, group)) return null;
+    var record =
+        BY_BOGEY.getOrDefault(level, Map.of()).get(group.units().getFirst().bogie.getUniqueId());
+    if (record == null
+        || record.members().size() != group.units().size()
+        || LIVE.getOrDefault(level, Map.of()).get(record.train().id) != record.train()) return null;
+    for (var unit : group.units())
+      if (!record.members().contains(unit.bogie.getUniqueId())) return null;
+    return record.train();
+  }
+
+  static void sync(PhysicalTrainProxy proxy) {
+    PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(
+        proxy.snapshotSync.force(proxy.snapshot())));
+  }
+
+  private static void remove(ServerLevel level, Map<UUID, PhysicalTrainProxy> live, UUID id) {
+    var proxy = live.remove(id);
+    proxy.clearJourney();
+    StationPresence.releaseTrain(level, proxy);
+    if (Create.RAILWAYS.trains.get(id) == proxy) Create.RAILWAYS.removeTrain(id);
+    var removed = new CompoundTag();
+    removed.putUUID("Id", id);
+    removed.putBoolean("Removed", true);
+    PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(removed));
+    org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+        .info("[NativeTrainIdentity] unregistered id={}", id);
+  }
+
+  static void unload(ServerLevel level) {
+    TrainSyncMetrics.reset(level);
+    WARNED.remove(level);
+    BY_BOGEY.remove(level);
+    var live = LIVE.remove(level);
+    if (live != null) for (var id : List.copyOf(live.keySet())) remove(level, live, id);
+  }
+
+  static void login(net.minecraft.server.level.ServerPlayer player) {
+    for (var live : LIVE.values())
+      for (var proxy : live.values()) {
+        var baseline = proxy.snapshotSync.baseline();
+        if (baseline != null) PacketDistributor.sendToPlayer(player, new NativeTrainNetwork.Update(baseline));
+        PacketDistributor.sendToPlayer(
+            player, new NativeTrainNetwork.Update(proxy.signals.packet()));
+      }
+  }
+
+  private static CompoundTag snapshot(ServerLevel level, UUID id, TrainConsists.Group group) {
+    var byBody = new HashMap<UUID, List<VehiclePhysics.Unit>>();
+    for (var u : group.units())
+      byBody.computeIfAbsent(u.carrier.getUniqueId(), k -> new ArrayList<>()).add(u);
+    var adjacency = new TreeMap<UUID, Set<UUID>>();
+    for (var body : group.members()) adjacency.put(body, new TreeSet<>());
+    for (var link : group.links()) {
+      adjacency.get(link.a().getUniqueId()).add(link.b().getUniqueId());
+      adjacency.get(link.b().getUniqueId()).add(link.a().getUniqueId());
+    }
+    if (adjacency.values().stream().anyMatch(s -> s.size() > 2)) return null;
+    var start =
+        adjacency.keySet().stream()
+            .filter(b -> adjacency.get(b).size() <= 1)
+            .findFirst()
+            .orElse(null);
+    if (start == null) return null;
+    var order = new ArrayList<UUID>();
+    UUID current = start, previous = null;
+    while (current != null) {
+      if (order.contains(current)) return null;
+      order.add(current);
+      var back = previous;
+      var next =
+          adjacency.get(current).stream().filter(n -> !n.equals(back)).findFirst().orElse(null);
+      previous = current;
+      current = next;
+    }
+    if (order.size() != group.members().size()) return null;
+    var centers = new HashMap<UUID, Vector3d>();
+    for (var body : group.bodies().values())
+      centers.put(body.getUniqueId(), body.boundingBox().center(new Vector3d()));
+    var tag = new CompoundTag();
+    tag.putUUID("Id", id);
+    var driver = group.units().getFirst().driver;
+    tag.putString("Name", driver == null ? "" : driver.trainName());
+    var owner = driver == null ? TrainOwner.UNKNOWN : driver.trainOwner();
+    if (owner.known()) {
+      tag.putUUID("Owner", owner.id());
+      tag.putString("OwnerName", owner.name());
+    }
+    tag.putString("Dimension", level.dimension().location().toString());
+    var carriages = new ListTag();
+    UUID graph = null;
+    boolean detached = false;
+    double totalLength = 0, speed = 0;
+    Vector3d lastBack = null;
+    for (int index = 0; index < order.size(); index++) {
+      var bodyId = order.get(index);
+      var units = byBody.getOrDefault(bodyId, List.of());
+      var body = group.bodies().get(bodyId);
+      var center = centers.get(bodyId);
+      var axis = new Vector3d(0, 0, 1).rotate(body.logicalPose().orientation());
+      if (order.size() > 1) {
+        var direction =
+            index == 0
+                ? new Vector3d(center).sub(centers.get(order.get(1)))
+                : new Vector3d(centers.get(order.get(index - 1))).sub(center);
+        if (direction.lengthSquared() > 1e-8 && axis.dot(direction) < 0) axis.negate();
+      }
+      var forward = axis;
+      var sorted =
+          units.stream()
+              .sorted(
+                  Comparator.comparingDouble(
+                          (VehiclePhysics.Unit u) ->
+                              VehiclePhysics.world(u.bogie, u.localCenter).dot(forward))
+                      .reversed())
+              .toList();
+      var part = new CompoundTag();
+      part.putUUID("Body", bodyId);
+      if (!sorted.isEmpty()) {
+        part.put("Front", bogey(sorted.getFirst(), forward));
+        if (sorted.size() > 1) part.put("Rear", bogey(sorted.getLast(), forward));
+      } else return null;
+      for (var u : units) {
+        detached |= u.detached;
+        for (var sample : u.samples) {
+          if (sample == null) {
+            detached = true;
+            continue;
+          }
+          if (graph == null) graph = sample.path().graph();
+          else if (!graph.equals(sample.path().graph())) detached = true;
+        }
+      }
+      var boxes = new ArrayList<dev.ryanhcode.sable.companion.math.BoundingBox3dc>();
+      boxes.add(body.boundingBox());
+      for (var unit : units) boxes.add(unit.bogie.boundingBox());
+      double low = Double.POSITIVE_INFINITY, high = -low;
+      for (var bounds : boxes)
+        for (double x : new double[] {bounds.minX(), bounds.maxX()})
+          for (double y : new double[] {bounds.minY(), bounds.maxY()})
+            for (double z : new double[] {bounds.minZ(), bounds.maxZ()}) {
+              double d = new Vector3d(x, y, z).sub(center).dot(forward);
+              low = Math.min(low, d);
+              high = Math.max(high, d);
+            }
+      var ahead = new Vector3d(center).fma(high, forward);
+      var back = new Vector3d(center).fma(low, forward);
+      vector(part, "Ahead", ahead);
+      vector(part, "Back", back);
+      totalLength += high - low;
+      if (lastBack != null) totalLength += lastBack.distance(ahead);
+      lastBack = back;
+      if (index == 0)
+        speed =
+            SubLevelPhysicsSystem.get(level)
+                .getPipeline()
+                .getLinearVelocity(body, new Vector3d())
+                .dot(forward);
+      carriages.add(part);
+    }
+    if (graph != null && !detached) tag.putUUID("Graph", graph);
+    tag.putBoolean("Derailed", detached || graph == null);
+    tag.putDouble("Speed", speed);
+    tag.putInt("Length", (int) Math.ceil(totalLength));
+    tag.put("Carriages", carriages);
+    return tag;
+  }
+
+  private static CompoundTag bogey(VehiclePhysics.Unit unit, Vector3d forward) {
+    var tag = new CompoundTag();
+    tag.putInt("Variant", unit.mount.variant.ordinal());
+    tag.putString("Support", unit.bogie.getUniqueId().toString());
+    vector(tag, "Center", VehiclePhysics.world(unit.bogie, unit.localCenter));
+    var a = VehiclePhysics.world(unit.bogie, unit.axle(0));
+    var b = VehiclePhysics.world(unit.bogie, unit.axle(1));
+    int first = new Vector3d(a).sub(b).dot(forward) >= 0 ? 0 : 1;
+    for (int i = 0; i < 2; i++) {
+      var sample = unit.samples[i == 0 ? first : 1 - first];
+      var point = new CompoundTag();
+      if (sample != null && !unit.detached) {
+        var path = sample.path();
+        boolean reverse = sample.tangent().dot(forward) < 0;
+        point.putInt("From", reverse ? path.b() : path.a());
+        point.putInt("To", reverse ? path.a() : path.b());
+        point.putDouble(
+            "Offset", (reverse ? 1 - sample.t() : sample.t()) * path.edge().getLength());
+      }
+      tag.put("P" + i, point);
+    }
+    return tag;
+  }
+
+  private static void vector(CompoundTag tag, String key, Vector3d value) {
+    var vector = new CompoundTag();
+    vector.putDouble("X", value.x);
+    vector.putDouble("Y", value.y);
+    vector.putDouble("Z", value.z);
+    tag.put(key, vector);
+  }
+
+  private NativeTrainBridge() {}
+}

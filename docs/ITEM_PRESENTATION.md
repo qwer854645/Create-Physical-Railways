@@ -21,7 +21,7 @@ have been removed.
 
 ## Coupling tool texture
 
-Final asset: `src/main/resources/assets/guidedrailways/textures/item/coupler_link.png`.
+Final asset: `src/main/resources/assets/physicalrailways/textures/item/coupler_link.png`.
 The PNG is exactly 16 by 16 pixels with binary transparency. The preview in
 `build/coupler-link-16-preview.png` enlarges each final pixel to a 16-pixel square.
 The generated artwork was sampled at pixel centers onto the final 16 by 16 grid,

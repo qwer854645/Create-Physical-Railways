@@ -135,7 +135,7 @@ def mixin_contracts(mod, own):
                 'sable$intersectBlocks(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;Ldev/ryanhcode/sable/sublevel/SubLevel;Ldev/ryanhcode/sable/companion/math/BoundingBox3dc;Ldev/ryanhcode/sable/api/math/LevelReusedVectors;Lorg/joml/Vector3d;Lorg/joml/Quaterniond;)Z'],
         }
     # Read required Mixin fields/methods from the pinned baseline declarations.
-    source = ROOT / 'src/main/java/com/guidedrailways/mixin'
+    source = ROOT / 'src/main/java/com/physicalrailways/mixin'
     result = {}
     plugin = (source / 'CargoCompatPlugin.java').read_text('utf-8')
     hooks = {name: re.findall(r'"([^"]+)"', body) for name, body in re.findall(

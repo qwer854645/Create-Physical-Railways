@@ -1,6 +1,6 @@
 # 物理铁路 / Create: Physical Railways 0.1.62
 
-正式名称为“物理铁路”，英文名 Create: Physical Railways。内部模组 ID、资源命名空间及现有存档标识继续使用 `guidedrailways`
+正式名称为“物理铁路”，英文名 Create: Physical Railways。内部模组 ID、资源命名空间及现有存档标识继续使用 `physicalrailways`
 
 0.1.62 补齐车钩读档注册与已加载物理体中的待恢复端点发现，本模组和 Railway 车钩加载后重建关节；统一磁盘与网络的对端信息保存。见 [车钩恢复与验收](docs/COUPLER_RESTORE.md)
 
@@ -79,7 +79,7 @@ Minecraft 1.21.1 / NeoForge 21.1.233 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
 默认满输入 256 RPM 的目标为 25.6 格/秒，每 RPM 对应 0.1 格/秒，最高目标速度可配置
 整列最大加速度 2.5 格/秒²，最大制动减速度 4 格/秒²，单副最大牵引力 abs(RPM)×6；按动力输入比例分配整列加速预算，不只按动力架自身分担质量限幅
 共用车体的载重按已注册转向架数平均分摊；应力系数为单副承担质量 / 32，Create 再乘输入转速计算应力负载
-本地开发客户端的实际参数文件为 run/config/guidedrailways-server.toml
+本地开发客户端的实际参数文件为 run/config/physicalrailways-server.toml
 
 ## 验证
 
@@ -767,3 +767,9 @@ Minecraft 1.21.1 / NeoForge 21.1.233 / Create 6.0.10-280 / Sable 2.0.3 / Java 21
 新增造型只引用现有 Create 暗金属、工业铁和黄铜材质；移动部件沿用方块实体渲染，不添加物理碰撞体，不通过频繁方块状态切换更新。双端驾驶数据包协议升至 8，客户端与服务端需同步更新。当前待实机验收，场景见 `docs/JUNCTION_ROUTING.md`。
 
 2026-11-03：按用户要求移除拉杆、急停按钮和选路拨杆的准星附近悬停操作提示；物品说明、护目镜信息与实际操作失败反馈保留。
+
+## 模组命名空间统一（2026-11-03）
+
+模组 ID 统一为 `physicalrailways`，显示名称为“物理铁路 / Create: Physical Railways”。源码包及入口类为 `com.physicalrailways.PhysicalRailways`，构建项目名为 `physical-railways`，发行文件为 `physicalrailways-<版本>.jar`。资源、数据包、翻译键、网络频道、配置、诊断属性、Mixin 配置与开发校验工具同步采用新命名空间。
+
+按用户要求直接更名，不提供旧版本命名空间映射、别名或存档迁移。四份自有思索场景由已更名的生成器重新生成，实际 NBT 方块/实体 ID 随之更新。完整离线清理构建、思索资源检查和可选信号测试夹具编译通过；发行 JAR 的 736 个条目已扫描，模组元数据、编译类、资源及 NBT 均无旧命名空间残留。没有启动或重启客户端。

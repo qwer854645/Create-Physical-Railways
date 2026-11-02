@@ -1,0 +1,64 @@
+package com.physicalrailways.mixin;
+
+import com.physicalrailways.CouplerEndpoint;
+import com.physicalrailways.NativeHardwareShape;
+import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
+import dev.ryanhcode.sable.api.block.BlockSubLevelCollisionShape;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.*;
+import org.spongepowered.asm.mixin.*;
+
+/** Native selectable geometry becomes actual collision geometry; no substitute block or model. */
+@Pseudo
+@Mixin(
+    targets = {
+      "com.railwayteam.railways.content.buffer.single_deco.AbstractDyeableSingleBufferBlock",
+      "com.railwayteam.railways.content.buffer.headstock.HeadstockBlock",
+      "com.railwayteam.railways.content.buffer.headstock.CopycatHeadstockBlock"
+    },
+    remap = false)
+public abstract class RailwayHardwareBlockMixin extends Block
+    implements BlockSubLevelCollisionShape, BlockSubLevelAssemblyListener {
+  protected RailwayHardwareBlockMixin(Properties properties) {
+    super(properties);
+  }
+
+  @Override
+  public boolean hasDynamicShape() {
+    return true;
+  }
+
+  @Override
+  public VoxelShape getSubLevelCollisionShape(BlockGetter level, BlockState state) {
+    return NativeHardwareShape.get(
+        state, true, state.getShape(level, BlockPos.ZERO, CollisionContext.empty()));
+  }
+
+  @Override
+  protected VoxelShape getCollisionShape(
+      BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    var fallback = state.getShape(level, pos, context);
+    var endpoint = CouplerEndpoint.get(level.getBlockEntity(pos));
+    if (endpoint != null
+        && (!(context instanceof EntityCollisionContext entity)
+            || entity.getEntity() instanceof net.minecraft.world.entity.LivingEntity))
+      return NativeHardwareShape.living(endpoint, fallback);
+    return NativeHardwareShape.get(state, false, fallback);
+  }
+
+  @Override
+  public void beforeMove(
+      ServerLevel from, ServerLevel to, BlockState state, BlockPos oldPos, BlockPos newPos) {
+    CouplerEndpoint.beforeMove(from, to, oldPos, newPos);
+  }
+
+  @Override
+  public void afterMove(
+      ServerLevel from, ServerLevel to, BlockState state, BlockPos oldPos, BlockPos newPos) {
+    CouplerEndpoint.afterMove(to, newPos);
+  }
+}
