@@ -93,11 +93,10 @@ public final class TrainRuntimeCheck {
         "DriverControls.publish",
         "VehiclePhysics.update");
     order(
-        "afterTick", "PhysicalPortals.tick", "NativeTrainBridge.tick", "PhysicalSignals.publish", "VehiclePhysics.activeCount");
+        "afterTick", "NativeTrainBridge.tick", "PhysicalSignals.publish", "VehiclePhysics.activeCount");
     order("physicsStep", "VehiclePhysics.step", "CouplerConnections.step");
     order(
         "unload",
-        "PhysicalPortals.unload",
         "VehiclePhysics.unload",
         "TrackNetwork.unload",
         "CouplerConnections.unload",

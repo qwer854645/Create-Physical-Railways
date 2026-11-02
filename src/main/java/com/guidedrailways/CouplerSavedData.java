@@ -67,8 +67,6 @@ final class CouplerSavedData extends SavedData {
     return owner == null || owner.equals(pos);
   }
 
-  BlockPos position(UUID endpoint) { return owners.get(endpoint); }
-
   /** Older pairs acquire their missing location once; unloaded registered owners stay protected. */
   boolean claim(UUID endpoint, BlockPos pos) {
     if (!owns(endpoint, pos)) return false;

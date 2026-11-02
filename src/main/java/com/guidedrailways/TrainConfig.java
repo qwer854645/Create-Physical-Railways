@@ -13,7 +13,7 @@ public final class TrainConfig {
       DERAIL_LATERAL,
       DERAIL_DELAY,
       DERAIL_IMPACT;
-  public static final ModConfigSpec.BooleanValue DETAILED_LOGGING, PERFORMANCE_LOGGING, DERAILMENT, NETHER_PORTAL_TRANSFERS, END_PORTAL_TRANSFERS;
+  public static final ModConfigSpec.BooleanValue DETAILED_LOGGING, PERFORMANCE_LOGGING, DERAILMENT;
 
   static {
     var b = new ModConfigSpec.Builder();
@@ -70,10 +70,6 @@ public final class TrainConfig {
         b.comment("Java guidance timing only; excludes native solver and rendering")
             .translation("config.guidedrailways.performanceLogging")
             .define("performanceLogging", false);
-    NETHER_PORTAL_TRANSFERS = b.comment("Allow complete physical trains and their occupants to travel through world Nether portals")
-        .translation("config.guidedrailways.netherPortalTransfers").define("netherPortalTransfers", true);
-    END_PORTAL_TRANSFERS = b.comment("Allow complete physical trains to use End portals; create a bounded obsidian landing platform")
-        .translation("config.guidedrailways.endPortalTransfers").define("endPortalTransfers", true);
     SPEC = b.build();
   }
 

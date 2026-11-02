@@ -19,19 +19,6 @@ public final class LagProbeCheck {
   public static void main(String[] args) throws Exception {
     boolean enabled = Boolean.getBoolean("guidedrailways.lagProbe");
     check(LagProbe.enabled() == enabled, "explicit startup opt-in");
-    check(LagProbe.skipPhysicalPortals() == (enabled && Boolean.getBoolean("guidedrailways.skipPhysicalPortalChecks")), "A/B bypass requires diagnostic mode and its own explicit opt-in");
-    try (var input = LagProbeCheck.class.getClassLoader().getResourceAsStream("com/guidedrailways/PhysicalPortals.class")) {
-      var portals = node(input.readAllBytes());
-      var tick = portals.methods.stream().filter(method -> method.name.equals("tick")).findFirst().orElseThrow();
-      var calls = new ArrayList<MethodInsnNode>();
-      for (var instruction : tick.instructions) if (instruction instanceof MethodInsnNode call) calls.add(call);
-      check(calls.getFirst().owner.equals("com/guidedrailways/LagProbe") && calls.getFirst().name.equals("skipPhysicalPortals"), "bypass is checked before level, physics, POI or target chunk access");
-      var branch = calls.getFirst().getNext();
-      while (branch != null && branch.getOpcode() < 0) branch = branch.getNext();
-      check(branch instanceof JumpInsnNode && branch.getOpcode() == Opcodes.IFEQ, "enabled bypass branches to an immediate return");
-      var returned = branch.getNext(); while (returned != null && returned.getOpcode() < 0) returned = returned.getNext();
-      check(returned.getOpcode() == Opcodes.RETURN, "A/B mode does no portal work");
-    }
     check((LagProbe.begin() != 0) == enabled, "no timer while disabled");
     if (!enabled) check(!new CargoCompatPlugin().shouldApplyMixin("absent.Target", "com.guidedrailways.mixin.LagProbeWorldMixin"), "default launch skips before inspecting or transforming renderer");
     var targets = Map.of("LagProbeWorldMixin", "net/minecraft/client/renderer/LevelRenderer",

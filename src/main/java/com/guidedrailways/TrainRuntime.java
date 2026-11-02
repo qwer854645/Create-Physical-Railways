@@ -39,7 +39,6 @@ final class TrainRuntime {
   static void afterTick(ServerLevel level) {
     long start = PerfCounters.begin();
     try {
-      PhysicalPortals.tick(level);
       NativeTrainBridge.tick(level);
       PhysicalSignals.publish(level);
     } finally {
@@ -60,7 +59,6 @@ final class TrainRuntime {
   }
 
   static void unload(ServerLevel level) {
-    PhysicalPortals.unload(level);
     VehiclePhysics.unload(level);
     TrackNetwork.unload(level);
     CouplerConnections.unload(level);

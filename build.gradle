@@ -68,8 +68,6 @@ neoForge {
                 jvmArgument '-Dguidedrailways.disableRenderOptimizations=true'
             if (project.hasProperty('lagProbe'))
                 jvmArgument '-Dguidedrailways.lagProbe=true'
-            if (project.hasProperty('skipPhysicalPortalChecks'))
-                jvmArgument '-Dguidedrailways.skipPhysicalPortalChecks=true'
             if (project.hasProperty('captureBogeys')) {
                 systemProperty 'guidedrailways.captureBogeys', 'true'
                 systemProperty 'guidedrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
@@ -750,34 +748,6 @@ tasks.register('checkCargoIdentityHooks', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkCargoIdentityHooks' }
 
-tasks.register('checkTransferSections', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.TransferSectionsCheck'
-}
-tasks.named('check') { dependsOn 'checkTransferSections' }
-
-tasks.register('checkPortalTransform', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.PortalTransformCheck'
-}
-tasks.named('check') { dependsOn 'checkPortalTransform' }
-
-tasks.register('checkPortalContact', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath
-    mainClass = 'com.guidedrailways.PortalContactCheck'
-}
-tasks.named('check') { dependsOn 'checkPortalContact' }
-
-tasks.register('checkTransferRollback', JavaExec) {
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.guidedrailways.TransferRollbackCheck'
-}
-tasks.named('check') { dependsOn 'checkTransferRollback' }
-
 tasks.register('checkCargoBaseline', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath
@@ -1048,20 +1018,6 @@ tasks.register('checkScheduleForecast', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkScheduleForecast' }
 
-tasks.register('checkTransferPlots', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.TransferPlotsCheck'
-}
-tasks.named('check') { dependsOn 'checkTransferPlots' }
-
-tasks.register('checkTransferJournal', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.TransferJournalCheck'
-}
-tasks.named('check') { dependsOn 'checkTransferJournal' }
-
 tasks.register('checkLagProbe', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
@@ -1075,20 +1031,6 @@ tasks.register('checkLagProbeEnabled', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkLagProbe', 'checkLagProbeEnabled' }
 
-tasks.register('checkLagProbeSkipPortals', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.LagProbeCheck'
-    systemProperty 'guidedrailways.lagProbe', 'true'
-    systemProperty 'guidedrailways.skipPhysicalPortalChecks', 'true'
-}
-tasks.register('checkLagProbeSkipPortalsDisabled', JavaExec) {
-    dependsOn classes, persistenceCheckClasses
-    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
-    mainClass = 'com.guidedrailways.LagProbeCheck'
-    systemProperty 'guidedrailways.skipPhysicalPortalChecks', 'true'
-}
-tasks.named('check') { dependsOn 'checkLagProbeSkipPortals', 'checkLagProbeSkipPortalsDisabled' }
 
 // Opt-in server fixtures are a separate development mod and never enter the release jar.
 if (project.hasProperty('signalServerTests')) {

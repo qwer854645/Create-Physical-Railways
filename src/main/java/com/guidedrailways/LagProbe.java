@@ -7,12 +7,10 @@ import org.objectweb.asm.tree.ClassNode;
 
 /** Opt-in diagnosis only. Client mixins are not applied at all during ordinary launches. */
 public final class LagProbe {
-  public enum Stage { WORLD_REBUILD, CHUNK_UPLOAD_BATCH, VBO_BIND, VBO_UPLOAD, VBO_CLOSE, SABLE_RENDER_RELEASE, PHYSICS_PROPERTY_SYNC, BOGIE_REMOVE, PORTAL_ATTEMPT, TRANSFER }
+  public enum Stage { WORLD_REBUILD, CHUNK_UPLOAD_BATCH, VBO_BIND, VBO_UPLOAD, VBO_CLOSE, SABLE_RENDER_RELEASE, PHYSICS_PROPERTY_SYNC, BOGIE_REMOVE }
   private static final boolean ENABLED = Boolean.getBoolean("guidedrailways.lagProbe");
-  private static final boolean SKIP_PORTALS = ENABLED && Boolean.getBoolean("guidedrailways.skipPhysicalPortalChecks");
   private static final AtomicLongArray LAST_LOG = new AtomicLongArray(Stage.values().length);
   public static boolean enabled() { return ENABLED; }
-  public static boolean skipPhysicalPortals() { return SKIP_PORTALS; }
   public static long begin() { return ENABLED ? System.nanoTime() : 0; }
 
   public static void end(Stage stage, long start) {
