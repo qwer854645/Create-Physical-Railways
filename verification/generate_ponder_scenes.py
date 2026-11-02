@@ -56,13 +56,13 @@ def build(name):
     for x in range(3, 6):
         for z in range(3, 6):
             block((x, 3, z), "minecraft:oak_planks")
-    if name in ("physical_bogey", "physical_controls"):
+    if name not in ("electric_controls", "rail_transfer"):
         block((4, 3, 4), "create:shaft", {"axis": "y"})
         block((4, 4, 4), "create:creative_motor", {"facing": "down"},
               {"id": "create:creative_motor", "Speed": 64.0})
     if name != "physical_bogey":
         block((4, 4, 3), "physicalrailways:driver_console", {"facing": "south"},
-              {"id": "physicalrailways:driver_console", "VisualNotch": -4, "Direction": 1})
+              {"id": "physicalrailways:driver_console", "VisualNotch": -4, "VisualBound": 1, "Direction": 1})
     if name == "electric_controls":
         for z, facing in [(4, "north"), (5, "south")]:
             block((4, 4, z), "electroenergetics:pantograph", {"facing": facing, "double": "true"},
@@ -88,6 +88,25 @@ def build(name):
               {"facing": "west", "extracting": "true", "powered": "false", "waterlogged": "false"})
         block((0, 4, 4), "minecraft:chest", {"facing": "south", "type": "single", "waterlogged": "false"})
 
+    if name == "physical_coupling":
+        block((4, 5, 7), "physicalrailways:bogie_frame", {"style": "0"}, {"id": "physicalrailways:bogie_frame"})
+        block((4, 2, 7), "physicalrailways:bogie_mount", {"style": "0", "compact": "false"})
+        for x in range(3, 6):
+            for z in range(6, 9): block((x, 3, z), "minecraft:oak_planks")
+        block((4, 4, 5), "physicalrailways:coupler", {"facing": "south"})
+        block((4, 4, 6), "physicalrailways:coupler", {"facing": "north"})
+    if name in ("physical_schedule", "physical_network"):
+        block((1, 1, 4), "create:track_station")
+    if name == "physical_network":
+        block((2, 1, 2), "create:track_signal")
+        block((2, 1, 6), "create:track_observer")
+        block((1, 2, 4), "create:display_link")
+        block((1, 3, 4), "create:display_board")
+    if name in ("physical_cargo", "physical_conditions"):
+        block((5, 4, 4), "minecraft:chest", {"facing": "south", "type": "single", "waterlogged": "false"})
+        block((3, 4, 4), "create:fluid_tank")
+        block((3, 4, 3), "create:white_seat")
+
     palette, blocks = [], []
     for pos, (state, nbt) in sorted(cells.items()):
         if state not in palette:
@@ -104,5 +123,5 @@ def build(name):
 
 
 if __name__ == "__main__":
-    for scene in ("physical_bogey", "physical_controls", "electric_controls", "rail_transfer"):
+    for scene in ('physical_bogey', 'physical_controls', 'electric_controls', 'rail_transfer', 'physical_coupling', 'physical_settings', 'physical_schedule', 'physical_conditions', 'physical_network', 'physical_cargo', 'physical_variants'):
         build(scene)

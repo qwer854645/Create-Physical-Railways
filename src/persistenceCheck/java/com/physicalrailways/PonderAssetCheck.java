@@ -33,7 +33,7 @@ public final class PonderAssetCheck {
     var textCall = Pattern.compile("text\\(\\s*scene\\s*,\\s*\"([a-z_]+)\"");
     for (var file :
         List.of(
-            "PhysicalRailwayScenes.java", "ElectricTrainScene.java", "RailTransferScene.java")) {
+            "PhysicalRailwayScenes.java", "ElectricTrainScene.java", "RailTransferScene.java", "RailwayOperationScenes.java")) {
       var source = Files.readString(Path.of("src/main/java/com/physicalrailways", file));
       var matches = textCall.matcher(source);
       while (matches.find()) {
@@ -47,8 +47,20 @@ public final class PonderAssetCheck {
       }
     }
     check(used.equals(shared.keySet()), "no orphaned or missing shared tutorial text");
+    var plugin = Files.readString(Path.of("src/main/java/com/physicalrailways/RailwayPonderPlugin.java"));
+    var registered = new HashSet<String>();
+    var registrations = Pattern.compile("addStoryBoard\\((?:id\\(\"[^\"]+\"\\),\\s*)?\"([^\"]+)\"").matcher(plugin);
+    while (registrations.find()) check(registered.add(registrations.group(1)), "each storyboard registered once");
+    check(registered.size() == 11, "all eleven teaching pages are registered");
+    for (var key : used) {
+      int ticks = RailwayPonderPlugin.captionTicks(key);
+      check(ticks >= 100 && ticks <= 240, "bounded reading time: " + key);
+      if (shared.get(key).split("\\s+").length > 30) check(ticks > 150, "long captions get extra reading time");
+    }
+
     for (var name :
-        List.of("physical_bogey", "physical_controls", "electric_controls", "rail_transfer")) {
+        List.of("physical_bogey", "physical_controls", "electric_controls", "rail_transfer", "physical_coupling", "physical_settings", "physical_schedule", "physical_conditions", "physical_network", "physical_cargo", "physical_variants")) {
+      check(registered.remove(name), "validated template is registered: " + name);
       var header = "physicalrailways.ponder." + name + ".header";
       check(
           zh.has(header) && RailwayPonderPlugin.title(name).equals(en.get(header).getAsString()),
@@ -85,16 +97,17 @@ public final class PonderAssetCheck {
         if (id.equals("physicalrailways:bogie_frame")) {
           wheels++;
           check(
-              xyz.equals(List.of(4, 5, 4)), "separate bogey storage matches the animated section");
+              (xyz.equals(List.of(4, 5, 4)) || name.equals("physical_coupling") && xyz.equals(List.of(4, 5, 7))), "separate bogey storage matches the animated section");
         }
         if (id.equals("physicalrailways:bogie_mount")) mounts++;
         if (id.equals("physicalrailways:rail_docking_connector")) docks++;
       }
-      check(rails == 9 && wheels == 1 && mounts == 1, "each scene has a track, bogey and mount");
+      check(rails == 9 && wheels == (name.equals("physical_coupling") ? 2 : 1) && mounts == (name.equals("physical_coupling") ? 2 : 1), "each scene has a track, bogey and mount");
       check(
           docks == (name.equals("rail_transfer") ? 2 : 0),
           "optional docking assets stay in their own scene");
     }
+    check(registered.isEmpty(), "no registered page is missing a validated template");
     System.out.println("PonderAssetCheck: " + checks + " template and localization checks passed");
   }
 }

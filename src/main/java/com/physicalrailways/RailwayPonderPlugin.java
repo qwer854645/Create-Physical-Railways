@@ -24,10 +24,17 @@ final class RailwayPonderPlugin implements PonderPlugin {
     helper
         .forComponents(id("driver_console"))
         .addStoryBoard("physical_controls", PhysicalRailwayScenes::controls);
+    helper.forComponents(id("coupler"), id("coupler_link")).addStoryBoard("physical_coupling", RailwayOperationScenes::coupling);
+    helper.addStoryBoard(id("driver_console"), "physical_settings", RailwayOperationScenes::settings).orderAfter("physical_controls");
+    helper.addStoryBoard(id("driver_console"), "physical_schedule", RailwayOperationScenes::schedule).orderAfter("physical_settings");
+    helper.addStoryBoard(id("driver_console"), "physical_conditions", RailwayOperationScenes::conditions).orderAfter("physical_schedule");
+    helper.addStoryBoard(id("driver_console"), "physical_network", RailwayOperationScenes::network).orderAfter("physical_conditions");
+    helper.addStoryBoard(id("driver_console"), "physical_cargo", RailwayOperationScenes::cargo).orderAfter("physical_network");
+    helper.addStoryBoard(id("bogie"), "physical_variants", RailwayOperationScenes::variants).orderAfter("physical_bogey");
     if (ModList.get().isLoaded("electroenergetics"))
       helper
           .addStoryBoard(id("driver_console"), "electric_controls", ElectricTrainScene::electric)
-          .orderAfter("physical_controls");
+          .orderAfter("physical_cargo");
     if (ModList.get().isLoaded("simulated"))
       helper
           .forComponents(id("rail_docking_connector"))
@@ -40,6 +47,14 @@ final class RailwayPonderPlugin implements PonderPlugin {
       if (entry.getKey().startsWith(SHARED))
         helper.registerSharedText(
             entry.getKey().substring(SHARED.length()), entry.getValue().getAsString());
+  }
+
+  static int captionTicks(String key) {
+    return Math.clamp(35 + caption(key).split("\\s+").length * 6, 100, 240);
+  }
+
+  static String caption(String key) {
+    return Objects.requireNonNull(ENGLISH.get(SHARED + key)).getAsString();
   }
 
   static String title(String scene) {

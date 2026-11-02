@@ -25,8 +25,16 @@ final class PhysicalRailwayScenes {
   }
 
   static void text(SceneBuilder scene, String key, Vec3 target) {
-    scene.overlay().showText(85).sharedText(key).pointAt(target).placeNearTarget().attachKeyFrame();
-    scene.idle(95);
+    int duration = RailwayPonderPlugin.captionTicks(key);
+    scene.overlay().showText(duration).sharedText(key).pointAt(target).placeNearTarget().attachKeyFrame();
+    scene.idle(duration + 10);
+  }
+
+  static Vec3 consolePoint(double x, double y, double z) {
+    var point = new org.joml.Matrix4d().translate(.5, 0, .5).rotateY(-Math.PI).translate(-.5, 0, -.5)
+        .translate(.5, .625, .5).rotateX(Math.PI / 8).translate(-.5, -.625, -.5)
+        .transformPosition(new org.joml.Vector3d(x / 16, y / 16, z / 16));
+    return Vec3.atLowerCornerOf(CONSOLE).add(point.x, point.y, point.z);
   }
 
   static void tracks(SceneBuilder scene, SceneBuildingUtil util) {
@@ -114,63 +122,42 @@ final class PhysicalRailwayScenes {
     scene.markAsFinished();
   }
 
+  private static void consoleState(SceneBuilder scene, SceneBuildingUtil util, int notch, boolean emergency, int route) {
+    scene.world().modifyBlockEntityNBT(util.select().position(CONSOLE), DriverConsoleEntity.class, tag -> {
+      tag.putBoolean("VisualBound", true);
+      tag.putBoolean("VisualActive", false);
+      tag.putInt("VisualNotch", notch);
+      tag.putBoolean("VisualEmergency", emergency);
+      tag.putInt("VisualRouteSelection", route);
+    });
+  }
+
   static void controls(SceneBuilder builder, SceneBuildingUtil util) {
     var scene = new CreateSceneBuilder(builder);
     begin(scene, "physical_controls");
     tracks(scene, util);
-    var vehicle = vehicle(scene, util, util.select().fromTo(3, 2, 3, 5, 4, 5));
+    vehicle(scene, util, util.select().fromTo(3, 2, 3, 5, 4, 5));
     scene.world().setKineticSpeed(util.select().fromTo(4, 2, 4, 4, 4, 4), 64);
+    consoleState(scene, util, -4, false, 0);
     text(scene, "controls_install", util.vector().topOf(CONSOLE));
-    scene.overlay().showControls(util.vector().topOf(CONSOLE), Pointing.RIGHT, 45).rightClick();
-    text(scene, "controls_enter", util.vector().topOf(CONSOLE));
-    scene.overlay().showControls(util.vector().topOf(CONSOLE), Pointing.RIGHT, 65).rightClick();
-    scene
-        .world()
-        .modifyBlockEntityNBT(
-            util.select().position(CONSOLE),
-            DriverConsoleEntity.class,
-            tag -> {
-              tag.putInt("VisualNotch", 3);
-              tag.putBoolean("VisualActive", true);
-            });
-    text(scene, "controls_lever", util.vector().topOf(CONSOLE));
-    move(scene, util, vehicle, -1, 40);
-    scene.overlay().showControls(util.vector().topOf(CONSOLE), Pointing.RIGHT, 45).rightClick();
-    scene.world().modifyBlockEntityNBT(util.select().position(CONSOLE), DriverConsoleEntity.class,
-        tag -> tag.putInt("VisualRouteSelection", -1));
-    text(scene, "controls_steer", util.vector().topOf(CONSOLE));
-    scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45).rightClick();
-    scene
-        .world()
-        .modifyBlockEntityNBT(
-            util.select().position(CONSOLE),
-            DriverConsoleEntity.class,
-            tag -> {
-              tag.putInt("VisualNotch", -4);
-              tag.putBoolean("VisualEmergency", true);
-            });
-    text(scene, "controls_brake", util.vector().topOf(4, 4, 2));
-    scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45).rightClick();
-    text(scene, "controls_reset", util.vector().topOf(4, 4, 2));
-    scene
-        .world()
-        .modifyBlockEntityNBT(
-            util.select().position(CONSOLE),
-            DriverConsoleEntity.class,
-            tag -> tag.putBoolean("VisualEmergency", false));
-    scene
-        .overlay()
-        .showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45)
-        .rightClick()
-        .whileSneaking();
-    text(scene, "controls_settings", util.vector().topOf(4, 4, 2));
-    scene
-        .overlay()
-        .showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45)
-        .rightClick()
-        .withItem(AllItems.SCHEDULE.asStack());
-    text(scene, "controls_schedule", util.vector().topOf(4, 4, 2));
-    text(scene, "controls_observe", util.vector().topOf(4, 4, 2));
+    text(scene, "controls_enter", consolePoint(11, 14.5, 7.5));
+    scene.overlay().showControls(consolePoint(11, 14.5, 7.5), Pointing.RIGHT, 65).rightClick();
+    consoleState(scene, util, 3, false, 0);
+    text(scene, "controls_lever", consolePoint(11, 14.5, 7.5));
+    scene.overlay().showControls(consolePoint(9, 12, 12), Pointing.RIGHT, 60).rightClick();
+    consoleState(scene, util, 3, false, -1);
+    text(scene, "controls_steer", consolePoint(9, 12, 12));
+    scene.overlay().showControls(consolePoint(5, 12.5, 12), Pointing.RIGHT, 60).rightClick();
+    consoleState(scene, util, -4, true, -1);
+    text(scene, "controls_brake", consolePoint(5, 12.5, 12));
+    scene.overlay().showControls(consolePoint(5, 12.5, 12), Pointing.RIGHT, 60).rightClick();
+    text(scene, "controls_reset", consolePoint(5, 12.5, 12));
+    consoleState(scene, util, -4, false, 0);
+    scene.overlay().showControls(util.vector().topOf(CONSOLE), Pointing.RIGHT, 60).rightClick().whileSneaking();
+    text(scene, "controls_settings", util.vector().topOf(CONSOLE));
+    scene.overlay().showControls(util.vector().topOf(CONSOLE), Pointing.RIGHT, 60).rightClick().withItem(AllItems.SCHEDULE.asStack());
+    text(scene, "controls_schedule", util.vector().topOf(CONSOLE));
+    text(scene, "controls_observe", util.vector().topOf(CONSOLE));
     scene.markAsFinished();
   }
 

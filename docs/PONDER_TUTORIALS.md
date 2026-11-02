@@ -1,71 +1,35 @@
-# Ponder tutorials
+# 思索教程与功能覆盖
 
-Four native Ponder storyboards are registered by the client-only
-`RailwayPonderPlugin`:
+2026-11-03 重写。共 11 个原生 Ponder 场景，核心 9 页，另有按依赖注册的电驱和对接各 1 页。
 
-- Physical Bogey: choose a style, place directly on track, build/glue the carriage,
-  supply rotation through the top mount, rerail and dismantle with the wrench.
-- Physical Train Controls: install on the physical body, enter driving before
-  holding right-click, adjust the lever, select branches, brake/reset, edit settings,
-  insert a schedule, and explicitly take control from observation mode.
-- Electric Driving: the next page on the controls item, explicitly ordered after
-  manual driving. Shows pantographs, catenary construction, DC supply/ground,
-  energized contact, manual takeover and traction, power/load limits, supply loss
-  and braking. Registered only when Electro Energetics is installed, using its
-  native Ponder wire elements and pantograph renderer. No real circuit is created.
-- Rail Docking Connector: install matching endpoints, select the world endpoint
-  with a wrench, bind a station, associate an addressed mailbox, stop and dock,
-  transfer through real handling facilities, inspect and release before departure.
-  This storyboard is registered only when Simulated is present.
+## 入口与内容
 
-Hover over the corresponding item and use Ponder's displayed key binding to open
-the tutorial. The normal Create Shift description and Ponder entry coexist.
+- 物理转向架：放置、独立车轮与安装座、粘合车体、旋转输入、运行、安装座制动、脱轨重新上轨及潜行扳手拆除。
+- 款式与兼容：款式菜单的 Blocks & Bogies 前提、Steam ’n’ Rails 宽轨/窄轨/单轨及尺寸匹配、多转向架、应力与动力限制。位于转向架的下一页。
+- 车钩与连接工具：两个独立车体、相向同型端点、工具依次两次右击、整列统一控制、后车选岔跟随、再次右击已连接端点解挂及轨旁设备边界。两个物品均有入口。
+- 驾驶台直接操作：拉杆牵引/惰行/制动、三位岔路预选与取消、急停、停稳后重新按住红色按钮复位；不再描述持续操控或观察模式。
+- 设置与信息：潜行右击、停车/收回牵引/暂停后换向、档位速度编辑、名称与放置者、护目镜展开信息、装有时刻表时的道岔优先级。
+- 时刻表与车站：轨道和车站准备、装入、暂停/继续/跳过/重启/取回、五类指令、手动介入、重载等待和实际停车确认。明确不通过车站组装、拆解或交接时刻表。
+- 等待条件：延时、时刻、车站红石、红石链路、车站卸载、整列物品/流体阈值、真实装卸空闲，以及 Create 座椅中的存活非旁观玩家；缺失数据不能冒充完成。
+- 岔路、信号与显示：预选按行进方向、提交后回中、后车锁定、自动时刻表优先、普通/链式信号与手动驾驶责任、观察器过滤、显示连接器预测、只读原生列车查询与可选小地图。
+- 货运：真实车载容器、明确输送路径、整列统计与可写库存的区别、软管/Simulated/Automated Logistics 的自身选择范围、原版可移式接口限制、包裹缓冲与阻塞排查。
+- 电驱：仅安装 Electro Energetics 时注册。沿用其原生线缆与受电弓演示，涵盖安装、接触网、供电/接地、升降、手动牵引、功率限制、失电与急停。
+- 铁路对接：仅安装 Simulated 时注册。两端铁路款、扳手选择世界端再绑定车站、原生邮箱关联/地址、实际停稳、伸出锁定、真实缓冲输送、查看和释放；外部红石锁须自行解除。
 
-## Resources and behavior
+驾驶台分页顺序为直接操作、设置、时刻表、等待条件、铁路设施、货运，最后为可选电驱。思索使用 Ponder 当前绑定的按键打开，不固定写死玩家的键位。
 
-`assets/physicalrailways/ponder/*.nbt` are self-contained original 9 by 7 by 9 vanilla
-structure templates. Regenerate them with
-`python verification/generate_ponder_scenes.py`; no world or game process is needed.
-The script writes only these four templates, with deterministic gzip metadata.
+## 演示边界与资源
 
-The bogey's stored cell is separate from the carriage. Its independent display
-section is lowered to the actual rail/tread contact height, and moves alongside
-the mount. Wheel phase uses the existing motion data; controls use their existing
-visual notch data. Docking only animates native extension/feet and a visual lock;
-it never pairs live connectors, requests Sable constraints or transfers real items.
-The sections illustrate the operation without invoking the gameplay backend.
+场景是客户端教学示意，不运行真实物理、车钩事务、时刻表或库存交换。信号、显示和储存方块表示使用位置，不伪造实际运输或预约结果。车钩场景显示两组真实转向架/安装座；其余场景各一组。车轮独立展示并校正到轨面高度。
 
-Header keys are `physicalrailways.ponder.<scene>.header`. Stable shared captions use
-`physicalrailways.ponder.shared.<caption>`, registered from the English resource as
-fallback text. Chinese and English are maintained together in the normal language
-resources; default-language changes do not require duplicating captions in Java.
+驾驶台教学保持车辆静止，以免拉杆、按钮和拨杆的指针因整车移动错位；部件坐标使用相同的面板倾角和朝向变换。长说明按英文词数增加停留时间，范围 100～240 tick，字幕结束后才进入下一步。支持原生暂停、回放和重播，不保留额外静态演示状态。
 
-## Validation
+模板均为自有 9×7×9 vanilla NBT，位于 `src/main/resources/assets/physicalrailways/ponder`。用 `python verification/generate_ponder_scenes.py` 确定性重建全部 11 份，不需要启动游戏。可选模组专用方块只进入其各自模板，普通页不引用可选 API。
 
-`checkPonderAssets` decodes the compressed templates with Minecraft's NBT reader,
-checks bounds, unique positions, palette references, track/vehicle layout and the
-actual registered bilingual captions. It is part of the normal build/check task.
-Compilation and language checks do not verify a Ponder rendering session.
+标题使用 `physicalrailways.ponder.<scene>.header`，共享字幕使用 `physicalrailways.ponder.shared.<caption>`。中英文同步，英文通过 `RailwayPonderPlugin` 注册原生缺省文本。
 
-Manual acceptance, once the user requests the client:
+## 自动检查与实机验收
 
-1. Open all three items' Ponder entries and verify Chinese and English text, both
-   normal and smaller GUI scales; captions and mouse glyphs should remain readable.
-2. Play, pause, scrub backward and restart each scene. Verify wheel/track alignment,
-   carriage motion, lever positions, and extension/retraction of both connectors.
-3. Verify the controls tutorial demonstrates directly aiming at the moving handle
-   and red button, with emergency reset only after stopping. Looking at the display
-   must be distinguished from holding the handle, which pauses the Schedule.
-4. Verify the connector selection/binding order and mailbox address explanation.
-   A chest is connected by a real funnel; no claim of remote train-wide inventory
-   access is made. External redstone power is distinguished from automatic docking.
-5. In a development environment without Simulated, verify bogey and controls still
-   have tutorials and no connector tutorial is registered. No optional class should
-   be required by the ordinary storyboards.
-6. With Electro Energetics installed, open the controls item and confirm electric
-   driving follows manual driving. Check both pantographs and the overhead wires
-   on playback, rewind and restart. Without it, the original manual-driving page
-   remains available without an empty electric page.
+`checkPonderAssets` 读取真实压缩 NBT，检查坐标、唯一性、调色板、轨道、车轮与安装座数目、可选对接隔离，以及实际注册的全部 11 个场景、标题、字幕和阅读时间。注册场景与校验模板必须一一对应，不能保留孤立字幕。该检查纳入完整离线构建。
 
-No client or server was started for authoring these tutorials; visual acceptance
-remains pending.
+自动检查不等于画面和全部玩法已验收。只在用户要求时打开客户端；待检查：每个物品入口和页序，中英文与小 GUI 缩放，长字幕遮挡，拉杆/按钮/拨杆指向，车钩两次点击及第二车体，电驱线缆和对接伸缩，以及暂停、回退、重播后的一致性。不自动启动服务端或游戏。

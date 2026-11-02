@@ -73,6 +73,7 @@ final class ElectricTrainScene {
             util.select().position(PhysicalRailwayScenes.CONSOLE),
             DriverConsoleEntity.class,
             tag -> {
+              tag.putBoolean("VisualBound", true);
               tag.putInt("VisualNotch", 3);
               tag.putBoolean("VisualActive", true);
             });
@@ -90,6 +91,7 @@ final class ElectricTrainScene {
             util.select().position(PhysicalRailwayScenes.CONSOLE),
             DriverConsoleEntity.class,
             tag -> {
+              tag.putBoolean("VisualBound", true);
               tag.putInt("VisualNotch", -4);
               tag.putBoolean("VisualEmergency", true);
             });
