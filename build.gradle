@@ -736,6 +736,20 @@ tasks.register('checkCargoIdentityHooks', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkCargoIdentityHooks' }
 
+tasks.register('checkTransferSections', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.TransferSectionsCheck'
+}
+tasks.named('check') { dependsOn 'checkTransferSections' }
+
+tasks.register('checkTransferRollback', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.TransferRollbackCheck'
+}
+tasks.named('check') { dependsOn 'checkTransferRollback' }
+
 tasks.register('checkCargoBaseline', JavaExec) {
     dependsOn classes, persistenceCheckClasses
     classpath = sourceSets.persistenceCheck.runtimeClasspath

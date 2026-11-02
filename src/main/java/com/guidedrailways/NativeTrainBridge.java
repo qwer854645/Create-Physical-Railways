@@ -35,6 +35,7 @@ public final class NativeTrainBridge {
               dev.ryanhcode.sable.sublevel.SubLevel body, SubLevelRemovalReason reason) {
             if (reason != SubLevelRemovalReason.REMOVED
                 || !(body.getLevel() instanceof ServerLevel level)) return;
+            if (PhysicalTransfer.preservesIdentity(level, body.getUniqueId())) return;
             var data = TrainIdentityData.get(level);
             var before = Map.copyOf(data.ledger.records);
             data.ledger.removed(body.getUniqueId());
@@ -157,6 +158,16 @@ public final class NativeTrainBridge {
   static void sync(PhysicalTrainProxy proxy) {
     PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(
         proxy.snapshotSync.force(proxy.snapshot())));
+  }
+
+  static void transferred(ServerLevel level, Set<UUID> members) {
+    var byBogie = BY_BOGEY.get(level);
+    if (byBogie == null) return;
+    var ids = new HashSet<UUID>();
+    byBogie.forEach((member, registration) -> { if (members.contains(member)) ids.add(registration.train.id); });
+    var live = LIVE.get(level);
+    if (live != null) for (var id : ids) if (live.containsKey(id)) remove(level, live, id);
+    byBogie.entrySet().removeIf(entry -> ids.contains(entry.getValue().train.id));
   }
 
   private static void remove(ServerLevel level, Map<UUID, PhysicalTrainProxy> live, UUID id) {
