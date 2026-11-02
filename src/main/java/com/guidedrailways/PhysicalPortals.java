@@ -36,6 +36,7 @@ final class PhysicalPortals {
   static void unload(ServerLevel level) { STATES.remove(level); }
 
   static void tick(ServerLevel level) {
+    if (LagProbe.skipPhysicalPortals()) return; // Diagnostic A/B: preserve vanilla portals and all rendering.
     long now = level.getServer().overworld().getGameTime();
     var previous = STATES.get(level);
     if (previous != null) previous.entries.values().removeIf(entry -> now < entry.tick || now - entry.tick > EXPIRY_TICKS);

@@ -9,8 +9,10 @@ import org.objectweb.asm.tree.ClassNode;
 public final class LagProbe {
   public enum Stage { WORLD_REBUILD, CHUNK_UPLOAD_BATCH, VBO_BIND, VBO_UPLOAD, VBO_CLOSE, SABLE_RENDER_RELEASE, PHYSICS_PROPERTY_SYNC, BOGIE_REMOVE, PORTAL_ATTEMPT, TRANSFER }
   private static final boolean ENABLED = Boolean.getBoolean("guidedrailways.lagProbe");
+  private static final boolean SKIP_PORTALS = ENABLED && Boolean.getBoolean("guidedrailways.skipPhysicalPortalChecks");
   private static final AtomicLongArray LAST_LOG = new AtomicLongArray(Stage.values().length);
   public static boolean enabled() { return ENABLED; }
+  public static boolean skipPhysicalPortals() { return SKIP_PORTALS; }
   public static long begin() { return ENABLED ? System.nanoTime() : 0; }
 
   public static void end(Stage stage, long start) {
