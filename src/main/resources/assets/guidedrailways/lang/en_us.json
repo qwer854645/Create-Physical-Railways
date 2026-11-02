@@ -379,5 +379,13 @@
   "message.guidedrailways.transfer.backups_full": "Transfer backups are full; archive them before another transfer",
   "message.guidedrailways.transfer.backup_failed": "Could not save a transfer backup; the carriage was not moved",
   "message.guidedrailways.transfer.failed": "Transfer failed; the carriage was restored to its original dimension",
-  "message.guidedrailways.transfer.recovery": "Transfer recovery is incomplete; stop using this carriage and check the server log and backup"
+  "message.guidedrailways.transfer.recovery": "Transfer recovery is incomplete; stop using this carriage and check the server log and backup",
+  "config.guidedrailways.netherPortalTransfers": "Physics body Nether portal travel",
+  "config.guidedrailways.netherPortalTransfers.tooltip": "Allow unoccupied single carriages to pass through Nether portals. Both openings must fit the carriage. Rerail and release the emergency brake after arrival",
+  "message.guidedrailways.transfer.portal_missing": "No usable Nether portal destination was found",
+  "message.guidedrailways.transfer.portal_fit": "The entire carriage must fit the opening of both portals; enlarge or align the portals",
+  "message.guidedrailways.transfer.portal_speed": "Slow down to 16 blocks/s or less and stop turning before entering the portal",
+  "message.guidedrailways.transfer.portal_landing": "Build a supporting platform or railway beneath every bogey at the portal exit",
+  "message.guidedrailways.transfer.portal_done": "The carriage passed through the Nether portal and stopped; rerail and release the emergency brake before driving",
+  "message.guidedrailways.transfer.portal_failed": "Portal travel stopped: %s"
 }

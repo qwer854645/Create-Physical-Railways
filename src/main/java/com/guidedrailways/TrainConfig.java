@@ -13,7 +13,7 @@ public final class TrainConfig {
       DERAIL_LATERAL,
       DERAIL_DELAY,
       DERAIL_IMPACT;
-  public static final ModConfigSpec.BooleanValue DETAILED_LOGGING, PERFORMANCE_LOGGING, DERAILMENT;
+  public static final ModConfigSpec.BooleanValue DETAILED_LOGGING, PERFORMANCE_LOGGING, DERAILMENT, NETHER_PORTAL_TRANSFERS;
 
   static {
     var b = new ModConfigSpec.Builder();
@@ -70,6 +70,8 @@ public final class TrainConfig {
         b.comment("Java guidance timing only; excludes native solver and rendering")
             .translation("config.guidedrailways.performanceLogging")
             .define("performanceLogging", false);
+    NETHER_PORTAL_TRANSFERS = b.comment("Allow unoccupied single carriages to travel through world Nether portals")
+        .translation("config.guidedrailways.netherPortalTransfers").define("netherPortalTransfers", true);
     SPEC = b.build();
   }
 

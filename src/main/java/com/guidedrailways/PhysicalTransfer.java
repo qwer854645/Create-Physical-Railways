@@ -38,6 +38,15 @@ public final class PhysicalTransfer {
 
   /** Destination is the root body's pose position, with orientation and internal coordinates retained. */
   public static Result transfer(ServerLevel source, UUID bodyId, ServerLevel target, Vec3 destination) {
+    return transfer(source, bodyId, target, destination, 0, false);
+  }
+
+  static Result throughPortal(ServerLevel source, UUID bodyId, ServerLevel target, Vec3 destination, int turns) {
+    return transfer(source, bodyId, target, destination, turns, true);
+  }
+
+  private static Result transfer(ServerLevel source, UUID bodyId, ServerLevel target, Vec3 destination,
+      int turns, boolean portal) {
     if (!source.getServer().isSameThread() || active != null
         || SubLevelPhysicsSystem.currentlySteppingSystem != null) throw reject("busy");
     if (source == target || source.getServer() != target.getServer()
@@ -84,16 +93,17 @@ public final class PhysicalTransfer {
       if (!ids.containsAll(identity.members()) || targetIdentities.containsKey(identity.id())
           || targetIdentities.values().stream().anyMatch(other -> other.members().stream().anyMatch(ids::contains)))
         throw reject("incomplete");
-    Vector3d displacement = new Vector3d(destination.x, destination.y, destination.z)
-        .sub(root.logicalPose().position());
-    var delta = new Vec3(displacement.x, displacement.y, displacement.z);
+    var anchor = root.logicalPose().position();
+    var transform = new PortalTransform(new Vec3(anchor.x, anchor.y, anchor.z), destination, turns);
     var parts = new ArrayList<Part>();
     var glues = new LinkedHashMap<UUID, Glue>();
     var loadedChunks = new HashSet<net.minecraft.world.level.ChunkPos>();
     int blocks = 0;
     for (var body : members.values()) {
-      if (physics.getPipeline().getLinearVelocity(body, new Vector3d()).lengthSquared() > .0025
-          || physics.getPipeline().getAngularVelocity(body, new Vector3d()).lengthSquared() > .0001) throw reject("moving");
+      if (physics.getPipeline().getLinearVelocity(body, new Vector3d()).lengthSquared()
+          > (portal ? PhysicalPortals.MAX_SPEED * PhysicalPortals.MAX_SPEED : .0025)
+          || physics.getPipeline().getAngularVelocity(body, new Vector3d()).lengthSquared() > (portal ? .25 : .0001))
+        throw reject(portal ? "portal_speed" : "moving");
       for (var actor : body.getPlot().getBlockEntityActors()) {
         for (var dependencies : java.util.Arrays.asList(actor.sable$getConnectionDependencies(), actor.sable$getLoadingDependencies())) {
           if (dependencies != null) for (var dependency : dependencies)
@@ -117,7 +127,7 @@ public final class PhysicalTransfer {
         glues.put(glue.getUUID(), new Glue(body.getUniqueId(), glue, data));
         if (glues.size() > MAX_GLUE) throw reject("limit");
       }
-      var arrival = box.move(delta);
+      var arrival = transform.bounds(box);
       if (arrival.minY < target.getMinBuildHeight() || arrival.maxY > target.getMaxBuildHeight()
           || !target.getWorldBorder().isWithinBounds(BlockPos.containing(arrival.minX, arrival.minY, arrival.minZ))
           || !target.getWorldBorder().isWithinBounds(BlockPos.containing(arrival.maxX, arrival.maxY, arrival.maxZ)))
@@ -135,6 +145,8 @@ public final class PhysicalTransfer {
       if (!target.noCollision(arrival) || !target.getEntities(null, arrival).isEmpty()
           || dst.getAllSubLevels().stream().anyMatch(other -> !other.isRemoved()
               && other.boundingBox().toMojang().intersects(arrival))) throw reject("blocked");
+      if (portal && source.getBlockState(body.getPlot().getCenterBlock()).is(Content.BOGIE.get())
+          && target.noCollision(arrival.move(0, -1, 0))) throw reject("portal_landing");
       for (var holder : body.getPlot().getLoadedChunks())
         for (var section : holder.getChunk().getSections()) {
           int[] count = {0};
@@ -142,7 +154,7 @@ public final class PhysicalTransfer {
           blocks += count[0];
           if (blocks > MAX_BLOCKS) throw reject("limit");
         }
-      for (var be : blockEntities(body)) validateBlockEntity(source, be);
+      for (var be : blockEntities(body)) validateBlockEntity(source, be, portal);
       var original = SubLevelSerializer.toData(body, List.of()).fullTag().copy();
       var copy = original.copy();
       var plot = copy.getCompound("plot");
@@ -152,12 +164,20 @@ public final class PhysicalTransfer {
           || dst.getSubLevel(body.getUniqueId()) != null) throw reject("occupied");
       TransferSections.shift(plot, source.getMinSection() - target.getMinSection(), target.getSectionsCount());
       var pose = SableNBTUtils.readPose3d(copy.getCompound("pose"));
-      pose.position().add(displacement);
+      var moved = transform.point(new Vec3(pose.position().x, pose.position().y, pose.position().z));
+      pose.position().set(moved.x, moved.y, moved.z);
+      pose.orientation().premul(new org.joml.Quaterniond().rotationY(turns * Math.PI / 2));
       copy.put("pose", SableNBTUtils.writePose3d(pose));
       copy.put("world_bounds", SableNBTUtils.writeBoundingBox(new BoundingBox3d(
           arrival.minX, arrival.minY, arrival.minZ, arrival.maxX, arrival.maxY, arrival.maxZ)));
       copy.put("linear_velocity", SableNBTUtils.writeVector3d(new Vector3d()));
       copy.put("angular_velocity", SableNBTUtils.writeVector3d(new Vector3d()));
+      if (portal) {
+        var data = copy.getCompound("user_data");
+        data.putLong("GuidedPortalUntil", source.getServer().overworld().getGameTime() + PhysicalPortals.COOLDOWN_TICKS);
+        copy.put("user_data", data);
+        TransferControls.park(copy);
+      }
       if (source.getBlockState(body.getPlot().getCenterBlock()).is(Content.BOGIE.get())) {
         var data = copy.getCompound("user_data");
         var owner = BogieMountBinding.owner(data);
@@ -179,7 +199,7 @@ public final class PhysicalTransfer {
         parts.stream().map(Part::original).toList(), parts.stream().map(Part::destination).toList(),
         glues.values().stream().map(glue -> {
           var tag = new CompoundTag(); tag.putUUID("Owner", glue.owner); tag.put("Data", glue.data); return tag;
-        }).toList());
+        }).toList(), portal ? root.getUniqueId() : null);
     active = new Context(source, target, ids);
     try {
       for (var mount : mounts) VehiclePhysics.forget(mount);
@@ -272,17 +292,44 @@ public final class PhysicalTransfer {
       throw new IllegalStateException("Cannot restore transferred glue");
   }
 
+  static AABB portalBounds(ServerSubLevel root) {
+    AABB bounds = root.boundingBox().toMojang();
+    var container = SubLevelContainer.getContainer(root.getLevel());
+    for (var entity : blockEntities(root)) if (entity instanceof MountEntity mount) {
+      if (mount.bogieId == null || !(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
+          || bogie.isRemoved()) throw reject("incomplete");
+      bounds = bounds.minmax(bogie.boundingBox().toMojang());
+    }
+    return bounds;
+  }
+
+  static void stopAtPortal(ServerLevel level, UUID id) {
+    var container = SubLevelContainer.getContainer(level);
+    if (container == null || !(container.getSubLevel(id) instanceof ServerSubLevel root) || root.isRemoved()) return;
+    var pipeline = SubLevelPhysicsSystem.get(level).getPipeline();
+    pipeline.resetVelocity(root);
+    for (var entity : blockEntities(root)) {
+      if (entity instanceof MountEntity mount && mount.bogieId != null
+          && container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie) pipeline.resetVelocity(bogie);
+      if (entity instanceof DriverConsoleEntity console) {
+        console.schedule.pause(ScheduleController.PAUSED);
+        console.emergency = true; console.notch = -4;
+        console.setChanged(); console.updateVisual();
+      }
+    }
+  }
+
   private static List<BlockEntity> blockEntities(ServerSubLevel body) {
     var result = new ArrayList<BlockEntity>();
     for (var holder : body.getPlot().getLoadedChunks()) result.addAll(holder.getChunk().getBlockEntities().values());
     return result;
   }
 
-  private static void validateBlockEntity(ServerLevel level, BlockEntity be) {
+  private static void validateBlockEntity(ServerLevel level, BlockEntity be, boolean portal) {
     if (be instanceof MountEntity || be instanceof BogieEntity) return;
     if (be instanceof DriverConsoleEntity console) {
-      if (console.active || console.operator != null || console.schedule.running()
-          || console.notch >= 0 && !console.emergency)
+      if (!portal && (console.active || console.operator != null || console.schedule.running()
+          || console.notch >= 0 && !console.emergency))
         throw reject("controls");
       return;
     }
@@ -311,4 +358,5 @@ public final class PhysicalTransfer {
         }
       }
   }
+
 }
