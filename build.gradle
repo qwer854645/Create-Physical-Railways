@@ -1027,6 +1027,20 @@ tasks.register('checkScheduleForecast', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkScheduleForecast' }
 
+tasks.register('checkTransferPlots', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.TransferPlotsCheck'
+}
+tasks.named('check') { dependsOn 'checkTransferPlots' }
+
+tasks.register('checkTransferJournal', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.TransferJournalCheck'
+}
+tasks.named('check') { dependsOn 'checkTransferJournal' }
+
 // Opt-in server fixtures are a separate development mod and never enter the release jar.
 if (project.hasProperty('signalServerTests')) {
     sourceSets {

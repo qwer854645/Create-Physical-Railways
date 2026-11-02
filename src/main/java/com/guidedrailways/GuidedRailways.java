@@ -34,9 +34,14 @@ public final class GuidedRailways {
         });
     NeoForge.EVENT_BUS.addListener(NativeTrainDiagnostics::register);
     NeoForge.EVENT_BUS.addListener(TransferCommands::register);
+    NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStartedEvent e) -> TransferRecovery.startup(e.getServer()));
+    NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> TransferRecovery.clear(e.getServer()));
     NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent e) -> {
-          if (e.getEntity() instanceof ServerPlayer player) NativeTrainBridge.login(player);
+          if (e.getEntity() instanceof ServerPlayer player) {
+            NativeTrainBridge.login(player);
+            TransferRecovery.login(player);
+          }
         });
     NeoForge.EVENT_BUS.addListener(
         (net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent e) -> {

@@ -16,7 +16,7 @@ import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.phys.*;
 import org.joml.Vector3d;
 
-/** Bounded POI detection for real world nether portals. No terrain-wide per-body scans. */
+/** Bounded POI / section-palette detection for vanilla world portals. */
 final class PhysicalPortals {
   static final int COOLDOWN_TICKS = 100, MAX_ENTRIES = 256, EXPIRY_TICKS = 600;
   static final double MAX_SPEED = 16;
@@ -39,8 +39,9 @@ final class PhysicalPortals {
     long now = level.getServer().overworld().getGameTime();
     var previous = STATES.get(level);
     if (previous != null) previous.entries.values().removeIf(entry -> now < entry.tick || now - entry.tick > EXPIRY_TICKS);
-    if (!TrainConfig.NETHER_PORTAL_TRANSFERS.get()
-        || level.dimension() != Level.OVERWORLD && level.dimension() != Level.NETHER) return;
+    boolean nether = TrainConfig.NETHER_PORTAL_TRANSFERS.get() && (level.dimension() == Level.OVERWORLD || level.dimension() == Level.NETHER);
+    boolean end = TrainConfig.END_PORTAL_TRANSFERS.get() && (level.dimension() == Level.OVERWORLD || level.dimension() == Level.END);
+    if (!nether && !end) return;
     var container = SubLevelContainer.getContainer(level);
     if (container == null || SubLevelPhysicsSystem.currentlySteppingSystem != null) return;
     var bodies = List.copyOf(container.getAllSubLevels());
@@ -49,7 +50,7 @@ final class PhysicalPortals {
     for (int visit = 0; visit < Math.min(VISITS_PER_TICK, bodies.size()); visit++) {
       var body = bodies.get(Math.floorMod(state.cursor++, bodies.size()));
       if (body.isRemoved() || level.getBlockState(body.getPlot().getCenterBlock()).is(Content.BOGIE.get())) continue;
-      var box = body.boundingBox().toMojang();
+      var box = contactBounds(level, body);
       double volume = box.getXsize() * box.getYsize() * box.getZsize();
       if (!Double.isFinite(volume) || volume <= 0 || volume > PhysicalTransfer.MAX_VOLUME) continue;
       var entry = state.entries.get(body.getUniqueId());
@@ -69,7 +70,12 @@ final class PhysicalPortals {
       if (now < entry.retry || data != null
           && PortalTransform.cooling(now, data.getLong("GuidedPortalUntil"), COOLDOWN_TICKS)) continue;
       BlockPos portal;
-      try { portal = touching(level, search); }
+      boolean endPortal;
+      try {
+        portal = nether ? touching(level, search) : null;
+        if (portal == null && end) portal = touchingEnd(level, search);
+        endPortal = portal != null && level.getBlockState(portal).is(Blocks.END_PORTAL);
+      }
       catch (RuntimeException failure) {
         entry.retry = now + RETRY_TICKS;
         org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[PhysicalPortal] detection failed body={}", body.getUniqueId(), failure);
@@ -79,6 +85,17 @@ final class PhysicalPortals {
       entry.retry = now + RETRY_TICKS;
       var position = box.getCenter();
       try {
+        if (endPortal) {
+          var target = level.getServer().getLevel(level.dimension() == Level.END ? Level.OVERWORLD : Level.END);
+          if (target == null || !level.getServer().isLevelEnabled(target)) throw error("portal_missing");
+          var group = PhysicalTransfer.portalBounds(body); var pose = body.logicalPose().position();
+          try (var landing = new EndPortalLanding(target, group, new Vec3(pose.x, pose.y, pose.z))) {
+            PhysicalTransfer.throughPortal(level, body.getUniqueId(), target, landing.transform.destination(), 0);
+            landing.commit();
+          }
+          notify(level, position, Component.translatable("message.guidedrailways.transfer.portal_done"));
+          break;
+        }
         var source = opening(level, portal);
         var group = PhysicalTransfer.portalBounds(body);
         if (!source.fits(group)) throw error("portal_fit");
@@ -126,6 +143,39 @@ final class PhysicalPortals {
           .filter(pos -> box.intersects(new AABB(pos)))
           .filter(pos -> level.getBlockState(pos).is(Blocks.NETHER_PORTAL)).findFirst().orElse(null);
     }
+  }
+
+  private static AABB contactBounds(ServerLevel level, ServerSubLevel body) {
+    var box = body.boundingBox().toMojang(); var container = SubLevelContainer.getContainer(level);
+    for (var holder : body.getPlot().getLoadedChunks()) for (var be : holder.getChunk().getBlockEntities().values()) if (be instanceof MountEntity mount && mount.bogieId != null
+        && container.getSubLevel(mount.bogieId) instanceof ServerSubLevel lower && !lower.isRemoved())
+      box = box.minmax(lower.boundingBox().toMojang());
+    return box;
+  }
+
+  private static BlockPos touchingEnd(ServerLevel level, AABB box) {
+    int minX = net.minecraft.util.Mth.floor(box.minX), maxX = net.minecraft.util.Mth.floor(box.maxX);
+    int minZ = net.minecraft.util.Mth.floor(box.minZ), maxZ = net.minecraft.util.Mth.floor(box.maxZ);
+    int minY = Math.max(level.getMinBuildHeight(), net.minecraft.util.Mth.floor(box.minY));
+    int maxY = Math.min(level.getMaxBuildHeight() - 1, net.minecraft.util.Mth.floor(box.maxY));
+    if ((long) ((maxX >> 4) - (minX >> 4) + 1) * ((maxZ >> 4) - (minZ >> 4) + 1) > PhysicalTransfer.MAX_CHUNKS) return null;
+    int examined = 0;
+    for (int cx = minX >> 4; cx <= maxX >> 4; cx++) for (int cz = minZ >> 4; cz <= maxZ >> 4; cz++) {
+      var chunk = level.getChunkSource().getChunkNow(cx, cz);
+      if (chunk == null) continue;
+      for (int section = minY >> 4; section <= maxY >> 4; section++) {
+        var states = chunk.getSection(level.getSectionIndexFromSectionY(section));
+        if (!states.maybeHas(state -> state.is(Blocks.END_PORTAL))) continue;
+        for (int y = Math.max(minY, section << 4); y <= Math.min(maxY, (section << 4) + 15); y++)
+          for (int x = Math.max(minX, cx << 4); x <= Math.min(maxX, (cx << 4) + 15); x++)
+            for (int z = Math.max(minZ, cz << 4); z <= Math.min(maxZ, (cz << 4) + 15); z++) {
+              if (++examined > 8192) return null;
+              if (states.getBlockState(x & 15, y & 15, z & 15).is(Blocks.END_PORTAL)
+                  && box.intersects(new AABB(x, y + .75, z, x + 1, y + .875, z + 1))) return new BlockPos(x, y, z);
+            }
+      }
+    }
+    return null;
   }
 
   private static PortalTransform.Opening opening(ServerLevel level, BlockPos position) {

@@ -17,9 +17,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.*;
 import org.joml.Vector3d;
 
-/** Server-thread, stopped, unoccupied carriage transfer. No third-party teleport implementation. */
+/** Server-thread physical consist transfer. Independently implemented on the Sable serialization API. */
 public final class PhysicalTransfer {
-  static final int MAX_BODIES = 16, MAX_BLOCKS = 32768, MAX_VOLUME = 65536, MAX_CHUNKS = 16, MAX_GLUE = 256;
+  static final int MAX_BODIES = 128, MAX_BLOCKS = 32768, MAX_VOLUME = 65536, MAX_CHUNKS = 64, MAX_GLUE = 256;
   private record Context(ServerLevel source, ServerLevel target, Set<UUID> ids) {}
   private static Context active;
   public record Result(UUID operation, int bodies) {}
@@ -71,21 +71,21 @@ public final class PhysicalTransfer {
               instanceof ServerSubLevel carrier)) throw reject("incomplete");
       root = carrier;
     }
-    var members = new LinkedHashMap<UUID, ServerSubLevel>();
-    members.put(root.getUniqueId(), root);
+    var members = TransferGroup.collect(source, root);
     var mounts = new ArrayList<MountEntity>();
-    for (var be : blockEntities(root)) {
+    for (var carrier : List.copyOf(members.values())) for (var be : blockEntities(carrier)) {
       if (be instanceof MountEntity mount) {
         if (mount.bogieId == null || mount.handoff != null
             || !(src.getSubLevel(mount.bogieId) instanceof ServerSubLevel lower) || lower.isRemoved()
-            || lower == root || !BogieMountBinding.matches(lower.getUserDataTag(),
+            || lower == carrier || !BogieMountBinding.matches(lower.getUserDataTag(),
                 VehiclePhysics.mountLocation(source, mount.getBlockPos()))) throw reject("incomplete");
-        if (members.putIfAbsent(lower.getUniqueId(), lower) != null) throw reject("incomplete");
+        if (members.get(lower.getUniqueId()) != lower) throw reject("incomplete");
         mounts.add(mount);
       }
     }
     if (members.size() > MAX_BODIES) throw reject("limit");
     var ids = Set.copyOf(members.keySet());
+    TransferRecovery.check(source.getServer(), ids);
     var identities = TrainIdentityData.get(source).ledger.records.values().stream()
         .filter(identity -> identity.members().stream().anyMatch(ids::contains)).toList();
     var targetIdentities = TrainIdentityData.get(target).ledger.records;
@@ -95,9 +95,21 @@ public final class PhysicalTransfer {
         throw reject("incomplete");
     var anchor = root.logicalPose().position();
     var transform = new PortalTransform(new Vec3(anchor.x, anchor.y, anchor.z), destination, turns);
+    var moves = new LinkedHashMap<UUID, TransferPlots.Move>();
+    var occupied = (BitSet) dst.getOccupancy().clone();
+    int side = 1 << dst.getLogSideLength();
+    for (var body : members.values()) {
+      if (dst.getSubLevel(body.getUniqueId()) != null) throw reject("occupied");
+      int x = body.getPlot().plotPos.x - src.getOrigin().x, z = body.getPlot().plotPos.z - src.getOrigin().y;
+      int index = TransferPlots.reserve(occupied, dst.getIndex(x, z), Math.multiplyExact(side, side));
+      moves.put(body.getUniqueId(), new TransferPlots.Move(x, z, index & (side - 1), index >>> dst.getLogSideLength(),
+          src.getOrigin().x, src.getOrigin().y, src.getLogPlotSize() + 4));
+    }
+    var links = new TransferLinks(source, target, members.values(), moves.values());
+    var loadedChunks = new HashSet<net.minecraft.world.level.ChunkPos>();
+    var passengers = new TransferPassengers(source, target, members, moves, transform, loadedChunks);
     var parts = new ArrayList<Part>();
     var glues = new LinkedHashMap<UUID, Glue>();
-    var loadedChunks = new HashSet<net.minecraft.world.level.ChunkPos>();
     int blocks = 0;
     for (var body : members.values()) {
       if (physics.getPipeline().getLinearVelocity(body, new Vector3d()).lengthSquared()
@@ -120,6 +132,7 @@ public final class PhysicalTransfer {
       var entities = new HashSet<>(source.getEntities(null, box.inflate(.05)));
       entities.addAll(source.getEntities(null, plotBox));
       for (var entity : entities) {
+        if (passengers.owns(entity)) continue;
         if (!(entity instanceof SuperGlueEntity glue) || !plotBox.intersects(glue.getBoundingBox()))
           throw reject("entities");
         var data = new CompoundTag();
@@ -132,16 +145,7 @@ public final class PhysicalTransfer {
           || !target.getWorldBorder().isWithinBounds(BlockPos.containing(arrival.minX, arrival.minY, arrival.minZ))
           || !target.getWorldBorder().isWithinBounds(BlockPos.containing(arrival.maxX, arrival.maxY, arrival.maxZ)))
         throw reject("destination");
-      for (int x = net.minecraft.util.Mth.floor(arrival.minX) >> 4;
-          x <= net.minecraft.util.Mth.floor(arrival.maxX) >> 4; x++)
-        for (int z = net.minecraft.util.Mth.floor(arrival.minZ) >> 4;
-            z <= net.minecraft.util.Mth.floor(arrival.maxZ) >> 4; z++) {
-          var chunk = new net.minecraft.world.level.ChunkPos(x, z);
-          if (loadedChunks.add(chunk)) {
-            if (loadedChunks.size() > MAX_CHUNKS) throw reject("limit");
-            target.getChunk(x, z); // Collision queries alone can treat unloaded chunks as empty.
-          }
-        }
+      loadArea(target, arrival, loadedChunks);
       if (!target.noCollision(arrival) || !target.getEntities(null, arrival).isEmpty()
           || dst.getAllSubLevels().stream().anyMatch(other -> !other.isRemoved()
               && other.boundingBox().toMojang().intersects(arrival))) throw reject("blocked");
@@ -158,12 +162,11 @@ public final class PhysicalTransfer {
       var original = SubLevelSerializer.toData(body, List.of()).fullTag().copy();
       var copy = original.copy();
       var plot = copy.getCompound("plot");
-      int x = plot.getInt("plot_x"), z = plot.getInt("plot_z");
-      int side = 1 << dst.getLogSideLength();
-      if (x < 0 || z < 0 || x >= side || z >= side || dst.getOccupancy().get(dst.getIndex(x, z))
-          || dst.getSubLevel(body.getUniqueId()) != null) throw reject("occupied");
+      var move = moves.get(body.getUniqueId());
+      TransferPlots.apply(copy, move, moves.values());
       TransferSections.shift(plot, source.getMinSection() - target.getMinSection(), target.getSectionsCount());
       var pose = SableNBTUtils.readPose3d(copy.getCompound("pose"));
+      pose.rotationPoint().add(move.dx(), 0, move.dz());
       var moved = transform.point(new Vec3(pose.position().x, pose.position().y, pose.position().z));
       pose.position().set(moved.x, moved.y, moved.z);
       pose.orientation().premul(new org.joml.Quaterniond().rotationY(turns * Math.PI / 2));
@@ -176,14 +179,15 @@ public final class PhysicalTransfer {
         var data = copy.getCompound("user_data");
         data.putLong("GuidedPortalUntil", source.getServer().overworld().getGameTime() + PhysicalPortals.COOLDOWN_TICKS);
         copy.put("user_data", data);
-        TransferControls.park(copy);
       }
+      TransferControls.park(copy);
       if (source.getBlockState(body.getPlot().getCenterBlock()).is(Content.BOGIE.get())) {
         var data = copy.getCompound("user_data");
         var owner = BogieMountBinding.owner(data);
         if (owner == null) throw reject("incomplete");
         var next = owner.moveTo(owner.location(), new MountOwnership.Location(
-            target.dimension().location().toString(), owner.location().position()), owner.revision());
+            target.dimension().location().toString(), TransferPlots.point(moves.values(),
+                BlockPos.of(owner.location().position())).asLong()), owner.revision());
         if (!next.changed()) throw reject("incomplete");
         var claim = BogieMountBinding.encode(next.ownership().location());
         claim.putLong("Revision", next.ownership().revision());
@@ -194,22 +198,40 @@ public final class PhysicalTransfer {
       resetKinetics(copy);
       parts.add(new Part(body, original, copy));
     }
+    // Preloading may discover dormant destination bodies. A reservation is only a plan until load().
+    for (var entry : moves.entrySet()) {
+      var move = entry.getValue();
+      if (dst.getSubLevel(entry.getKey()) != null || dst.getOccupancy().get(dst.getIndex(move.newX(), move.newZ()))) throw reject("occupied");
+    }
     UUID operation = UUID.randomUUID();
     var backup = TransferBackup.prepare(source, target, operation,
         parts.stream().map(Part::original).toList(), parts.stream().map(Part::destination).toList(),
         glues.values().stream().map(glue -> {
-          var tag = new CompoundTag(); tag.putUUID("Owner", glue.owner); tag.put("Data", glue.data); return tag;
+          var tag = new CompoundTag(); tag.putUUID("Owner", glue.owner); tag.put("Data", glue.data);
+          var after = glue.data.copy(); TransferPlots.entity(after, moves.get(glue.owner)); tag.put("NextData", after); return tag;
+        }).toList(), links.snapshot(), identities, passengers.snapshot(), parts.stream().map(part -> {
+          var tag = new CompoundTag();
+          var old = part.body.getLastSerializationPointer();
+          if (old != null) tag.putLong("SavedSource", old.chunkPos().toLong());
+          tag.putLong("Source", holdingChunk(part.original).toLong()); tag.putLong("Target", holdingChunk(part.destination).toLong());
+          return tag;
         }).toList(), portal ? root.getUniqueId() : null);
+    TransferRecovery.lock(source.getServer(), ids, operation);
     active = new Context(source, target, ids);
     try {
+      passengers.detach();
       for (var mount : mounts) VehiclePhysics.forget(mount);
       for (var glue : glues.values()) glue.entity.discard();
       for (var part : parts) src.removeSubLevel(part.body, SubLevelRemovalReason.REMOVED);
       NativeTrainBridge.transferred(source, ids);
+      links.move(true);
       for (var part : parts) load(target, part.destination);
-      for (var glue : glues.values()) loadGlue(target, glue.data);
+      for (var glue : glues.values()) {
+        var relocated = glue.data.copy(); TransferPlots.entity(relocated, moves.get(glue.owner));
+        loadGlue(target, relocated);
+      }
       for (var mount : mounts) {
-        var loaded = target.getBlockEntity(mount.getBlockPos());
+        var loaded = target.getBlockEntity(TransferPlots.point(moves.values(), mount.getBlockPos()));
         if (!(loaded instanceof MountEntity plate)) throw new IllegalStateException("Missing transferred mount");
         VehiclePhysics.register(plate);
         if (VehiclePhysics.initialize(plate) == null) throw new IllegalStateException("Cannot reconnect transferred bogey");
@@ -221,13 +243,23 @@ public final class PhysicalTransfer {
         to.ledger.records.put(identity.id(), identity);
       }
       from.setDirty(); to.setDirty();
-      TransferBackup.finish(backup, "Transferred");
+      passengers.move(true);
+      TransferRecoveryData.get(source.getServer()).moved(ids, target);
+      TransferBackup.transition(backup, operation, "Committed");
+      persist(source, target);
+      TransferBackup.transition(backup, operation, "Transferred");
+      TransferRecovery.unlock(source.getServer(), operation);
       org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
           .info("[PhysicalTransfer] completed operation={} bodies={} source={} target={} position={}",
               operation, parts.size(), source.dimension().location(), target.dimension().location(), destination);
       return new Result(operation, parts.size());
     } catch (RuntimeException failure) {
       boolean restored = true;
+      TransferBackup.finish(backup, operation, "RollingBack");
+      try { passengers.release(); }
+      catch (RuntimeException undo) { failure.addSuppressed(undo); restored = false; }
+      try { links.move(false); }
+      catch (RuntimeException undo) { failure.addSuppressed(undo); restored = false; }
       for (var glue : glues.values()) {
         try {
           var copy = target.getEntity(glue.entity.getUUID());
@@ -262,7 +294,16 @@ public final class PhysicalTransfer {
         TrainIdentityData.get(source).ledger.records.put(identity.id(), identity);
       }
       TrainIdentityData.get(source).setDirty(); TrainIdentityData.get(target).setDirty();
-      TransferBackup.finish(backup, restored ? "RolledBack" : "RecoveryRequired");
+      try { passengers.move(false); }
+      catch (RuntimeException undo) { failure.addSuppressed(undo); restored = false; }
+      if (portal) try { park(source, ids); }
+      catch (RuntimeException undo) { failure.addSuppressed(undo); restored = false; }
+      TransferRecoveryData.get(source.getServer()).moved(ids, source);
+      if (restored) try { persist(source, target); }
+      catch (RuntimeException undo) { failure.addSuppressed(undo); restored = false; }
+      boolean recorded = TransferBackup.finish(backup, operation, restored ? "RolledBack" : "RecoveryRequired");
+      if (restored && recorded) TransferRecovery.unlock(source.getServer(), operation);
+      if (!recorded) restored = false;
       org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID)
           .error("[PhysicalTransfer] failed operation={} restored={} backup={}", operation, restored, backup, failure);
       throw reject(restored ? "failed" : "recovery");
@@ -279,14 +320,57 @@ public final class PhysicalTransfer {
     }
   }
 
-  private static void load(ServerLevel level, CompoundTag data) {
+  static void load(ServerLevel level, CompoundTag data) {
     var result = SubLevelSerializer.fullyLoad(level, SubLevelSerializer.fromData(data.copy()));
     if (result == null || result.isRemoved()) throw new IllegalStateException("Sable rejected transfer snapshot");
     result.updateLastPose(); result.updateBoundingBox();
     SubLevelPhysicsSystem.get(level).getPipeline().resetVelocity(result);
   }
 
-  private static void loadGlue(ServerLevel level, CompoundTag data) {
+  static net.minecraft.world.level.ChunkPos holdingChunk(CompoundTag snapshot) {
+    var pos = SableNBTUtils.readPose3d(snapshot.getCompound("pose")).position();
+    return new net.minecraft.world.level.ChunkPos(BlockPos.containing(pos.x, pos.y, pos.z));
+  }
+
+  static void persist(ServerLevel source, ServerLevel target) {
+    try {
+      // In particular, an End arrival platform must reach disk before the journal is retired.
+      target.getChunkSource().save(true);
+      // Sable exposes a world-level save barrier, not a per-loaded-body commit API.
+      for (var level : List.of(source, target)) {
+        var map = SubLevelContainer.getContainer(level).getHoldingChunkMap();
+        map.saveAll(); map.getStorage().flush();
+        level.getDataStorage().save(); ((com.guidedrailways.mixin.ServerEntityStorageAccessor) level).guidedrailways$entityStorage().saveAll();
+      }
+      source.getServer().overworld().getDataStorage().save();
+      source.getServer().getPlayerList().saveAll();
+    } catch (java.io.IOException failure) { throw new IllegalStateException("Cannot flush physical transfer", failure); }
+  }
+
+  static void recover(ServerLevel source, ServerLevel target, Set<UUID> ids, Runnable action) {
+    if (active != null || !source.getServer().isSameThread() || SubLevelPhysicsSystem.currentlySteppingSystem != null) throw reject("busy");
+    active = new Context(source, target, ids);
+    try { action.run(); }
+    finally { active = null; TrainConsists.invalidate(source); TrainConsists.invalidate(target); }
+  }
+
+  static void loadArea(ServerLevel level, AABB area, Set<net.minecraft.world.level.ChunkPos> chunks) {
+    area = area.inflate(16, 0, 16); // Include nearby hosting chunks, not just the train's immediate block footprint.
+    var map = SubLevelContainer.getContainer(level).getHoldingChunkMap();
+    boolean changed = false;
+    for (int x = net.minecraft.util.Mth.floor(area.minX) >> 4; x <= net.minecraft.util.Mth.floor(area.maxX) >> 4; x++)
+      for (int z = net.minecraft.util.Mth.floor(area.minZ) >> 4; z <= net.minecraft.util.Mth.floor(area.maxZ) >> 4; z++) {
+        var chunk = new net.minecraft.world.level.ChunkPos(x, z);
+        if (chunks.add(chunk)) {
+          if (chunks.size() > MAX_CHUNKS) throw reject("limit");
+          level.getChunk(x, z);
+          map.updateChunkStatus(chunk, true); changed = true;
+        }
+      }
+    if (changed) map.processChanges();
+  }
+
+  static void loadGlue(ServerLevel level, CompoundTag data) {
     var glue = EntityType.loadEntityRecursive(data.copy(), level, java.util.function.Function.identity());
     if (!(glue instanceof SuperGlueEntity) || !level.addFreshEntity(glue))
       throw new IllegalStateException("Cannot restore transferred glue");
@@ -294,35 +378,40 @@ public final class PhysicalTransfer {
 
   static AABB portalBounds(ServerSubLevel root) {
     AABB bounds = root.boundingBox().toMojang();
-    var container = SubLevelContainer.getContainer(root.getLevel());
-    for (var entity : blockEntities(root)) if (entity instanceof MountEntity mount) {
-      if (mount.bogieId == null || !(container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie)
-          || bogie.isRemoved()) throw reject("incomplete");
-      bounds = bounds.minmax(bogie.boundingBox().toMojang());
-    }
+    for (var body : TransferGroup.collect(root.getLevel(), root).values()) bounds = bounds.minmax(body.boundingBox().toMojang());
     return bounds;
   }
 
   static void stopAtPortal(ServerLevel level, UUID id) {
     var container = SubLevelContainer.getContainer(level);
     if (container == null || !(container.getSubLevel(id) instanceof ServerSubLevel root) || root.isRemoved()) return;
-    var pipeline = SubLevelPhysicsSystem.get(level).getPipeline();
-    pipeline.resetVelocity(root);
-    for (var entity : blockEntities(root)) {
+    Set<ServerSubLevel> bodies;
+    try { bodies = new HashSet<>(TransferGroup.collect(level, root).values()); }
+    catch (IllegalArgumentException incomplete) { bodies = new HashSet<>(CargoStorage.consist(level, root).bodies().values()); }
+    for (var carrier : List.copyOf(bodies)) for (var entity : blockEntities(carrier))
       if (entity instanceof MountEntity mount && mount.bogieId != null
-          && container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie) pipeline.resetVelocity(bogie);
-      if (entity instanceof DriverConsoleEntity console) {
-        console.schedule.pause(ScheduleController.PAUSED);
-        console.emergency = true; console.notch = -4;
-        console.setChanged(); console.updateVisual();
+          && container.getSubLevel(mount.bogieId) instanceof ServerSubLevel bogie) bodies.add(bogie);
+    park(level, bodies.stream().map(ServerSubLevel::getUniqueId).toList());
+  }
+
+  private static void park(ServerLevel level, Collection<UUID> ids) {
+    var container = SubLevelContainer.getContainer(level);
+    var pipeline = SubLevelPhysicsSystem.get(level).getPipeline();
+    for (var id : ids) {
+      if (!(container.getSubLevel(id) instanceof ServerSubLevel body) || body.isRemoved()) continue;
+      pipeline.resetVelocity(body);
+      for (var entity : blockEntities(body)) {
+        if (entity instanceof DriverConsoleEntity console) {
+          console.schedule.pause(ScheduleController.PAUSED);
+          console.emergency = true; console.notch = -4;
+          console.setChanged(); console.updateVisual();
+        }
       }
     }
   }
 
   private static List<BlockEntity> blockEntities(ServerSubLevel body) {
-    var result = new ArrayList<BlockEntity>();
-    for (var holder : body.getPlot().getLoadedChunks()) result.addAll(holder.getChunk().getBlockEntities().values());
-    return result;
+    return TransferGroup.entities(body);
   }
 
   private static void validateBlockEntity(ServerLevel level, BlockEntity be, boolean portal) {
@@ -333,10 +422,20 @@ public final class PhysicalTransfer {
         throw reject("controls");
       return;
     }
-    if (be instanceof CouplerEntity coupler) {
-      if (coupler.endpoint.handoff != null
-          || CouplerSavedData.get(level).links.forEndpoint(coupler.endpoint.endpointId) != null)
+    var coupler = CouplerEndpoint.get(be);
+    if (coupler != null) {
+      if (coupler.handoff != null)
         throw reject("coupled");
+      return;
+    }
+    if (be instanceof com.simibubi.create.content.logistics.vault.ItemVaultBlockEntity
+        || be instanceof com.simibubi.create.content.fluids.tank.FluidTankBlockEntity) {
+      var multi = (com.simibubi.create.foundation.blockEntity.IMultiBlockEntityContainer) be;
+      var controller = multi.getController();
+      var helper = dev.ryanhcode.sable.companion.SableCompanion.INSTANCE;
+      if (controller == null || !level.hasChunkAt(controller) || multi.getControllerBE() == null
+          || helper.getContaining(level, controller) != helper.getContaining(level, be.getBlockPos())
+          || multi.getLastKnownPos() != null && !multi.getLastKnownPos().equals(be.getBlockPos())) throw reject("incomplete");
       return;
     }
     String id = net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()).toString();
