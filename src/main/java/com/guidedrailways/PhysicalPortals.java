@@ -84,6 +84,7 @@ final class PhysicalPortals {
       if (portal == null) continue;
       entry.retry = now + RETRY_TICKS;
       var position = box.getCenter();
+      long attemptStart = LagProbe.begin();
       try {
         if (endPortal) {
           var target = level.getServer().getLevel(level.dimension() == Level.END ? Level.OVERWORLD : Level.END);
@@ -126,6 +127,8 @@ final class PhysicalPortals {
           org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[PhysicalPortal] cannot stop body={}", body.getUniqueId(), failure);
         }
         notify(level, position, Component.translatable("message.guidedrailways.transfer.portal_failed", UserText.error(failure)));
+      } finally {
+        LagProbe.end(LagProbe.Stage.PORTAL_ATTEMPT, attemptStart);
       }
       break; // At most one expensive portal resolution/transfer attempt per world tick.
     }

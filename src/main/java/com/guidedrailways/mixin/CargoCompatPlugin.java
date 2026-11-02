@@ -48,6 +48,18 @@ public final class CargoCompatPlugin implements IMixinConfigPlugin {
   @Override
   public boolean shouldApplyMixin(String target, String mixin) {
     String simpleName = mixin.substring(mixin.lastIndexOf('.') + 1);
+    if (simpleName.startsWith("LagProbe")) {
+      if (!com.guidedrailways.LagProbe.enabled()) return false;
+      try {
+        var node = MixinService.getService().getBytecodeProvider().getClassNode(target);
+        boolean supported = com.guidedrailways.LagProbe.supports(simpleName, node);
+        org.slf4j.LoggerFactory.getLogger("guidedrailways").info("[LagProbe] {} target={} enabled={}", simpleName, target, supported);
+        return supported;
+      } catch (ClassNotFoundException | java.io.IOException | RuntimeException failure) {
+        org.slf4j.LoggerFactory.getLogger("guidedrailways").warn("[LagProbe] {} skipped: {}", simpleName, failure.toString());
+        return false;
+      }
+    }
     if (com.guidedrailways.RenderOptimizationSupport.option(simpleName) != null) {
       var logger = org.slf4j.LoggerFactory.getLogger("guidedrailways");
       if (com.guidedrailways.RenderOptimizationSupport.disabled(simpleName)) {

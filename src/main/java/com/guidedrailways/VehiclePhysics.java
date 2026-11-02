@@ -772,6 +772,12 @@ public final class VehiclePhysics {
   }
 
   static void dismantle(Unit u, Player player) {
+    long start = LagProbe.begin();
+    try { dismantleNow(u, player); }
+    finally { LagProbe.end(LagProbe.Stage.BOGIE_REMOVE, start); }
+  }
+
+  private static void dismantleNow(Unit u, Player player) {
     var level = u.bogie.getLevel();
     if (ACTIVE.getOrDefault(level, Map.of()).get(u.bogie.getUniqueId()) != u
         || !liveMount(level, u.mount)

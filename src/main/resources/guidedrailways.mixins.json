@@ -40,6 +40,11 @@
   },
   "plugin": "com.guidedrailways.mixin.CargoCompatPlugin",
   "client": [
+    "LagProbeWorldMixin",
+    "LagProbeUploadsMixin",
+    "LagProbeVertexMixin",
+    "LagProbeSableReleaseMixin",
+    "LagProbePropertiesMixin",
     "ShaderSamplerLocationMixin",
     "VeilFramebufferRegistrationMixin",
     "VeilFramebufferSnapshotMixin",

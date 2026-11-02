@@ -9,10 +9,9 @@ import net.neoforged.neoforge.common.NeoForge;
 /**
  * Splits slow client time into tick work and frame work.
  *
- * <p>The server side measured normal around carriages and the window stays focused, so the stutter
- * has to be inside the client. Reporting the two halves separately says whether the time goes into
- * the client tick (entities, block entities, Sable updates) or into drawing, which is the difference
- * between fixing our code and reducing what is drawn.
+ * <p>These are broad event intervals, not attribution to a particular mod or GPU operation.
+ * Compare them with server timings and JFR samples. In particular, GC MXBean time can include
+ * concurrent work: it does not measure stop-the-world time under ZGC.
  */
 final class FrameWatch {
   /** A frame this slow is already under 25 fps; the point is to catch mild stutter too. */

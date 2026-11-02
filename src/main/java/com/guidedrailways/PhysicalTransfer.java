@@ -38,11 +38,15 @@ public final class PhysicalTransfer {
 
   /** Destination is the root body's pose position, with orientation and internal coordinates retained. */
   public static Result transfer(ServerLevel source, UUID bodyId, ServerLevel target, Vec3 destination) {
-    return transfer(source, bodyId, target, destination, 0, false);
+    long start = LagProbe.begin();
+    try { return transfer(source, bodyId, target, destination, 0, false); }
+    finally { LagProbe.end(LagProbe.Stage.TRANSFER, start); }
   }
 
   static Result throughPortal(ServerLevel source, UUID bodyId, ServerLevel target, Vec3 destination, int turns) {
-    return transfer(source, bodyId, target, destination, turns, true);
+    long start = LagProbe.begin();
+    try { return transfer(source, bodyId, target, destination, turns, true); }
+    finally { LagProbe.end(LagProbe.Stage.TRANSFER, start); }
   }
 
   private static Result transfer(ServerLevel source, UUID bodyId, ServerLevel target, Vec3 destination,
