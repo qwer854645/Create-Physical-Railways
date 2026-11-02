@@ -101,6 +101,7 @@ final class TrainConsists {
   }
 
   static void changed(ServerLevel level, UUID... bodies) {
+    PhysicalPortals.topologyChanged(level, bodies);
     invalidate(level);
     var changed = CHANGES.computeIfAbsent(level, k -> new HashSet<>());
     Collections.addAll(changed, bodies);

@@ -43,11 +43,32 @@ public final class PortalTransformCheck {
         check(Math.abs(near - (100 + Math.signum(velocity) * .75)) < 1e-9,
             "entire carriage is placed outside the portal, in either travel direction");
         var tooSmall = new PortalTransform.Opening(new Vec3(100, 70, 100), targetX, 1, 2);
-        boolean refused = false;
-        try { PortalTransform.passage(entry, tooSmall, group, new Vec3(0, 65, 0), speed); }
-        catch (IllegalArgumentException expected) { refused = true; }
-        check(refused, "undersized exit cannot silently cut off the carriage");
+        var oversized = PortalTransform.passage(entry, tooSmall, group, new Vec3(0, 65, 0), speed).bounds(group);
+        check(Math.abs((targetX ? oversized.getCenter().x : oversized.getCenter().z) - 100) < 1e-9,
+            "narrow exit centers the complete body instead of rejecting contact");
+        check(Math.abs(oversized.minY - 70.05) < 1e-9, "tall body clears the exit floor without floating out of support range");
+        double outside = targetX ? velocity > 0 ? oversized.minZ : oversized.maxZ : velocity > 0 ? oversized.minX : oversized.maxX;
+        check(Math.abs(outside - (100 + Math.signum(velocity) * .75)) < 1e-9,
+            "an oversized body still clears the entire portal frame along its normal");
       }
+    for (boolean widthX : new boolean[] {true, false}) {
+      var entry = new PortalTransform.Opening(new Vec3(0, 64, 0), widthX, 2, 3);
+      var target = new PortalTransform.Opening(new Vec3(100, 70, 100), widthX, 2, 3);
+      // Lower bogeys below the entrance, a wide body, a long tail, and an offset entry used to
+      // all be rejected by whole-box containment even when the destination had clear space.
+      for (var source : new AABB[] {new AABB(-2, 63.7, -20, 2, 68, 20),
+          new AABB(.9, 64, -.2, 2.4, 66, .2), new AABB(-.5, 65.9, -1, .5, 68.2, 1)}) {
+        var group = widthX ? source : new AABB(source.minZ, source.minY, source.minX, source.maxZ, source.maxY, source.maxX);
+        check(!entry.fits(group), "regression fixture really fails the previous containment precondition");
+        var anchor = group.getCenter(); var result = PortalTransform.passage(entry, target, group, anchor, Vec3.ZERO).bounds(group);
+        double center = widthX ? result.getCenter().x : result.getCenter().z;
+        check(Double.isFinite(center) && result.minY >= 70, "partial and oversized contact has a finite destination above its floor");
+        check((widthX ? result.minZ : result.minX) >= 100.75 - 1e-9
+            || (widthX ? result.maxZ : result.maxX) <= 99.25 + 1e-9, "the complete group clears the frame, including its tail");
+        check(Math.abs(group.getXsize() - result.getXsize()) < 1e-8 && Math.abs(group.getYsize() - result.getYsize()) < 1e-8,
+            "exit planning never shrinks a large structure to fake a fit");
+      }
+    }
     var schedule = new CompoundTag();
     var item = new CompoundTag(); item.putString("id", "create:schedule"); item.putInt("count", 1);
     schedule.put("Item", item.copy()); schedule.putInt("Entry", 3); schedule.putString("Title", "Express");

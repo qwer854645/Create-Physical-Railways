@@ -9,23 +9,37 @@ import net.minecraft.core.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.village.poi.*;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.phys.*;
 import org.joml.Vector3d;
 
-/** Bounded POI / section-palette detection for vanilla world portals. */
+/** Discovery is throttled; known contact only checks one cached portal and member bounds. */
 final class PhysicalPortals {
-  static final int COOLDOWN_TICKS = 100, MAX_ENTRIES = 256, EXPIRY_TICKS = 600;
+  static final int COOLDOWN_TICKS = 300, MAX_ENTRIES = 256, EXPIRY_TICKS = 600;
   static final double MAX_SPEED = 16;
-  private static final int VISITS_PER_TICK = 8, RETRY_TICKS = 100, MAX_PORTAL_POINTS = 1024;
+  private static final int VISITS_PER_TICK = 8, SCAN_TICKS = 5, IDLE_SCAN_TICKS = 20, MAX_PORTAL_POINTS = 1024;
   private static final Map<ServerLevel, State> STATES = new WeakHashMap<>();
   private static final class Entry {
     AABB box;
-    long tick, retry;
-    Entry(AABB box, long tick) { this.box = box; this.tick = tick; }
+    Vec3 ownerCenter;
+    long tick, probed, nextProbe, errorUntil;
+    boolean needsExit;
+    Session session;
+    Entry(AABB box, long now) { this.box = box; ownerCenter = box.getCenter(); tick = probed = now; }
+  }
+  private record Gate(BlockPos anchor, AABB area, boolean end) {}
+  private record Sensor(AABB box, Set<UUID> members) {}
+  private static final class Session {
+    final UUID root;
+    final Set<UUID> members;
+    final Gate gate;
+    final PortalContact contact = new PortalContact();
+    long checked = Long.MIN_VALUE;
+    boolean parked, attempting;
+    Session(UUID root, Set<UUID> members, Gate gate) { this.root = root; this.members = members; this.gate = gate; }
   }
   private static final class State {
     int cursor;
@@ -35,78 +49,189 @@ final class PhysicalPortals {
 
   static void unload(ServerLevel level) { STATES.remove(level); }
 
+  static void topologyChanged(ServerLevel level, UUID... ids) {
+    var state = STATES.get(level); if (state == null) return;
+    for (var id : ids) {
+      var entry = state.entries.get(id);
+      if (entry != null && entry.session != null && !entry.session.attempting)
+        release(state, entry.session, level.getServer().overworld().getGameTime());
+    }
+  }
+
   static void tick(ServerLevel level) {
-    if (LagProbe.skipPhysicalPortals()) return; // Diagnostic A/B: preserve vanilla portals and all rendering.
+    if (LagProbe.skipPhysicalPortals()) return;
     long now = level.getServer().overworld().getGameTime();
     var previous = STATES.get(level);
     if (previous != null) previous.entries.values().removeIf(entry -> now < entry.tick || now - entry.tick > EXPIRY_TICKS);
     boolean nether = TrainConfig.NETHER_PORTAL_TRANSFERS.get() && (level.dimension() == Level.OVERWORLD || level.dimension() == Level.NETHER);
     boolean end = TrainConfig.END_PORTAL_TRANSFERS.get() && (level.dimension() == Level.OVERWORLD || level.dimension() == Level.END);
-    if (!nether && !end) return;
+    if (!nether && !end) { STATES.remove(level); return; }
     var container = SubLevelContainer.getContainer(level);
-    if (container == null || SubLevelPhysicsSystem.currentlySteppingSystem != null) return;
+    if (container == null || SubLevelPhysicsSystem.get(level) == null || SubLevelPhysicsSystem.currentlySteppingSystem != null) return;
     var bodies = List.copyOf(container.getAllSubLevels());
     if (bodies.isEmpty()) { STATES.remove(level); return; }
     var state = STATES.computeIfAbsent(level, ignored -> new State());
     for (int visit = 0; visit < Math.min(VISITS_PER_TICK, bodies.size()); visit++) {
       var body = bodies.get(Math.floorMod(state.cursor++, bodies.size()));
-      if (body.isRemoved() || level.getBlockState(body.getPlot().getCenterBlock()).is(Content.BOGIE.get())) continue;
-      var box = contactBounds(level, body);
+      if (body.isRemoved()) continue;
+      // Bound lower bogeys are observed through their carriage, never migrated independently.
+      var data = body.getUserDataTag();
+      if (BogieMountBinding.owner(data) != null) continue;
+      var box = body.boundingBox().toMojang();
       double volume = box.getXsize() * box.getYsize() * box.getZsize();
       if (!Double.isFinite(volume) || volume <= 0 || volume > PhysicalTransfer.MAX_VOLUME) continue;
-      var entry = state.entries.get(body.getUniqueId());
-      var search = box;
-      if (entry != null && now >= entry.tick && now - entry.tick <= 100
-          && box.getCenter().distanceTo(entry.box.getCenter()) <= (now - entry.tick) * MAX_SPEED / 20 + 2)
-        search = box.minmax(entry.box);
-      if (entry == null) {
-        if (state.entries.size() >= MAX_ENTRIES) {
-          var oldest = state.entries.entrySet().stream().min(Comparator.comparingLong(e -> e.getValue().tick));
-          oldest.ifPresent(value -> state.entries.remove(value.getKey()));
-        }
-        entry = new Entry(box, now); state.entries.put(body.getUniqueId(), entry);
-      }
-      entry.box = box; entry.tick = now;
-      var data = body.getUserDataTag();
-      if (now < entry.retry || data != null
-          && PortalTransform.cooling(now, data.getLong("GuidedPortalUntil"), COOLDOWN_TICKS)) continue;
-      BlockPos portal;
-      boolean endPortal;
-      try {
-        portal = nether ? touching(level, search) : null;
-        if (portal == null && end) portal = touchingEnd(level, search);
-        endPortal = portal != null && level.getBlockState(portal).is(Blocks.END_PORTAL);
-      }
-      catch (RuntimeException failure) {
-        entry.retry = now + RETRY_TICKS;
-        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[PhysicalPortal] detection failed body={}", body.getUniqueId(), failure);
+      var entry = entry(state, body.getUniqueId(), box, now);
+      if (entry == null) continue; // Never evict an active failed contact just to retry it.
+      entry.tick = now;
+      if (entry.session != null) {
+        if (entry.session.gate.end ? !end : !nether) { release(state, entry.session, now); continue; }
+        if (observe(level, state, entry.session, body, now)) break;
         continue;
       }
-      if (portal == null) continue;
-      entry.retry = now + RETRY_TICKS;
-      var position = box.getCenter();
-      long attemptStart = LagProbe.begin();
+      if (data != null && PortalTransform.cooling(now, data.getLong("GuidedPortalUntil"), COOLDOWN_TICKS)) {
+        entry.needsExit = true; continue;
+      }
+      if (now < entry.errorUntil) continue;
+      // Moving bodies can bypass the negative-cache delay; sweeps cover the last discovery interval.
+      if (!PortalContact.scanDue(now, entry.nextProbe, box.getCenter(), entry.ownerCenter)) continue;
+      entry.ownerCenter = box.getCenter();
+      var sensed = sensor(level, body); box = sensed.box;
+      var search = box;
+      if (now >= entry.probed && now - entry.probed <= 100
+          && box.getCenter().distanceTo(entry.box.getCenter()) <= (now - entry.probed) * MAX_SPEED / 20 + 2)
+        search = box.minmax(entry.box);
+      entry.nextProbe = now + PortalContact.scanDelay(entry.box, box);
+      entry.box = box; entry.probed = now;
+      BlockPos position;
       try {
-        if (endPortal) {
-          var target = level.getServer().getLevel(level.dimension() == Level.END ? Level.OVERWORLD : Level.END);
-          if (target == null || !level.getServer().isLevelEnabled(target)) throw error("portal_missing");
-          var group = PhysicalTransfer.portalBounds(body); var pose = body.logicalPose().position();
-          try (var landing = new EndPortalLanding(target, group, new Vec3(pose.x, pose.y, pose.z))) {
-            PhysicalTransfer.throughPortal(level, body.getUniqueId(), target, landing.transform.destination(), 0);
-            landing.commit();
-          }
-          notify(level, position, Component.translatable("message.guidedrailways.transfer.portal_done"));
-          break;
+        position = nether ? touching(level, search) : null;
+        if (position == null && end) position = touchingEnd(level, search);
+      } catch (RuntimeException failure) {
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).warn("[PhysicalPortal] discovery failed body={}", body.getUniqueId(), failure);
+        entry.errorUntil = now + 100; continue;
+      }
+      if (position == null) { entry.needsExit = false; continue; }
+      boolean endPortal = level.getBlockState(position).is(Blocks.END_PORTAL);
+      Gate gate = new Gate(position.immutable(), new AABB(position), endPortal);
+      Set<UUID> members = sensed.members;
+      try {
+        gate = gate(level, position, endPortal);
+        members = Set.copyOf(TransferGroup.collect(level, body).keySet());
+        // Swept discovery is not permission to enter a portal already completely passed.
+        if (!inside(level, members, gate.area)) continue;
+        Session existing = null;
+        for (var id : members) {
+          var other = state.entries.get(id);
+          if (other != null && other.session != null) { existing = other.session; break; }
         }
-        var source = opening(level, portal);
-        var group = PhysicalTransfer.portalBounds(body);
-        if (!source.fits(group)) throw error("portal_fit");
+        var session = existing != null ? existing : new Session(body.getUniqueId(), members, gate);
+        bind(level, state, entry, session, now);
+        observe(level, state, session, body, now);
+      } catch (RuntimeException failure) {
+        var session = new Session(body.getUniqueId(), members, gate);
+        session.contact.block(); bind(level, state, entry, session, now);
+        fail(level, body, session, failure);
+      }
+      break; // At most one portal discovery/assembly inspection or transfer attempt per world tick.
+    }
+  }
+
+  private static Entry entry(State state, UUID id, AABB box, long now) {
+    var entry = state.entries.get(id); if (entry != null) return entry;
+    if (state.entries.size() >= MAX_ENTRIES) {
+      var oldest = state.entries.entrySet().stream().filter(value -> value.getValue().session == null)
+          .min(Comparator.comparingLong(value -> value.getValue().tick));
+      if (oldest.isEmpty()) return null;
+      state.entries.remove(oldest.get().getKey());
+    }
+    entry = new Entry(box, now); state.entries.put(id, entry); return entry;
+  }
+
+  private static void bind(ServerLevel level, State state, Entry owner, Session session, long now) {
+    owner.session = session;
+    var container = SubLevelContainer.getContainer(level);
+    for (var id : session.members) {
+      var body = container.getSubLevel(id); if (body == null || body.isRemoved()) continue;
+      var member = entry(state, id, body.boundingBox().toMojang(), now);
+      if (member != null) {
+        if (member.needsExit) session.contact.block();
+        member.session = session; member.tick = now;
+      }
+    }
+  }
+
+  private static void release(State state, Session session, long now) {
+    session.contact.leave();
+    for (var entry : state.entries.values()) if (entry.session == session) {
+      entry.session = null; entry.needsExit = false; entry.nextProbe = now + SCAN_TICKS;
+    }
+  }
+
+  private static boolean inside(ServerLevel level, Set<UUID> members, AABB area) {
+    var container = SubLevelContainer.getContainer(level);
+    for (var id : members) {
+      var body = container.getSubLevel(id);
+      if (body != null && !body.isRemoved() && body.boundingBox().toMojang().intersects(area)) return true;
+    }
+    return false;
+  }
+
+  private static boolean observe(ServerLevel level, State state, Session session, ServerSubLevel fallback, long now) {
+    if (session.checked == now) return false;
+    session.checked = now;
+    if (!level.hasChunkAt(session.gate.anchor)) { release(state, session, now); return false; }
+    var portal = level.getBlockState(session.gate.anchor);
+    if (!portal.is(session.gate.end ? Blocks.END_PORTAL : Blocks.NETHER_PORTAL)
+        || !inside(level, session.members, session.gate.area)) { release(state, session, now); return false; }
+    for (var id : session.members) {
+      var entry = state.entries.get(id); if (entry != null && entry.session == session) entry.tick = now;
+    }
+    if (!session.contact.enter()) return false;
+    var found = SubLevelContainer.getContainer(level).getSubLevel(session.root);
+    var root = found instanceof ServerSubLevel alive && !alive.isRemoved() ? alive : fallback;
+    session.attempting = true;
+    try {
+      attempt(level, root, session.gate);
+      release(state, session, now);
+    } catch (RuntimeException failure) {
+      session.contact.block(); fail(level, root, session, failure);
+    } finally {
+      session.attempting = false;
+    }
+    return true;
+  }
+
+  private static void fail(ServerLevel level, ServerSubLevel root, Session session, RuntimeException failure) {
+    if (!session.parked) {
+      session.parked = true;
+      try { PhysicalTransfer.stopAtPortal(level, root.getUniqueId()); }
+      catch (RuntimeException cleanup) {
+        failure.addSuppressed(cleanup);
+        org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[PhysicalPortal] cannot stop body={}", root.getUniqueId(), failure);
+      }
+    }
+    notify(level, root.boundingBox().toMojang().getCenter(), Component.translatable("message.guidedrailways.transfer.portal_failed", UserText.error(failure)));
+  }
+
+  private static void attempt(ServerLevel level, ServerSubLevel body, Gate gate) {
+    long start = LagProbe.begin();
+    try {
+      var group = PhysicalTransfer.portalBounds(body); var pose = body.logicalPose().position();
+      var position = new Vec3(pose.x, pose.y, pose.z);
+      if (gate.end) {
+        var target = level.getServer().getLevel(level.dimension() == Level.END ? Level.OVERWORLD : Level.END);
+        if (target == null || !level.getServer().isLevelEnabled(target)) throw error("portal_missing");
+        try (var landing = new EndPortalLanding(target, group, position)) {
+          PhysicalTransfer.throughPortal(level, body.getUniqueId(), target, landing.transform.destination(), 0);
+          landing.commit();
+        }
+      } else {
+        var source = opening(level, gate.anchor);
         var target = level.getServer().getLevel(level.dimension() == Level.NETHER ? Level.OVERWORLD : Level.NETHER);
         if (target == null || !level.getServer().isLevelEnabled(target)) throw error("portal_missing");
         double scale = DimensionType.getTeleportationScale(level.dimensionType(), target.dimensionType());
-        var scaled = new Vec3(source.bottomCenter().x * scale, source.bottomCenter().y,
-            source.bottomCenter().z * scale);
-        var center = target.getWorldBorder().clampToBounds(scaled);
+        var center = target.getWorldBorder().clampToBounds(new Vec3(source.bottomCenter().x * scale,
+            source.bottomCenter().y, source.bottomCenter().z * scale));
         var exit = target.getPortalForcer().findClosestPortalPosition(center, target.dimension() == Level.NETHER, target.getWorldBorder());
         if (exit.isEmpty()) {
           var created = target.getPortalForcer().createPortal(center, source.widthX() ? Direction.Axis.X : Direction.Axis.Z);
@@ -114,25 +239,37 @@ final class PhysicalPortals {
           exit = Optional.of(created.get().minCorner);
         }
         target.getChunkAt(exit.get());
-        var destination = opening(target, exit.get());
-        var pose = body.logicalPose().position();
         var speed = SubLevelPhysicsSystem.get(level).getPipeline().getLinearVelocity(body, new Vector3d());
-        var transform = PortalTransform.passage(source, destination, group,
-            new Vec3(pose.x, pose.y, pose.z), new Vec3(speed.x, speed.y, speed.z));
+        var transform = PortalTransform.passage(source, opening(target, exit.get()), group, position, new Vec3(speed.x, speed.y, speed.z));
         PhysicalTransfer.throughPortal(level, body.getUniqueId(), target, transform.destination(), transform.turns());
-        notify(level, position, Component.translatable("message.guidedrailways.transfer.portal_done"));
-      } catch (RuntimeException failure) {
-        try { PhysicalTransfer.stopAtPortal(level, body.getUniqueId()); }
-        catch (RuntimeException cleanup) {
-          failure.addSuppressed(cleanup);
-          org.slf4j.LoggerFactory.getLogger(GuidedRailways.ID).error("[PhysicalPortal] cannot stop body={}", body.getUniqueId(), failure);
-        }
-        notify(level, position, Component.translatable("message.guidedrailways.transfer.portal_failed", UserText.error(failure)));
-      } finally {
-        LagProbe.end(LagProbe.Stage.PORTAL_ATTEMPT, attemptStart);
       }
-      break; // At most one expensive portal resolution/transfer attempt per world tick.
+      notify(level, position, Component.translatable("message.guidedrailways.transfer.portal_done"));
+    } finally { LagProbe.end(LagProbe.Stage.PORTAL_ATTEMPT, start); }
+  }
+
+  private static Sensor sensor(ServerLevel level, ServerSubLevel body) {
+    var box = body.boundingBox().toMojang(); var container = SubLevelContainer.getContainer(level);
+    var members = new HashSet<UUID>(); members.add(body.getUniqueId());
+    for (var holder : body.getPlot().getLoadedChunks()) for (var be : holder.getChunk().getBlockEntities().values())
+      if (be instanceof MountEntity mount && mount.bogieId != null
+          && container.getSubLevel(mount.bogieId) instanceof ServerSubLevel lower && !lower.isRemoved()) {
+        box = box.minmax(lower.boundingBox().toMojang()); members.add(lower.getUniqueId());
+      }
+    return new Sensor(box, Set.copyOf(members));
+  }
+
+  private static Gate gate(ServerLevel level, BlockPos position, boolean end) {
+    if (end) {
+      var rect = BlockUtil.getLargestRectangleAround(position, Direction.Axis.X, 21, Direction.Axis.Z, 21,
+          pos -> level.getBlockState(pos).is(Blocks.END_PORTAL));
+      var min = rect.minCorner;
+      return new Gate(position.immutable(), new AABB(min.getX(), min.getY() + .75, min.getZ(),
+          min.getX() + rect.axis1Size, min.getY() + .875, min.getZ() + rect.axis2Size), true);
     }
+    var door = opening(level, position); var base = door.bottomCenter();
+    return new Gate(position.immutable(), door.widthX()
+        ? new AABB(base.x - door.width() / 2.0, base.y, base.z - .5, base.x + door.width() / 2.0, base.y + door.height(), base.z + .5)
+        : new AABB(base.x - .5, base.y, base.z - door.width() / 2.0, base.x + .5, base.y + door.height(), base.z + door.width() / 2.0), false);
   }
 
   private static IllegalArgumentException error(String key) {
@@ -147,14 +284,6 @@ final class PhysicalPortals {
           .filter(pos -> box.intersects(new AABB(pos)))
           .filter(pos -> level.getBlockState(pos).is(Blocks.NETHER_PORTAL)).findFirst().orElse(null);
     }
-  }
-
-  private static AABB contactBounds(ServerLevel level, ServerSubLevel body) {
-    var box = body.boundingBox().toMojang(); var container = SubLevelContainer.getContainer(level);
-    for (var holder : body.getPlot().getLoadedChunks()) for (var be : holder.getChunk().getBlockEntities().values()) if (be instanceof MountEntity mount && mount.bogieId != null
-        && container.getSubLevel(mount.bogieId) instanceof ServerSubLevel lower && !lower.isRemoved())
-      box = box.minmax(lower.boundingBox().toMojang());
-    return box;
   }
 
   private static BlockPos touchingEnd(ServerLevel level, AABB box) {

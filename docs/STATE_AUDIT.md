@@ -118,7 +118,7 @@
 
 `TransferBackup` 在修改前保存版本 3 快照，最多 32 份，每份估计内存上限 16 MiB；满额拒绝。门户只原子替换已完成或回滚的同根记录。`TransferJournal` 的原子决定文件绑定操作 UUID，旧操作的提交不适用于新快照；成功保存屏障后才能记录完成。`TransferRecovery` 在服务端启动时只尝试未完成记录，保守检查槽位、端点和实体编号。运行时锁按服务端弱键持有最多 `MAX_ENTRIES=4096` 个 UUID，完成释放，停止清空，未完成日志在启动重建；不能按时间清除未恢复操作。`TransferRecoveryData` 在主世界 SavedData 最多保存 4096 个离线玩家恢复位置，不保存/回写玩家库存；重连成功且玩家保存后移除。两项上限登记到 CacheHygieneCheck。正常世界保存仍非跨文件原子事务，边界和待验收见 PHYSICAL_TRANSFER.md。
 
-`PhysicalPortals` 按世界持有游标和最多 `MAX_ENTRIES=256` 个 UUID 的位置观察及重试时间，不持有车体引用；`EXPIRY_TICKS=600` 未观察或时钟回退后清理，世界卸载移除整表。每 tick 扫描最多 8 个体、最多一次传送尝试，下界 POI 范围及候选数有上限；末地只在已加载且 palette 含门户的 section 检查最多 8192 个方块。`EndPortalLanding` 本次调用内最多临时记录 2048 个平台方块，失败撤回，成功保留，不进入全局缓存。到达冷却存入 user data 的 `GuidedPortalUntil`，使用主世界时间、持续 100 tick；异常回退超过有效窗口视为旧数据，不能形成永久锁。缓存上限和过期已登记到 CacheHygieneCheck。
+`PhysicalPortals` 按世界持有游标和最多 `MAX_ENTRIES=256` 个 UUID。每个活跃编组共用一个 PortalContact 和缓存门区，只保存根/成员 UUID、包围盒、位置及计时，不持有车体/世界引用；首次接触立即尝试一次，失败保持锁存，整组退出或连挂拓扑改变才重置。活跃接触不可为腾空间而淘汰；容量不足保守等待。`EXPIRY_TICKS=600` 未观察或时钟回退清理，世界卸载释放。每 tick 最多访问 8 个体、一次新编组发现或迁移；无门结果静止 20 tick/移动 5 tick 复查，明显移动提前；已知接触只做缓存门块与成员包围盒检查。POI/末地 section 扫描有限额。`EndPortalLanding` 最多记录本次 2048 个平台方块，失败撤回，成功保留，不进入全局缓存。到达冷却存入 `GuidedPortalUntil`，使用主世界时间、持续 300 tick；结束时仍在门内需退出，不自动往返。缓存上限和过期已登记到 CacheHygieneCheck。
 
 ## 约定
 

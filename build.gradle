@@ -764,6 +764,13 @@ tasks.register('checkPortalTransform', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkPortalTransform' }
 
+tasks.register('checkPortalContact', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath
+    mainClass = 'com.guidedrailways.PortalContactCheck'
+}
+tasks.named('check') { dependsOn 'checkPortalContact' }
+
 tasks.register('checkTransferRollback', JavaExec) {
     dependsOn testClasses
     classpath = sourceSets.test.runtimeClasspath
