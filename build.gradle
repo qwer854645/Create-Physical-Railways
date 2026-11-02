@@ -56,6 +56,17 @@ neoForge {
             // repeated multi-hundred-ms GC pauses that read as stutter near carriages.
             jvmArgument '-Xms4G'
             jvmArgument '-Xmx12G'
+            // Frame spikes in this client were not our renderers: they arrived together with GC counts in
+            // [FrameSpike] while average frames stayed at 1-4 ms, which is a collector pause, not a rendering cost.
+            // ZGC keeps them under a few milliseconds on a heap this size.
+            jvmArgument '-XX:+UseZGC'
+            // Bare filename: the client's working directory is run/, so a build/ path does not exist there and the JVM
+            // refuses to start. Same lesson as the JFR recording.
+            jvmArgument '-Xlog:gc*:file=gc-client.log:time,uptime:filecount=3,filesize=8m'
+            // A/B switch for the three render mixins: run with -PnoRenderOpt to boot without them and compare the
+            // [FrameSpike] positions that keep repeating. Faster than guessing which of the three is responsible.
+            if (project.hasProperty('noRenderOpt'))
+                jvmArgument '-Dguidedrailways.disableRenderOptimizations=true'
             if (project.hasProperty('captureBogeys')) {
                 systemProperty 'guidedrailways.captureBogeys', 'true'
                 systemProperty 'guidedrailways.captureBogeysOutput', file('build/bogey-capture.json').absolutePath
