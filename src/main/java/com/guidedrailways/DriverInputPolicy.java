@@ -11,21 +11,12 @@ public final class DriverInputPolicy {
   }
 
   public static boolean remoteCommand(int id) {
-    return id == 1
-        || id == 2
+    return id == 35
         || id == 8
         || id == 9
         || id == 19
-        || id >= 20 && id <= 22
+        || id == 23
         || notchCommand(id);
-  }
-
-  public static boolean permittedWhileObserving(int id) {
-    return id == 0 || id == 8 || id == 19 || id == 35;
-  }
-
-  public static boolean suppressMovement(boolean active, boolean gui) {
-    return active && !gui;
   }
 
   public static boolean suppressLook(
@@ -41,7 +32,4 @@ public final class DriverInputPolicy {
     return -(double) .2F / (double) .6F;
   }
 
-  public static int steer(boolean left, boolean right) {
-    return left == right ? 0 : left ? -1 : 1;
-  }
 }

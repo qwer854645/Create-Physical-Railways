@@ -136,7 +136,7 @@ final class PhysicalRailwayScenes {
     text(scene, "controls_lever", util.vector().topOf(CONSOLE));
     move(scene, util, vehicle, -1, 40);
     text(scene, "controls_steer", util.vector().topOf(4, 1, 1));
-    scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45).leftClick();
+    scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45).rightClick();
     scene
         .world()
         .modifyBlockEntityNBT(

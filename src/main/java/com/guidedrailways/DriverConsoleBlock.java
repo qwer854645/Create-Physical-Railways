@@ -60,6 +60,11 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
 
   @Override
   protected VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) {
+    return box(1, 0, 1, 15, 16, 15);
+  }
+
+  @Override
+  protected VoxelShape getCollisionShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) {
     return box(1, 0, 1, 15, 14, 15);
   }
 
@@ -108,16 +113,6 @@ public final class DriverConsoleBlock extends HorizontalDirectionalBlock
         && l.getBlockEntity(p) instanceof DriverConsoleEntity console) {
       DriverControls.register(server.serverLevel(), console);
       if (player.isShiftKeyDown()) console.open(server);
-      else if (!DriverControls.isPrimary(console)) DriverControls.secondaryHint(player);
-      else {
-        if (!console.active) console.command(player, 0);
-        if (console.active && player.getUUID().equals(console.operator))
-          DriverNetwork.sync(console, true);
-        else if (console.active)
-          player.displayClientMessage(
-              net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"),
-              true);
-      }
     }
     return InteractionResult.sidedSuccess(l.isClientSide);
   }

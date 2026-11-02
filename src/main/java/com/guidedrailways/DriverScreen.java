@@ -19,7 +19,6 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
       autoPause,
       autoSkip,
       autoRestart,
-      takeover,
       autoRemove,
       gearTabButton,
       saveGears,
@@ -78,10 +77,9 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
     autoPause = command(Component.translatable("gui.guidedrailways.auto.pause"), 107, 168, 86, 31);
     autoSkip = command(Component.translatable("gui.guidedrailways.auto.skip"), 202, 168, 86, 33);
     autoRestart =
-        command(Component.translatable("gui.guidedrailways.auto.restart"), 12, 190, 86, 34);
-    takeover = command(text("takeover"), 107, 190, 86, 35);
+        command(Component.translatable("gui.guidedrailways.auto.restart"), 12, 190, 133, 34);
     autoRemove =
-        command(Component.translatable("gui.guidedrailways.auto.remove"), 202, 190, 86, 32);
+        command(Component.translatable("gui.guidedrailways.auto.remove"), 155, 190, 133, 32);
     // 56 wide, not 86: the confirm tick keeps the bottom-right corner, so this ends at 258.
     command(Component.translatable("gui.guidedrailways.align"), 202, 212, 56, 40);
     schedulePriority = button(text("schedule_priority", SwitchQueue.DEFAULT_PRIORITY), 12, 178, 276,
@@ -475,7 +473,7 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         menu.value(IS_PRIMARY) != 0
             && menu.value(OPERATOR_AVAILABLE) != 0
             && enteredGears() != null;
-    forward.active = reverse.active = menu.value(IS_OPERATOR) != 0 && menu.value(OBSERVING) == 0;
+    forward.active = reverse.active = menu.value(CAN_CONFIGURE) != 0 && menu.value(SCHEDULE_RUNNING) == 0 && menu.value(STOPPED) != 0;
     boolean schedule = menu.value(HAS_SCHEDULE) != 0 && menu.value(IS_PRIMARY) != 0;
     schedulePriority.setMessage(text("schedule_priority", menu.value(SCHEDULE_PRIORITY)));
     schedulePriority.active = schedule && menu.value(STOPPED) != 0 && menu.value(CAN_CONFIGURE) != 0;
@@ -486,10 +484,6 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
             && menu.value(STOPPED) != 0
             && menu.value(SCHEDULE_STATUS) != ScheduleController.FINISHED;
     autoRestart.active = schedule && menu.value(STOPPED) != 0;
-    takeover.active =
-        menu.value(IS_PRIMARY) != 0
-            && menu.value(OPERATOR_AVAILABLE) != 0
-            && (menu.value(IS_OPERATOR) == 0 || menu.value(OBSERVING) != 0);
     autoRemove.active =
         menu.value(HAS_SCHEDULE) != 0
             && menu.value(STOPPED) != 0
@@ -573,7 +567,6 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         gearTab = nameTab = false;
         setFocused(null);
       } else {
-        DriverClient.exit();
         onClose();
       }
       return true;

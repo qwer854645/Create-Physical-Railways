@@ -53,9 +53,9 @@ Manual acceptance, once the user requests the client:
    normal and smaller GUI scales; captions and mouse glyphs should remain readable.
 2. Play, pause, scrub backward and restart each scene. Verify wheel/track alignment,
    carriage motion, lever positions, and extension/retraction of both connectors.
-3. Verify the controls tutorial demonstrates entering first, holding right-click
-   second, and emergency reset only after stopping. Observation must be described
-   separately from manual takeover.
+3. Verify the controls tutorial demonstrates directly aiming at the moving handle
+   and red button, with emergency reset only after stopping. Looking at the display
+   must be distinguished from holding the handle, which pauses the Schedule.
 4. Verify the connector selection/binding order and mailbox address explanation.
    A chest is connected by a real funnel; no claim of remote train-wide inventory
    access is made. External redstone power is distinguished from automatic docking.

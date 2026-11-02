@@ -184,7 +184,7 @@ public final class DriverControls {
         if (operator == null || !operator.isAlive() || !accessible(e, operator)) {
           if (e.observing) e.leave();
           else e.park();
-        }
+        } else if (level.getGameTime() - e.interactionAt > 20 || level.getGameTime() < e.interactionAt) e.leave();
       }
     DRIVEN.put(level, List.copyOf(units));
     var chosen = election(level);
@@ -269,16 +269,35 @@ public final class DriverControls {
 
   static void remote(net.minecraft.server.level.ServerPlayer player, BlockPos pos, int command) {
     if (!DriverInputPolicy.remoteCommand(command)) return;
-    var e = CONSOLES.getOrDefault(player.serverLevel(), Map.of()).get(pos);
-    if (e == null
-        || !e.active
-        || !player.getUUID().equals(e.operator)
-        || command != 19 && !isPrimary(e)) return;
-    if (!accessible(e, player)) {
-      if (e.observing) e.leave();
-      else e.park();
+    var level = player.serverLevel();
+    if (!level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof DriverConsoleEntity e)) return;
+    if (command == 19) { if (player.getUUID().equals(e.operator)) e.leave(); return; }
+    if (!player.mayBuild() || !level.mayInteract(player, pos) || !accessible(e, player) || !isPrimary(e)) {
+      if (command == 35) DriverNetwork.sync(e, player, false);
       return;
     }
+    long now = level.getGameTime();
+    if (command == 8 || command == 9) {
+      if (ConsoleInteraction.pick(e, player) != ConsoleInteraction.Part.EMERGENCY) return;
+      if (command == 8) { e.buttonOperator = player.getUUID(); e.buttonAt = now; }
+      else {
+        if (!player.getUUID().equals(e.buttonOperator) || now - e.buttonAt < 20 || now - e.buttonAt > 60) return;
+        e.buttonOperator = null;
+      }
+      e.command(player, command);
+      return;
+    }
+    if (command == 35) {
+      if (ConsoleInteraction.pick(e, player) != ConsoleInteraction.Part.LEVER
+          || e.active && !player.getUUID().equals(e.operator)) { DriverNetwork.sync(e, player, false); return; }
+      e.interactionAt = now;
+      e.command(player, command);
+      if (!e.active || !player.getUUID().equals(e.operator)) DriverNetwork.sync(e, player, false);
+      return;
+    }
+    if (!e.active || !player.getUUID().equals(e.operator)) return;
+    e.interactionAt = now;
+    if (command == 23) return;
     e.command(player, command);
   }
 

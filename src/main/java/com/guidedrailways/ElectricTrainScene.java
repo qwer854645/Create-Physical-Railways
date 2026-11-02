@@ -83,7 +83,7 @@ final class ElectricTrainScene {
     pantographs(scene, util, false);
     scene.idle(30);
     PhysicalRailwayScenes.text(scene, "electric_loss", util.vector().topOf(4, 4, 3));
-    scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 40).leftClick();
+    scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 40).rightClick();
     scene
         .world()
         .modifyBlockEntityNBT(

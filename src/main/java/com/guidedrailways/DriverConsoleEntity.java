@@ -20,6 +20,8 @@ public final class DriverConsoleEntity extends BlockEntity
   java.util.UUID operator;
   int steer;
   long steerAt;
+  long interactionAt, buttonAt;
+  java.util.UUID buttonOperator;
   boolean active, enabled, emergency, observing;
   int direction = 1, notch = -4;
 
@@ -306,7 +308,6 @@ public final class DriverConsoleEntity extends BlockEntity
       hint(player, "busy");
       return;
     }
-    if (observing && !DriverInputPolicy.permittedWhileObserving(command)) return;
     if (command == 19) {
       if (operator != null && operator.equals(player.getUUID())) leave();
       return;
@@ -320,20 +321,7 @@ public final class DriverConsoleEntity extends BlockEntity
     }
     int oldNotch = notch, oldDirection = direction;
     boolean oldActive = active, oldEmergency = emergency;
-    if (command == 0) {
-      if (!active && DriverControls.body(this) == null) {
-        hint(player, "install");
-        return;
-      }
-      if (active) leave();
-      else {
-        DriverControls.claim(server, this, player);
-        active = true;
-        observing = schedule.running() || schedule.resumePending();
-        if (!observing) enabled = true;
-        operator = player.getUUID();
-      }
-    } else if (command == 35) {
+    if (command == 35) {
       if (DriverControls.body(this) == null) {
         hint(player, "install");
         return;
@@ -350,7 +338,7 @@ public final class DriverConsoleEntity extends BlockEntity
     } else if (command == 8) {
       DriverControls.emergency(this);
     } else {
-      if (!active) return;
+      if (!active && command != 9 && command != 3 && command != 5) return;
       if (command == 9) {
         if (!DriverControls.canChangeDirection(this)) {
           hint(player, "reset_stop");
@@ -361,6 +349,7 @@ public final class DriverConsoleEntity extends BlockEntity
         hint(player, "reset_first");
         return;
       } else if (command >= 3 && command <= 5) {
+        if (schedule.running() || schedule.resumePending()) { hint(player, "pause_first"); return; }
         int next = command == 3 ? 1 : command == 4 ? 0 : -1;
         if (next != direction) {
           if (!DriverControls.canChangeDirection(this)) {

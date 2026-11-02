@@ -179,7 +179,7 @@ public final class DriverMenu extends AbstractContainerMenu {
       broadcastChanges();
       return result;
     }
-    if (id != 35 && id != 3 && id != 5) return false;
+    if (id != 3 && id != 5) return false;
     console.command(player, id);
     broadcastChanges();
     return true;

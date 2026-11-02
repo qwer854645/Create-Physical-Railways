@@ -1072,3 +1072,10 @@ if (project.hasProperty('signalServerTests')) {
         dependsOn 'copySignalValidationMods', 'prepareSignalValidationWorld'
     }
 }
+
+tasks.register('checkConsoleInteraction', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.guidedrailways.ConsoleInteractionCheck'
+}
+tasks.named('check') { dependsOn 'checkConsoleInteraction' }

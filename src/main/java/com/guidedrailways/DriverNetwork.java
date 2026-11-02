@@ -30,58 +30,13 @@ public final class DriverNetwork {
     }
   }
 
-  public record State(
-      boolean active,
-      BlockPos pos,
-      int notch,
-      int direction,
-      boolean emergency,
-      double speed,
-      double available,
-      int powered,
-      int supports,
-      boolean observing,
-      double gearTarget)
-      implements CustomPacketPayload {
-    static final Type<State> TYPE =
-        new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "driver_state"));
-    static final StreamCodec<RegistryFriendlyByteBuf, State> CODEC =
-        StreamCodec.of(
-            (b, v) -> {
-              b.writeBoolean(v.active);
-              b.writeBlockPos(v.pos);
-              b.writeVarInt(v.notch);
-              b.writeVarInt(v.direction);
-              b.writeBoolean(v.emergency);
-              b.writeDouble(v.speed);
-              b.writeDouble(v.available);
-              b.writeVarInt(v.powered);
-              b.writeVarInt(v.supports);
-              b.writeBoolean(v.observing);
-              b.writeDouble(v.gearTarget);
-            },
-            b ->
-                new State(
-                    b.readBoolean(),
-                    b.readBlockPos(),
-                    b.readVarInt(),
-                    b.readVarInt(),
-                    b.readBoolean(),
-                    b.readDouble(),
-                    b.readDouble(),
-                    b.readVarInt(),
-                    b.readVarInt(),
-                    b.readBoolean(),
-                    b.readDouble()));
-
-    @Override
-    public Type<State> type() {
-      return TYPE;
-    }
-
-    static State off() {
-      return new State(false, BlockPos.ZERO, -4, 0, false, 0, 0, 0, 0, false, 0);
-    }
+  /** Acknowledges only the short-lived handle interaction, never a persistent driving mode. */
+  public record State(boolean active, BlockPos pos) implements CustomPacketPayload {
+    static final Type<State> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(GuidedRailways.ID, "driver_state"));
+    static final StreamCodec<RegistryFriendlyByteBuf, State> CODEC = StreamCodec.of(
+        (b, v) -> { b.writeBoolean(v.active); b.writeBlockPos(v.pos); },
+        b -> new State(b.readBoolean(), b.readBlockPos()));
+    @Override public Type<State> type() { return TYPE; }
   }
 
   public record MenuState(
@@ -208,7 +163,7 @@ public final class DriverNetwork {
   }
 
   static void register(RegisterPayloadHandlersEvent event) {
-    var r = event.registrar("6");
+    var r = event.registrar("7");
     r.playToServer(
         SetName.TYPE,
         SetName.CODEC,
@@ -261,19 +216,12 @@ public final class DriverNetwork {
         || !(e.getLevel() instanceof net.minecraft.server.level.ServerLevel level)) return;
     var player = level.getServer().getPlayerList().getPlayer(e.operator);
     if (player == null) return;
+    sync(e, player, active);
+  }
+
+  static void sync(DriverConsoleEntity e, ServerPlayer player, boolean active) {
     PacketDistributor.sendToPlayer(
         player,
-        new State(
-            active,
-            e.getBlockPos(),
-            e.notch,
-            e.direction,
-            e.emergency,
-            e.actual,
-            e.available,
-            e.powered,
-            e.supports,
-            e.observing,
-            e.manualCeiling(e.notch, e.available)));
+        new State(active, e.getBlockPos()));
   }
 }
