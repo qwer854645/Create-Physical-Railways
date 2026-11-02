@@ -14,11 +14,11 @@ public final class DriverInputCheck {
         gain == 0,
         "held drag zeroes this frame's mouse turn gain exactly, without a persistent option edit");
     for (int id :
-        new int[] {-1, 0, 1, 2, 3, 4, 5, 6, 7, 10, 14, 18, 20, 21, 22, 24, 95, 109, Integer.MAX_VALUE})
+        new int[] {-1, 0, 1, 2, 3, 4, 5, 6, 7, 10, 14, 18, 24, 95, 109, Integer.MAX_VALUE})
       check(
           !DriverInputPolicy.remoteCommand(id),
           "world packets reject legacy mode, keyboard steering and menu actions");
-    for (int id : new int[] {8, 9, 96, 100, 108, 19, 23, 35})
+    for (int id : new int[] {8, 9, 96, 100, 108, 19, 20, 21, 22, 23, 35})
       check(DriverInputPolicy.remoteCommand(id), "allowed world command remains available");
     for (int notch = -4; notch <= 8; notch++)
       check(

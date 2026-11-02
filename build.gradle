@@ -1079,3 +1079,10 @@ tasks.register('checkConsoleInteraction', JavaExec) {
     mainClass = 'com.guidedrailways.ConsoleInteractionCheck'
 }
 tasks.named('check') { dependsOn 'checkConsoleInteraction' }
+
+tasks.register('checkManualRouteSelection', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.guidedrailways.ManualRouteSelectionCheck'
+}
+tasks.named('check') { dependsOn 'checkManualRouteSelection' }

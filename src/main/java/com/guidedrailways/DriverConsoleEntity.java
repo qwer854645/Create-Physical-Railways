@@ -18,12 +18,16 @@ public final class DriverConsoleEntity extends BlockEntity
   java.util.UUID consoleId = java.util.UUID.randomUUID();
   long placementOrder;
   java.util.UUID operator;
-  int steer;
-  long steerAt;
+  final ManualRouteSelection routeSelection = new ManualRouteSelection();
   long interactionAt, buttonAt;
   java.util.UUID buttonOperator;
   boolean active, enabled, emergency, observing;
   int direction = 1, notch = -4;
+  boolean routeAutomatic;
+
+  void clearRouteSelection() {
+    if (routeSelection.select(0)) updateVisual();
+  }
 
   /** Why this console's train is not moving; computed when the payload is sent. */
   ConsoleStatus statusReason = ConsoleStatus.NO_BODY;
@@ -198,7 +202,7 @@ public final class DriverConsoleEntity extends BlockEntity
     observing = false;
     enabled = false;
     operator = null;
-    steer = 0;
+    routeSelection.select(0);
     notch = -4;
     schedule.pause(ScheduleController.CHANGED);
     updateVisual();
@@ -278,7 +282,6 @@ public final class DriverConsoleEntity extends BlockEntity
   void leave() {
     active = false;
     observing = false;
-    steer = 0;
     DriverNetwork.sync(this, false);
     operator = null;
     updateVisual();
@@ -289,7 +292,7 @@ public final class DriverConsoleEntity extends BlockEntity
     enabled = false;
     active = false;
     observing = false;
-    steer = 0;
+    routeSelection.select(0);
     notch = -4;
     DriverNetwork.sync(this, false);
     operator = null;
@@ -312,13 +315,6 @@ public final class DriverConsoleEntity extends BlockEntity
       if (operator != null && operator.equals(player.getUUID())) leave();
       return;
     }
-    if (command >= 20 && command <= 22) {
-      if (active && player.getUUID().equals(operator)) {
-        steer = command == 20 ? -1 : command == 21 ? 1 : 0;
-        steerAt = server.getGameTime();
-      }
-      return;
-    }
     int oldNotch = notch, oldDirection = direction;
     boolean oldActive = active, oldEmergency = emergency;
     if (command == 35) {
@@ -331,7 +327,6 @@ public final class DriverConsoleEntity extends BlockEntity
       observing = false;
       enabled = true;
       operator = player.getUUID();
-      steer = 0;
       if (schedule.present()) schedule.manual(this);
       updateVisual();
       return;
@@ -512,6 +507,8 @@ public final class DriverConsoleEntity extends BlockEntity
     var tag = saveWithoutMetadata(registries);
     tag.putBoolean("VisualActive", active);
     tag.putInt("VisualNotch", notch);
+    tag.putInt("VisualRouteSelection", routeSelection.intent());
+    tag.putBoolean("VisualRouteAutomatic", schedule.running() || schedule.resumePending());
     tag.putBoolean("VisualEmergency", emergency);
     // Resolved here as well, because a console nobody has touched may never have run the sync path
     // that refreshes it, and the client would then draw no lamps at all.
@@ -564,6 +561,8 @@ public final class DriverConsoleEntity extends BlockEntity
     gearSpeeds = SpeedSetting.validGears(SpeedSetting.MAX, gears) ? gears : null;
     if (tag.contains("VisualNotch")) {
       active = tag.getBoolean("VisualActive");
+      routeSelection.select(Math.clamp(tag.getInt("VisualRouteSelection"), -1, 1));
+      routeAutomatic = tag.getBoolean("VisualRouteAutomatic");
       notch =
           Math.clamp(tag.getInt("VisualNotch"), -DriverModel.BRAKE_NOTCHES, DriverModel.MAX_NOTCH);
       emergency = tag.getBoolean("VisualEmergency");
@@ -577,6 +576,7 @@ public final class DriverConsoleEntity extends BlockEntity
     readout = ConsoleReadout.read(tag.getCompound("VisualReadout"));
     } else {
       readout = ConsoleReadout.EMPTY;
+      routeSelection.select(0);
       // Disk: the takeover session is never restored, but the lever setting is.
       active = false;
       enabled = false;

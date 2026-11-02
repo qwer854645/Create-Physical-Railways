@@ -62,6 +62,11 @@ public final class DriverConsoleRenderer implements BlockEntityRenderer<DriverCo
     pose.mulPose(Axis.XP.rotationDegrees(22.5f));
     pose.translate(-.5, -.625, -.5);
     drawLamps(e, pose, buffers, atlas, overlay);
+    double selectorX = 11 + 2 * e.routeSelection.intent();
+    CouplerRenderer.box(pose.last(), vertices, iron, (selectorX - .55) / 16, 11.6 / 16,
+        11.55 / 16, (selectorX + .55) / 16, 12.3 / 16, 12.9 / 16, light, overlay);
+    CouplerRenderer.box(pose.last(), vertices, e.routeAutomatic ? dark : iron,
+        (selectorX - .7) / 16, 12.3 / 16, 11.4 / 16, (selectorX + .7) / 16, 12.65 / 16, 13 / 16d, light, overlay);
     pose.pushPose();
     pose.translate(11 / 16d, 12 / 16d, 7.5 / 16d);
     pose.mulPose(

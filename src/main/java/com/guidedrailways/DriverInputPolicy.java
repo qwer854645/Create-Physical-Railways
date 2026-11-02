@@ -16,6 +16,7 @@ public final class DriverInputPolicy {
         || id == 9
         || id == 19
         || id == 23
+        || id >= 20 && id <= 22
         || notchCommand(id);
   }
 

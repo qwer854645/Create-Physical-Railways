@@ -23,6 +23,7 @@ public final class DriverControls {
     for (var console : CONSOLES.getOrDefault(level, Map.of()).values()) {
       var body = body(console);
       if (body == null || !affected.contains(body.getUniqueId())) continue;
+      console.clearRouteSelection();
       var c = console.schedule;
       c.topologyChanged();
     }
@@ -155,7 +156,7 @@ public final class DriverControls {
     e.active = false;
     e.observing = false;
     e.enabled = false;
-    e.steer = 0;
+    e.routeSelection.select(0);
     DriverNetwork.sync(e, false);
     e.operator = null;
   }
@@ -177,7 +178,8 @@ public final class DriverControls {
                 }
                 return gone;
               });
-    for (var e : map.values())
+    for (var e : map.values()) {
+      if (e.schedule.running() || e.schedule.resumePending()) e.clearRouteSelection();
       if (e.active) {
         var operator =
             e.operator == null ? null : level.getServer().getPlayerList().getPlayer(e.operator);
@@ -186,6 +188,7 @@ public final class DriverControls {
           else e.park();
         } else if (level.getGameTime() - e.interactionAt > 20 || level.getGameTime() < e.interactionAt) e.leave();
       }
+    }
     DRIVEN.put(level, List.copyOf(units));
     var chosen = election(level);
     VIEW.put(level, chosen);
@@ -196,9 +199,11 @@ public final class DriverControls {
       e.powered = 0;
       e.guided = 0;
       var b = body(e);
+      if (b == null) e.clearRouteSelection();
       if (b != null
           && chosen.get(b.getUniqueId()) != e
           && (e.active
+              || e.routeSelection.intent() != 0
               || e.enabled
               || e.schedule.running()
               || e.schedule.resumePending()
@@ -277,6 +282,25 @@ public final class DriverControls {
       return;
     }
     long now = level.getGameTime();
+    if (command >= 20 && command <= 22) {
+      var part = ConsoleInteraction.pick(e, player);
+      if (!part.route() || part.command() != command) return;
+      if (e.schedule.running() || e.schedule.resumePending()) {
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.route_automatic"), true);
+        return;
+      }
+      if (e.active && !player.getUUID().equals(e.operator)) {
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.busy"), true);
+        return;
+      }
+      if (body(e) == null) {
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.guidedrailways.driver.install"), true);
+        return;
+      }
+      int choice = command == 20 ? -1 : command == 21 ? 1 : 0;
+      if (e.routeSelection.select(choice)) e.updateVisual();
+      return;
+    }
     if (command == 8 || command == 9) {
       if (ConsoleInteraction.pick(e, player) != ConsoleInteraction.Part.EMERGENCY) return;
       if (command == 8) { e.buttonOperator = player.getUUID(); e.buttonAt = now; }

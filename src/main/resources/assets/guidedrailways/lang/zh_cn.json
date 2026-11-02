@@ -303,7 +303,7 @@
   "guidedrailways.ponder.shared.controls_install": "把驾驶台安装在物理车体上；同一编组仅最先放置的驾驶台生效，统一控制整列动力",
   "guidedrailways.ponder.shared.controls_enter": "无需进入驾驶模式，直接对准拉杆或红色按钮操作；移动与视角保持正常",
   "guidedrailways.ponder.shared.controls_lever": "对准拉杆按住右键，上下拖动或滚轮调节牵引与制动档位，松开保持",
-  "guidedrailways.ponder.shared.controls_steer": "手动驾驶暂按默认分支行驶，连挂车厢跟随头车；左右移动键用于正常走动",
+  "guidedrailways.ponder.shared.controls_steer": "右击选路拨杆左侧或右侧，预选下一岔路；中位取消。左右按行驶方向，头车锁定新分支后回中，后车沿已锁定路线行驶",
   "guidedrailways.ponder.shared.controls_brake": "对准红色按钮右击，立即紧急制动",
   "guidedrailways.ponder.shared.controls_reset": "停车后，对准红色按钮按住右键约一秒解除紧急制动，再重新设置拉杆",
   "guidedrailways.ponder.shared.controls_settings": "潜行右击打开设置，可修改列车名称与各牵引档位的目标速度",
@@ -351,5 +351,11 @@
   "gui.guidedrailways.driver.pause_first": "先暂停时刻表再换向",
   "gui.guidedrailways.driver.direct_lever": "拉杆：按住右键拖动或滚轮调档，松开保持",
   "gui.guidedrailways.driver.direct_emergency": "急停按钮：右击紧急制动",
-  "gui.guidedrailways.driver.direct_reset": "急停按钮：停稳后按住右键一秒复位"
+  "gui.guidedrailways.driver.direct_reset": "急停按钮：停稳后按住右键一秒复位",
+  "gui.guidedrailways.driver.direct_route_left": "右击预选左侧 · %s",
+  "gui.guidedrailways.driver.direct_route_right": "右击预选右侧 · %s",
+  "block.guidedrailways.driver_console.tooltip.condition6": "右击选路拨杆时",
+  "gui.guidedrailways.driver.route_automatic": "自动驾驶按时刻表选路，手动预选不可用",
+  "gui.guidedrailways.driver.direct_route_default": "右击取消预选 · %s",
+  "block.guidedrailways.driver_console.tooltip.behaviour6": "左侧预选左分支，中位取消，右侧预选右分支；头车锁定新岔路后回中"
 }

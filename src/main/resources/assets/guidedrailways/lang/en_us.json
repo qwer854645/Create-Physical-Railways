@@ -303,7 +303,7 @@
   "guidedrailways.ponder.shared.controls_install": "Place the controls on a physical carriage; only the first-placed controls in a consist manage power for the whole train",
   "guidedrailways.ponder.shared.controls_enter": "Aim directly at the handle or red button. No driving mode is required; movement and looking remain normal",
   "guidedrailways.ponder.shared.controls_lever": "Aim at the handle, hold right-click and drag or scroll to change traction and brake notches; release to keep the notch",
-  "guidedrailways.ponder.shared.controls_steer": "Manual driving currently follows the default branch; coupled carriages follow the leader. Movement keys remain available for walking",
+  "guidedrailways.ponder.shared.controls_steer": "Right-click the selector left or right to preselect the next junction; the center cancels. Directions follow travel. It centers after the leader locks a new branch; following carriages keep that route",
   "guidedrailways.ponder.shared.controls_brake": "Right-click the red button to apply emergency braking immediately",
   "guidedrailways.ponder.shared.controls_reset": "Once stopped, hold right-click on the red button for about one second to reset emergency braking, then set the handle again",
   "guidedrailways.ponder.shared.controls_settings": "Sneak-R-Click to open settings and change the train name or each traction notch's target speed",
@@ -351,5 +351,11 @@
   "gui.guidedrailways.driver.pause_first": "Pause the Schedule before changing direction",
   "gui.guidedrailways.driver.direct_lever": "Handle: hold right-click and drag or scroll; release to keep the notch",
   "gui.guidedrailways.driver.direct_emergency": "Emergency button: right-click to stop",
-  "gui.guidedrailways.driver.direct_reset": "Emergency button: stop, then hold right-click for one second to reset"
+  "gui.guidedrailways.driver.direct_reset": "Emergency button: stop, then hold right-click for one second to reset",
+  "gui.guidedrailways.driver.direct_route_left": "R-Click to preselect left · %s",
+  "gui.guidedrailways.driver.direct_route_right": "R-Click to preselect right · %s",
+  "block.guidedrailways.driver_console.tooltip.condition6": "When right-clicking the route selector",
+  "gui.guidedrailways.driver.route_automatic": "The Schedule controls automatic routing; manual preselection is unavailable",
+  "gui.guidedrailways.driver.direct_route_default": "R-Click to cancel preselection · %s",
+  "block.guidedrailways.driver_console.tooltip.behaviour6": "Left and right preselect a branch; the center cancels. The selector centers after the leader locks a new junction"
 }

@@ -33,6 +33,13 @@ public final class ConsoleInteractionCheck {
           "cannot press a button through the pedestal");
       check(ConsoleInteraction.pick(point(plate, 0, 2, 0), point(plate, 0, -1, 0), facing, 0)
           == ConsoleInteraction.Part.NONE, "empty coarse selection space does nothing");
+      for (int choice = -1; choice <= 1; choice++) for (int zone = -1; zone <= 1; zone++) {
+        var expected = zone < 0 ? ConsoleInteraction.Part.ROUTE_LEFT
+            : zone > 0 ? ConsoleInteraction.Part.ROUTE_RIGHT : ConsoleInteraction.Part.ROUTE_DEFAULT;
+        check(ConsoleInteraction.pick(point(plate, (11 + zone * 2) / 16d, 2, 12 / 16d),
+            point(plate, (11 + zone * 2) / 16d, 11 / 16d, 12 / 16d), facing, 0, choice) == expected,
+            "selector zones remain independently clickable at every position: " + facing + "/" + choice + "/" + zone);
+      }
     }
     System.out.println("ConsoleInteractionCheck: " + checks + " moving-part, facing and occlusion checks passed");
   }

@@ -135,7 +135,10 @@ final class PhysicalRailwayScenes {
             });
     text(scene, "controls_lever", util.vector().topOf(CONSOLE));
     move(scene, util, vehicle, -1, 40);
-    text(scene, "controls_steer", util.vector().topOf(4, 1, 1));
+    scene.overlay().showControls(util.vector().topOf(CONSOLE), Pointing.RIGHT, 45).rightClick();
+    scene.world().modifyBlockEntityNBT(util.select().position(CONSOLE), DriverConsoleEntity.class,
+        tag -> tag.putInt("VisualRouteSelection", -1));
+    text(scene, "controls_steer", util.vector().topOf(CONSOLE));
     scene.overlay().showControls(util.vector().topOf(4, 4, 2), Pointing.RIGHT, 45).rightClick();
     scene
         .world()

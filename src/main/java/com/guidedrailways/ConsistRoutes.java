@@ -25,6 +25,8 @@ final class ConsistRoutes {
     final Map<RouteMemory.Axle, Vector3d> anchors = new HashMap<>();
     TrackNetwork.Sample head;
     int intent;
+    DriverConsoleEntity manual;
+    ManualRouteSelection.Choice manualChoice;
     ScheduleController automatic;
     double switchRoom = Double.POSITIVE_INFINITY;
 
@@ -154,6 +156,7 @@ final class ConsistRoutes {
               && context.automatic != null
               && context.automatic.running()
               && context.automatic.plan() != null;
+      long before = context.memory.passageVersion();
       int committed =
           context.memory.commit(
               axle,
@@ -175,6 +178,11 @@ final class ConsistRoutes {
         return false;
       }
       BranchWatch.record(context.level, context.identity, node, committed);
+      if (leading && context.automatic == null && exits.length > 1 && context.manual != null
+          && context.manual.routeSelection.consume(context.manualChoice, context.memory.passageVersion() != before)) {
+        context.intent = 0;
+        context.manual.updateVisual();
+      }
       if (planned) {
         // The plan's own choice for this junction, logged whenever the consist took something else: the reason says
         // which rule decided, which is what makes an occasional wrong branch diagnosable after the fact.
@@ -364,9 +372,14 @@ final class ConsistRoutes {
           break;
         }
       context.intent = 0;
+      context.manual = null;
+      context.manualChoice = null;
       for (var u : group)
-        if (u.driver != null && u.driver.active && !u.driver.observing) {
-          context.intent = level.getGameTime() - u.driver.steerAt <= 30 ? u.driver.steer : 0;
+        if (context.automatic == null && u.driver != null
+            && !u.driver.schedule.running() && !u.driver.schedule.resumePending()) {
+          context.manual = u.driver;
+          context.manualChoice = u.driver.routeSelection.snapshot();
+          context.intent = context.manualChoice.intent();
           break;
         }
       for (var id : members) next.put(id, context);

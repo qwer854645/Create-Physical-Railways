@@ -81,6 +81,10 @@ public final class RouteMemory {
 
   /** Why the last decision went the way it did; the caller logs it when it disagrees with the plan. */
   private String lastDecision = "none";
+  private long passageVersion;
+
+  /** Changes only when a commit creates a new passage, never for previews or following axles. */
+  long passageVersion() { return passageVersion; }
 
   String lastDecision() {
     return lastDecision;
@@ -284,6 +288,7 @@ public final class RouteMemory {
     if (!commit) return chosen;
 
     var created = new Passage(node, from, chosen, now);
+    passageVersion++;
     created.used.add(axle);
     queue.addLast(created);
     while (queue.size() > MAX_PASSAGES) {

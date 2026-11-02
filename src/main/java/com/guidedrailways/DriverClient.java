@@ -75,6 +75,11 @@ public final class DriverClient {
     if (console == null || !mc.player.getMainHandItem().isEmpty()) return;
     var next = pick(console);
     if (next == ConsoleInteraction.Part.NONE) return;
+    if (next.route()) {
+      send(console.getBlockPos(), next.command());
+      event.setCanceled(true);
+      return;
+    }
     held = console.getBlockPos(); part = next; ticks = 0; dragPixels = 0;
     wasEmergency = console.emergency; requestedNotch = console.notch;
     send(held, part == ConsoleInteraction.Part.LEVER ? 35 : 8);
@@ -124,9 +129,15 @@ public final class DriverClient {
     if (console == null || mc.options.hideGui || !mc.player.getMainHandItem().isEmpty()) return;
     var aimed = held != null ? part : pick(console);
     String key = aimed == ConsoleInteraction.Part.LEVER ? "direct_lever"
-        : aimed == ConsoleInteraction.Part.EMERGENCY ? console.emergency ? "direct_reset" : "direct_emergency" : null;
+        : aimed == ConsoleInteraction.Part.EMERGENCY ? console.emergency ? "direct_reset" : "direct_emergency"
+        : aimed.route() ? console.routeAutomatic ? "route_automatic"
+        : aimed == ConsoleInteraction.Part.ROUTE_LEFT ? "direct_route_left"
+        : aimed == ConsoleInteraction.Part.ROUTE_RIGHT ? "direct_route_right" : "direct_route_default" : null;
     if (key == null) return;
-    var label = Component.translatable("gui.guidedrailways.driver." + key);
+    int selection = console.routeSelection.intent();
+    var selected = Component.translatable("gui.guidedrailways.driver." +
+        (selection < 0 ? "steer_left" : selection > 0 ? "steer_right" : "steer_default"));
+    var label = Component.translatable("gui.guidedrailways.driver." + key, selected);
     int y = mc.getWindow().getGuiScaledHeight() / 2 + 18;
     for (var row : mc.font.split(label, Math.max(40, mc.getWindow().getGuiScaledWidth() - 24))) {
       event.getGuiGraphics().drawString(mc.font, row, (mc.getWindow().getGuiScaledWidth() - mc.font.width(row)) / 2, y, CreateGuiTheme.TEXT);
