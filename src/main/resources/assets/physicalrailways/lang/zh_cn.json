@@ -342,7 +342,6 @@
   "physicalrailways.console.arrived": "已到站",
   "physicalrailways.console.ready": "可发车",
   "physicalrailways.console.on_stop": "已对准",
-  "gui.physicalrailways.align": "对准停车点",
   "physicalrailways.console.offset": "%s 格到停车点",
   "message.physicalrailways.driver_console.unbound": "未连接物理车体",
   "message.physicalrailways.driver_console.bound": "已安装在物理车体上",

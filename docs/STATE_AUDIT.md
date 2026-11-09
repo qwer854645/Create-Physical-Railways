@@ -11,13 +11,12 @@
 | 意图 | 条件 | 是否驱动列车 |
 |---|---|---|
 | `IDLE` | 未绑定，或无人接管 | 否 |
-| `MANUAL` | 司机在座 | 是 |
-| `ALIGN` | 自动对准开启 | 是 |
+| `MANUAL` | 手动握持拉杆 | 是 |
 | `SCHEDULE` | 时刻表运行且被观察 | 否（由时刻表下令） |
 | `OVERRIDE` | 时刻表存在但司机接管 | 是 |
 
-- 派生字段：`bound`、`aligning`、`observing`、`active`、`schedule.running()`
-- 断言：`ConsoleIntentCheck`（46 项，含全部 32 种标志组合都必须恰好得到一个意图）
+- 派生字段：`bound`、`observing`、`active`、`schedule.running()`
+- 断言：`ConsoleIntentCheck`（28 项，含全部 16 种标志组合都必须恰好得到一个意图）；自动对准已删除
 
 ### 2. 时刻表状态 `ScheduleController`
 

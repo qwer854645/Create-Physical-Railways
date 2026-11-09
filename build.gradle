@@ -300,12 +300,6 @@ tasks.named('check') { dependsOn 'checkRenderOptimizationCompat' }
     tasks.named('check') { dependsOn taskName }
 }
 
-tasks.register('checkAutoAlign', JavaExec) {
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.physicalrailways.AutoAlignCheck'
-}
-tasks.named('check') { dependsOn 'checkAutoAlign' }
 
 tasks.register('checkScheduleTransitions', JavaExec) {
     dependsOn testClasses
@@ -321,12 +315,6 @@ tasks.register('checkScheduleStage', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkScheduleStage' }
 
-tasks.register('checkAlignDemand', JavaExec) {
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'com.physicalrailways.AlignDemandCheck'
-}
-tasks.named('check') { dependsOn 'checkAlignDemand' }
 
 tasks.register('checkConsoleIntent', JavaExec) {
     dependsOn testClasses

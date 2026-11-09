@@ -55,13 +55,6 @@ public final class DriverConsoleEntity extends BlockEntity
 
   private long nextStatusLog;
 
-  /** True while auto align is allowed to creep the train to its stop. */
-  private boolean aligning;
-
-  boolean aligning() {
-    return aligning;
-  }
-
   /**
    * What this console is currently trying to do, derived from the flags it already keeps.
    *
@@ -69,17 +62,7 @@ public final class DriverConsoleEntity extends BlockEntity
    * arrangement this type exists to remove.
    */
   ConsoleIntent intent() {
-    return ConsoleIntent.of(bound, aligning, schedule.running(), observing, active);
-  }
-
-  void stopAligning() {
-    aligning = false;
-  }
-
-  /** Signed distance to the stop for the align controller, or NaN when unknown. */
-  double alignOffset() {
-    double offset = resolveOffset();
-    return Double.isNaN(offset) ? Double.NaN : offset;
+    return ConsoleIntent.of(bound, schedule.running(), observing, active);
   }
 
   /** Signed distance to the stop last sent to clients; zero when unknown. */
@@ -353,14 +336,6 @@ public final class DriverConsoleEntity extends BlockEntity
           }
           direction = next;
         }
-      } else if (command == 40) {
-        if (!bound) {
-          hint(player, "install");
-          return;
-        }
-        aligning = !aligning;
-        updateVisual();
-        return;
       } else if (command == 1) notch = DriverModel.step(notch, -1);
       else if (command == 2) notch = DriverModel.step(notch, 1);
       else if (command == 6) notch = 0;
@@ -516,7 +491,6 @@ public final class DriverConsoleEntity extends BlockEntity
     tag.putBoolean("VisualBound", bound);
     statusReason = resolveStatus();
     tag.putString("VisualStatus", statusReason.name());
-    tag.putBoolean("VisualAligning", aligning);
     stopOffset = resolveOffset();
     tag.putDouble("VisualOffset", stopOffset);
     readout = currentReadout();
@@ -572,7 +546,6 @@ public final class DriverConsoleEntity extends BlockEntity
             ? ConsoleStatus.valueOf(tag.getString("VisualStatus"))
             : ConsoleStatus.NO_BODY;
     stopOffset = tag.getDouble("VisualOffset");
-    aligning = tag.getBoolean("VisualAligning");
     readout = ConsoleReadout.read(tag.getCompound("VisualReadout"));
     } else {
       readout = ConsoleReadout.EMPTY;

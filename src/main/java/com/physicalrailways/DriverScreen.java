@@ -80,8 +80,6 @@ public final class DriverScreen extends AbstractContainerScreen<DriverMenu> {
         command(Component.translatable("gui.physicalrailways.auto.restart"), 12, 190, 133, 34);
     autoRemove =
         command(Component.translatable("gui.physicalrailways.auto.remove"), 155, 190, 133, 32);
-    // 56 wide, not 86: the confirm tick keeps the bottom-right corner, so this ends at 258.
-    command(Component.translatable("gui.physicalrailways.align"), 202, 212, 56, 40);
     schedulePriority = button(text("schedule_priority", SwitchQueue.DEFAULT_PRIORITY), 12, 178, 276,
         b -> {
           if (minecraft.gameMode != null)

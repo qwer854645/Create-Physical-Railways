@@ -342,7 +342,6 @@
   "physicalrailways.console.arrived": "Arrived",
   "physicalrailways.console.ready": "Ready",
   "physicalrailways.console.on_stop": "On stop",
-  "gui.physicalrailways.align": "Align to stop",
   "physicalrailways.console.offset": "%s blocks to stop",
   "message.physicalrailways.driver_console.unbound": "No physics body connected",
   "message.physicalrailways.driver_console.bound": "Mounted on a physics body",

@@ -268,18 +268,6 @@ final class AutomaticTrains {
       int notch,
       boolean emergency,
       boolean hold) {
-    // Auto align drives through the same command as a manual lever, but with its own ceiling: the lever only has
-    // notches, and even the first notch creeps far above the speed alignment is permitted to use.
-    if (navigation == null && owner != null && owner.intent() == ConsoleIntent.ALIGN) {
-      double speed = 0;
-      for (var u : group) speed = Math.max(speed, Math.abs(u.speed));
-      var demand = AlignDemand.of(owner.alignOffset(), speed, owner.emergency);
-      if (demand.stop()) owner.stopAligning();
-      if (demand.override()) {
-        cap = demand.cap();
-        notch = demand.notch();
-      }
-    }
     if (navigation != null) navigation.visual(notch, navigation.plan().direction);
     for (var u : group)
       u.command =
