@@ -1074,3 +1074,35 @@ tasks.register('checkManualRouteSelection', JavaExec) {
     mainClass = 'com.physicalrailways.ManualRouteSelectionCheck'
 }
 tasks.named('check') { dependsOn 'checkManualRouteSelection' }
+
+// Isolated screenshot world generator. Never included in the release artifact.
+if (project.hasProperty('showcase')) {
+    sourceSets {
+        showcase {
+            compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+            runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+        }
+    }
+    neoForge {
+        mods { physicalrailways { sourceSet sourceSets.showcase } }
+        runs {
+            showcaseServer {
+                server()
+                gameDirectory = file('run/showcase-server')
+                systemProperty 'physicalrailways.showcaseWorld', 'true'
+                jvmArgument '-Xmx4G'
+                programArgument '--nogui'
+            }
+        }
+    }
+    tasks.register('copyShowcaseMods', Copy) {
+        into file('run/showcase-server/mods')
+        from('libs') { include '*.jar' }
+        from configurations.devRuntimeMods
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    tasks.named('runShowcaseServer') {
+        dependsOn 'copyShowcaseMods'
+        standardInput = System.in
+    }
+}
