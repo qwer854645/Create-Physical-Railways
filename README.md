@@ -1,65 +1,65 @@
-# 物理铁路 / Create: Physical Railways
+# Create: Physical Railways
 
-**简体中文** · [English](README.en.md)
+[简体中文](README.zh-CN.md) · **English**
 
-> **不稳定的 Alpha 测试版**：可能出现崩溃、明显卡顿、车辆行为异常或存档数据问题。请优先使用专用测试存档，并在游玩前备份。当前不建议用于重要存档或需要长期稳定运行的服务器。
+> **Unstable Alpha test build:** crashes, severe stuttering, unexpected vehicle behavior, or world data issues may occur. Use a dedicated test world where possible and back up your world before playing. This build is currently not recommended for important worlds or servers that need long-term stability.
 
-物理铁路是基于 **Create（机械动力）** 与 **Sable** 的铁路扩展。自由搭建物理车体，安装转向架与驾驶台，把多节车厢连接成列车，在 Create 轨道上手动驾驶或按时刻表运行。
+Create: Physical Railways is a railway addon built on **Create** and **Sable**. Build your own physics-based carriages, fit them with bogeys and train controls, couple them together, and drive them on Create tracks manually or with schedules.
 
-项目希望让物理列车尽量融入 Create 原有的铁路玩法，同时保留自由造车、物理碰撞和车厢之间的相对运动。
+The project aims to bring physical trains into Create's existing railway gameplay while retaining free-form construction, physical collisions, and movement between carriages.
 
-## 主要内容
+## Features
 
-- **自由造车**：使用方块搭建车体，支持同一车体安装多副物理转向架。
-- **动力与驾驶**：接入 Create 旋转动力，通过驾驶台拉杆控制牵引、惰行和制动，使用急停按钮与左右岔路预选拨杆。
-- **车钩编组**：使用车钩和连接工具连挂独立车厢，由主驾驶台统一控制整列受支持的转向架，后车跟随头车通过岔路。
-- **自动运行**：在驾驶台装入 Create 时刻表，设置目的站、限速与等待条件，支持暂停、继续、跳过和重新开始。
-- **铁路设施联动**：接入车站、信号、列车观察器与显示连接器，提供停靠、占用、目的站和行程等信息。
-- **货运与乘客**：读取实际车载容器的物品、流体数量及座椅中的玩家，结合兼容装卸接口完成等待条件和包裹取送。
-- **游戏内教学**：提供中英文思索教程，涵盖造车、驾驶、连挂、自动运行与兼容功能。
+- **Build your own carriages:** construct bodies from blocks, with multiple physical bogeys supported under one body.
+- **Power and driving:** supply Create rotational power and use the controls' lever for traction, coasting, and braking, alongside an emergency stop and a left/right junction selector.
+- **Coupled trains:** connect separate carriages with couplers and the coupling tool. The primary controls command all supported bogeys in the train, and trailing carriages follow the leading carriage through junctions.
+- **Scheduled operation:** install a Create schedule in the controls to set destinations, throttle limits, and wait conditions. Pause, resume, skip, or restart a schedule.
+- **Railway integration:** connect with stations, signals, train observers, and display links for station presence, occupancy, destinations, and journey information.
+- **Cargo and passengers:** read items and fluids from actual onboard containers and detect players in seats. Supported transfer interfaces enable cargo wait conditions and package tasks.
+- **In-game guidance:** Chinese and English Ponder tutorials cover construction, driving, coupling, schedules, and integrations.
 
-## 安装
+## Installation
 
-适用 **Minecraft 1.21.1 / NeoForge**。当前开发依赖组合为：
+For **Minecraft 1.21.1 / NeoForge**. The current development dependency set is:
 
 - NeoForge **21.1.264**
-- Create **6.0.10**（开发构建：6.0.10-280）
+- Create **6.0.10** (development build: 6.0.10-280)
 - Sable **2.0.6**
 
-将本模组与上述依赖安装到客户端和服务端的 `mods` 文件夹，并按依赖模组的要求安装其附属依赖。联机时请使用相同版本的本模组。
+Install this mod and its required dependencies in the client and server `mods` folders, including any additional dependencies required by Create and Sable. Use the same version of Physical Railways on both sides.
 
-其他已检查版本及兼容范围见[依赖说明](docs/DEPENDENCIES.md)。开发依赖组合不代表所有模组组合均已完成游戏内测试。
+See [dependency notes](docs/DEPENDENCIES.md) for other checked versions and compatibility boundaries. The development dependency set does not mean every combination has passed in-game testing.
 
-## 可选兼容
+## Optional integrations
 
-- **Steam ’n’ Rails**：宽轨、窄轨、单轨，以及对应转向架款式。
-- **Blocks & Bogies**：转向架款式选择、模型与动画。
-- **Electro Energetics**：接触网与受电弓供电牵引，仍待完整游戏内验收。
-- **Simulated、VS / Sable Hose Connectors、Automated Logistics**：限定于各接口实际输送范围的物品、流体与对接适配；包裹取送需要相应对接设施。
-- **Xaero's Minimap**：物理列车标记，实际显示效果仍待验收。
+- **Steam ’n’ Rails:** wide, narrow, and monorail tracks, with corresponding bogey styles.
+- **Blocks & Bogies:** bogey style selection, models, and animations.
+- **Electro Energetics:** overhead wire and pantograph-powered traction; full in-game acceptance testing is still pending.
+- **Simulated, VS / Sable Hose Connectors, and Automated Logistics:** item, fluid, and docking support within each interface's actual transfer scope. Package tasks require suitable docking facilities.
+- **Xaero's Minimap:** physical train markers; visual verification is still pending.
 
-这些模组均为可选依赖，不需要全部安装。具体边界见 [Create 铁路兼容](docs/CREATE_COMPATIBILITY.md)、[转向架与电驱兼容](docs/ADDON_COMPATIBILITY.md)和[货运访问边界](docs/CARGO_ACCESS_BOUNDARY.md)。
+These mods are optional; you do not need to install all of them. See the notes on [Create railway compatibility](docs/CREATE_COMPATIBILITY.md), [bogey and electric integrations](docs/ADDON_COMPATIBILITY.md), and [cargo access boundaries](docs/CARGO_ACCESS_BOUNDARY.md) for details. These reference documents are currently in Chinese.
 
-## 开始使用
+## Getting started
 
-在物理转向架、车钩、连接工具和驾驶台物品上打开 **思索**，按教程完成车辆搭建与操作。部分兼容部件的教程仅在安装对应模组后出现。
+Open **Ponder** on the physical bogey, coupler, coupling tool, and train controls items for construction and operating instructions. Some integration tutorials appear only when the corresponding mod is installed.
 
-驾驶台直接按瞄准的部件操作：按住右键拖动拉杆或滚动滚轮调整档位，右击急停按钮或岔路预选拨杆，潜行右击驾驶台打开设置。
+Aim directly at the part you want to operate: hold right-click and drag the lever or use the scroll wheel to change notches, right-click the emergency stop or junction selector, and sneak-right-click the controls to open settings.
 
-## 当前状态与限制
+## Status and limitations
 
-本版本用于功能体验和问题反馈，**尚未完成稳定性验收，不保证运行稳定或数据安全**。存档恢复、多人操作、长时间性能和部分可选兼容仍需更多实测；当前验证范围见[发布前验收记录](docs/RELEASE_ACCEPTANCE.md)。
+This build is intended for trying features and reporting problems. **Stability acceptance testing is incomplete; stable operation and data safety are not guaranteed.** Save recovery, multiplayer behavior, long-term performance, and some optional integrations need further in-game testing. See the [release acceptance record](docs/RELEASE_ACCEPTANCE.md) for the current verification scope.
 
-- 暂不支持物理列车跨维度行驶。
-- 不通过 Create 车站组装、拆解物理列车或自动交接时刻表。
-- 手动驾驶会报告信号占用，但不会强制在红灯前停车。
-- Create 原版可移式接口不能直接装卸物理车体；实际运输需要受支持的输送路径。
-- 不保证兼容第三方新增的时刻表指令、等待条件或全部铁路控制接口。
+- Physical trains cannot travel between dimensions.
+- Create stations do not assemble or disassemble physical trains, or automatically hand schedules to and from them.
+- Manual driving reports signal occupancy but does not enforce stops at red signals.
+- Create's Portable Storage and Portable Fluid Interfaces cannot directly transfer cargo to or from physical bodies. Actual transport requires a supported transfer path.
+- Third-party schedule instructions, wait conditions, and railway control interfaces are not universally supported.
 
-遇到问题时，请在 [Issues](https://github.com/qwer854645/Create-Physical-Railways/issues) 中提供模组版本、依赖列表、复现步骤及日志；画面或操作问题可附截图、视频。
+Please report problems through [Issues](https://github.com/qwer854645/Create-Physical-Railways/issues), including the mod version, dependency list, reproduction steps, and logs. Screenshots or videos are useful for visual and interaction issues.
 
-## AI 辅助与许可
+## AI assistance and license
 
-本项目在代码、文档及部分美术资源制作中使用了 AI 辅助。
+AI tools assisted with code, documentation, and some art assets in this project.
 
-本项目采用 [MIT 许可证](LICENSE)；第三方模组及其资源遵循各自的许可证。
+This project uses the [MIT License](LICENSE). Third-party mods and their assets remain subject to their respective licenses.
