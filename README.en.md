@@ -2,6 +2,8 @@
 
 [简体中文](README.md) · **English**
 
+> **Unstable Alpha test build:** crashes, severe stuttering, unexpected vehicle behavior, or world data issues may occur. Use a dedicated test world where possible and back up your world before playing. This build is currently not recommended for important worlds or servers that need long-term stability.
+
 Create: Physical Railways is a railway addon built on **Create** and **Sable**. Build your own physics-based carriages, fit them with bogeys and train controls, couple them together, and drive them on Create tracks manually or with schedules.
 
 The project aims to bring physical trains into Create's existing railway gameplay while retaining free-form construction, physical collisions, and movement between carriages.
@@ -46,14 +48,13 @@ Aim directly at the part you want to operate: hold right-click and drag the leve
 
 ## Status and limitations
 
-The project is in **Alpha**. Use a backed-up world or a dedicated test world. Save recovery, multiplayer behavior, long-term performance, and some optional integrations need further in-game testing. See the [release acceptance record](docs/RELEASE_ACCEPTANCE.md) for the current verification scope.
+This build is intended for trying features and reporting problems. **Stability acceptance testing is incomplete; stable operation and data safety are not guaranteed.** Save recovery, multiplayer behavior, long-term performance, and some optional integrations need further in-game testing. See the [release acceptance record](docs/RELEASE_ACCEPTANCE.md) for the current verification scope.
 
 - Physical trains cannot travel between dimensions.
 - Create stations do not assemble or disassemble physical trains, or automatically hand schedules to and from them.
 - Manual driving reports signal occupancy but does not enforce stops at red signals.
 - Create's Portable Storage and Portable Fluid Interfaces cannot directly transfer cargo to or from physical bodies. Actual transport requires a supported transfer path.
 - Third-party schedule instructions, wait conditions, and railway control interfaces are not universally supported.
-- The mod ID is now `physicalrailways`; worlds using the previous namespace have no content migration path.
 
 Please report problems through [Issues](https://github.com/qwer854645/Create-Physical-Railways/issues), including the mod version, dependency list, reproduction steps, and logs. Screenshots or videos are useful for visual and interaction issues.
 
