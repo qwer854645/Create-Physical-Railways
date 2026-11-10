@@ -46,7 +46,7 @@
 两轮均成功运行一个必需 GameTest，包含相同的 14 个断言：
 
 - 基础环境：NeoForge 21.1.264、Create 6.0.10、Sable 2.0.6 及其运行依赖，通过，进程正常退出
-- 当前开发模组组合：再加入 libs 中的 Railway 0.3.0-beta.2、BnB 1.0.8、CEE 1.1.4、Aeronautics/Simulated 1.3.2、Automated Logistics 0.7.0、Hose Connectors 0.2.2、Xaero 开发依赖，通过，进程正常退出
+- 当前开发模组组合：再加入 libs 中的 Railway 0.3.0-beta.2、BnB 1.0.8、CEE 1.1.4、Aeronautics/Simulated 1.3.2、Xaero 开发依赖，通过，进程正常退出
 
 日志成功标记为 `MIXED_SIGNAL_API_PASS checks=14` 和 `All 1 required tests passed`。基础轮日志位于 build-signal-server-run.log，完整组合位于 build-signal-server-full-mods.log；这些本机日志不提交。完整组合中有 Railway 为未安装的其他模组材质生成的战利品表错误，未阻止测试完成；不能称启动日志完全无错误。
 

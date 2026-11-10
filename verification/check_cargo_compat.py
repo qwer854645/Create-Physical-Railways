@@ -1,6 +1,6 @@
 """Check optional compatibility contracts against RELEASE jars without loading Minecraft.
 
-Usage: python verification/check_cargo_compat.py --hose FILE --simulated FILE --logistics FILE
+Usage: python verification/check_cargo_compat.py --simulated FILE
 This validates bytecode signatures, not Mixin application or in-game transport.
 """
 import argparse
@@ -53,16 +53,18 @@ def signatures(data):
 def main():
     parser = argparse.ArgumentParser()
     for mod in ('hose', 'simulated', 'logistics'):
-        parser.add_argument('--' + mod, required=True, type=Path)
+        parser.add_argument('--' + mod, required=(mod == 'simulated'), type=Path)
     parser.add_argument('--railways', type=Path)
     args = parser.parse_args()
-    archives = {key: ZipFile(getattr(args, key)) for key in ('hose', 'simulated', 'logistics')}
+    archives = {key: ZipFile(getattr(args, key)) for key in ('hose', 'simulated', 'logistics')
+                if getattr(args, key) is not None}
     if args.railways:
         archives['railways'] = ZipFile(args.railways)
     root = Path(__file__).resolve().parents[1]
     source = root / 'src/main/java/com/physicalrailways/mixin'
     plugin = (source / 'CargoCompatPlugin.java').read_text('utf-8')
     count = 0
+    checked_by_mod = {key: 0 for key in archives}
     def check(cls, expected):
         nonlocal count
         mod = 'railways' if cls.startswith('com.railwayteam.') else 'hose' if cls.startswith('com.mk2525.') else 'simulated' if cls.startswith('dev.simulated_team.') else 'logistics'
@@ -73,6 +75,7 @@ def main():
         missing = set(expected) - actual
         assert not missing, f'{cls}: missing {sorted(missing)}'
         count += len(expected)
+        checked_by_mod[mod] += len(expected)
     for name, body in re.findall(r'"(\w+Mixin)"\s*,\s*Set\.of\(((?:\s|,|"(?:[^"\\]|\\.)*")*)\)', plugin):
         expected = re.findall(r'"([^"]+)"', body)
         mixin = (source / (name + '.java')).read_text('utf-8')
@@ -93,7 +96,9 @@ def main():
     check('net.sprocketgames.create_aeronautics_automated_logistics.dock.DockTransferSnapshot$ConnectorContents', [
         '<init>(Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;IJ)V', 'items()Ljava/util/List;',
         'fluids()Ljava/util/List;', 'itemStacks()Ljava/util/List;', 'fluidStacks()Ljava/util/List;', 'itemCount()I', 'fluidAmount()J'])
-    assert count >= 30, 'all optional hook declarations must be checked'
+    minimum = {'simulated': 19, 'railways': 7, 'hose': 6, 'logistics': 13}
+    for mod, checked in checked_by_mod.items():
+        assert checked >= minimum[mod], f'{mod}: selected adapter contracts were not fully checked'
     print(f'Cargo release contracts: {count} signatures passed')
     for key in archives:
         path = getattr(args, key)

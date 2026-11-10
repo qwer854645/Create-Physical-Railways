@@ -58,7 +58,7 @@ PhysicalSignals 负责真实物理编组的区段覆盖、保守车体延伸、�
 
 整列统计复用实际物理车体容器；原生车厢提供只读货物视图，不复制挂载库存，也不将整个编组变成一个可随意抽取的库存。实际输送仍受具体物理连接器及其对接范围限制。
 
-已接入整列物品 / 流体数量条件、限定输送路径的装卸空闲、Create 座椅玩家乘客条件，以及通过铁路对接连接器完成的包裹取送。可选兼容包括 Hose Connectors、Simulated 对接连接器和 Automated Logistics。
+已接入整列物品 / 流体数量条件、限定输送路径的装卸空闲、Create 座椅玩家乘客条件，以及通过铁路对接连接器完成的包裹取送。可选货运兼容包括 Simulated 对接连接器。
 
 详见 [货运](CARGO_COMPATIBILITY.md)、[货运访问边界](CARGO_ACCESS_BOUNDARY.md)、[旅客](PASSENGER_COMPATIBILITY.md)、[包裹](PACKAGE_COMPATIBILITY.md) 和 [铁路对接](RAIL_DOCKING.md)。这些适配不代表原版可移式接口可直接装卸 Sable 车体。
 

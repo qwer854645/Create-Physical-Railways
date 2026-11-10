@@ -188,8 +188,8 @@ tasks.register('copyDevMods', Copy) {
         // Copy leaves old versions behind. Remove only superseded managed development jars.
         def selected = (fileTree('libs') { include '*.jar' }.files + configurations.devRuntimeMods.files)*.name as Set
         def managed = ['create-1.21.1-', 'sable-neoforge-1.21.1-', 'ponder-neoforge-', 'flywheel-neoforge-1.21.1-',
-                       'railways-', 'create_bb-', 'electroenergetics-', 'VS-Sable-HoseConnectors-',
-                       'create-aeronautics-bundled-', 'create_aeronautics_automated_logistics-', 'xaerominimap-']
+                       'railways-', 'create_bb-', 'electroenergetics-',
+                       'create-aeronautics-bundled-', 'xaerominimap-']
         file('run/mods').listFiles()?.findAll { f ->
             f.isFile() && f.name.endsWith('.jar') && !selected.contains(f.name) && managed.any { f.name.startsWith(it) }
         }?.each { f ->

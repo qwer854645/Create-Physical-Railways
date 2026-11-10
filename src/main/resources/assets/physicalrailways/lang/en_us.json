@@ -392,7 +392,7 @@
   "physicalrailways.ponder.shared.cargo_storage": "Chests and tanks are real onboard blocks. Sharing a body or a coupled consist does not connect separate storage",
   "physicalrailways.ponder.shared.cargo_path": "Connect storage to the real handling endpoint with funnels, belts, pipes or the supported mod’s explicit connections",
   "physicalrailways.ponder.shared.cargo_scope": "Controls and observers can summarize consist cargo, but that query is read-only; it is not remote access to every chest",
-  "physicalrailways.ponder.shared.cargo_connectors": "Hose, Simulated and Automated Logistics connectors retain their native transfer and explicit selection rules. Native Portable Storage Interfaces do not directly handle these physics containers",
+  "physicalrailways.ponder.shared.cargo_connectors": "Simulated connectors transfer items and fluids through their native pairing and local buffers. Native Portable Storage Interfaces do not directly handle these physics containers",
   "physicalrailways.ponder.shared.cargo_packages": "Automatic package work uses Railway Docking Connectors and station-linked mailboxes. Onboard packages must move through real handling paths to and from the buffers",
   "physicalrailways.ponder.shared.cargo_blocked": "Check full buffers, address mismatches, disconnected facilities and external redstone locks. Waiting never makes undelivered packages disappear",
   "physicalrailways.ponder.physical_variants.header": "Bogey Styles and Compatibility",

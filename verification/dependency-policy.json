@@ -31,28 +31,10 @@
       "0.3.0-beta+neoforge-mc1.21.1",
       "0.2.1+neoforge-mc1.21.1"
     ],
-    "hose": [
-      "0.2.2",
-      "0.2.1",
-      "0.2.0",
-      "0.1.9",
-      "0.1.8",
-      "0.1.7",
-      "0.1.6",
-      "0.1.5",
-      "0.1.4",
-      "0.1.3",
-      "0.1.2",
-      "0.1.1",
-      "0.1.0"
-    ],
     "aero": [
       "1.3.2+mc1.21.1",
       "1.3.1+mc1.21.1",
       "1.3.0+mc1.21.1"
-    ],
-    "logistics": [
-      "0.7.0"
     ],
     "create": [
       "6.0.10+mc1.21.1"
@@ -60,7 +42,6 @@
   },
   "limitations": [
     "Static linkage and model audit only; runtime Mixin application and gameplay are pending",
-    "Upstream dependency ranges still apply; Create 6.0.10 is required by Sable",
-    "CAAL 0.4.0 through 0.6.2 retain snapshot integration only; full dock hooks require 0.7.0"
+    "Upstream dependency ranges still apply; Create 6.0.10 is required by Sable"
   ]
 }

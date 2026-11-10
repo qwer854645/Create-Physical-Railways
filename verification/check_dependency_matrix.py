@@ -234,7 +234,9 @@ def main():
         own = [read_class(z.read(n)) for n in z.namelist() if n.endswith('.class')]
     refs = set().union(*(c['refs'] for c in own))
     classes = set().union(*(c['classes'] for c in own))
-    baseline = {m: Archive(folder / next(r['file'] for r in rows if r['mod'] == m)) for m in PREFIXES}
+    # Audit only dependencies selected by the release manifest. Optional contract helpers remain available.
+    selected = {r['mod'] for r in rows}
+    baseline = {m: Archive(folder / next(r['file'] for r in rows if r['mod'] == m)) for m in selected}
     report = []
     for row in rows:
         mod, prefixes = row['mod'], PREFIXES[row['mod']]
@@ -294,7 +296,7 @@ def main():
               '; '.join(sorted(missing)[:2]), 'changed models', len(changed_models))
     (ROOT / 'build/dependency-matrix-report.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
     # Every selected latest release must pass. Older failures identify safe lower bounds.
-    for mod in PREFIXES:
+    for mod in selected:
         assert next(r for r in report if r['mod'] == mod)['linkage'], mod
     policy = json.loads((ROOT / 'verification/dependency-policy.json').read_text('utf-8'))
     for mod, versions in policy['supported'].items():

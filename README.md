@@ -35,7 +35,7 @@ See [dependency notes](docs/DEPENDENCIES.md) for other checked versions and comp
 - **Steam ’n’ Rails:** wide, narrow, and monorail tracks, with corresponding bogey styles.
 - **Blocks & Bogies:** bogey style selection, models, and animations.
 - **Electro Energetics:** overhead wire and pantograph-powered traction; full in-game acceptance testing is still pending.
-- **Simulated, VS / Sable Hose Connectors, and Automated Logistics:** item, fluid, and docking support within each interface's actual transfer scope. Package tasks require suitable docking facilities.
+- **Simulated:** item, fluid, and docking support within the connector's actual transfer scope. Package tasks require suitable docking facilities.
 - **Xaero's Minimap:** physical train markers; visual verification is still pending.
 
 These mods are optional; you do not need to install all of them. See the notes on [Create railway compatibility](docs/CREATE_COMPATIBILITY.md), [bogey and electric integrations](docs/ADDON_COMPATIBILITY.md), and [cargo access boundaries](docs/CARGO_ACCESS_BOUNDARY.md) for details. These reference documents are currently in Chinese.

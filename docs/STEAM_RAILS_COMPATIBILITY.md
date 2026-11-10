@@ -80,7 +80,7 @@ Steam 'n' Rails 原生轨旁连挂器两处轨道标记分别识别本模组轮�
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File verification/prepare_railways.ps1
 .\gradlew.bat build --offline
-python verification/check_cargo_compat.py --hose libs/VS-Sable-HoseConnectors-0.2.2-1.21.1.jar --simulated build/compat-api/simulated-neoforge-1.21.1-1.3.2.jar --logistics libs/create_aeronautics_automated_logistics-0.7.0.jar --railways libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar
+python verification/check_cargo_compat.py --simulated build/compat-api/simulated-neoforge-1.21.1-1.3.2.jar --railways libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar
 python verification/check_railways_compat.py --railways libs/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar --create run/mods/create-1.21.1-6.0.10-280.jar --artifact build/libs/physicalrailways-0.1.53.jar
 ```
 

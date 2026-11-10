@@ -12,7 +12,7 @@
 - Sable Companion：**1.6.0**，与 Sable 2.0.6 捆绑版本一致；Veil、Rapier 等内部依赖沿用上游捆绑版本，不拆包替换
 - Steam 'n' Rails NeoForge：**0.3.0-beta.2**，按此前要求继续使用[最新 beta](https://www.curseforge.com/minecraft/mc-mods/steam-n-rails-neoforge/files/all)
 - Blocks & Bogies：**1.0.8**、Electro Energetics：**1.1.4**，仍为各自最新发布版
-- Create Aeronautics／Simulated：**1.3.2**、VS / Sable Hose Connectors：**0.2.2**、Automated Logistics：**0.7.0**，仍为各自最新发布版
+- Create Aeronautics／Simulated：**1.3.2**，仍为各自最新发布版
 
 完整发布包地址和 SHA-256／SHA-512 在 `verification/dependency-releases.json`，Ponder 的官方镜像校验值在 `verification/dependency-maven.json`。构建依赖固定到上述版本，用户安装范围与构建版本分别管理
 
@@ -25,8 +25,6 @@
 - Electro Energetics：**1.0.0、1.0.1、1.1.0～1.1.4**，共 7 个发布版；兼容旧电阻配置和新功耗配置
 - Railway：**0.2.1、0.3.0-beta、0.3.0-beta.2**；接口和转向架几何一致，部分纹理修正由安装的版本自行提供
 - Simulated：**1.3.0、1.3.1、1.3.2**，通过对应 Aeronautics 官方捆绑包检查
-- Hose Connectors：**0.1.0～0.1.9、0.2.0～0.2.2**；旧版没有自己的 `onLoad`，改为构造结束后绑定本地库存。新版加载／调整缓冲区后再次绑定，所有版本继续使用库存实际变化判断运输活动
-- Automated Logistics：**0.7.0** 提供完整的快照、对接运输活动及地址检查接口。0.4.0～0.6.2 只保留旧快照扩展，对接活动钩子会因缺少接口而停用；不把这些旧版计为完整兼容
 - Create：**6.0.10**。本项目直接引用的接口检查可通过 6.0.7～6.0.9，但 Sable 的上游依赖限制要求 6.0.10，因此不降低实际安装要求
 
 较早 BnB 存在菜单回调和模型变更，Railway 0.2.0 及更早存在转向架模型差异，Simulated 1.2.x 缺少当前对接 API；没有仅靠放宽版本号将这些版本标为兼容。新版本位于声明区间内也不等于已验收，上游各模组的依赖范围仍需取交集
@@ -54,7 +52,7 @@ python verification/prepare_dependencies.py
 python verification/check_dependency_matrix.py --artifact build/libs/physicalrailways-0.2.8.jar --download
 ```
 
-候选包保存在忽略的 build/dependency-matrix，不复制到 run/mods。检查 81 个发布包，覆盖实际字节码引用、父类成员、Mixin 目标、反射接口和模型资源。结果写入 build/dependency-matrix-report.json；`dependency-policy.json` 中列入支持的版本必须全部通过，不兼容候选可失败并报告原因
+候选包保存在忽略的 build/dependency-matrix，不复制到 run/mods。检查当前发布清单中的依赖包，覆盖实际字节码引用、父类成员、Mixin 目标、反射接口和模型资源。结果写入 build/dependency-matrix-report.json；`dependency-policy.json` 中列入支持的版本必须全部通过，不兼容候选可失败并报告原因
 
 另已使用 NeoForge 21.1.233、Sable 2.0.0、BnB 1.0.6、CEE 1.0.0、Railway 0.2.1 和 Simulated 1.3.0 完成最低组合源码编译，然后恢复最新开发组合完成完整构建。旧 API 可以通过 `*_api_jar` Gradle 参数单独指定，不必修改开发依赖或运行目录
 
@@ -65,5 +63,5 @@ python verification/check_dependency_matrix.py --artifact build/libs/physicalrai
 1. 现有存档加载、转向架及车钩保存／重载、时刻表继续运行
 2. BnB 与 Railway 菜单切换、不同尺寸款式的放置／渲染／碰撞
 3. CEE 接触网下升降受电弓、正反向牵引、断电、制动及多车连挂
-4. 三类连接器的物品／流体运输、等待条件和包裹地址过滤
+4. 对接连接器的物品／流体运输、等待条件和包裹地址过滤
 5. 原版列车与物理列车碰撞、单轨放置和行驶

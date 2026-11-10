@@ -29,7 +29,7 @@ def main():
         row = json.loads((ROOT / 'verification/map-test-dependencies.json').read_text('utf-8'))
         fetch(ROOT / 'libs' / row['file'], row['url'], row['sha256'])
     rows = json.loads((ROOT / 'verification/dependency-releases.json').read_text('utf-8'))
-    for mod in ['sable', 'bnb', 'cee', 'railways', 'hose', 'logistics', 'aero']:
+    for mod in ['sable', 'bnb', 'cee', 'railways', 'aero']:
         row = next(r for r in rows if r['mod'] == mod)
         fetch(ROOT / 'libs' / row['file'], row['url'], row['sha256'])
     mirror = json.loads((ROOT / 'verification/dependency-maven.json').read_text('utf-8'))

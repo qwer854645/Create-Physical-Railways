@@ -35,7 +35,7 @@
 - **Steam ’n’ Rails**：宽轨、窄轨、单轨，以及对应转向架款式。
 - **Blocks & Bogies**：转向架款式选择、模型与动画。
 - **Electro Energetics**：接触网与受电弓供电牵引，仍待完整游戏内验收。
-- **Simulated、VS / Sable Hose Connectors、Automated Logistics**：限定于各接口实际输送范围的物品、流体与对接适配；包裹取送需要相应对接设施。
+- **Simulated**：限定于连接器实际输送范围的物品、流体与对接适配；包裹取送需要相应对接设施。
 - **Xaero's Minimap**：物理列车标记，实际显示效果仍待验收。
 
 这些模组均为可选依赖，不需要全部安装。具体边界见 [Create 铁路兼容](docs/CREATE_COMPATIBILITY.md)、[转向架与电驱兼容](docs/ADDON_COMPATIBILITY.md)和[货运访问边界](docs/CARGO_ACCESS_BOUNDARY.md)。

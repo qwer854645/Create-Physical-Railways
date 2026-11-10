@@ -392,7 +392,7 @@
   "physicalrailways.ponder.shared.cargo_storage": "箱子与储罐属于真实车载方块；同车体或连挂编组不会使独立容器互通",
   "physicalrailways.ponder.shared.cargo_path": "用漏斗、传送带、管道或适配模组的明确连接，把容器接到实际装卸端点",
   "physicalrailways.ponder.shared.cargo_scope": "驾驶台与观察器可汇总整列货物，但统计接口是只读的，不是可远程抽取任意箱子的总仓库",
-  "physicalrailways.ponder.shared.cargo_connectors": "软管、Simulated 和 Automated Logistics 连接器按各自原生输送和容器选择规则工作；原版可移式接口不能直接装卸这些物理容器",
+  "physicalrailways.ponder.shared.cargo_connectors": "Simulated 连接器沿原生配对与本地缓冲输送物品和流体；原版可移式接口不能直接装卸这些物理容器",
   "physicalrailways.ponder.shared.cargo_packages": "自动取件与派送通过铁路对接连接器和车站关联邮箱；车载包裹必须沿真实输送路径进出缓冲",
   "physicalrailways.ponder.shared.cargo_blocked": "库存满、地址不匹配、连接断开或外部红石锁未解除时先排查对应设施；未送达的包裹不会因为时刻表等待而凭空消失",
   "physicalrailways.ponder.physical_variants.header": "转向架款式与兼容边界",

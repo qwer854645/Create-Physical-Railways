@@ -96,7 +96,7 @@ flowchart TD
 ## 外围适配与显示
 
 - Railway、Blocks & Bogies 的车型选择、模型和动画经兼容模块接入；几何目录负责平台高度和碰撞布局
-- CEE、Simulated、Hose Connectors 和 Automated Logistics 在供电或货物边界接入，不拥有本模组时刻表执行状态
+- CEE 和 Simulated 在供电或货物边界接入，不拥有本模组时刻表执行状态
 - 客户端模型、HUD、界面与网络包只呈现或请求操作；驾驶权限及有效性在服务端判定
 - 玩家可见语言、提示和界面遵循 `project-style.json` 与 `PROJECT_STYLE.md`
 
