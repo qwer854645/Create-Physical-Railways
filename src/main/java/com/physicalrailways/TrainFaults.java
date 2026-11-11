@@ -33,6 +33,7 @@ final class TrainFaults {
 
   static void begin(ServerLevel level, TrainConsists.Snapshot snapshot) {
     var world = WORLDS.computeIfAbsent(level, k -> new World());
+    var previousGroups = world.groups;
     world.groups = snapshot.byBody();
     long now = level.getGameTime();
     BodyGuard.beginStep(now);
@@ -43,6 +44,20 @@ final class TrainFaults {
         if (found != null && found.window.blocked()) {
           incident = found;
           break;
+        }
+      }
+      if (incident == null) {
+        // A live drawbar can outlast an unloaded axle. Cargo completeness alone cannot detect it.
+        for (var id : group.members()) {
+          var previous = previousGroups.get(id);
+          if (previous != null
+              && (!previous.members().equals(group.members())
+                  || !previous.units().equals(group.units()))
+              && !footprint(group).containsAll(footprint(previous))) {
+            incident = attach(world, previous);
+            incident.window.unavailable(now);
+            break;
+          }
         }
       }
       if (incident == null && !world.phases.isEmpty()) {
@@ -255,8 +270,11 @@ final class TrainFaults {
       var incident = world.incidents.get(id);
       if (incident != null) reset.add(incident);
     }
+    var snapshot = TrainConsists.get(level);
+    // Explicit player topology changes accept a new baseline; passive unloading does not.
+    world.groups = snapshot.byBody();
     if (reset.isEmpty()) return;
-    for (var group : TrainConsists.get(level).groups()) {
+    for (var group : snapshot.groups()) {
       Incident previous = null;
       for (var id : group.members()) {
         var incident = world.incidents.get(id);

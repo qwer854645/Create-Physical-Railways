@@ -41,7 +41,7 @@ public final class ScheduleFeatureServerTests {
     return new ScheduleEntry(instruction, List.of());
   }
 
-  @GameTest(template = "empty", templateNamespace = "physicalrailways_signal_validation", timeoutTicks = 400)
+  @GameTest(template = "empty", templateNamespace = "physicalrailways_signal_validation", timeoutTicks = 2400)
   public static void nativeConditionsAndFutureDisplays(GameTestHelper helper) throws Exception {
     new Run(helper).start();
   }
@@ -57,7 +57,7 @@ public final class ScheduleFeatureServerTests {
     Train proxy;
     ScheduledDelay delay;
     final CompoundTag nativeClock = new CompoundTag();
-    int ticks;
+    int ticks, loadTicks;
     boolean forced;
 
     Run(GameTestHelper helper) { this.helper = helper; level = helper.getLevel(); }
@@ -106,7 +106,16 @@ public final class ScheduleFeatureServerTests {
       var schedule = new Schedule(List.of(new ScheduleEntry(destination("A"),
           List.of(List.of(new PlayerPassengerCondition()), List.of(delay)))), false, 0);
       member(controller, "program").set(controller, schedule);
-      helper.runAfterDelay(1, this::tickDelay);
+      helper.runAfterDelay(1, this::awaitReady);
+    }
+
+    void awaitReady() {
+      if (!level.isPositionEntityTicking(consolePos)) {
+        helper.assertTrue(++loadTicks < 2000, "forced station chunk becomes entity ticking");
+        helper.runAfterDelay(1, this::awaitReady);
+        return;
+      }
+      tickDelay();
     }
 
     void tickDelay() {

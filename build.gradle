@@ -1027,16 +1027,25 @@ if (project.hasProperty('signalServerTests')) {
             compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
             runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
         }
+        // Package-private runtime probes share the production module only in this opt-in run.
+        // Keeping a separate source set excludes these classes from the release jar.
+        faultValidation {
+            compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+            runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+        }
     }
     neoForge {
         mods {
             physicalrailways_signal_validation { sourceSet sourceSets.signalValidation }
+            physicalrailways { sourceSet sourceSets.faultValidation }
         }
         runs {
             signalValidation {
                 type = 'gameTestServer'
                 gameDirectory = file('build/signal-validation-run')
                 systemProperty 'neoforge.enabledGameTestNamespaces', 'physicalrailways_signal_validation'
+                if (project.hasProperty('validationRestart'))
+                    systemProperty 'physicalrailways.validationRestart', 'true'
             }
         }
     }
@@ -1053,6 +1062,11 @@ if (project.hasProperty('signalServerTests')) {
             def world = new File(root, 'world').canonicalFile
             if (world.parentFile != root || root != file("${layout.buildDirectory.get().asFile}/signal-validation-run").canonicalFile)
                 throw new GradleException('Signal fixture world must stay inside the dedicated build directory')
+            if (project.hasProperty('validationRestart')) {
+                if (!world.isDirectory() || !new File(root, 'fault-restart.properties').isFile())
+                    throw new GradleException('Restart validation requires a completed saved fixture run')
+                return
+            }
             delete world
         }
     }
