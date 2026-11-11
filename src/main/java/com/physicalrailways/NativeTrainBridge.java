@@ -11,7 +11,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Vector3d;
 
-/** Maintains native query objects. Does not issue motion, schedule, station or signal commands. */
+/**
+ * Publishes native identities and drains write-through commands without native carriage execution.
+ */
 public final class NativeTrainBridge {
   private record Registration(PhysicalTrainProxy train, Set<UUID> members) {}
 
@@ -44,6 +46,8 @@ public final class NativeTrainBridge {
   }
 
   static void tick(ServerLevel level) {
+    for (var proxy : LIVE.getOrDefault(level, Map.of()).values())
+      proxy.controls.consume(level.getGameTime() % 5 == 0);
     TrainSyncMetrics.report(level);
     if (level.getGameTime() % 5 != 0 || SubLevelPhysicsSystem.get(level) == null) return;
     var groups =
@@ -113,6 +117,7 @@ public final class NativeTrainBridge {
         if (proxy.currentStation != null && !snapshot.getBoolean("Derailed"))
           snapshot.putUUID("Station", proxy.currentStation);
         snapshot.put("Journey", proxy.journey.capture(groups.get(i), snapshot));
+        proxy.controls.bind(level, groups.get(i));
         proxy.apply(snapshot, Create.RAILWAYS.trackNetworks, level.registryAccess());
         proxy.bindCargo(level, groups.get(i));
         var registration = new Registration(proxy, memberships.get(i));
@@ -160,6 +165,10 @@ public final class NativeTrainBridge {
       if (body != null && group.members().contains(body.getUniqueId())) return true;
     }
     return false;
+  }
+
+  static void acceptCommands(ServerLevel level) {
+    for (var proxy : LIVE.getOrDefault(level, Map.of()).values()) proxy.controls.consume();
   }
 
   static PhysicalTrainProxy registered(ServerLevel level, TrainConsists.Group group) {
@@ -247,6 +256,12 @@ public final class NativeTrainBridge {
     tag.putUUID("Id", id);
     var driver = group.units().getFirst().driver;
     tag.putString("Name", driver == null ? "" : driver.trainName());
+    if (driver != null) {
+      tag.putString("Icon", driver.trainIcon.toString());
+      tag.putBoolean("HasController", true);
+      tag.putInt("MapColor", driver.trainMapColor);
+      tag.putDouble("Throttle", driver.schedule.throttle());
+    }
     var owner = driver == null ? TrainOwner.UNKNOWN : driver.trainOwner();
     if (owner.known()) {
       tag.putUUID("Owner", owner.id());

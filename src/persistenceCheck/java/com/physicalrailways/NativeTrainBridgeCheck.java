@@ -52,18 +52,7 @@ public final class NativeTrainBridgeCheck {
             restored.ledger.reconcile(List.of(members), Set.copyOf(List.of(members))).get(members)),
         "real NBT identity round trip");
     var node = code("com/physicalrailways/PhysicalTrainProxy");
-    for (var methodName :
-        List.of(
-            "tick",
-            "burnFuel",
-            "crash",
-            "approachTargetSpeed",
-            "collectInitiallyOccupiedSignalBlocks",
-            "detachFromTracks",
-            "reattachToTracks",
-            "arriveAt",
-            "setCurrentStation",
-            "leaveStation")) {
+    for (var methodName : List.of("tick", "burnFuel")) {
       var method =
           node.methods.stream().filter(m -> m.name.equals(methodName)).findFirst().orElseThrow();
       var effects = new ArrayList<Integer>();
@@ -108,7 +97,8 @@ public final class NativeTrainBridgeCheck {
             .noneMatch(i -> i instanceof MethodInsnNode),
         "logical carriage never creates entities");
     // Unit conversion is checked against the actual compiled native update instruction.
-    var apply = node.methods.stream().filter(m -> m.name.equals("applyOwned")).findFirst().orElseThrow();
+    var apply =
+        node.methods.stream().filter(m -> m.name.equals("applyOwned")).findFirst().orElseThrow();
     check(
         java.util.stream.StreamSupport.stream(apply.instructions.spliterator(), false)
             .anyMatch(

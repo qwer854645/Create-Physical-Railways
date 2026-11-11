@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Query-only native identity. All physical motion and scheduling remain in the existing backend.
+ * Native identity and command facade. Physical motion and scheduling stay in the existing backend.
  */
 public final class PhysicalTrainProxy extends Train {
   private ResourceKey<Level> dimension = Level.OVERWORLD;
@@ -32,6 +32,7 @@ public final class PhysicalTrainProxy extends Train {
   final TrainSnapshotSync snapshotSync = new TrainSnapshotSync();
   final ObserverFilterCache observerFilters = new ObserverFilterCache();
   final NativeSignalState signals = new NativeSignalState(this);
+  final NativeTrainControl controls = new NativeTrainControl(this);
 
   PhysicalTrainProxy(UUID id) {
     super(
@@ -125,6 +126,10 @@ public final class PhysicalTrainProxy extends Train {
     graph = data.hasUUID("Graph") ? graphs.get(data.getUUID("Graph")) : null;
     speed = data.getDouble("Speed") / 20; // Create uses blocks/tick; backend reports blocks/second.
     targetSpeed = speed;
+    throttle = data.contains("Throttle") ? data.getDouble("Throttle") : 1;
+    var iconId = ResourceLocation.tryParse(data.getString("Icon"));
+    icon = iconId == null ? TrainIconType.getDefault() : TrainIconType.byId(iconId);
+    mapColorIndex = Math.clamp(data.getInt("MapColor"), 0, 15);
     currentlyBackwards = speed < 0;
     derailed = data.getBoolean("Derailed") || graph == null;
     length = data.getInt("Length");
@@ -173,6 +178,7 @@ public final class PhysicalTrainProxy extends Train {
     var journeyData = data.getCompound("Journey");
     ((PhysicalNavigation) navigation).project(journeyData.getCompound("Navigation"));
     ((PhysicalScheduleRuntime) runtime).project(journeyData, registries);
+    controls.projected();
   }
 
   /** Actual station association only; never invokes the native runtime or mail transfer. */
@@ -180,9 +186,11 @@ public final class PhysicalTrainProxy extends Train {
     currentStation = station;
     if (station == null) snapshot.remove("Station");
     else snapshot.putUUID("Station", station);
+    controls.stationProjected();
   }
 
   void clearJourney() {
+    controls.unbind();
     signals.clear();
     clearCargo();
     journey.reset();
@@ -368,22 +376,32 @@ public final class PhysicalTrainProxy extends Train {
   public void tick(Level level) {}
 
   @Override
-  public void crash() {}
+  public void crash() {
+    controls.crash();
+  }
 
   @Override
   public void burnFuel() {}
 
   @Override
-  public void approachTargetSpeed(float modifier) {}
+  public void approachTargetSpeed(float modifier) {
+    controls.speed(targetSpeed);
+  }
 
   @Override
-  public void collectInitiallyOccupiedSignalBlocks() {}
+  public void collectInitiallyOccupiedSignalBlocks() {
+    signals.publish();
+  }
 
   @Override
-  public void detachFromTracks() {}
+  public void detachFromTracks() {
+    controls.detach();
+  }
 
   @Override
-  public void reattachToTracks(Level level) {}
+  public void reattachToTracks(Level level) {
+    controls.reattach(level);
+  }
 
   @Override
   public boolean canDisassemble() {
@@ -396,13 +414,52 @@ public final class PhysicalTrainProxy extends Train {
   }
 
   @Override
-  public void arriveAt(GlobalStation station) {}
+  public void arriveAt(GlobalStation station) {
+    controls.station(station);
+  }
 
   @Override
-  public void setCurrentStation(GlobalStation station) {}
+  public void setCurrentStation(GlobalStation station) {
+    controls.station(station);
+  }
 
   @Override
-  public void leaveStation() {}
+  public void leaveStation() {
+    controls.station(null);
+  }
+
+  public boolean editIdentity(
+      net.minecraft.world.entity.player.Player player,
+      String name,
+      ResourceLocation icon,
+      int color) {
+    return controls.edit(player, name, icon, color);
+  }
+
+  @Override
+  public void determineHonk(Level level) {
+    controls.honk();
+  }
+
+  @Override
+  public float maxSpeed() {
+    return (float) (TrainConfig.MAX_TARGET_SPEED.get() / 20);
+  }
+
+  @Override
+  public float acceleration() {
+    return (float) (TrainConfig.ACCELERATION.get() / 400);
+  }
+
+  @Override
+  public boolean hasForwardConductor() {
+    return snapshot.getBoolean("HasController");
+  }
+
+  @Override
+  public boolean hasBackwardConductor() {
+    return snapshot.getBoolean("HasController");
+  }
 
   @Override
   public int getTotalLength() {

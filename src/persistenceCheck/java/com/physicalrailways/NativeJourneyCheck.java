@@ -149,19 +149,13 @@ public final class NativeJourneyCheck {
           runtime.fields.stream()
               .anyMatch(f -> f.name.equals(field) && (f.access & Opcodes.ACC_PUBLIC) != 0),
           "native runtime query: " + field);
-    noExecution(
-        "PhysicalNavigation", List.of("tick", "cancelNavigation", "startNavigation", "read"));
+    noExecution("PhysicalNavigation", List.of("tick", "read"));
     noExecution(
         "PhysicalScheduleRuntime",
         List.of(
             "tick",
             "tickConditions",
             "startCooldown",
-            "destinationReached",
-            "transitInterrupted",
-            "startCurrentInstruction",
-            "setSchedule",
-            "discardSchedule",
             "read",
             "setSchedulePresentClientside",
             "returnSchedule"));
@@ -175,7 +169,8 @@ public final class NativeJourneyCheck {
         "snapshot publication does not plan or execute a second journey");
     var proxy = code("com/physicalrailways/PhysicalTrainProxy");
     check(
-        calls(method(proxy, "applyOwned")).stream().filter(c -> c.name.equals("project")).count() == 2,
+        calls(method(proxy, "applyOwned")).stream().filter(c -> c.name.equals("project")).count()
+            == 2,
         "both native views refreshed by the same packet");
     check(calls(method(proxy, "apply")).stream().anyMatch(c -> c.name.equals("copy"))
             && calls(method(proxy, "apply")).stream().anyMatch(c -> c.name.equals("applyOwned"))
@@ -183,18 +178,30 @@ public final class NativeJourneyCheck {
         "ordinary apply and public snapshot still defend against caller mutation");
     check(calls(method(proxy, "applyOwned")).stream().noneMatch(c -> c.name.equals("copy")),
         "owned network snapshot is not deep-copied again during projection");
-    check(calls(method(proxy, "receiveSnapshot")).stream().anyMatch(c -> c.name.equals("accept"))
-            && calls(method(proxy, "receiveSnapshot")).stream().noneMatch(c -> c.name.equals("copy"))
-            && calls(method(proxy, "snapshotRevision")).stream().noneMatch(c -> c.name.equals("copy")),
+    check(
+        calls(method(proxy, "receiveSnapshot")).stream().anyMatch(c -> c.name.equals("accept"))
+            && calls(method(proxy, "receiveSnapshot")).stream()
+                .noneMatch(c -> c.name.equals("copy"))
+            && calls(method(proxy, "snapshotRevision")).stream()
+                .noneMatch(c -> c.name.equals("copy")),
         "baseline decoding and revision queries access private state without preparatory copies");
     var client = code("com/physicalrailways/NativeTrainClient");
     check(client.methods.stream().flatMap(m -> calls(m).stream()).noneMatch(c ->
             c.owner.equals("com/physicalrailways/PhysicalTrainProxy") && c.name.equals("snapshot")),
         "client revision checks and decoding never request a defensive full snapshot");
-    check(client.methods.stream().flatMap(m -> calls(m).stream()).anyMatch(c ->
-            c.owner.equals("com/physicalrailways/PhysicalTrainProxy") && c.name.equals("applyOwned"))
-            && client.methods.stream().flatMap(m -> calls(m).stream()).noneMatch(c ->
-                c.owner.equals("com/physicalrailways/PhysicalTrainProxy") && c.name.equals("apply")),
+    check(
+        client.methods.stream()
+                .flatMap(m -> calls(m).stream())
+                .anyMatch(
+                    c ->
+                        c.owner.equals("com/physicalrailways/PhysicalTrainProxy")
+                            && c.name.equals("applyOwned"))
+            && client.methods.stream()
+                .flatMap(m -> calls(m).stream())
+                .noneMatch(
+                    c ->
+                        c.owner.equals("com/physicalrailways/PhysicalTrainProxy")
+                            && c.name.equals("apply")),
         "client uses the owned projection entry rather than copying again through ordinary apply");
     check(
         calls(method(proxy, "clearJourney")).stream().filter(c -> c.name.equals("project")).count()
@@ -241,15 +248,26 @@ public final class NativeJourneyCheck {
     check(calls(statusLine).stream().anyMatch(c -> c.name.equals("getPresentTrain"))
             && calls(statusLine).stream().anyMatch(c -> c.name.equals("getWaitingStatus")),
         "native station status consumes the present train and its runtime wait description");
-    check(calls(method(code("com/physicalrailways/PhysicalScheduleRuntime"), "getWaitingStatus"))
-            .stream().anyMatch(c -> c.owner.endsWith("/ScheduleRuntime") && c.name.equals("getWaitingStatus")),
+    check(
+        calls(method(code("com/physicalrailways/PhysicalScheduleRuntime"), "getWaitingStatus"))
+            .stream()
+            .anyMatch(
+                c -> c.owner.endsWith("/ScheduleRuntime") && c.name.equals("getWaitingStatus")),
         "physical station wait descriptions delegate to native schedule condition formatting");
-    var observedLine = method(code("com/simibubi/create/content/redstone/displayLink/source/ObservedTrainNameSource"),
-        "provideLine");
+    var observedLine =
+        method(
+            code("com/simibubi/create/content/redstone/displayLink/source/ObservedTrainNameSource"),
+            "provideLine");
     check(calls(observedLine).stream().anyMatch(c -> c.name.equals("getCurrentTrain")),
         "native observed-name source consumes the observer's train identity");
-    check(Arrays.stream(observedLine.instructions.toArray()).anyMatch(i -> i instanceof FieldInsnNode f
-            && f.getOpcode() == Opcodes.GETFIELD && f.owner.endsWith("/Train") && f.name.equals("name")),
+    check(
+        Arrays.stream(observedLine.instructions.toArray())
+            .anyMatch(
+                i ->
+                    i instanceof FieldInsnNode f
+                        && f.getOpcode() == Opcodes.GETFIELD
+                        && f.owner.endsWith("/Train")
+                        && f.name.equals("name")),
         "native observed-name source uses the synchronized native train name");
     check(calls(method(code("com/physicalrailways/PhysicalObservers$Context"), "cover"))
             .stream().anyMatch(c -> c.name.equals("keepAlive") && c.desc.contains("/Train;")),

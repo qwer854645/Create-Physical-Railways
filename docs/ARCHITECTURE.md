@@ -100,6 +100,13 @@ flowchart TD
 - 客户端模型、HUD、界面与网络包只呈现或请求操作；驾驶权限及有效性在服务端判定
 - 玩家可见语言、提示和界面遵循 `project-style.json` 与 `PROJECT_STYLE.md`
 
+## 原版操作入口
+
+`NativeTrainControl` 接收原版代理上的方法调用和公开输入字段变化，在验证主控、编组、权限和状态后请求现有物理控制器。
+`NativeTrainBridge.acceptCommands` 位于驾驶台刷新后、自动驾驶前；发布阶段再次接收尚未消费的变化，随后更新镜像基线。
+公开时刻表数据修改复制后交给 ScheduleController，不共享外部可变对象；物品所有权和只读货物边界不变。
+原版 tick、显示快照和客户端查询不能再执行一遍任务。完整入口见 `NATIVE_TRAIN_OPERATIONS.md`。
+
 ## 性能计数
 
 `PerfCounters` 只在服务端配置 `performanceLogging=true` 时采样；关闭时 `begin()` 返回 0，各累加器直接忽略，不产生计时代价。每 20 刻输出一行汇总：

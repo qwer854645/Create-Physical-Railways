@@ -43,6 +43,12 @@ public final class StationPresence {
         && STATES.get(server).present.contains(pos);
   }
 
+  static boolean confirmed(ServerLevel level, PhysicalTrainProxy train, GlobalStation station) {
+    var state = STATES.get(level);
+    var arrival = state == null ? null : state.bindings.get(station.id);
+    return arrival != null && arrival.train == train;
+  }
+
   /** Also consult the native association while the debounced presence cache is updating. */
   public static boolean blocksAssembly(StationBlockEntity block) {
     var station = block.getStation();

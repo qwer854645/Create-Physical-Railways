@@ -556,6 +556,8 @@ public final class VehiclePhysics {
         var heading = new Vector3d(0, 0, 1).rotate(pose.orientation());
         if (u.detached) {
           u.speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading);
+          if (u.mount.braking || u.driver != null && u.driver.emergency)
+            TrainFaults.brake(physics, u, dt);
           continue;
         }
         // Leading axle steers at junctions (Create TravellingPoint.steer); trailing axle follows
@@ -718,7 +720,7 @@ public final class VehiclePhysics {
     return true;
   }
 
-  private static void release(Unit u, String reason) {
+  static void release(Unit u, String reason) {
     // Keep current velocity and the carrier bearing; remove only world-to-track constraints.
     var anchors = anchorSummary(u);
     u.clearGuides();

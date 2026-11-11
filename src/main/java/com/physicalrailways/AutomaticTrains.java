@@ -93,6 +93,36 @@ final class AutomaticTrains {
           hold(group, controller, true);
           continue;
         }
+        if (Double.isFinite(master.nativeSpeed)) {
+          if (level.getGameTime() >= master.nativeUntil) {
+            controller.nativeCancel();
+            hold(group, controller, false);
+            continue;
+          }
+          if (group.stream().anyMatch(u -> u.detached)) {
+            master.enabled = false;
+            controller.pause(ScheduleController.TRACK_MISSING);
+            hold(group, controller, false);
+            continue;
+          }
+          var orientation =
+              basis(master, group, links, master.direction == 0 ? 1 : master.direction);
+          if (orientation == null) {
+            hold(group, controller, false);
+            continue;
+          }
+          bind(
+              group,
+              master,
+              null,
+              orientation.signs,
+              Math.min(available(group, master), Math.abs(master.nativeSpeed))
+                  * controller.throttle(),
+              DriverModel.MAX_NOTCH,
+              false,
+              !master.enabled || master.nativeSpeed == 0);
+          continue;
+        }
         if (controller.resumePending()) {
           var restored = new HashSet<UUID>();
           for (var u : group) restored.add(u.bogie.getUniqueId());
@@ -102,7 +132,7 @@ final class AutomaticTrains {
             continue;
           }
         }
-        if (!controller.present()) {
+        if (!controller.present() && !controller.nativeActive()) {
           var orientation =
               basis(master, group, links, master.direction == 0 ? 1 : master.direction);
           if (orientation == null) {
@@ -402,8 +432,18 @@ final class AutomaticTrains {
       List<CouplerConnections.BodyLink> links,
       ScheduleController c,
       Set<UUID> packageTargets) {
+    return plan(level, group, links, c, packageTargets, c.nativeDestination());
+  }
+
+  static Plan plan(
+      ServerLevel level,
+      List<VehiclePhysics.Unit> group,
+      List<CouplerConnections.BodyLink> links,
+      ScheduleController c,
+      Set<UUID> packageTargets,
+      UUID nativeTarget) {
     var instruction = c.instruction();
-    if (instruction == null) return null;
+    if (instruction == null && nativeTarget == null) return null;
     Plan best = null;
     boolean stopped = maximumSpeed(group) < .15;
     int forward = c.owner.actual < -.05 ? -1 : 1;
@@ -422,13 +462,15 @@ final class AutomaticTrains {
       var travel = new Vector3d(sample.tangent()).mul(basis.signs.get(head.bogie.getUniqueId()));
       var start = network.direction(sample, travel);
       var goals =
-          instruction
-                  instanceof
-                  com.simibubi.create.content.trains.schedule.destination.DestinationInstruction
-                          destination
-              ? network.goals(destination, c.waiting() ? c.station() : null)
-              : network.goals(
-                  stop -> packageTargets.contains(stop.id), c.waiting() ? c.station() : null);
+          nativeTarget != null
+              ? network.goals(stop -> nativeTarget.equals(stop.id), null)
+              : instruction
+                      instanceof
+                      com.simibubi.create.content.trains.schedule.destination.DestinationInstruction
+                              destination
+                  ? network.goals(destination, c.waiting() ? c.station() : null)
+                  : network.goals(
+                      stop -> packageTargets.contains(stop.id), c.waiting() ? c.station() : null);
       var route =
           ScheduleRoute.find(
               network,

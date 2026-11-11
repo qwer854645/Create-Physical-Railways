@@ -1,6 +1,5 @@
 package com.physicalrailways;
 
-import com.simibubi.create.AllDataComponents;
 import com.simibubi.create.content.trains.graph.*;
 import java.util.*;
 import net.minecraft.nbt.*;
@@ -20,11 +19,13 @@ final class NativeTrainJourney {
     var driver = group.units().getFirst().driver;
     if (driver == null || driver.isRemoved()) return clear(out);
     var c = driver.schedule;
-    var data = c.present() ? c.item().get(AllDataComponents.TRAIN_SCHEDULE) : null;
-    if (data == null) return clear(out);
+    var data = c.nativeActive() ? null : c.queryProgram();
+    if (data == null && !c.nativeActive()) return clear(out);
     // The schedule component is replaced when its saved progress changes. Reuse unchanged data.
-    if (!data.equals(program)) program = data.copy();
-    out.put("Program", program);
+    if (data != null) {
+      if (!data.equals(program)) program = data.copy();
+      out.put("Program", program);
+    }
     out.putInt("Entry", c.entry());
     out.putInt("Status", c.status());
     out.putBoolean("Paused", !c.running() || c.manualOverride() || c.resumePending());

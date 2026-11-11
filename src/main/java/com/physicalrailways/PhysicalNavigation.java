@@ -9,7 +9,7 @@ import net.createmod.catnip.data.Couple;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 
-/** Native navigation queries without native motion, signal scouting or station reservations. */
+/** Native navigation facade backed by the physical planner and controller. */
 final class PhysicalNavigation extends Navigation {
   PhysicalNavigation(PhysicalTrainProxy train) {
     super(train);
@@ -67,11 +67,39 @@ final class PhysicalNavigation extends Navigation {
   public void tick(Level level) {}
 
   @Override
-  public void cancelNavigation() {}
+  public void cancelNavigation() {
+    ((PhysicalTrainProxy) train).controls.cancel();
+    destination = null;
+    ((NavigationAccessor) (Object) this).physicalrailways$path().clear();
+  }
 
   @Override
   public double startNavigation(DiscoveredPath path) {
-    return -1;
+    double distance = ((PhysicalTrainProxy) train).controls.navigate(path);
+    if (distance >= 0) {
+      destination = path.destination;
+      distanceToDestination = distanceStartedAt = distance;
+    }
+    return distance;
+  }
+
+  @Override
+  public DiscoveredPath findPathTo(
+      com.simibubi.create.content.trains.station.GlobalStation station, double maxCost) {
+    return ((PhysicalTrainProxy) train).controls.find(station, maxCost);
+  }
+
+  @Override
+  public DiscoveredPath findPathTo(
+      ArrayList<com.simibubi.create.content.trains.station.GlobalStation> stations,
+      double maxCost) {
+    DiscoveredPath best = null;
+    if (stations == null) return null;
+    for (var station : stations) {
+      var candidate = findPathTo(station, maxCost);
+      if (candidate != null && (best == null || candidate.cost < best.cost)) best = candidate;
+    }
+    return best;
   }
 
   @Override

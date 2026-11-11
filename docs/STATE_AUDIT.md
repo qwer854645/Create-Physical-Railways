@@ -164,3 +164,20 @@
 每个驾驶台持有一个 `ManualRouteSelection`，仅保存当前意图及修订号；不可变快照在选择改变时才分配，物理步读取不额外分配。它不持有世界或实体引用，不写入磁盘，仅通过 `VisualRouteSelection` 和 `VisualRouteAutomatic` 同步显示。临时拉杆互斥释放不会清除此预选。
 
 `ConsistRoutes.Context` 在每次准备时引用当前主控及预选快照；消费必须匹配修订号，不能把较新操作当作旧预选消费。`RouteMemory.passageVersion` 是实例内的新通行记录序号，只有实际创建记录才递增，不改变既有路径和保留策略。自动运行、失去主控/车体、卸载、停车保护及编组变化清除预选；不存在持久化待执行转向、全局玩家表或轮询扫描。
+
+
+## 原版操作转发（2026-11-11）
+
+`NativeTrainControl` 随每个代理创建，保存服务器/编组绑定和最后投影基线，不是全局注册表。
+公开字段的变化在控制阶段和查询投影覆盖前接收；无变化不做编组查询，程序内容仅在发布阶段比较。
+代理移除时 `unbind` 清除世界引用、成员和程序基线，失效请求不延迟执行。
+手动输入租期为 20 tick，汽笛最小间隔为 20 tick；瞬态目标速度不写入驾驶台存档。
+
+`DriverConsoleEntity` 保存 `TrainIcon`、`TrainMapColor`，名称仍使用 `TrainName`；`nativeSpeed` 为瞬态外部目标，
+NaN 表示无外部目标；nativeUntil 是逐刻输入的物理控制租期，普通目标使用 Long.MAX_VALUE。
+租期由物理自动控制阶段检查，不依赖查询代理是否撤销/重建。人工接管、暂停、取消、失联或主动拓扑变化结束该目标。
+`ScheduleController.nativeProgram` 仅在没有物理时刻表物品时持有程序 NBT，保存到 PhysicalSchedule.NativeProgram；
+`nativeDestination` 表示外部直接导航目标，保存到 NativeDestination，与原时刻表进度分别处理。
+两者仍由同一个物理执行器推进，加载时走同一个成员恢复门，不通过原版 tick 推进。
+外部导航完成不消耗原有程序项目；程序数据丢弃不生成物品，真实时刻表物品的所有权不交给原版返回入口。
+转发范围、派生只读字段和测试场景见 `NATIVE_TRAIN_OPERATIONS.md`。

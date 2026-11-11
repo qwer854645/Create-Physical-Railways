@@ -28,6 +28,7 @@ final class TrainRuntime {
       TrainFaults.begin(level, TrainConsists.get(level));
       TrainElectricity.refresh(level);
       DriverControls.refresh(level, units);
+      NativeTrainBridge.acceptCommands(level);
       PhysicalSignals.tick(level);
       AutomaticTrains.tick(level, units, DriverControls.consoles(level));
       StationPresence.tick(level);

@@ -38,6 +38,111 @@ final class ScheduleController {
   final DriverConsoleEntity owner;
   private ItemStack item = ItemStack.EMPTY;
   private Schedule program;
+  private CompoundTag nativeProgram;
+  private UUID nativeDestination;
+
+  UUID nativeDestination() {
+    return nativeDestination;
+  }
+
+  CompoundTag queryProgram() {
+    return item.isEmpty()
+        ? nativeProgram
+        : item.get(com.simibubi.create.AllDataComponents.TRAIN_SCHEDULE);
+  }
+
+  boolean nativeActive() {
+    return nativeDestination != null;
+  }
+
+  boolean nativeProgram(Schedule next, boolean auto) {
+    if (!(owner.getLevel() instanceof ServerLevel level) || unsupported(next) != null) return false;
+    var tag = next.write(level.registryAccess());
+    var copy = Schedule.fromTag(level.registryAccess(), tag.copy());
+    pause(PAUSED);
+    nativeDestination = null;
+    owner.nativeSpeed = Double.NaN;
+    if (item.isEmpty()) nativeProgram = tag.copy();
+    else item.set(com.simibubi.create.AllDataComponents.TRAIN_SCHEDULE, tag.copy());
+    program = copy;
+    entry = 0;
+    resetConditions();
+    resetSettings();
+    waiting = false;
+    station = null;
+    return nativeResume();
+  }
+
+  boolean nativeResume() {
+    if (owner.emergency || owner.active || (!present() && !nativeActive())) return false;
+    if (!nativeActive() && unsupported(program()) != null) return false;
+    if (running && !resumePending && !manualOverride && !Double.isFinite(owner.nativeSpeed)) return true;
+    if (!nativeActive() && entry >= total()) {
+      entry = 0;
+      resetConditions();
+    }
+    owner.nativeSpeed = Double.NaN;
+    owner.enabled = false;
+    owner.observing = true;
+    running = true;
+    resumePending = manualOverride = false;
+    reloadGate = null;
+    manualSource = null;
+    members = null;
+    cargoBodies = null;
+    releaseBrakes = true;
+    invalidateRoute(false);
+    syncProgress();
+    state(PLANNING);
+    return true;
+  }
+
+  boolean nativeEntry(int next) {
+    if (!present() || next < 0 || next > total()) return false;
+    if (next == entry) return true;
+    RailDocks.release(this);
+    nativeDestination = null;
+    entry = next;
+    invalidateRoute(true);
+    if (next == total()) {
+      running = false;
+      state(FINISHED);
+    } else state(running ? PLANNING : PAUSED);
+    syncProgress();
+    owner.setChanged();
+    return true;
+  }
+
+  void nativeThrottle(double value) {
+    if (!Double.isFinite(value)) return;
+    throttle = Math.clamp(value, 0, 1);
+    owner.setChanged();
+  }
+
+  void nativeTitle(String title) {
+    currentTitle = TrainName.normalize(title);
+    owner.setChanged();
+  }
+
+  void nativeNavigate(AutomaticTrains.Plan route) {
+    pause(PAUSED);
+    nativeDestination = route.route.goal().id();
+    nativeResume();
+    acceptPlan(route);
+    members = Set.copyOf(route.signs.keySet());
+    owner.setChanged();
+  }
+
+  void nativeCancel() {
+    nativeDestination = null;
+    pause(PAUSED);
+    owner.nativeSpeed = Double.NaN;
+    owner.enabled = false;
+    owner.notch = -4;
+    owner.clearRouteSelection();
+    owner.setChanged();
+  }
+
   private boolean running, manualOverride, waiting, releaseBrakes;
   private final ScheduleCadence cadence = new ScheduleCadence();
   private long nextVisual;
@@ -211,6 +316,10 @@ final class ScheduleController {
   }
 
   void topologyChanged() {
+    if (Double.isFinite(owner.nativeSpeed) || nativeActive()) {
+      owner.enabled = false;
+      nativeCancel();
+    }
     if (resumePending) pause(CHANGED);
     else RailDocks.release(this);
     members = null;
@@ -255,7 +364,7 @@ final class ScheduleController {
   }
 
   boolean present() {
-    return !item.isEmpty();
+    return !item.isEmpty() || nativeProgram != null;
   }
 
   int total() {
@@ -264,6 +373,8 @@ final class ScheduleController {
   }
 
   Schedule program() {
+    if (program == null && nativeProgram != null && owner.getLevel() != null)
+      program = Schedule.fromTag(owner.getLevel().registryAccess(), nativeProgram.copy());
     if (program == null && present() && owner.getLevel() != null)
       try {
         program = ScheduleItem.getSchedule(owner.getLevel().registryAccess(), item);
@@ -313,6 +424,7 @@ final class ScheduleController {
   }
 
   boolean prepareInstructions() {
+    if (nativeActive()) return true;
     var p = program();
     int previousEntry = entry;
     double previousThrottle = throttle;
@@ -408,6 +520,9 @@ final class ScheduleController {
   }
 
   private void store(Player player, ItemStack stack) {
+    nativeProgram = null;
+    nativeDestination = null;
+    owner.nativeSpeed = Double.NaN;
     priority = SwitchQueue.DEFAULT_PRIORITY;
     item = stack.copyWithCount(1);
     program = null;
@@ -496,6 +611,8 @@ final class ScheduleController {
       return action(player, 30);
     }
     if (id != 30 || !present()) return false;
+    nativeDestination = null;
+    owner.nativeSpeed = Double.NaN;
     var p = program();
     String error = unsupported(p);
     if (error != null) {
@@ -538,6 +655,7 @@ final class ScheduleController {
   }
 
   void manual(DriverConsoleEntity source) {
+    nativeDestination = null;
     if (manualOverride && manualSource == source && !running && !resumePending && status == PAUSED)
       return;
     stop(PAUSED, source);
@@ -548,6 +666,8 @@ final class ScheduleController {
   }
 
   private void stop(int reason, DriverConsoleEntity source) {
+    owner.nativeSpeed = Double.NaN;
+    owner.nativeUntil = Long.MAX_VALUE;
     running = false;
     resumePending = false;
     reloadGate = null;
@@ -570,12 +690,12 @@ final class ScheduleController {
       return false;
     }
     var parsed = program();
-    if (unsupported(parsed) != null) {
+    if (!nativeActive() && unsupported(parsed) != null) {
       pause(UNSUPPORTED);
       return false;
     }
-    entry = Math.min(entry, parsed.entries.size());
-    if (entry >= parsed.entries.size()) {
+    if (!nativeActive()) entry = Math.min(entry, parsed.entries.size());
+    if (!nativeActive() && entry >= parsed.entries.size()) {
       resumePending = false;
       reloadGate = null;
       running = false;
@@ -639,9 +759,9 @@ final class ScheduleController {
     var p = program();
     if (p == null || p.entries.isEmpty() || owner.getLevel() == null) return;
     p.savedProgress = Math.clamp(entry, 0, p.entries.size() - 1);
-    item.set(
-        com.simibubi.create.AllDataComponents.TRAIN_SCHEDULE,
-        p.write(owner.getLevel().registryAccess()));
+    var encoded = p.write(owner.getLevel().registryAccess());
+    if (item.isEmpty()) nativeProgram = encoded;
+    else item.set(com.simibubi.create.AllDataComponents.TRAIN_SCHEDULE, encoded);
     owner.setChanged();
   }
 
@@ -654,6 +774,8 @@ final class ScheduleController {
     var stack = item;
     owner.park();
     item = ItemStack.EMPTY;
+    nativeProgram = null;
+    nativeDestination = null;
     program = null;
     entry = 0;
     waiting = false;
@@ -668,6 +790,14 @@ final class ScheduleController {
   }
 
   String target() {
+    if (nativeActive() && owner.getLevel() instanceof ServerLevel level) {
+      for (var graph : com.simibubi.create.Create.RAILWAYS.sided(level).trackNetworks.values()) {
+        var goal =
+            graph.getPoint(
+                com.simibubi.create.content.trains.graph.EdgePointType.STATION, nativeDestination);
+        if (goal != null) return goal.name;
+      }
+    }
     if (!present() || entry >= total()) return "";
     if (plan != null) return plan.route.goal().name();
     var instruction = instruction();
@@ -720,6 +850,7 @@ final class ScheduleController {
   }
 
   boolean tickConditions(ServerLevel level) {
+    if (nativeActive()) return true;
     conditionState = WAITING;
     long now = level.getGameTime();
     boolean sampleExpensive = now >= nextConditionCheck || now < nextConditionCheck - CONDITION_INTERVAL;
@@ -874,7 +1005,8 @@ final class ScheduleController {
       if (!context.contains("CargoAmount") || context.getLong("CargoAmount") != amount)
         org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
             .info(
-                "[CargoWait] console={} entry={} type={} amount={} operator={} target={} bodies={} storageRoots={}",
+                "[CargoWait] console={} entry={} type={} amount={} operator={} target={} bodies={}"
+                    + " storageRoots={}",
                 owner.getBlockPos(),
                 entry,
                 condition.getId(),
@@ -927,6 +1059,11 @@ final class ScheduleController {
   }
 
   void advance() {
+    if (nativeActive()) {
+      nativeDestination = null;
+      pause(present() ? PAUSED : EMPTY);
+      return;
+    }
     RailDocks.release(this);
     cadence.restartPlanning();
     entry++;
@@ -955,9 +1092,11 @@ final class ScheduleController {
   }
 
   void save(CompoundTag tag, HolderLookup.Provider registries) {
-    if (!present()) return;
+    if (!present() && !nativeActive()) return;
     var data = new CompoundTag();
-    data.put("Item", item.save(registries));
+    if (!item.isEmpty()) data.put("Item", item.save(registries));
+    if (nativeProgram != null) data.put("NativeProgram", nativeProgram.copy());
+    if (nativeDestination != null) data.putUUID("NativeDestination", nativeDestination);
     data.putInt("Entry", entry);
     SchedulePriority.save(data, priority());
     data.putBoolean("Waiting", waiting);
@@ -987,6 +1126,12 @@ final class ScheduleController {
   void load(CompoundTag tag, HolderLookup.Provider registries) {
     var data = tag.getCompound("PhysicalSchedule");
     item = ItemStack.parseOptional(registries, data.getCompound("Item"));
+    nativeProgram =
+        data.contains("NativeProgram", Tag.TAG_COMPOUND)
+            ? data.getCompound("NativeProgram").copy()
+            : null;
+    nativeDestination =
+        data.hasUUID("NativeDestination") ? data.getUUID("NativeDestination") : null;
     priority = SchedulePriority.load(data);
     program = null;
     throttle = SchedulePrelude.throttle(data.getDouble("Throttle"));
@@ -1019,7 +1164,7 @@ final class ScheduleController {
       } catch (IllegalArgumentException ignored) {
       }
     members = restoredMembers.isEmpty() ? null : Set.copyOf(restoredMembers);
-    resumePending = present() && data.getBoolean("Running");
+    resumePending = (present() || nativeActive()) && data.getBoolean("Running");
     reloadGate = resumePending ? new ScheduleReloadGate(members) : null;
     running = false;
     manualOverride = false;
@@ -1032,7 +1177,7 @@ final class ScheduleController {
     visualDirty = false;
     releaseBrakes = false;
     status =
-        !present()
+        !present() && !nativeActive()
             ? EMPTY
             : resumePending ? UNLOADED : data.getInt("Status") == FINISHED ? FINISHED : PAUSED;
   }

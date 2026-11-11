@@ -90,9 +90,11 @@ public final class TrainRuntimeCheck {
     boolean stopped = false;
     for (var instruction : method("ScheduleController", "stop").instructions) {
       if (instruction instanceof FieldInsnNode field
-          && field.getOpcode() == org.objectweb.asm.Opcodes.PUTFIELD && field.name.equals("running"))
-        stopped = true;
-      if (instruction instanceof MethodInsnNode call && call.owner.endsWith("RailDocks") && call.name.equals("release"))
+          && field.getOpcode() == org.objectweb.asm.Opcodes.PUTFIELD
+          && field.name.equals("running")) stopped = true;
+      if (instruction instanceof MethodInsnNode call
+          && call.owner.endsWith("RailDocks")
+          && call.name.equals("release"))
         check(stopped, "a failing dock callback cannot leave the schedule running");
     }
     for (String[] boundary :
@@ -169,6 +171,7 @@ public final class TrainRuntimeCheck {
         "TrainFaults.begin",
         "TrainElectricity.refresh",
         "DriverControls.refresh",
+        "NativeTrainBridge.acceptCommands",
         "PhysicalSignals.tick",
         "DriverControls.consoles",
         "AutomaticTrains.tick",

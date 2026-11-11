@@ -94,19 +94,27 @@ public final class NativeStationContractCheck {
                     "physicalrailways$keepPhysicalIdentity"))
             .stream()
             .anyMatch(m -> m.name.equals("cancel")),
-        "native train editing cannot write into a physical query proxy");
+        "rejected native train edits are cancelled on the server");
+    check(
+        calls(
+                method(
+                    code("com/physicalrailways/mixin/PhysicalTrainEditMixin"),
+                    "physicalrailways$keepPhysicalIdentity"))
+            .stream()
+            .anyMatch(m -> m.name.equals("editIdentity")),
+        "accepted edits write through the physical identity adapter");
     var screen = code("com/simibubi/create/content/trains/station/StationScreen");
     for (var hook : List.of("tick", "syncTrainNameAndColor"))
       check(method(screen, hook) != null, "native station screen hook exists: " + hook);
     var screenMixin = code("com/physicalrailways/mixin/PhysicalStationScreenMixin");
     check(
-        calls(method(screenMixin, "physicalrailways$readOnlyIdentity")).stream()
-            .anyMatch(m -> m.name.equals("cancel")),
-        "physical station views do not send native edits");
+        screenMixin.methods.stream()
+            .noneMatch(m -> m.name.equals("physicalrailways$readOnlyIdentity")),
+        "station editing uses the native request packet");
     check(
         calls(method(screenMixin, "physicalrailways$physicalStationView")).stream()
-            .anyMatch(m -> m.name.equals("setValue")),
-        "open station views refresh the controls' name");
+            .anyMatch(m -> m.name.equals("setEditable")),
+        "station name field is editable while assembly remains protected");
     check(clientCodeHasGraphRefresh(), "client retries native graph and station synchronization");
     var mail = method(code("com/physicalrailways/PackageMail"), "exchange");
     check(

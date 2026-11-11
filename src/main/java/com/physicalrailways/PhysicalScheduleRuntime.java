@@ -4,8 +4,8 @@ import com.simibubi.create.content.trains.display.GlobalTrainDisplayData.TrainDe
 import com.simibubi.create.content.trains.graph.DiscoveredPath;
 import com.simibubi.create.content.trains.graph.EdgePointType;
 import com.simibubi.create.content.trains.schedule.*;
-import com.simibubi.create.content.trains.schedule.destination.DestinationInstruction;
 import com.simibubi.create.content.trains.schedule.destination.ChangeTitleInstruction;
+import com.simibubi.create.content.trains.schedule.destination.DestinationInstruction;
 import java.util.*;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.*;
@@ -13,7 +13,7 @@ import net.minecraft.network.chat.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/** Read-only projection. The only executable schedule and physical item stay in the controls. */
+/** Native runtime facade. Execution and physical item ownership stay in the controls. */
 final class PhysicalScheduleRuntime extends ScheduleRuntime {
   private CompoundTag program;
   private UUID predictionStation;
@@ -25,6 +25,10 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
 
   PhysicalScheduleRuntime(PhysicalTrainProxy train) {
     super(train);
+  }
+
+  CompoundTag programBaseline() {
+    return program;
   }
 
   void project(CompoundTag tag, HolderLookup.Provider registries) {
@@ -43,22 +47,35 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
                   error);
         }
       }
-      forecastSteps = schedule == null ? List.of() : schedule.entries.stream().map(entry -> {
-        var instruction = entry.instruction;
-        if (instruction instanceof DestinationInstruction destination) {
-          try {
-            return new ScheduleForecast.Step(ScheduleForecast.Kind.DESTINATION,
-                destination.getFilter(), net.createmod.catnip.data.Glob.toRegexPattern(destination.getFilter()));
-          } catch (java.util.regex.PatternSyntaxException invalid) {
-            // Old saves and externally supplied query data may contain an invalid later glob.
-            // Stop forecasting at that entry rather than failing identity/display updates.
-            return new ScheduleForecast.Step(ScheduleForecast.Kind.DESTINATION, destination.getFilter(), "[");
-          }
-        }
-        if (instruction instanceof ChangeTitleInstruction title)
-          return new ScheduleForecast.Step(ScheduleForecast.Kind.TITLE, title.getScheduleTitle(), "");
-        return new ScheduleForecast.Step(ScheduleForecast.Kind.OTHER, "", "");
-      }).toList();
+      forecastSteps =
+          schedule == null
+              ? List.of()
+              : schedule.entries.stream()
+                  .map(
+                      entry -> {
+                        var instruction = entry.instruction;
+                        if (instruction instanceof DestinationInstruction destination) {
+                          try {
+                            return new ScheduleForecast.Step(
+                                ScheduleForecast.Kind.DESTINATION,
+                                destination.getFilter(),
+                                net.createmod.catnip.data.Glob.toRegexPattern(
+                                    destination.getFilter()));
+                          } catch (java.util.regex.PatternSyntaxException invalid) {
+                            // Old saves and externally supplied query data may contain an invalid
+                            // later glob.
+                            // Stop forecasting at that entry rather than failing identity/display
+                            // updates.
+                            return new ScheduleForecast.Step(
+                                ScheduleForecast.Kind.DESTINATION, destination.getFilter(), "[");
+                          }
+                        }
+                        if (instruction instanceof ChangeTitleInstruction title)
+                          return new ScheduleForecast.Step(
+                              ScheduleForecast.Kind.TITLE, title.getScheduleTitle(), "");
+                        return new ScheduleForecast.Step(ScheduleForecast.Kind.OTHER, "", "");
+                      })
+                  .toList();
       forecastEntry = -1;
     }
     paused = schedule == null || tag.getBoolean("Paused");
@@ -114,21 +131,30 @@ final class PhysicalScheduleRuntime extends ScheduleRuntime {
   public void startCooldown() {}
 
   @Override
-  public void destinationReached() {}
-
-  @Override
-  public void transitInterrupted() {}
-
-  @Override
-  public DiscoveredPath startCurrentInstruction(Level level) {
-    return null;
+  public void destinationReached() {
+    var station = train.getCurrentStation();
+    if (station != null) ((PhysicalTrainProxy) train).controls.station(station);
   }
 
   @Override
-  public void setSchedule(Schedule schedule, boolean auto) {}
+  public void transitInterrupted() {
+    ((PhysicalTrainProxy) train).controls.cancel();
+  }
 
   @Override
-  public void discardSchedule() {}
+  public DiscoveredPath startCurrentInstruction(Level level) {
+    return ((PhysicalTrainProxy) train).controls.startInstruction(level);
+  }
+
+  @Override
+  public void setSchedule(Schedule schedule, boolean auto) {
+    ((PhysicalTrainProxy) train).controls.schedule(schedule, auto);
+  }
+
+  @Override
+  public void discardSchedule() {
+    ((PhysicalTrainProxy) train).controls.discard();
+  }
 
   @Override
   public void read(HolderLookup.Provider registries, CompoundTag tag) {}

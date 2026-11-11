@@ -77,6 +77,24 @@ public final class DriverConsoleEntity extends BlockEntity
   boolean bound;
   private int[] gearSpeeds;
   private String trainName = "";
+  net.minecraft.resources.ResourceLocation trainIcon =
+      com.simibubi.create.content.trains.entity.TrainIconType.getDefault().getId();
+  int trainMapColor;
+  double nativeSpeed = Double.NaN;
+  long nativeUntil = Long.MAX_VALUE;
+
+  void nativeIdentity(String name, net.minecraft.resources.ResourceLocation icon, int color) {
+    String nextName = TrainName.normalize(name);
+    var nextIcon = com.simibubi.create.content.trains.entity.TrainIconType.byId(icon).getId();
+    int nextColor = Math.clamp(color, 0, 15);
+    if (trainName.equals(nextName) && trainIcon.equals(nextIcon) && trainMapColor == nextColor)
+      return;
+    trainName = nextName;
+    trainIcon = nextIcon;
+    trainMapColor = nextColor;
+    updateVisual();
+  }
+
   private TrainOwner trainOwner = TrainOwner.UNKNOWN;
 
   TrainOwner trainOwner() {
@@ -301,6 +319,8 @@ public final class DriverConsoleEntity extends BlockEntity
     int oldNotch = notch, oldDirection = direction;
     boolean oldActive = active, oldEmergency = emergency;
     if (command == 35) {
+      nativeSpeed = Double.NaN;
+      nativeUntil = Long.MAX_VALUE;
       if (DriverControls.body(this) == null) {
         hint(player, "install");
         return;
@@ -509,6 +529,8 @@ public final class DriverConsoleEntity extends BlockEntity
     super.saveAdditional(tag, registries);
     tag.putInt("Direction", direction);
     tag.putString("TrainName", trainName);
+    tag.putString("TrainIcon", trainIcon.toString());
+    tag.putInt("TrainMapColor", trainMapColor);
     if (trainOwner.known()) {
       tag.putUUID("PlacedBy", trainOwner.id());
       tag.putString("PlacedByName", trainOwner.name());
@@ -531,6 +553,15 @@ public final class DriverConsoleEntity extends BlockEntity
     if (tag.hasUUID("ConsoleId")) consoleId = tag.getUUID("ConsoleId");
     placementOrder = Math.max(0, tag.getLong("PlacementOrder"));
     trainName = TrainName.normalize(tag.getString("TrainName"));
+    var iconId = net.minecraft.resources.ResourceLocation.tryParse(tag.getString("TrainIcon"));
+    trainIcon =
+        (iconId == null
+                ? com.simibubi.create.content.trains.entity.TrainIconType.getDefault()
+                : com.simibubi.create.content.trains.entity.TrainIconType.byId(iconId))
+            .getId();
+    trainMapColor = Math.clamp(tag.getInt("TrainMapColor"), 0, 15);
+    nativeSpeed = Double.NaN;
+    nativeUntil = Long.MAX_VALUE;
     trainOwner =
         new TrainOwner(
             tag.hasUUID("PlacedBy") ? tag.getUUID("PlacedBy") : null,

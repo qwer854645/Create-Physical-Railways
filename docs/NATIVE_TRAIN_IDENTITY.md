@@ -1,6 +1,13 @@
 # 原生列车身份与车站关联
 
-适用：0.2.24 · Create 6.0.10 · Minecraft 1.21.1 / NeoForge
+适用：0.2.25 · Create 6.0.10 · Minecraft 1.21.1 / NeoForge
+
+## 2026-11-11 操作转发
+
+原版代理现支持受校验的控制写入口，详见 [原版操作转发](NATIVE_TRAIN_OPERATIONS.md)。
+名称、图标与地图颜色持久化到驾驶台；导航、时刻表数据、运行控制和脱轨/挂轨请求进入物理后端。
+下面按版本记录的“只读”描述保留历史背景，当前行为以操作转发文档和 `CREATE_COMPATIBILITY.md` 为准。
+原版运动执行器、时刻表物品交接、组装/拆解及库存写入仍保持原有边界。
 
 ## 已实现的范围
 
@@ -24,7 +31,7 @@
 
 ## 隔离边界
 
-代理 earlyTick/tick 不执行原版运动、时刻表或信号更新；逻辑车厢不生成实体。原版拆车入口对代理返回不可拆。代理的 arriveAt/setCurrentStation/leaveStation 入口仍不执行原版副作用；实际关联仅由经过停稳验证的车站桥接更新。
+代理 earlyTick/tick 不执行原版运动、时刻表或信号更新；逻辑车厢不生成实体。原版拆车入口对代理返回不可拆。代理的 arriveAt/setCurrentStation/leaveStation 入口经实际车站关联校验后处理；外部回调不能伪造到站，实际关联由经过停稳验证的车站桥接确认。
 
 三处定点 Mixin 只过滤 PhysicalTrainProxy，原版列车保持原路径：
 
