@@ -80,48 +80,68 @@ public final class NativeTrainBridge {
     var warned = WARNED.computeIfAbsent(level, l -> new HashSet<>());
     warned.retainAll(identities.values());
     for (int i = 0; i < groups.size(); i++) {
-      if (!eligible.contains(memberships.get(i))) continue;
-      var id = identities.get(memberships.get(i));
-      if (id == null) continue;
-      var snapshot = snapshot(level, id, groups.get(i));
-      if (snapshot == null) {
-        if (warned.add(id))
+      try {
+        if (!eligible.contains(memberships.get(i))) continue;
+        var id = identities.get(memberships.get(i));
+        if (id == null) continue;
+        if (TrainFaults.blocked(level, groups.get(i))) {
+          if (live.containsKey(id)) {
+            seen.add(id);
+            var retained = new Registration(live.get(id), memberships.get(i));
+            for (var member : retained.members()) byBogie.put(member, retained);
+          }
+          continue;
+        }
+        var snapshot = snapshot(level, id, groups.get(i));
+        if (snapshot == null) {
+          if (warned.add(id))
+            org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+                .warn(
+                    "[NativeTrainIdentity] query proxy deferred id={}; a linear consist with"
+                        + " bogey-supported carriages is required",
+                    id);
+          continue;
+        }
+        warned.remove(id);
+        seen.add(id);
+        var proxy = live.get(id);
+        boolean created = proxy == null;
+        if (created) {
+          proxy = new PhysicalTrainProxy(id);
+          live.put(id, proxy);
+        }
+        if (proxy.currentStation != null && !snapshot.getBoolean("Derailed"))
+          snapshot.putUUID("Station", proxy.currentStation);
+        snapshot.put("Journey", proxy.journey.capture(groups.get(i), snapshot));
+        proxy.apply(snapshot, Create.RAILWAYS.trackNetworks, level.registryAccess());
+        proxy.bindCargo(level, groups.get(i));
+        var registration = new Registration(proxy, memberships.get(i));
+        for (var member : registration.members()) byBogie.put(member, registration);
+        var previous = Create.RAILWAYS.trains.get(id);
+        if (previous != proxy) {
+          if (previous != null)
+            throw new IllegalStateException("Physical train identity collision: " + id);
+          Create.RAILWAYS.addTrain(proxy);
           org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-              .warn(
-                  "[NativeTrainIdentity] query proxy deferred id={}; a linear consist with bogey-supported carriages is required",
-                  id);
-        continue;
-      }
-      warned.remove(id);
-      seen.add(id);
-      var proxy = live.get(id);
-      boolean created = proxy == null;
-      if (created) {
-        proxy = new PhysicalTrainProxy(id);
-        live.put(id, proxy);
-      }
-      if (proxy.currentStation != null && !snapshot.getBoolean("Derailed"))
-        snapshot.putUUID("Station", proxy.currentStation);
-      snapshot.put("Journey", proxy.journey.capture(groups.get(i), snapshot));
-      proxy.apply(snapshot, Create.RAILWAYS.trackNetworks, level.registryAccess());
-      proxy.bindCargo(level, groups.get(i));
-      var registration = new Registration(proxy, memberships.get(i));
-      for (var member : registration.members()) byBogie.put(member, registration);
-      var previous = Create.RAILWAYS.trains.get(id);
-      if (previous != proxy) {
-        if (previous != null)
-          throw new IllegalStateException("Physical train identity collision: " + id);
-        Create.RAILWAYS.addTrain(proxy);
-        org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-            .info(
-                "[NativeTrainIdentity] registered id={} carriages={} dimension={}",
-                id,
-                proxy.carriages.size(),
-                level.dimension().location());
-      }
-      if (created || level.getGameTime() % 10 == 0) {
-        var packet = proxy.snapshotSync.next(snapshot, level.getGameTime(), created);
-        if (packet != null) PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(packet));
+              .info(
+                  "[NativeTrainIdentity] registered id={} carriages={} dimension={}",
+                  id,
+                  proxy.carriages.size(),
+                  level.dimension().location());
+        }
+        if (created || level.getGameTime() % 10 == 0) {
+          var packet = proxy.snapshotSync.next(snapshot, level.getGameTime(), created);
+          if (packet != null)
+            PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(packet));
+        }
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, groups.get(i), "native_publication", error);
+        var identity = identities.get(memberships.get(i));
+        if (identity != null && live.containsKey(identity)) {
+          seen.add(identity);
+          var retained = new Registration(live.get(identity), memberships.get(i));
+          for (var member : retained.members()) byBogie.put(member, retained);
+        }
       }
     }
     for (var id : List.copyOf(live.keySet())) if (!seen.contains(id)) remove(level, live, id);
@@ -155,8 +175,8 @@ public final class NativeTrainBridge {
   }
 
   static void sync(PhysicalTrainProxy proxy) {
-    PacketDistributor.sendToAllPlayers(new NativeTrainNetwork.Update(
-        proxy.snapshotSync.force(proxy.snapshot())));
+    PacketDistributor.sendToAllPlayers(
+        new NativeTrainNetwork.Update(proxy.snapshotSync.force(proxy.snapshot())));
   }
 
   private static void remove(ServerLevel level, Map<UUID, PhysicalTrainProxy> live, UUID id) {
@@ -184,7 +204,8 @@ public final class NativeTrainBridge {
     for (var live : LIVE.values())
       for (var proxy : live.values()) {
         var baseline = proxy.snapshotSync.baseline();
-        if (baseline != null) PacketDistributor.sendToPlayer(player, new NativeTrainNetwork.Update(baseline));
+        if (baseline != null)
+          PacketDistributor.sendToPlayer(player, new NativeTrainNetwork.Update(baseline));
         PacketDistributor.sendToPlayer(
             player, new NativeTrainNetwork.Update(proxy.signals.packet()));
       }

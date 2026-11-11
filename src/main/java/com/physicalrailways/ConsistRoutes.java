@@ -88,11 +88,13 @@ final class ConsistRoutes {
 
     @Override
     public boolean mayPass(TrackNetwork.Path path, int node, int from, int to) {
-      // Called for every axle on every substep, so this asks the memory directly instead of building a
+      // Called for every axle on every substep, so this asks the memory directly instead of
+      // building a
       // list and a stream to look for one entry.
       if (context.automatic != null)
         SchedulePriority.record(context.level, context.identity, context.automatic.priority());
-      boolean recorded = context.memory.recorded(new RouteMemory.Junction(path.graph(), node), from, to);
+      boolean recorded =
+          context.memory.recorded(new RouteMemory.Junction(path.graph(), node), from, to);
       boolean allowed =
           RailwaysCompat.pass(context.level, path, node, from, to, context.identity, recorded);
       switchWaiting = !allowed;
@@ -127,7 +129,8 @@ final class ConsistRoutes {
           context.automatic.requestRouteRetry();
           org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
               .warn(
-                  "[AutomaticJunctionRetry] console={} bogie={} node={} from={} planned={} exits={} target={}",
+                  "[AutomaticJunctionRetry] console={} bogie={} node={} from={} planned={} exits={}"
+                      + " target={}",
                   context.automatic.owner.getBlockPos(),
                   axle.bogie(),
                   node,
@@ -169,7 +172,8 @@ final class ConsistRoutes {
       if (committed != selected) {
         org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
             .info(
-                "[BranchChoice] rejected console=unknown node={} from={} chosen={} committed={} reason={}",
+                "[BranchChoice] rejected console=unknown node={} from={} chosen={} committed={}"
+                    + " reason={}",
                 node,
                 from,
                 selected,
@@ -178,14 +182,20 @@ final class ConsistRoutes {
         return false;
       }
       BranchWatch.record(context.level, context.identity, node, committed);
-      if (leading && context.automatic == null && exits.length > 1 && context.manual != null
-          && context.manual.routeSelection.consume(context.manualChoice, context.memory.passageVersion() != before)) {
+      if (leading
+          && context.automatic == null
+          && exits.length > 1
+          && context.manual != null
+          && context.manual.routeSelection.consume(
+              context.manualChoice, context.memory.passageVersion() != before)) {
         context.intent = 0;
         context.manual.updateVisual();
       }
       if (planned) {
-        // The plan's own choice for this junction, logged whenever the consist took something else: the reason says
-        // which rule decided, which is what makes an occasional wrong branch diagnosable after the fact.
+        // The plan's own choice for this junction, logged whenever the consist took something else:
+        // the reason says
+        // which rule decided, which is what makes an occasional wrong branch diagnosable after the
+        // fact.
         int expected = context.automatic.plan().choose(path, node, from);
         if (expected >= 0 && committed != expected)
           org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
@@ -202,7 +212,8 @@ final class ConsistRoutes {
         int expected = context.automatic.plan().choose(path, node, from);
         org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
             .info(
-                "[AutomaticJunction] console={} bogie={} axle={} node={} from={} planned={} selected={} target={}",
+                "[AutomaticJunction] console={} bogie={} axle={} node={} from={} planned={}"
+                    + " selected={} target={}",
                 context.automatic.owner.getBlockPos(),
                 axle.bogie(),
                 axle.end(),
@@ -229,195 +240,233 @@ final class ConsistRoutes {
     var system = SubLevelPhysicsSystem.get(level);
     var pipe = system.getPipeline();
     var units = new ArrayList<VehiclePhysics.Unit>();
-    for (var u : input)
-      if (u.ready(level.getGameTime()) && BodyGuard.readable(system, u)) units.add(u);
+    for (var u : input) {
+      if (TrainFaults.blocked(level, u.carrier.getUniqueId())) continue;
+      if (u.ready(level.getGameTime())) {
+        if (BodyGuard.readable(system, u)) units.add(u);
+        else
+          TrainFaults.fail(
+              level, u, "route_body", new IllegalStateException("Physics body unavailable"));
+      }
+    }
     var liveUnits = new HashSet<>(units);
     var graph = new HashMap<UUID, Set<UUID>>();
     var sockets = new HashMap<UUID, Vector3d>();
     for (var u : units) graph.computeIfAbsent(u.carrier.getUniqueId(), k -> new HashSet<>());
-    for (var link : TrainConsists.get(level).links()) {
-      if (link.a().isRemoved() || link.b().isRemoved()) continue;
-      UUID a = link.a().getUniqueId(), b = link.b().getUniqueId();
-      graph.computeIfAbsent(a, k -> new HashSet<>()).add(b);
-      graph.computeIfAbsent(b, k -> new HashSet<>()).add(a);
-      sockets.put(a, VehiclePhysics.world(link.a(), link.anchorA()));
-      sockets.put(b, VehiclePhysics.world(link.b(), link.anchorB()));
-    }
     var old = STATES.getOrDefault(level, Map.of());
     var next = new HashMap<UUID, Context>();
     var output = new ArrayList<Plan>();
     for (var component : TrainConsists.get(level).groups()) {
-      var members = component.members();
-      // A shared tick snapshot may outlive a body removed between physics substeps.
-      var group = new ArrayList<VehiclePhysics.Unit>();
-      for (var unit : component.units()) if (liveUnits.contains(unit)) group.add(unit);
-      if (group.isEmpty()) continue;
-      group.sort(Comparator.comparing(u -> u.carrier.getUniqueId()));
-      UUID seedId = group.getFirst().carrier.getUniqueId();
-      var queue = new ArrayDeque<UUID>();
-      var axleIds = new HashSet<RouteMemory.Axle>();
-      for (var u : group)
-        if (!u.detached)
-          for (int i = 0; i < 2; i++) axleIds.add(new RouteMemory.Axle(u.bogie.getUniqueId(), i));
-      UUID head = seedId;
-      double best = -Double.MAX_VALUE;
-      for (var u : group) {
-        UUID id = u.carrier.getUniqueId();
-        if (graph.getOrDefault(id, Set.of()).size() > 1 || u.detached) continue;
-        var centre = VehiclePhysics.world(u.bogie, u.localCenter);
-        var heading =
-            new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
-        double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading);
-        boolean reverse =
-            BranchSelect.reverseTravel(speed, VehicleTraction.requestedSpeed(u), u.reverseTravel);
-        var travel = new Vector3d(heading).mul(reverse ? -1 : 1);
-        var socket = sockets.get(id);
-        double rank = socket == null ? 0 : new Vector3d(centre).sub(socket).normalize().dot(travel);
-        if (Double.isFinite(rank) && rank > best) {
-          best = rank;
-          head = id;
-        }
-      }
-      VehiclePhysics.Unit automaticHead = null;
-      int automaticEnd = 0;
-      for (var u : group)
-        if (u.command != null
-            && u.command.navigation() != null
-            && u.command.navigation().plan() != null
-            && group.contains(u.command.navigation().plan().head)) {
-          var plan = u.command.navigation().plan();
-          automaticHead = plan.head;
-          automaticEnd = plan.end;
-          head = automaticHead.carrier.getUniqueId();
-          break;
-        }
-      var distance = new HashMap<UUID, Integer>();
-      distance.put(head, 0);
-      queue.add(head);
-      while (!queue.isEmpty()) {
-        var id = queue.remove();
-        for (var n : graph.getOrDefault(id, Set.of()))
-          if (!distance.containsKey(n)) {
-            distance.put(n, distance.get(id) + 1);
-            queue.add(n);
+      if (TrainFaults.blocked(level, component)) {
+        var held = new HashSet<Context>();
+        for (var id : component.members())
+          if (old.containsKey(id)) {
+            var context = old.get(id);
+            next.put(id, context);
+            if (held.add(context))
+              try {
+                context.memory.holdForRecovery(level.getGameTime());
+                for (var passage : context.memory.active(level.getGameTime()))
+                  RailwaysCompat.hold(level, passage, context.identity);
+              } catch (RuntimeException error) {
+                TrainFaults.fail(level, component, "switch_hold", error);
+              }
           }
+        continue;
       }
-      var travels = new HashMap<UUID, Vector3d>();
-      for (var u : group)
-        travels.computeIfAbsent(
-            u.carrier.getUniqueId(),
-            id -> {
-              var h =
-                  new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
-              boolean back =
-                  BranchSelect.reverseTravel(
-                      pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(h),
-                      VehicleTraction.requestedSpeed(u),
-                      u.reverseTravel);
-              return h.mul(back ? -1 : 1);
-            });
-      group.sort(
-          (a, b) -> {
-            int cmp =
-                Integer.compare(
-                    distance.getOrDefault(a.carrier.getUniqueId(), 9999),
-                    distance.getOrDefault(b.carrier.getUniqueId(), 9999));
-            if (cmp != 0) return cmp;
-            if (a.carrier != b.carrier)
-              return a.carrier.getUniqueId().compareTo(b.carrier.getUniqueId());
-            var delta =
-                VehiclePhysics.world(b.bogie, b.localCenter)
-                    .sub(VehiclePhysics.world(a.bogie, a.localCenter));
-            int along = Double.compare(delta.dot(travels.get(a.carrier.getUniqueId())), 0);
-            return along != 0 ? along : a.bogie.getUniqueId().compareTo(b.bogie.getUniqueId());
-          });
-      var previous = old.get(head);
-      if (previous == null)
+      int outputStart = output.size();
+      try {
+        for (var link : component.links()) {
+          if (link.a().isRemoved() || link.b().isRemoved()) continue;
+          UUID a = link.a().getUniqueId(), b = link.b().getUniqueId();
+          graph.computeIfAbsent(a, k -> new HashSet<>()).add(b);
+          graph.computeIfAbsent(b, k -> new HashSet<>()).add(a);
+          sockets.put(a, VehiclePhysics.world(link.a(), link.anchorA()));
+          sockets.put(b, VehiclePhysics.world(link.b(), link.anchorB()));
+        }
+
+        var members = component.members();
+        // A shared tick snapshot may outlive a body removed between physics substeps.
+        var group = new ArrayList<VehiclePhysics.Unit>();
+        for (var unit : component.units()) if (liveUnits.contains(unit)) group.add(unit);
+        if (group.isEmpty()) continue;
+        group.sort(Comparator.comparing(u -> u.carrier.getUniqueId()));
+        UUID seedId = group.getFirst().carrier.getUniqueId();
+        var queue = new ArrayDeque<UUID>();
+        var axleIds = new HashSet<RouteMemory.Axle>();
         for (var u : group)
-          if (old.containsKey(u.carrier.getUniqueId())) {
-            previous = old.get(u.carrier.getUniqueId());
+          if (!u.detached)
+            for (int i = 0; i < 2; i++) axleIds.add(new RouteMemory.Axle(u.bogie.getUniqueId(), i));
+        UUID head = seedId;
+        double best = -Double.MAX_VALUE;
+        for (var u : group) {
+          UUID id = u.carrier.getUniqueId();
+          if (graph.getOrDefault(id, Set.of()).size() > 1 || u.detached) continue;
+          var centre = VehiclePhysics.world(u.bogie, u.localCenter);
+          var heading =
+              new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
+          double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading);
+          boolean reverse =
+              BranchSelect.reverseTravel(speed, VehicleTraction.requestedSpeed(u), u.reverseTravel);
+          var travel = new Vector3d(heading).mul(reverse ? -1 : 1);
+          var socket = sockets.get(id);
+          double rank =
+              socket == null ? 0 : new Vector3d(centre).sub(socket).normalize().dot(travel);
+          if (Double.isFinite(rank) && rank > best) {
+            best = rank;
+            head = id;
+          }
+        }
+        VehiclePhysics.Unit automaticHead = null;
+        int automaticEnd = 0;
+        for (var u : group)
+          if (u.command != null
+              && u.command.navigation() != null
+              && u.command.navigation().plan() != null
+              && group.contains(u.command.navigation().plan().head)) {
+            var plan = u.command.navigation().plan();
+            automaticHead = plan.head;
+            automaticEnd = plan.end;
+            head = automaticHead.carrier.getUniqueId();
             break;
           }
-      Context context;
-      if (previous != null && previous.memory.members().equals(axleIds)) context = previous;
-      else {
-        context =
-            new Context(
-                previous == null ? new RouteMemory(axleIds) : previous.memory.copyFor(axleIds),
-                level,
-                seedId);
-        if (previous != null)
-          for (var a : axleIds)
-            if (previous.anchors.containsKey(a)) context.anchors.put(a, previous.anchors.get(a));
-      }
-      if (context.memory.hasOpenPassages()) {
-        var guided = new HashMap<RouteMemory.Axle, UUID>();
-        for (var u : group) {
-          if (u.detached) continue;
-          for (int i = 0; i < 2; i++) {
-            var sample = u.samples[i];
-            if (sample != null && TrackNetwork.live(level, sample.path())
-                && sample.position().distanceSquared(VehiclePhysics.world(u.bogie, u.axle(i))) <= .64)
-              guided.put(new RouteMemory.Axle(u.bogie.getUniqueId(), i), sample.path().graph());
+        var distance = new HashMap<UUID, Integer>();
+        distance.put(head, 0);
+        queue.add(head);
+        while (!queue.isEmpty()) {
+          var id = queue.remove();
+          for (var n : graph.getOrDefault(id, Set.of()))
+            if (!distance.containsKey(n)) {
+              distance.put(n, distance.get(id) + 1);
+              queue.add(n);
+            }
+        }
+        var travels = new HashMap<UUID, Vector3d>();
+        for (var u : group)
+          travels.computeIfAbsent(
+              u.carrier.getUniqueId(),
+              id -> {
+                var h =
+                    new Vector3d(0, 0, 1)
+                        .rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
+                boolean back =
+                    BranchSelect.reverseTravel(
+                        pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(h),
+                        VehicleTraction.requestedSpeed(u),
+                        u.reverseTravel);
+                return h.mul(back ? -1 : 1);
+              });
+        group.sort(
+            (a, b) -> {
+              int cmp =
+                  Integer.compare(
+                      distance.getOrDefault(a.carrier.getUniqueId(), 9999),
+                      distance.getOrDefault(b.carrier.getUniqueId(), 9999));
+              if (cmp != 0) return cmp;
+              if (a.carrier != b.carrier)
+                return a.carrier.getUniqueId().compareTo(b.carrier.getUniqueId());
+              var delta =
+                  VehiclePhysics.world(b.bogie, b.localCenter)
+                      .sub(VehiclePhysics.world(a.bogie, a.localCenter));
+              int along = Double.compare(delta.dot(travels.get(a.carrier.getUniqueId())), 0);
+              return along != 0 ? along : a.bogie.getUniqueId().compareTo(b.bogie.getUniqueId());
+            });
+        var previous = old.get(head);
+        if (previous == null)
+          for (var u : group)
+            if (old.containsKey(u.carrier.getUniqueId())) {
+              previous = old.get(u.carrier.getUniqueId());
+              break;
+            }
+        Context context;
+        if (previous != null && previous.memory.members().equals(axleIds)) context = previous;
+        else {
+          context =
+              new Context(
+                  previous == null ? new RouteMemory(axleIds) : previous.memory.copyFor(axleIds),
+                  level,
+                  seedId);
+          if (previous != null)
+            for (var a : axleIds)
+              if (previous.anchors.containsKey(a)) context.anchors.put(a, previous.anchors.get(a));
+        }
+        if (context.memory.hasOpenPassages()) {
+          var guided = new HashMap<RouteMemory.Axle, UUID>();
+          for (var u : group) {
+            if (u.detached) continue;
+            for (int i = 0; i < 2; i++) {
+              var sample = u.samples[i];
+              if (sample != null
+                  && TrackNetwork.live(level, sample.path())
+                  && sample.position().distanceSquared(VehiclePhysics.world(u.bogie, u.axle(i)))
+                      <= .64)
+                guided.put(new RouteMemory.Axle(u.bogie.getUniqueId(), i), sample.path().graph());
+            }
           }
+          context.memory.keepAlive(guided, level.getGameTime());
         }
-        context.memory.keepAlive(guided, level.getGameTime());
+        for (var passage : context.memory.active(level.getGameTime()))
+          RailwaysCompat.hold(level, passage, context.identity);
+        context.automatic = null;
+        for (var u : group)
+          if (u.command != null && u.command.navigation() != null) {
+            context.automatic = u.command.navigation();
+            break;
+          }
+        context.intent = 0;
+        context.manual = null;
+        context.manualChoice = null;
+        for (var u : group)
+          if (context.automatic == null
+              && u.driver != null
+              && !u.driver.schedule.running()
+              && !u.driver.schedule.resumePending()) {
+            context.manual = u.driver;
+            context.manualChoice = u.driver.routeSelection.snapshot();
+            context.intent = context.manualChoice.intent();
+            break;
+          }
+        for (var id : members) next.put(id, context);
+        if (automaticHead != null && group.remove(automaticHead)) group.addFirst(automaticHead);
+        VehiclePhysics.Unit first = null;
+        for (var u : group)
+          if (!u.detached) {
+            first = u;
+            break;
+          }
+        int leading = 0;
+        if (first != null) {
+          var h =
+              new Vector3d(0, 0, 1).rotate(pipe.readPose(first.bogie, new Pose3d()).orientation());
+          leading =
+              BranchSelect.reverseTravel(
+                      pipe.getLinearVelocity(first.bogie, new Vector3d()).dot(h),
+                      VehicleTraction.requestedSpeed(first),
+                      first.reverseTravel)
+                  ? 1
+                  : 0;
+          if (automaticHead == first) leading = automaticEnd;
+          context.head = first.samples[leading];
+        }
+        for (var u : group)
+          output.add(
+              new Plan(
+                  u,
+                  new Cursor(
+                      context,
+                      new RouteMemory.Axle(u.bogie.getUniqueId(), 0),
+                      u == first && leading == 0,
+                      u.mount.gauge),
+                  new Cursor(
+                      context,
+                      new RouteMemory.Axle(u.bogie.getUniqueId(), 1),
+                      u == first && leading == 1,
+                      u.mount.gauge)));
+      } catch (RuntimeException error) {
+        output.subList(outputStart, output.size()).clear();
+        for (var id : component.members()) if (old.containsKey(id)) next.put(id, old.get(id));
+        TrainFaults.fail(level, component, "route_preparation", error);
       }
-      for (var passage : context.memory.active(level.getGameTime()))
-        RailwaysCompat.hold(level, passage, context.identity);
-      context.automatic = null;
-      for (var u : group)
-        if (u.command != null && u.command.navigation() != null) {
-          context.automatic = u.command.navigation();
-          break;
-        }
-      context.intent = 0;
-      context.manual = null;
-      context.manualChoice = null;
-      for (var u : group)
-        if (context.automatic == null && u.driver != null
-            && !u.driver.schedule.running() && !u.driver.schedule.resumePending()) {
-          context.manual = u.driver;
-          context.manualChoice = u.driver.routeSelection.snapshot();
-          context.intent = context.manualChoice.intent();
-          break;
-        }
-      for (var id : members) next.put(id, context);
-      if (automaticHead != null && group.remove(automaticHead)) group.addFirst(automaticHead);
-      VehiclePhysics.Unit first = null;
-      for (var u : group)
-        if (!u.detached) {
-          first = u;
-          break;
-        }
-      int leading = 0;
-      if (first != null) {
-        var h =
-            new Vector3d(0, 0, 1).rotate(pipe.readPose(first.bogie, new Pose3d()).orientation());
-        leading =
-            BranchSelect.reverseTravel(
-                    pipe.getLinearVelocity(first.bogie, new Vector3d()).dot(h),
-                    VehicleTraction.requestedSpeed(first),
-                    first.reverseTravel)
-                ? 1
-                : 0;
-        if (automaticHead == first) leading = automaticEnd;
-        context.head = first.samples[leading];
-      }
-      for (var u : group)
-        output.add(
-            new Plan(
-                u,
-                new Cursor(
-                    context,
-                    new RouteMemory.Axle(u.bogie.getUniqueId(), 0),
-                    u == first && leading == 0,
-                    u.mount.gauge),
-                new Cursor(
-                    context,
-                    new RouteMemory.Axle(u.bogie.getUniqueId(), 1),
-                    u == first && leading == 1,
-                    u.mount.gauge)));
     }
     STATES.put(level, next);
     CACHE.put(level, new Cached(level.getGameTime(), output));

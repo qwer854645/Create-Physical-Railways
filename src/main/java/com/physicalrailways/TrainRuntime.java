@@ -9,6 +9,7 @@ final class TrainRuntime {
   private TrainRuntime() {}
 
   static void beforeTick(ServerLevel level) {
+    if (!TrainFaults.phaseReady(level, "world_before")) return;
     long start = PerfCounters.begin();
     try {
       SchedulePriority.tick(level);
@@ -24,6 +25,7 @@ final class TrainRuntime {
       var units = VehiclePhysics.refresh(level);
       TrainConsists.refresh(level, units);
       TrainConsists.applyChanges(level);
+      TrainFaults.begin(level, TrainConsists.get(level));
       TrainElectricity.refresh(level);
       DriverControls.refresh(level, units);
       PhysicalSignals.tick(level);
@@ -31,16 +33,23 @@ final class TrainRuntime {
       StationPresence.tick(level);
       DriverControls.publish(level);
       VehiclePhysics.update(level, units);
+      TrainFaults.phaseHealthy(level, "world_before");
+    } catch (RuntimeException error) {
+      TrainFaults.phaseFailed(level, "world_before", error);
     } finally {
       PerfCounters.before(level, PerfCounters.elapsed(start));
     }
   }
 
   static void afterTick(ServerLevel level) {
+    if (!TrainFaults.phaseReady(level, "world_after")) return;
     long start = PerfCounters.begin();
     try {
       NativeTrainBridge.tick(level);
       PhysicalSignals.publish(level);
+      TrainFaults.phaseHealthy(level, "world_after");
+    } catch (RuntimeException error) {
+      TrainFaults.phaseFailed(level, "world_after", error);
     } finally {
       PerfCounters.after(level, PerfCounters.elapsed(start));
     }
@@ -49,10 +58,24 @@ final class TrainRuntime {
   }
 
   static void physicsStep(SubLevelPhysicsSystem system, double timeStep) {
-    VehiclePhysics.step(system, timeStep);
+    var level = system.getLevel();
+    if (TrainFaults.phaseReady(level, "physics")) {
+      try {
+        VehiclePhysics.step(system, timeStep);
+        TrainFaults.phaseHealthy(level, "physics");
+      } catch (RuntimeException error) {
+        TrainFaults.phaseFailed(level, "physics", error);
+        TrainFaults.brakeHeld(system, timeStep);
+      }
+    } else TrainFaults.brakeHeld(system, timeStep);
     long start = PerfCounters.begin();
     try {
-      CouplerConnections.step(system);
+      if (TrainFaults.phaseReady(level, "coupling")) {
+        CouplerConnections.step(system);
+        TrainFaults.phaseHealthy(level, "coupling");
+      }
+    } catch (RuntimeException error) {
+      TrainFaults.phaseFailed(level, "coupling", error);
     } finally {
       PerfCounters.coupler(system.getLevel(), PerfCounters.elapsed(start));
     }
@@ -72,5 +95,6 @@ final class TrainRuntime {
     ApproachRooms.unload(level);
     BranchWatch.unload(level);
     TrainElectricity.unload(level);
+    TrainFaults.unload(level);
   }
 }

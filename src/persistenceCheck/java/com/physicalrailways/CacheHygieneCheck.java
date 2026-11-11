@@ -8,14 +8,15 @@ import org.objectweb.asm.tree.*;
 /**
  * Every long-lived cache in the mod must declare the bound that keeps it finite, and must use it.
  *
- * <p>Three defects in one week came from a hand-written cache or record that had no notion of age: a mount handoff
- * that never expired, a junction passage that waited for an axle which never arrived, and a repeat table whose owner
- * had to count contradictions by hand to escape it. Each was fixed by adding a lifetime, and each lifetime was easy
- * to forget because nothing asked for one.
+ * <p>Three defects in one week came from a hand-written cache or record that had no notion of age:
+ * a mount handoff that never expired, a junction passage that waited for an axle which never
+ * arrived, and a repeat table whose owner had to count contradictions by hand to escape it. Each
+ * was fixed by adding a lifetime, and each lifetime was easy to forget because nothing asked for
+ * one.
  *
- * <p>This check asks: for every cache registered below, the class declares the named constant and at least one of
- * its methods reads that constant. Adding a cache without registering it here is silent, so the list is the contract
- * and the doc explains it - {@code docs/STATE_AUDIT.md}.
+ * <p>This check asks: for every cache registered below, the class declares the named constant and
+ * at least one of its methods reads that constant. Adding a cache without registering it here is
+ * silent, so the list is the contract and the doc explains it - {@code docs/STATE_AUDIT.md}.
  */
 public final class CacheHygieneCheck {
   private record Cache(String owner, String bound) {}
@@ -24,6 +25,9 @@ public final class CacheHygieneCheck {
   private static final List<Cache> CACHES =
       List.of(
           new Cache("SwitchReservations", "HOLD_TICKS"),
+          new Cache("TrainFaults", "INCIDENT_TICKS"),
+          new Cache("TrainFaults", "REPORT_TICKS"),
+          new Cache("RecoveryWindow", "MAX_RETRY_TICKS"),
           new Cache("SwitchReservations", "REPORT_TICKS"),
           new Cache("SteamRailways", "DIAGNOSTIC_TICKS"),
           new Cache("SchedulePriority", "LIFETIME"),
@@ -75,9 +79,10 @@ public final class CacheHygieneCheck {
   /**
    * True when any compiled class in the mod reads that field.
    *
-   * <p>A bound may legitimately be read from another class - the reservation hold is checked by the routing path - so
-   * the scan covers the whole output directory. The directory comes from the build; without it the check falls back
-   * to the declaring class only, which is still enough to catch an unused bound.
+   * <p>A bound may legitimately be read from another class - the reservation hold is checked by the
+   * routing path - so the scan covers the whole output directory. The directory comes from the
+   * build; without it the check falls back to the declaring class only, which is still enough to
+   * catch an unused bound.
    */
   private static boolean referencedAnywhere(String owner, String name) throws Exception {
     String root = System.getProperty("physicalrailways.classes");
@@ -91,8 +96,7 @@ public final class CacheHygieneCheck {
         try (var input = java.nio.file.Files.newInputStream(path)) {
           new org.objectweb.asm.ClassReader(input).accept(node, 0);
         }
-        for (var method : node.methods)
-          if (referenced(method, fieldOwner, name)) return true;
+        for (var method : node.methods) if (referenced(method, fieldOwner, name)) return true;
       }
     }
     return false;
@@ -113,10 +117,14 @@ public final class CacheHygieneCheck {
       check(
           type.equals("J") || type.equals("I"),
           cache.owner() + "." + cache.bound() + " must be a long or an int, was " + type);
-      // A compile-time constant is inlined at every use, so bytecode cannot prove it is read. What it can prove is
-      // that a bound exists, is a positive number, and is small enough to be a bound rather than a placeholder.
+      // A compile-time constant is inlined at every use, so bytecode cannot prove it is read. What
+      // it can prove is
+      // that a bound exists, is a positive number, and is small enough to be a bound rather than a
+      // placeholder.
       Object value = constant.value;
-      check(value instanceof Number, cache.owner() + "." + cache.bound() + " must have a literal value");
+      check(
+          value instanceof Number,
+          cache.owner() + "." + cache.bound() + " must have a literal value");
       double bound = ((Number) value).doubleValue();
       check(bound > 0, cache.owner() + "." + cache.bound() + " must be positive");
       check(

@@ -1,4 +1,7 @@
 {
+  "physicalrailways.console.runtime_fault": "列车故障，牵引已切断",
+  "physicalrailways.console.restoring": "等待整列恢复稳定",
+  "gui.physicalrailways.auto.state.22": "列车故障，恢复后请继续时刻表",
   "message.physicalrailways.driver_console.actual_speed": "实际速度：%s 格/秒",
   "message.physicalrailways.driver_console.journey": "行程：%s/%s · 剩余：%s 格",
   "message.physicalrailways.driver_console.name": "列车：%s",

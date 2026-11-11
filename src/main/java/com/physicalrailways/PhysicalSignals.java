@@ -109,52 +109,73 @@ public final class PhysicalSignals {
     var pipe = SubLevelPhysicsSystem.get(level).getPipeline();
     var consoles = new HashSet<UUID>();
     for (var u : units) {
-      UUID body = u.carrier.getUniqueId(), owner = s.owners.get(body);
-      liveBodies.add(body);
-      carriers.put(body, u.carrier);
-      if (u.driver != null && u.driver.schedule.running()) running.add(owner);
-      if (u.driver != null) consoles.add(u.driver.consoleId);
-      var groups =
-          occupied.computeIfAbsent(
-              owner,
-              k ->
-                  new Coverage(
-                      new HashSet<>(), new PhysicalObservers.Context(level, snapshot.group(body))));
-      var samples = anchors.computeIfAbsent(body, k -> new ArrayList<>());
-      var heading =
-          new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
-      if (!u.detached)
-        for (int i = 0; i < 2; i++) {
-          var old = u.samples[i];
-          var sample =
-              TrackNetwork.nearest(
-                  level,
-                  VehiclePhysics.world(u.bogie, u.axle(i)),
-                  heading,
-                  old == null ? null : old.path(),
-                  1,
-                  u.mount.gauge);
-          if (sample != null) {
-            samples.add(sample);
-            mark(
-                sample.path(),
-                sample.t() * sample.path().edge().getLength(),
-                sample.t() * sample.path().edge().getLength(),
-                groups);
-            var key = new Axle(u.bogie.getUniqueId(), i);
-            liveAxles.add(key);
-            var previous = s.previous.put(key, new Previous(sample, level.getGameTime()));
-            // Sweep between consecutive ticks so a fast axle cannot skip an observer.
-            // Do not report a passage across unloaded time or a wrench/staff relocation.
-            double limit =
-                Math.max(2, pipe.getLinearVelocity(u.bogie, new Vector3d()).length() * .1 + 1);
-            if (previous != null
-                && previous.tick + 1 == level.getGameTime()
-                && previous.sample.position().distanceSquared(sample.position()) <= limit * limit)
-              bridge(s, level, previous.sample, sample, groups);
-          }
+      try {
+        UUID body = u.carrier.getUniqueId(), owner = s.owners.get(body);
+        liveBodies.add(body);
+        carriers.put(body, u.carrier);
+        if (u.driver != null && u.driver.schedule.running()) running.add(owner);
+        if (u.driver != null) consoles.add(u.driver.consoleId);
+        var groups =
+            occupied.computeIfAbsent(
+                owner,
+                k ->
+                    new Coverage(
+                        new HashSet<>(),
+                        new PhysicalObservers.Context(level, snapshot.group(body))));
+        if (!BodyGuard.readable(SubLevelPhysicsSystem.get(level), u)) {
+          groups.signals.addAll(s.lastKnown.getOrDefault(body, Set.of()));
+          groups.signals.addAll(s.ledger.occupiedBy(owner));
+          continue;
         }
-      if (samples.isEmpty()) groups.signals.addAll(s.lastKnown.getOrDefault(body, Set.of()));
+        var samples = anchors.computeIfAbsent(body, k -> new ArrayList<>());
+        var heading =
+            new Vector3d(0, 0, 1).rotate(pipe.readPose(u.bogie, new Pose3d()).orientation());
+        if (!u.detached)
+          for (int i = 0; i < 2; i++) {
+            var old = u.samples[i];
+            var sample =
+                TrackNetwork.nearest(
+                    level,
+                    VehiclePhysics.world(u.bogie, u.axle(i)),
+                    heading,
+                    old == null ? null : old.path(),
+                    1,
+                    u.mount.gauge);
+            if (sample != null) {
+              samples.add(sample);
+              mark(
+                  sample.path(),
+                  sample.t() * sample.path().edge().getLength(),
+                  sample.t() * sample.path().edge().getLength(),
+                  groups);
+              var key = new Axle(u.bogie.getUniqueId(), i);
+              liveAxles.add(key);
+              var previous = s.previous.put(key, new Previous(sample, level.getGameTime()));
+              // Sweep between consecutive ticks so a fast axle cannot skip an observer.
+              // Do not report a passage across unloaded time or a wrench/staff relocation.
+              double limit =
+                  Math.max(2, pipe.getLinearVelocity(u.bogie, new Vector3d()).length() * .1 + 1);
+              if (previous != null
+                  && previous.tick + 1 == level.getGameTime()
+                  && previous.sample.position().distanceSquared(sample.position()) <= limit * limit)
+                bridge(s, level, previous.sample, sample, groups);
+            }
+          }
+        if (samples.isEmpty()) groups.signals.addAll(s.lastKnown.getOrDefault(body, Set.of()));
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, u, "signal_coverage", error);
+        var carrierId = u.carrier.getUniqueId();
+        var identity = s.owners.get(carrierId);
+        var retained =
+            occupied.computeIfAbsent(
+                identity,
+                k ->
+                    new Coverage(
+                        new HashSet<>(),
+                        new PhysicalObservers.Context(level, snapshot.group(carrierId))));
+        retained.signals.addAll(s.lastKnown.getOrDefault(carrierId, Set.of()));
+        retained.signals.addAll(s.ledger.occupiedBy(identity));
+      }
     }
     // Connect wheel supports within each carriage, then between physically linked carriages.
     for (var entry : anchors.entrySet()) {

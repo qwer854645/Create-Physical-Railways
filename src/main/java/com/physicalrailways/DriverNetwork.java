@@ -163,7 +163,7 @@ public final class DriverNetwork {
   }
 
   static void register(RegisterPayloadHandlersEvent event) {
-    var r = event.registrar("8");
+    var r = event.registrar("9");
     r.playToServer(
         SetName.TYPE,
         SetName.CODEC,

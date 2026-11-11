@@ -42,6 +42,7 @@ public final class VehiclePhysics {
     long lastSeen, nextLog, nextHoldLog, derailGraceUntil;
     boolean detached, reverseTravel, trainPowered, electricEquipped;
     int supports = 1;
+
     /** Consecutive substeps without a track sample; a short streak is held, not released. */
     int missStreak;
 
@@ -184,8 +185,7 @@ public final class VehiclePhysics {
     var target = handoff.destination();
     if (BogieMountBinding.matches(saved, target)) return MountHandoff.Result.READY;
     var data = saved == null ? new net.minecraft.nbt.CompoundTag() : saved.copy();
-    var result =
-        BogieMountBinding.move(data, handoff.source(), target, handoff.sourceRevision());
+    var result = BogieMountBinding.move(data, handoff.source(), target, handoff.sourceRevision());
     if (result != MountOwnership.Result.APPLIED && result != MountOwnership.Result.REPLAYED) {
       var current = BogieMountBinding.owner(saved);
       org.slf4j.LoggerFactory.getLogger("physicalrailways")
@@ -315,74 +315,92 @@ public final class VehiclePhysics {
     var counts = new HashMap<UUID, Integer>();
     for (var u : units) counts.merge(u.carrier.getUniqueId(), 1, Integer::sum);
     for (var u : units) {
-      int supports = counts.get(u.carrier.getUniqueId());
-      if (u.supports != supports) {
-        if (u.pivot != null && u.pivot.isValid()) u.pivot.remove();
-        u.supports = supports;
-        connectPivot(u);
+      if (TrainFaults.blocked(level, u.carrier.getUniqueId())) continue;
+      try {
+        int supports = counts.get(u.carrier.getUniqueId());
+        if (u.supports != supports) {
+          if (u.pivot != null && u.pivot.isValid()) u.pivot.remove();
+          u.supports = supports;
+          connectPivot(u);
+        }
+        u.mass =
+            u.carrier.getMassTracker().getMass() / supports + u.bogie.getMassTracker().getMass();
+        u.mount.setLoad(u.mass);
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, u, "support_update", error);
       }
-      u.mass = u.carrier.getMassTracker().getMass() / supports + u.bogie.getMassTracker().getMass();
-      u.mount.setLoad(u.mass);
     }
     VehicleTraction.allocate(level);
     for (var u : units) {
-      if (level.getBlockEntity(u.bogie.getPlot().getCenterBlock()) instanceof BogieEntity visual) {
-        visual.speed = u.speed;
-        visual.distance += u.speed / 20;
-        if (visual.motionSync.update(level.getGameTime(), visual.speed, visual.distance))
-          visual.sendData();
-      }
-      if (TrainConfig.DETAILED_LOGGING.get() && level.getGameTime() >= u.nextLog) {
-        u.nextLog = level.getGameTime() + 20;
-        var pos = world(u.bogie, u.localCenter);
-        if (level.players().stream().anyMatch(p -> p.distanceToSqr(pos.x, pos.y, pos.z) < 4096)) {
-          var pipeline = system.getPipeline();
-          double verticalSpeed = pipeline.getLinearVelocity(u.bogie, new Vector3d()).y,
-              angularSpeed = pipeline.getAngularVelocity(u.bogie, new Vector3d()).length();
-          org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-              .info(
-                  "[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={} tractionMass={} commandedForce={} brakes={} guided={} travel={} verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={} carrier={} mounts={} pivot={} anchors={}",
-                  u.bogie.getUniqueId(),
-                  u.speed,
-                  u.driver == null
-                      ? u.mount.getSpeed() * TrainConfig.speedPerRpm()
-                      : VehicleTraction.requestedSpeed(u),
-                  u.mount.getSpeed(),
-                  u.mass,
-                  u.tractionMass,
-                  u.commandedForce,
-                  u.mount.braking
-                      || (u.command != null
-                          ? u.command.hold() || u.command.emergency() || u.command.notch() < 0
-                          : u.driver != null
-                              && (!u.driver.enabled
-                                  || u.driver.emergency
-                                  || u.driver.notch < 0
-                                  || u.driver.powered == 0)),
-                  !u.detached,
-                  u.reverseTravel ? "reverse" : "forward",
-                  verticalSpeed,
-                  angularSpeed,
-                  u.curveRisk,
-                  u.lateralSpeed,
-                  u.carrier.getUniqueId(),
-                  counts.get(u.carrier.getUniqueId()),
-                  TrainConfig.DETAILED_LOGGING.get() ? pivotSummary(u) : "off",
-                  TrainConfig.DETAILED_LOGGING.get() ? anchorSummary(u) : "off");
-          // The lever position and the command that actually produces force are separate things: a train
-          // can show notch 8 and still be held. This names the command, which is what tells them apart.
-          org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-              .info(
-                  "[Traction] unit={} command={} notch={} hold={} emergency={} seated={} speed={} force={}",
-                  u.bogie.getUniqueId(),
-                  u.command == null ? "none" : u.command.mode(),
-                  u.command == null ? 0 : u.command.notch(),
-                  u.command != null && u.command.hold(),
-                  u.command != null && u.command.emergency(),
-                  u.driver != null,
-                  u.speed,
-                  u.commandedForce);
+      if (TrainFaults.blocked(level, u.carrier.getUniqueId())) continue;
+      try {
+        if (level.getBlockEntity(u.bogie.getPlot().getCenterBlock())
+            instanceof BogieEntity visual) {
+          visual.speed = u.speed;
+          visual.distance += u.speed / 20;
+          if (visual.motionSync.update(level.getGameTime(), visual.speed, visual.distance))
+            visual.sendData();
         }
+        if (TrainConfig.DETAILED_LOGGING.get() && level.getGameTime() >= u.nextLog) {
+          u.nextLog = level.getGameTime() + 20;
+          var pos = world(u.bogie, u.localCenter);
+          if (level.players().stream().anyMatch(p -> p.distanceToSqr(pos.x, pos.y, pos.z) < 4096)) {
+            var pipeline = system.getPipeline();
+            double verticalSpeed = pipeline.getLinearVelocity(u.bogie, new Vector3d()).y,
+                angularSpeed = pipeline.getAngularVelocity(u.bogie, new Vector3d()).length();
+            org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+                .info(
+                    "[GuidedBogie] body={} speed={} target={} inputRpm={} supportedMass={}"
+                        + " tractionMass={} commandedForce={} brakes={} guided={} travel={}"
+                        + " verticalSpeed={} angularSpeedRad={} curveRisk={} lateralSpeed={}"
+                        + " carrier={} mounts={} pivot={} anchors={}",
+                    u.bogie.getUniqueId(),
+                    u.speed,
+                    u.driver == null
+                        ? u.mount.getSpeed() * TrainConfig.speedPerRpm()
+                        : VehicleTraction.requestedSpeed(u),
+                    u.mount.getSpeed(),
+                    u.mass,
+                    u.tractionMass,
+                    u.commandedForce,
+                    u.mount.braking
+                        || (u.command != null
+                            ? u.command.hold() || u.command.emergency() || u.command.notch() < 0
+                            : u.driver != null
+                                && (!u.driver.enabled
+                                    || u.driver.emergency
+                                    || u.driver.notch < 0
+                                    || u.driver.powered == 0)),
+                    !u.detached,
+                    u.reverseTravel ? "reverse" : "forward",
+                    verticalSpeed,
+                    angularSpeed,
+                    u.curveRisk,
+                    u.lateralSpeed,
+                    u.carrier.getUniqueId(),
+                    counts.get(u.carrier.getUniqueId()),
+                    TrainConfig.DETAILED_LOGGING.get() ? pivotSummary(u) : "off",
+                    TrainConfig.DETAILED_LOGGING.get() ? anchorSummary(u) : "off");
+            // The lever position and the command that actually produces force are separate things:
+            // a train
+            // can show notch 8 and still be held. This names the command, which is what tells them
+            // apart.
+            org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+                .info(
+                    "[Traction] unit={} command={} notch={} hold={} emergency={} seated={} speed={}"
+                        + " force={}",
+                    u.bogie.getUniqueId(),
+                    u.command == null ? "none" : u.command.mode(),
+                    u.command == null ? 0 : u.command.notch(),
+                    u.command != null && u.command.hold(),
+                    u.command != null && u.command.emergency(),
+                    u.driver != null,
+                    u.speed,
+                    u.commandedForce);
+          }
+        }
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, u, "visual_update", error);
       }
     }
   }
@@ -507,18 +525,10 @@ public final class VehiclePhysics {
   }
 
   /**
-   * Routing reads poses of every connected body, so a carriage torn down inside this substep can
-   * still throw. Skipping the substep keeps the world alive; the next substep picks up whatever is
-   * left, and {@link BodyGuard} reports the body that caused it.
+   * Component failures are isolated by routing; unknown shared failures reach the runtime guard.
    */
   private static List<ConsistRoutes.Plan> plans(ServerLevel level, Collection<Unit> units) {
-    try {
-      return ConsistRoutes.prepare(level, units);
-    } catch (RuntimeException removed) {
-      org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-          .warn("[BodyGone] routing skipped this substep: {}", removed.toString());
-      return List.of();
-    }
+    return ConsistRoutes.prepare(level, units);
   }
 
   private static void stepVehicle(SubLevelPhysicsSystem physics, double dt) {
@@ -532,115 +542,132 @@ public final class VehiclePhysics {
     long contactsStart = PerfCounters.begin();
     BogiePairContacts.step(physics, units.values(), dt);
     PerfCounters.contacts(level, PerfCounters.elapsed(contactsStart));
-    for (var plan : plans(level, units.values())) {
+    var prepared = plans(level, units.values());
+    for (var held : units.values())
+      if (TrainFaults.blocked(level, held.carrier.getUniqueId()))
+        TrainFaults.brake(physics, held, dt);
+    for (var plan : prepared) {
       var u = plan.unit();
-      if (!u.ready(level.getGameTime())) continue;
-      if (!BodyGuard.readable(physics, u)) continue;
-      var pose = pipe.readPose(u.bogie, new Pose3d());
-      var heading = new Vector3d(0, 0, 1).rotate(pose.orientation());
-      if (u.detached) {
-        u.speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading);
-        continue;
-      }
-      // Leading axle steers at junctions (Create TravellingPoint.steer); trailing axle follows it.
-      u.reverseTravel =
-          BranchSelect.reverseTravel(
-              pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading),
-              VehicleTraction.requestedSpeed(u),
-              u.reverseTravel);
-      boolean reverse = u.reverseTravel;
-      int lead = reverse ? 1 : 0, trail = 1 - lead;
-      double approachSpeed = Math.abs(pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading));
-      double nose =
-          PhysicalSignals.nose(
-                  u, world(u.bogie, u.axle(lead)), new Vector3d(heading).mul(reverse ? -1 : 1))
-              + .25;
-      long switchStart = PerfCounters.begin();
-      double switchRoom =
-          TrackNetwork.switchDistance(
-              level,
-              u.samples[lead],
-              heading,
-              reverse,
-              plan.axle(lead),
-              approachSpeed * approachSpeed / (2 * TrainConfig.BRAKING.get()) + nose + 8,
-              nose);
-      PerfCounters.switchQuery(level, PerfCounters.elapsed(switchStart));
-      // A switch the train already stands on reports zero room, and RailwayStopModel holds a train that has no
-      // room; since the train can only clear a switch by moving, that is a deadlock. The rule lives in
-      // ApproachLimit so that its own check can pin it, and it is applied before the plan's limit so that the
-      // plan keeps whatever stop it wanted.
-      switchRoom = ApproachLimit.switchRoom(switchRoom, plan.axle(lead).blocked());
-      switchRoom = plan.axle(lead).limit(switchRoom);
-      ApproachRooms.record(level, u.carrier.getUniqueId(), switchRoom);
-      var atLead = world(u.bogie, u.axle(lead));
-      var leadSample =
-          TrackNetwork.follow(
-              level, atLead, heading, u.samples[lead], null, .8, reverse, plan.axle(lead));
-      if (leadSample == null) {
-        if (hold(u, "lead_axle")) continue;
-        release(u, "track_missing_or_out_of_range");
-        continue;
-      }
-      // Keep the previous edge during a held miss. Clearing it would let the next substep
-      // reacquire the nearest branch without asking the route policy or switch reservation.
-      u.samples[lead] = leadSample;
-      plan.axle(lead).followed(leadSample);
-      var atTrail = world(u.bogie, u.axle(trail));
-      var trailSample =
-          TrackNetwork.follow(
-              level,
-              atTrail,
-              heading,
-              u.samples[trail],
-              u.samples[lead],
-              .8,
-              reverse,
-              plan.axle(trail));
-      if (trailSample == null) {
-        if (hold(u, "trail_axle")) continue;
-        release(u, "track_missing_or_out_of_range");
-        continue;
-      }
-      u.samples[trail] = trailSample;
-      u.missStreak = 0;
-      if (TrainConfig.DERAILMENT.get()
-          && level.getGameTime() >= u.derailGraceUntil
-          && checkDerailment(u, physics, dt)) continue;
-      u.speed = 0;
-      u.commandedForce = 0;
-      for (int i = 0; i < 2; i++) {
-        var sample = u.samples[i];
-        var q = sample.orientation();
-        if (u.guides[i] == null || !u.guides[i].isValid()) {
-          // Two point guides already constrain pitch/yaw. A single roll lock is sufficient.
-          var locks = EnumSet.of(ConstraintJointAxis.LINEAR_Y, ConstraintJointAxis.LINEAR_Z);
-          if (i == 0) locks.add(ConstraintJointAxis.ANGULAR_X);
-          u.guides[i] =
-              pipe.addConstraint(
-                  null,
-                  u.bogie,
-                  new GenericConstraintConfiguration(
-                      sample.position(), u.axle(i), q, ANCHOR_ROT, locks));
-          u.guides[i].setContactsEnabled(false);
-        } else u.guides[i].setFrame1(sample.position(), q);
-        // Longitudinal translation is not locked: the solver never sets the vehicle's forward
-        // position.
-        double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(sample.tangent());
-        u.speed += speed * .5;
-        double force = VehicleTraction.force(u, speed, dt);
-        force = RailwayStopModel.force(speed, force, switchRoom, u.mass, TrainConfig.BRAKING.get(), dt);
-        u.commandedForce += force * .5;
-        var impulse =
-            new Vector3d(sample.tangent())
-                .mul(force * dt * .5)
-                .rotate(new Quaterniond(pose.orientation()).conjugate());
-        // Apply traction at the frame centre height, with front/rear positions distributed along
-        // its length.
-        var point =
-            new Vector3d(u.localCenter)
-                .add(0, 0, i == 0 ? u.mount.variant.half : -u.mount.variant.half);
-        pipe.applyImpulse(u.bogie, point, impulse);
+      if (TrainFaults.blocked(level, u.carrier.getUniqueId())) continue;
+      try {
+        if (!u.ready(level.getGameTime())) continue;
+        if (!BodyGuard.readable(physics, u)) continue;
+        var pose = pipe.readPose(u.bogie, new Pose3d());
+        var heading = new Vector3d(0, 0, 1).rotate(pose.orientation());
+        if (u.detached) {
+          u.speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading);
+          continue;
+        }
+        // Leading axle steers at junctions (Create TravellingPoint.steer); trailing axle follows
+        // it.
+        u.reverseTravel =
+            BranchSelect.reverseTravel(
+                pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading),
+                VehicleTraction.requestedSpeed(u),
+                u.reverseTravel);
+        boolean reverse = u.reverseTravel;
+        int lead = reverse ? 1 : 0, trail = 1 - lead;
+        double approachSpeed =
+            Math.abs(pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(heading));
+        double nose =
+            PhysicalSignals.nose(
+                    u, world(u.bogie, u.axle(lead)), new Vector3d(heading).mul(reverse ? -1 : 1))
+                + .25;
+        long switchStart = PerfCounters.begin();
+        double switchRoom =
+            TrackNetwork.switchDistance(
+                level,
+                u.samples[lead],
+                heading,
+                reverse,
+                plan.axle(lead),
+                approachSpeed * approachSpeed / (2 * TrainConfig.BRAKING.get()) + nose + 8,
+                nose);
+        PerfCounters.switchQuery(level, PerfCounters.elapsed(switchStart));
+        // A switch the train already stands on reports zero room, and RailwayStopModel holds a
+        // train that has no
+        // room; since the train can only clear a switch by moving, that is a deadlock. The rule
+        // lives in
+        // ApproachLimit so that its own check can pin it, and it is applied before the plan's limit
+        // so that the
+        // plan keeps whatever stop it wanted.
+        switchRoom = ApproachLimit.switchRoom(switchRoom, plan.axle(lead).blocked());
+        switchRoom = plan.axle(lead).limit(switchRoom);
+        ApproachRooms.record(level, u.carrier.getUniqueId(), switchRoom);
+        var atLead = world(u.bogie, u.axle(lead));
+        var leadSample =
+            TrackNetwork.follow(
+                level, atLead, heading, u.samples[lead], null, .8, reverse, plan.axle(lead));
+        if (leadSample == null) {
+          if (hold(u, "lead_axle")) continue;
+          release(u, "track_missing_or_out_of_range");
+          continue;
+        }
+        // Keep the previous edge during a held miss. Clearing it would let the next substep
+        // reacquire the nearest branch without asking the route policy or switch reservation.
+        u.samples[lead] = leadSample;
+        plan.axle(lead).followed(leadSample);
+        var atTrail = world(u.bogie, u.axle(trail));
+        var trailSample =
+            TrackNetwork.follow(
+                level,
+                atTrail,
+                heading,
+                u.samples[trail],
+                u.samples[lead],
+                .8,
+                reverse,
+                plan.axle(trail));
+        if (trailSample == null) {
+          if (hold(u, "trail_axle")) continue;
+          release(u, "track_missing_or_out_of_range");
+          continue;
+        }
+        u.samples[trail] = trailSample;
+        u.missStreak = 0;
+        if (TrainConfig.DERAILMENT.get()
+            && level.getGameTime() >= u.derailGraceUntil
+            && checkDerailment(u, physics, dt)) continue;
+        u.speed = 0;
+        u.commandedForce = 0;
+        for (int i = 0; i < 2; i++) {
+          var sample = u.samples[i];
+          var q = sample.orientation();
+          if (u.guides[i] == null || !u.guides[i].isValid()) {
+            // Two point guides already constrain pitch/yaw. A single roll lock is sufficient.
+            var locks = EnumSet.of(ConstraintJointAxis.LINEAR_Y, ConstraintJointAxis.LINEAR_Z);
+            if (i == 0) locks.add(ConstraintJointAxis.ANGULAR_X);
+            u.guides[i] =
+                pipe.addConstraint(
+                    null,
+                    u.bogie,
+                    new GenericConstraintConfiguration(
+                        sample.position(), u.axle(i), q, ANCHOR_ROT, locks));
+            u.guides[i].setContactsEnabled(false);
+          } else u.guides[i].setFrame1(sample.position(), q);
+          // Longitudinal translation is not locked: the solver never sets the vehicle's forward
+          // position.
+          double speed = pipe.getLinearVelocity(u.bogie, new Vector3d()).dot(sample.tangent());
+          u.speed += speed * .5;
+          double force = VehicleTraction.force(u, speed, dt);
+          force =
+              RailwayStopModel.force(
+                  speed, force, switchRoom, u.mass, TrainConfig.BRAKING.get(), dt);
+          u.commandedForce += force * .5;
+          var impulse =
+              new Vector3d(sample.tangent())
+                  .mul(force * dt * .5)
+                  .rotate(new Quaterniond(pose.orientation()).conjugate());
+          // Apply traction at the frame centre height, with front/rear positions distributed along
+          // its length.
+          var point =
+              new Vector3d(u.localCenter)
+                  .add(0, 0, i == 0 ? u.mount.variant.half : -u.mount.variant.half);
+          pipe.applyImpulse(u.bogie, point, impulse);
+        }
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, u, "physics_step", error);
+        TrainFaults.brake(physics, u, dt);
       }
     }
   }
@@ -702,7 +729,8 @@ public final class VehiclePhysics {
     u.bogie.setUserDataTag(tag);
     org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
         .info(
-            "[GuideReleased] body={} reason={} speed={} curveRisk={} lateralSpeed={} curveSeconds={} impactSeconds={} anchors={}",
+            "[GuideReleased] body={} reason={} speed={} curveRisk={} lateralSpeed={}"
+                + " curveSeconds={} impactSeconds={} anchors={}",
             u.bogie.getUniqueId(),
             reason,
             u.speed,

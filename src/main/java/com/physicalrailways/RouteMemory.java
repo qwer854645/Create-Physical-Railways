@@ -142,6 +142,13 @@ public final class RouteMemory {
     return false;
   }
 
+  /** A fault-held train still occupies its unfinished crossing; do not consume or recreate it. */
+  public void holdForRecovery(long now) {
+    for (var queue : passages.values())
+      for (var passage : queue)
+        if (!cleared(passage) && !passage.expired(now)) passage.touched = now;
+  }
+
   /** Renew unfinished crossings only while every member has a valid guide on their graph. */
   public void keepAlive(Map<Axle, UUID> guided, long now) {
     if (now < 0 || members.isEmpty()) return;

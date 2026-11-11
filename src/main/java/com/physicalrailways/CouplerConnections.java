@@ -22,6 +22,7 @@ public final class CouplerConnections {
     final Map<UUID, Pending> pending = new HashMap<>();
     final Set<UUID> warned = new HashSet<>();
     final Map<UUID, String> waiting = new HashMap<>();
+    final Map<UUID, RecoveryWindow> recovery = new HashMap<>();
   }
 
   private static final Map<ServerLevel, State> STATES = new WeakHashMap<>();
@@ -427,15 +428,43 @@ public final class CouplerConnections {
     var data = CouplerSavedData.get(level);
     s.waiting.keySet().removeIf(id -> data.links.get(id) == null);
     for (var id : List.copyOf(s.live.keySet())) if (data.links.get(id) == null) close(s, id);
-    for (var link : data.links.all())
+    s.recovery.keySet().removeIf(id -> data.links.get(id) == null);
+    for (var link : data.links.all()) {
+      var recovery = s.recovery.get(link.id());
+      if (recovery != null && !recovery.probe(level.getGameTime())) continue;
+      var previous = s.live.get(link.id());
       try {
         reconcile(level, link);
+        if (recovery != null && recovery.healthy(level.getGameTime())) s.recovery.remove(link.id());
       } catch (RuntimeException error) {
-        close(s, link.id());
+        s.recovery
+            .computeIfAbsent(link.id(), k -> new RecoveryWindow())
+            .failed(level.getGameTime());
+        if (previous != null) {
+          TrainFaults.fail(level, previous.a.getUniqueId(), "coupler_joint", error);
+          TrainFaults.fail(level, previous.b.getUniqueId(), "coupler_joint", error);
+        } else {
+          for (var endpoint : List.of(link.a(), link.b())) {
+            try {
+              var actual = s.endpoints.get(endpoint);
+              var body = actual == null ? null : body(level, actual);
+              if (body != null)
+                TrainFaults.fail(level, body.getUniqueId(), "coupler_rebuild", error);
+            } catch (RuntimeException secondary) {
+              error.addSuppressed(secondary);
+            }
+          }
+        }
+        try {
+          close(s, link.id());
+        } catch (RuntimeException secondary) {
+          error.addSuppressed(secondary);
+        }
         if (s.warned.add(link.id()))
           org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
               .error("[Coupler] joint rebuild failed link={}", link.id(), error);
       }
+    }
     s.pending.values().removeIf(p -> p.expires < level.getGameTime());
   }
 

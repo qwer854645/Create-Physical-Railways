@@ -306,6 +306,7 @@ public final class DriverConsoleEntity extends BlockEntity
         return;
       }
       DriverControls.claim(server, this, player);
+      TrainFaults.acknowledge(server, DriverControls.body(this).getUniqueId());
       active = true;
       observing = false;
       enabled = true;
@@ -395,6 +396,11 @@ public final class DriverConsoleEntity extends BlockEntity
    * that decide them, because a console has no way to know why another consist is holding a junction.
    */
   ConsoleStatus resolveStatus() {
+    if (level instanceof ServerLevel server && DriverControls.body(this) != null) {
+      var reason = TrainFaults.reason(server, DriverControls.body(this).getUniqueId());
+      if (reason != null) return reason;
+      if (schedule.status() == ScheduleController.RUNTIME_FAULT) return ConsoleStatus.RUNTIME_FAULT;
+    }
     boolean atStop = schedule.status() == ScheduleController.WAITING;
     var body = bound ? DriverControls.body(this) : null;
     boolean stationGone = false;

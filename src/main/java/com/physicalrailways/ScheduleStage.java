@@ -45,6 +45,7 @@ enum ScheduleStage {
       case ScheduleController.CONFLICT -> BLOCKED;
       case ScheduleController.UNLOADED -> BLOCKED;
       case ScheduleController.EMERGENCY -> BLOCKED;
+      case ScheduleController.RUNTIME_FAULT -> BLOCKED;
       // An unknown code is not "fine": it is the controller in a state this projection does not describe.
       default -> BLOCKED;
     };

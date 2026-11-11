@@ -58,57 +58,81 @@ public final class StationPresence {
     var docked = new HashMap<UUID, Arrival>();
     for (var binding : state.bindings.values()) docked.put(binding.train.id, binding);
     for (var component : TrainConsists.get(level).groups()) {
-      var group = component.units();
-      if (group.isEmpty()) continue;
-      var proxy = NativeTrainBridge.registered(level, component);
-      if (proxy == null || proxy.derailed || proxy.graph == null) continue;
-      var owner = group.getFirst().driver;
-      if (owner == null) continue;
-      var links = component.links();
-      if (group.stream()
-          .anyMatch(
-              u ->
-                  u.detached
-                      || u.bogie.isRemoved()
-                      || u.carrier.isRemoved()
-                      || u.mount.isRemoved())) continue;
-      double speed = 0;
-      for (var u : group) {
-        speed = Math.max(speed, pipe.getLinearVelocity(u.bogie, new Vector3d()).length());
-        speed = Math.max(speed, pipe.getLinearVelocity(u.carrier, new Vector3d()).length());
-      }
-      if (speed > .2) continue;
-      var references = new ArrayList<Reference>();
-      var previous = docked.get(proxy.id);
-      if (previous != null) {
-        // While parked, changing the reverser must not move the arrival reference.
-        var head =
-            group.stream()
-                .filter(u -> u.bogie.getUniqueId().equals(previous.bogie))
-                .findFirst()
-                .orElse(null);
-        if (head == null) continue;
-        references.add(new Reference(head, previous.axle, previous.sign));
-      } else {
-        // Rebuild from actual geometry after loading. The saved reverser may point away
-        // from the end that arrived, so inspect both ends without trusting schedule state.
-        for (int direction : new int[] {1, -1}) {
-          var basis = AutomaticTrains.basis(owner, group, links, direction);
-          if (basis == null) continue;
-          references.add(
-              new Reference(
-                  basis.head(), basis.end(), basis.signs().get(basis.head().bogie.getUniqueId())));
+      try {
+        var group = component.units();
+        if (group.isEmpty()) continue;
+        var proxy = NativeTrainBridge.registered(level, component);
+        if (proxy == null || proxy.derailed || proxy.graph == null) continue;
+        if (TrainFaults.blocked(level, component)) {
+          for (var entry : state.bindings.entrySet())
+            if (entry.getValue().train == proxy) {
+              var key = new Key(entry.getValue().train.id, entry.getValue().station.id);
+              seen.add(key);
+              arrivals.put(key, entry.getValue());
+            }
+          continue;
         }
-      }
-      var candidates = new HashMap<Key, Arrival>();
-      for (var reference : references) sample(level, proxy, reference, candidates);
-      for (var entry : candidates.entrySet()) {
-        seen.add(entry.getKey());
-        if (state
-            .stops
-            .computeIfAbsent(entry.getKey(), k -> new StationStopState())
-            .tick(entry.getValue().distance, speed, true))
-          arrivals.put(entry.getKey(), entry.getValue());
+        var owner = group.getFirst().driver;
+        if (owner == null) continue;
+        var links = component.links();
+        if (group.stream()
+            .anyMatch(
+                u ->
+                    u.detached
+                        || u.bogie.isRemoved()
+                        || u.carrier.isRemoved()
+                        || u.mount.isRemoved())) continue;
+        double speed = 0;
+        for (var u : group) {
+          speed = Math.max(speed, pipe.getLinearVelocity(u.bogie, new Vector3d()).length());
+          speed = Math.max(speed, pipe.getLinearVelocity(u.carrier, new Vector3d()).length());
+        }
+        if (speed > .2) continue;
+        var references = new ArrayList<Reference>();
+        var previous = docked.get(proxy.id);
+        if (previous != null) {
+          // While parked, changing the reverser must not move the arrival reference.
+          var head =
+              group.stream()
+                  .filter(u -> u.bogie.getUniqueId().equals(previous.bogie))
+                  .findFirst()
+                  .orElse(null);
+          if (head == null) continue;
+          references.add(new Reference(head, previous.axle, previous.sign));
+        } else {
+          // Rebuild from actual geometry after loading. The saved reverser may point away
+          // from the end that arrived, so inspect both ends without trusting schedule state.
+          for (int direction : new int[] {1, -1}) {
+            var basis = AutomaticTrains.basis(owner, group, links, direction);
+            if (basis == null) continue;
+            references.add(
+                new Reference(
+                    basis.head(),
+                    basis.end(),
+                    basis.signs().get(basis.head().bogie.getUniqueId())));
+          }
+        }
+        var candidates = new HashMap<Key, Arrival>();
+        for (var reference : references) sample(level, proxy, reference, candidates);
+        for (var entry : candidates.entrySet()) {
+          seen.add(entry.getKey());
+          if (state
+              .stops
+              .computeIfAbsent(entry.getKey(), k -> new StationStopState())
+              .tick(entry.getValue().distance, speed, true))
+            arrivals.put(entry.getKey(), entry.getValue());
+        }
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, component, "station_presence", error);
+        var retained = NativeTrainBridge.registered(level, component);
+        if (retained != null)
+          for (var entry : state.bindings.entrySet()) {
+            if (entry.getValue().train == retained) {
+              var key = new Key(entry.getValue().train.id, entry.getValue().station.id);
+              seen.add(key);
+              arrivals.put(key, entry.getValue());
+            }
+          }
       }
     }
     state.stops.keySet().removeIf(k -> !seen.contains(k));
@@ -169,13 +193,13 @@ public final class StationPresence {
     }
   }
 
-
   /**
    * True while the station's block entity still exists.
    *
-   * <p>A station can be broken while a train stands at it. The binding then still names the global station,
-   * and calling into one that no longer has a block behind it touches removed state; the train side still has
-   * to be released, because otherwise the train keeps a station that no longer exists.
+   * <p>A station can be broken while a train stands at it. The binding then still names the global
+   * station, and calling into one that no longer has a block behind it touches removed state; the
+   * train side still has to be released, because otherwise the train keeps a station that no longer
+   * exists.
    */
   private static boolean live(ServerLevel level, GlobalStation station) {
     return station.blockEntityPos != null
@@ -245,9 +269,12 @@ public final class StationPresence {
     if (broken)
       org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
           .info("[StationGone] station={} train={}", binding.station.id, binding.train.id);
-    // The station block can be broken while a train is standing at it, and then this binding points at a
-    // block entity that has already been removed from the level. Its own bookkeeping is meaningless by
-    // then, but the train side must still be cleared, or the train keeps a station that no longer exists.
+    // The station block can be broken while a train is standing at it, and then this binding points
+    // at a
+    // block entity that has already been removed from the level. Its own bookkeeping is meaningless
+    // by
+    // then, but the train side must still be cleared, or the train keeps a station that no longer
+    // exists.
     if (live(level, binding.station))
       binding.station.trainDeparted(binding.train); // Cancels only this exact train's reservation.
     if (binding.station.id.equals(binding.train.currentStation)) binding.train.station(null);

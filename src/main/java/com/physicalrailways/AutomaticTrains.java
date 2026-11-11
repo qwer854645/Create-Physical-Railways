@@ -79,113 +79,115 @@ final class AutomaticTrains {
       if (master == null) continue;
       var controller = master.schedule;
       processed.add(controller);
-      stats(master, group);
-      if (master.emergency) {
-        if (controller.present()) controller.pause(ScheduleController.EMERGENCY);
-        hold(group, controller, true);
-        continue;
-      }
-      if (controller.resumePending()) {
-        var restored = new HashSet<UUID>();
-        for (var u : group) restored.add(u.bogie.getUniqueId());
-        if (!controller.restore(
-            level, restored, CouplerConnections.cargoComplete(level, component.members()))) {
-          hold(group, controller, false);
-          continue;
-        }
-      }
-      if (!controller.present()) {
-        var orientation = basis(master, group, links, master.direction == 0 ? 1 : master.direction);
-        if (orientation == null) {
-          hold(group, controller, false);
-          continue;
-        }
-        bind(
-            group,
-            master,
-            null,
-            orientation.signs,
-            master.direction == 0 ? 0 : available(group, master),
-            master.notch,
-            false,
-            !master.enabled);
-        continue;
-      }
-      if (master.active && !master.observing) controller.manual(master);
-      if (controller.manualOverride()) {
-        var source = controller.manualSource();
-        if (source == null || source.isRemoved() || DriverControls.body(source) == null) {
-          controller.pause(ScheduleController.PAUSED);
-          hold(group, controller, false);
-          continue;
-        }
-        stats(source, group);
-        var basis = basis(source, group, links, source.direction == 0 ? 1 : source.direction);
-        if (basis == null) {
-          controller.pause(ScheduleController.CONFLICT);
-          hold(group, controller, false);
-          continue;
-        }
-        bind(
-            group,
-            source,
-            null,
-            basis.signs,
-            source.direction == 0 ? 0 : available(group, source),
-            source.notch,
-            false,
-            !source.enabled);
-        continue;
-      }
-      if (!controller.running()) {
-        hold(group, controller, false);
-        continue;
-      }
-      var members = new HashSet<UUID>();
-      for (var u : group) members.add(u.bogie.getUniqueId());
-      var cargo = CargoStorage.consist(level, group.getFirst().carrier);
-      var membership = controller.acceptMembers(members, cargo.complete());
-      if (membership == ScheduleReloadGate.Result.WAIT) {
-        controller.state(ScheduleController.UNLOADED);
-        hold(group, controller, false);
-        continue;
-      }
-      if (membership == ScheduleReloadGate.Result.CHANGED) {
-        controller.pause(ScheduleController.CHANGED);
-        hold(group, controller, false);
-        continue;
-      }
-      if (group.stream().anyMatch(u -> u.detached)) {
-        controller.pause(ScheduleController.TRACK_MISSING);
-        hold(group, controller, false);
-        continue;
-      }
-      if (!controller.prepareInstructions()) {
-        hold(group, controller, false);
-        continue;
-      }
-      if (!controller.acceptCargoBodies(cargo.bodies().keySet())) {
-        controller.pause(ScheduleController.CHANGED);
-        hold(group, controller, false);
-        continue;
-      }
-      if (controller.takeBrakeRelease()) for (var u : group) brake(u, false);
-      double cap = SchedulePrelude.ceiling(available(group, master), controller.throttle());
-      if (cap <= 0) {
-        controller.state(ScheduleController.NO_POWER);
-        hold(group, controller, false);
-        continue;
-      }
       try {
+        if (TrainFaults.blocked(level, component)) {
+          if (TrainFaults.reason(level, group.getFirst().carrier.getUniqueId()) == ConsoleStatus.RUNTIME_FAULT
+              && (controller.running() || controller.resumePending() || controller.manualOverride()))
+            controller.pause(ScheduleController.RUNTIME_FAULT);
+          hold(group, controller, false);
+          continue;
+        }
+        stats(master, group);
+        if (master.emergency) {
+          if (controller.present()) controller.pause(ScheduleController.EMERGENCY);
+          hold(group, controller, true);
+          continue;
+        }
+        if (controller.resumePending()) {
+          var restored = new HashSet<UUID>();
+          for (var u : group) restored.add(u.bogie.getUniqueId());
+          if (!controller.restore(
+              level, restored, CouplerConnections.cargoComplete(level, component.members()))) {
+            hold(group, controller, false);
+            continue;
+          }
+        }
+        if (!controller.present()) {
+          var orientation =
+              basis(master, group, links, master.direction == 0 ? 1 : master.direction);
+          if (orientation == null) {
+            hold(group, controller, false);
+            continue;
+          }
+          bind(
+              group,
+              master,
+              null,
+              orientation.signs,
+              master.direction == 0 ? 0 : available(group, master),
+              master.notch,
+              false,
+              !master.enabled);
+          continue;
+        }
+        if (master.active && !master.observing) controller.manual(master);
+        if (controller.manualOverride()) {
+          var source = controller.manualSource();
+          if (source == null || source.isRemoved() || DriverControls.body(source) == null) {
+            controller.pause(ScheduleController.PAUSED);
+            hold(group, controller, false);
+            continue;
+          }
+          stats(source, group);
+          var basis = basis(source, group, links, source.direction == 0 ? 1 : source.direction);
+          if (basis == null) {
+            controller.pause(ScheduleController.CONFLICT);
+            hold(group, controller, false);
+            continue;
+          }
+          bind(
+              group,
+              source,
+              null,
+              basis.signs,
+              source.direction == 0 ? 0 : available(group, source),
+              source.notch,
+              false,
+              !source.enabled);
+          continue;
+        }
+        if (!controller.running()) {
+          hold(group, controller, false);
+          continue;
+        }
+        var members = new HashSet<UUID>();
+        for (var u : group) members.add(u.bogie.getUniqueId());
+        var cargo = CargoStorage.consist(level, group.getFirst().carrier);
+        var membership = controller.acceptMembers(members, cargo.complete());
+        if (membership == ScheduleReloadGate.Result.WAIT) {
+          controller.state(ScheduleController.UNLOADED);
+          hold(group, controller, false);
+          continue;
+        }
+        if (membership == ScheduleReloadGate.Result.CHANGED) {
+          controller.pause(ScheduleController.CHANGED);
+          hold(group, controller, false);
+          continue;
+        }
+        if (group.stream().anyMatch(u -> u.detached)) {
+          controller.pause(ScheduleController.TRACK_MISSING);
+          hold(group, controller, false);
+          continue;
+        }
+        if (!controller.prepareInstructions()) {
+          hold(group, controller, false);
+          continue;
+        }
+        if (!controller.acceptCargoBodies(cargo.bodies().keySet())) {
+          controller.pause(ScheduleController.CHANGED);
+          hold(group, controller, false);
+          continue;
+        }
+        if (controller.takeBrakeRelease()) for (var u : group) brake(u, false);
+        double cap = SchedulePrelude.ceiling(available(group, master), controller.throttle());
+        if (cap <= 0) {
+          controller.state(ScheduleController.NO_POWER);
+          hold(group, controller, false);
+          continue;
+        }
         drive(level, group, links, controller, cap);
       } catch (RuntimeException error) {
-        controller.pause(ScheduleController.UNSUPPORTED);
-        hold(group, controller, false);
-        org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-            .error(
-                "[AutomaticTrain] paused after invalid schedule/route console={}",
-                controller.owner.getBlockPos(),
-                error);
+        TrainFaults.fail(level, component, "automatic_control", error);
       }
     }
     for (var console : consoles)
@@ -506,7 +508,8 @@ final class AutomaticTrains {
     if (found < 0) {
       org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
           .warn(
-              "[AutomaticRouteMismatch] console={} bogie={} observed={} leg={} expected={} target={}",
+              "[AutomaticRouteMismatch] console={} bogie={} observed={} leg={} expected={}"
+                  + " target={}",
               c.owner.getBlockPos(),
               p.head.bogie.getUniqueId(),
               observed,
@@ -578,7 +581,8 @@ final class AutomaticTrains {
     if (level.getGameTime() % 20 == 0)
       org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
           .info(
-              "[AutomaticDrive] target={} remaining={} speed={} ceiling={} notch={} bogies={} signalRoom={} nose={}",
+              "[AutomaticDrive] target={} remaining={} speed={} ceiling={} notch={} bogies={}"
+                  + " signalRoom={} nose={}",
               p.route.goal().name(),
               remaining,
               speed,

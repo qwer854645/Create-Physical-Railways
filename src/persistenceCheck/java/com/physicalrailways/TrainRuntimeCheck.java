@@ -22,7 +22,10 @@ public final class TrainRuntimeCheck {
   }
 
   private static MethodNode method(String owner, String method) throws Exception {
-    return code(owner).methods.stream().filter(m -> m.name.equals(method)).findFirst().orElseThrow();
+    return code(owner).methods.stream()
+        .filter(m -> m.name.equals(method))
+        .findFirst()
+        .orElseThrow();
   }
 
   private static List<String> calls(String owner, String method) throws Exception {
@@ -38,6 +41,8 @@ public final class TrainRuntimeCheck {
   private static List<String> progress(String method) throws Exception {
     return calls("TrainRuntime", method).stream()
         .filter(call -> !call.startsWith("PerfCounters."))
+        .filter(
+            call -> !call.startsWith("TrainFaults.phase") && !call.equals("TrainFaults.brakeHeld"))
         .toList();
   }
 
@@ -55,6 +60,7 @@ public final class TrainRuntimeCheck {
           && call.name.equals(name)) return true;
     return false;
   }
+
   private static boolean mentions(MethodNode body, String text) {
     for (var instruction : body.instructions)
       if (instruction instanceof LdcInsnNode literal
@@ -69,7 +75,82 @@ public final class TrainRuntimeCheck {
     return false;
   }
 
+  private static void faultBoundaries() throws Exception {
+    for (String name : List.of("beforeTick", "afterTick", "physicsStep")) {
+      var runtime = calls("TrainRuntime", name);
+      check(
+          runtime.contains("TrainFaults.phaseReady")
+              && runtime.contains("TrainFaults.phaseHealthy")
+              && runtime.contains("TrainFaults.phaseFailed"),
+          name + " guards unknown shared failures with bounded retries");
+    }
+    check(
+        calls("TrainRuntime", "physicsStep").contains("TrainFaults.brakeHeld"),
+        "the shared physics cooldown still applies safety braking");
+    boolean stopped = false;
+    for (var instruction : method("ScheduleController", "stop").instructions) {
+      if (instruction instanceof FieldInsnNode field
+          && field.getOpcode() == org.objectweb.asm.Opcodes.PUTFIELD && field.name.equals("running"))
+        stopped = true;
+      if (instruction instanceof MethodInsnNode call && call.owner.endsWith("RailDocks") && call.name.equals("release"))
+        check(stopped, "a failing dock callback cannot leave the schedule running");
+    }
+    for (String[] boundary :
+        List.of(
+            new String[] {"AutomaticTrains", "tick"},
+            new String[] {"ConsistRoutes", "prepare"},
+            new String[] {"VehiclePhysics", "stepVehicle"},
+            new String[] {"VehicleTraction", "allocate"},
+            new String[] {"NativeTrainBridge", "tick"},
+            new String[] {"StationPresence", "tick"},
+            new String[] {"PhysicalSignals", "tick"})) {
+      var body = method(boundary[0], boundary[1]);
+      check(
+          body.tryCatchBlocks.stream().anyMatch(t -> "java/lang/RuntimeException".equals(t.type))
+              && calls(boundary[0], boundary[1]).contains("TrainFaults.fail"),
+          boundary[0] + " contains attributable failures inside its train iteration");
+      check(
+          body.tryCatchBlocks.stream().noneMatch(t -> "java/lang/Throwable".equals(t.type)),
+          boundary[0] + " does not swallow fatal VM errors");
+    }
+    for (String name : List.of("force", "requestedSpeed"))
+      check(
+          calls("VehicleTraction", name).getFirst().equals("TrainFaults.blocked"),
+          name + " checks the safety hold before manual or RPM traction");
+    var readiness = calls("TrainFaults", "begin");
+    check(
+        readiness.contains("BodyGuard.readable")
+            && readiness.contains("CouplerConnections.cargoComplete")
+            && readiness.indexOf("BodyGuard.readable")
+                < readiness.indexOf("RecoveryWindow.healthy"),
+        "readiness verifies native bodies and coupling before allowing recovery");
+    for (var body : code("TrainFaults").methods) {
+      boolean command = false, mass = false, powered = false;
+      for (var instruction : body.instructions) {
+        if (instruction instanceof FieldInsnNode field
+            && field.getOpcode() == org.objectweb.asm.Opcodes.PUTFIELD) {
+          command |= field.owner.endsWith("VehiclePhysics$Unit") && field.name.equals("command");
+          mass |= field.owner.endsWith("VehiclePhysics$Unit") && field.name.equals("tractionMass");
+          powered |=
+              field.owner.endsWith("VehiclePhysics$Unit") && field.name.equals("trainPowered");
+        }
+        if (!(instruction instanceof MethodInsnNode call)) continue;
+        if (call.owner.endsWith("ScheduleController") && call.name.equals("pause"))
+          check(
+              command && mass && powered,
+              "all traction fields are cleared before schedule callbacks");
+        check(
+            !(call.owner.endsWith("CouplerSavedData")
+                    || call.owner.endsWith("CargoStorage")
+                    || call.owner.endsWith("TrainIdentityData"))
+                && !(call.owner.endsWith("ScheduleController") && call.name.equals("clear")),
+            "fault containment cannot delete persistent pairing, cargo, identity or schedules");
+      }
+    }
+  }
+
   public static void main(String[] args) throws Exception {
+    faultBoundaries();
     order(
         "beforeTick",
         "SchedulePriority.tick",
@@ -84,6 +165,8 @@ public final class TrainRuntimeCheck {
         "VehiclePhysics.refresh",
         "TrainConsists.refresh",
         "TrainConsists.applyChanges",
+        "TrainConsists.get",
+        "TrainFaults.begin",
         "TrainElectricity.refresh",
         "DriverControls.refresh",
         "PhysicalSignals.tick",
@@ -93,7 +176,10 @@ public final class TrainRuntimeCheck {
         "DriverControls.publish",
         "VehiclePhysics.update");
     order(
-        "afterTick", "NativeTrainBridge.tick", "PhysicalSignals.publish", "VehiclePhysics.activeCount");
+        "afterTick",
+        "NativeTrainBridge.tick",
+        "PhysicalSignals.publish",
+        "VehiclePhysics.activeCount");
     order("physicsStep", "VehiclePhysics.step", "CouplerConnections.step");
     order(
         "unload",
@@ -109,7 +195,8 @@ public final class TrainRuntimeCheck {
         "SwitchBlockedReasons.unload",
         "ApproachRooms.unload",
         "BranchWatch.unload",
-        "TrainElectricity.unload");
+        "TrainElectricity.unload",
+        "TrainFaults.unload");
     for (String owner : List.of("VehiclePhysics", "DriverControls"))
       for (var method : code(owner).methods)
         for (var instruction : method.instructions)
@@ -183,7 +270,8 @@ public final class TrainRuntimeCheck {
                 "updateVisual",
                 "net/minecraft/world/level/Level",
                 "sendBlockUpdated")
-            && calls("DriverConsoleEntity", "updateVisual").contains("DriverConsoleEntity.sendVisual"),
+            && calls("DriverConsoleEntity", "updateVisual")
+                .contains("DriverConsoleEntity.sendVisual"),
         "the console syncs its lever through the block entity payload, not a block update");
     check(
         callsExternal(
@@ -194,14 +282,18 @@ public final class TrainRuntimeCheck {
         "the console payload carries VisualNotch to tracking players");
     check(
         !callsExternal(
-                "CouplerEndpoint", "syncVisual", "net/minecraft/world/level/Level", "sendBlockUpdated")
+                "CouplerEndpoint",
+                "syncVisual",
+                "net/minecraft/world/level/Level",
+                "sendBlockUpdated")
             && callsExternal(
                 "CouplerEndpoint",
                 "syncVisual",
                 "net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket",
                 "create"),
         "the coupler syncs its visual through the block entity payload as well");
-    // The three guards below each close a defect that presented as a train that would not move or would not
+    // The three guards below each close a defect that presented as a train that would not move or
+    // would not
     // stop, so they are contracts rather than conventions.
     check(
         calls("StationPresence", "release").contains("StationPresence.live"),
@@ -219,36 +311,60 @@ public final class TrainRuntimeCheck {
       }
     check(
         rule >= 0 && limit > rule,
-        "the reached-switch rule must run before the plan's own limit, or it clears a platform stop");
+        "the reached-switch rule must run before the plan's own limit, or it clears a platform"
+            + " stop");
 
     // The preview must expire history at the same game time as commit. Otherwise preview can
     // select an expired old exit and commit then treats that stale selection as the new plan.
-    check(Arrays.stream(method("ConsistRoutes$Cursor", "choose").instructions.toArray())
-            .anyMatch(i -> i instanceof MethodInsnNode call
-                && call.owner.equals("com/physicalrailways/RouteMemory")
-                && call.name.equals("preview") && call.desc.endsWith("ZJ)I")),
+    check(
+        Arrays.stream(method("ConsistRoutes$Cursor", "choose").instructions.toArray())
+            .anyMatch(
+                i ->
+                    i instanceof MethodInsnNode call
+                        && call.owner.equals("com/physicalrailways/RouteMemory")
+                        && call.name.equals("preview")
+                        && call.desc.endsWith("ZJ)I")),
         "junction preview must use the clocked route-memory overload");
-    check(Arrays.stream(method("ConsistRoutes", "prepare").instructions.toArray())
-            .anyMatch(i -> i instanceof MethodInsnNode call
-                && call.owner.equals("com/physicalrailways/RouteMemory")
-                && call.name.equals("active") && call.desc.startsWith("(J)")),
+    check(
+        Arrays.stream(method("ConsistRoutes", "prepare").instructions.toArray())
+            .anyMatch(
+                i ->
+                    i instanceof MethodInsnNode call
+                        && call.owner.equals("com/physicalrailways/RouteMemory")
+                        && call.name.equals("active")
+                        && call.desc.startsWith("(J)")),
         "switch reservation refresh must expire abandoned passages before holding them");
 
     var prepared = calls("ConsistRoutes", "prepare");
-    check(prepared.indexOf("RouteMemory.keepAlive") >= 0
-            && prepared.indexOf("RouteMemory.keepAlive") < prepared.indexOf("RouteMemory.active"),
+    check(
+        prepared.indexOf("RouteMemory.keepAlive") >= 0
+            && prepared.indexOf("RouteMemory.keepAlive")
+                < prepared.lastIndexOf("RouteMemory.active"),
         "valid live axle guides must renew a crossing before expiry and reservation refresh");
-    check(prepared.contains("TrackNetwork.live") && prepared.contains("VehiclePhysics.world"),
+    check(
+        prepared.indexOf("RouteMemory.holdForRecovery") >= 0
+            && prepared.indexOf("RouteMemory.holdForRecovery")
+                < prepared.indexOf("RouteMemory.active"),
+        "fault-held passages must be renewed before their reservation is refreshed");
+    check(
+        prepared.contains("TrackNetwork.live") && prepared.contains("VehiclePhysics.world"),
         "route renewal verifies live track and physical guide proximity");
     for (String cache : List.of("ApproachRooms", "BranchWatch")) {
-      check(calls("TrainRuntime", "beforeTick").contains(cache + ".tick"),
+      check(
+          calls("TrainRuntime", "beforeTick").contains(cache + ".tick"),
           cache + " sweeps abandoned keys even when nobody queries them");
-      check(calls("TrainRuntime", "unload").contains(cache + ".unload"),
+      check(
+          calls("TrainRuntime", "unload").contains(cache + ".unload"),
           cache + " releases its world on unload");
-      check(code(cache).fields.stream().anyMatch(f -> f.signature != null
-              && f.signature.contains("Lnet/minecraft/server/level/ServerLevel;")),
+      check(
+          code(cache).fields.stream()
+              .anyMatch(
+                  f ->
+                      f.signature != null
+                          && f.signature.contains("Lnet/minecraft/server/level/ServerLevel;")),
           cache + " isolates separate saves using the actual world instance");
-      check(calls(cache, "tick").contains("TickCache.tick"),
+      check(
+          calls(cache, "tick").contains("TickCache.tick"),
           cache + " runs real expiry rather than only declaring a lifetime constant");
     }
 
@@ -259,15 +375,20 @@ public final class TrainRuntimeCheck {
           || !call.name.equals("follow")) continue;
       var next = instruction.getNext();
       while (next != null && next.getOpcode() < 0) next = next.getNext();
-      check(next != null && next.getOpcode() == org.objectweb.asm.Opcodes.ASTORE,
+      check(
+          next != null && next.getOpcode() == org.objectweb.asm.Opcodes.ASTORE,
           "a failed follow must be checked before replacing the retained axle sample");
       retainedQueries++;
     }
     check(retainedQueries == 2, "both leading and trailing axles retain history on a held miss");
-    check(Arrays.stream(method("VehiclePhysics", "stepVehicle").instructions.toArray())
-            .anyMatch(i -> i instanceof MethodInsnNode call
-                && call.owner.equals("com/physicalrailways/ApproachLimit")
-                && call.name.equals("switchRoom") && call.desc.equals("(DZ)D")),
+    check(
+        Arrays.stream(method("VehiclePhysics", "stepVehicle").instructions.toArray())
+            .anyMatch(
+                i ->
+                    i instanceof MethodInsnNode call
+                        && call.owner.equals("com/physicalrailways/ApproachLimit")
+                        && call.name.equals("switchRoom")
+                        && call.desc.equals("(DZ)D")),
         "the switch clearance rule must receive the denied-passage state");
 
     System.out.println(

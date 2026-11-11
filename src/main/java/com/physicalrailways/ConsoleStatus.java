@@ -35,7 +35,9 @@ public enum ConsoleStatus {
   /** Standing at the target stop. */
   ARRIVED,
   /** Nothing in the way: the train is free to move. */
-  READY;
+  READY,
+  RUNTIME_FAULT,
+  RESTORING;
 
   /** Inputs, gathered by the caller from state that already exists. */
   public record Inputs(
@@ -75,7 +77,8 @@ public enum ConsoleStatus {
 
   /** True when the train cannot move for a reason the player can act on. */
   public boolean actionable() {
-    return this == STATION_GONE
+    return this == RUNTIME_FAULT
+        || this == STATION_GONE
         || this == SWITCH_DISABLED
         || this == SWITCH_HELD
         || this == SIGNAL_BLOCKED

@@ -11,24 +11,31 @@ final class VehicleTraction {
 
   static void allocate(ServerLevel level) {
     for (var component : TrainConsists.get(level).groups()) {
-      var group = component.units();
-      double mass = component.mass();
-      var rpm = new double[group.size()];
-      for (int i = 0; i < rpm.length; i++) {
-        var u = group.get(i);
-        rpm[i] = u.detached || u.mount.braking ? 0 : inputRpm(u);
-      }
-      var shares = TractionBudget.shares(mass, rpm);
-      boolean powered = java.util.Arrays.stream(shares).anyMatch(m -> m > 0);
-      for (int i = 0; i < shares.length; i++) {
-        var u = group.get(i);
-        u.tractionMass = shares[i];
-        u.trainPowered = powered;
+      if (TrainFaults.blocked(level, component)) continue;
+      try {
+        var group = component.units();
+        double mass = component.mass();
+        var rpm = new double[group.size()];
+        for (int i = 0; i < rpm.length; i++) {
+          var u = group.get(i);
+          rpm[i] = u.detached || u.mount.braking ? 0 : inputRpm(u);
+        }
+        var shares = TractionBudget.shares(mass, rpm);
+        boolean powered = java.util.Arrays.stream(shares).anyMatch(m -> m > 0);
+        for (int i = 0; i < shares.length; i++) {
+          var u = group.get(i);
+          u.tractionMass = shares[i];
+          u.trainPowered = powered;
+        }
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, component, "traction_allocation", error);
       }
     }
   }
 
   static double force(VehiclePhysics.Unit u, double speed, double dt) {
+    if (TrainFaults.blocked(u.bogie.getLevel(), u.carrier.getUniqueId()))
+      return DriveModel.coastForce(speed, u.mass, TrainConfig.BRAKING.get(), dt);
     double force;
     if (u.command != null) {
       var control = u.command;
@@ -112,6 +119,7 @@ final class VehicleTraction {
   }
 
   static double requestedSpeed(VehiclePhysics.Unit u) {
+    if (TrainFaults.blocked(u.bogie.getLevel(), u.carrier.getUniqueId())) return 0;
     var c = u.command;
     if (c != null)
       return !c.hold() && !c.emergency() && c.notch() > 0

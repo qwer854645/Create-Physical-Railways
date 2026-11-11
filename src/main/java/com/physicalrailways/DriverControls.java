@@ -20,6 +20,7 @@ public final class DriverControls {
   private DriverControls() {}
 
   static void topologyChanged(ServerLevel level, Set<UUID> affected) {
+    TrainFaults.changed(level, affected);
     for (var console : CONSOLES.getOrDefault(level, Map.of()).values()) {
       var body = body(console);
       if (body == null || !affected.contains(body.getUniqueId())) continue;
@@ -186,7 +187,8 @@ public final class DriverControls {
         if (operator == null || !operator.isAlive() || !accessible(e, operator)) {
           if (e.observing) e.leave();
           else e.park();
-        } else if (level.getGameTime() - e.interactionAt > 20 || level.getGameTime() < e.interactionAt) e.leave();
+        } else if (level.getGameTime() - e.interactionAt > 20
+            || level.getGameTime() < e.interactionAt) e.leave();
       }
     }
     DRIVEN.put(level, List.copyOf(units));
@@ -221,24 +223,30 @@ public final class DriverControls {
     for (var e : map.values()) {
       var body = body(e);
       if (body == null) continue;
-      var pipe = dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(level).getPipeline();
-      var facing = e.getBlockState().getValue(DriverConsoleBlock.FACING);
-      var heading =
-          new Vector3d(facing.getStepX(), 0, facing.getStepZ())
-              .rotate(
-                  pipe.readPose(body, new dev.ryanhcode.sable.companion.math.Pose3d())
-                      .orientation());
-      e.actual = pipe.getLinearVelocity(body, new Vector3d()).dot(heading);
-      for (var u : units)
-        if (u.carrier == body) {
-          e.supports++;
-          if (!u.detached) e.guided++;
-          if (Math.abs(VehicleTraction.inputRpm(u)) > .001) {
-            e.powered++;
-            double cap = e.targetSpeed(VehicleTraction.inputRpm(u));
-            e.available = e.powered == 1 ? cap : Math.min(e.available, cap);
+      if (TrainFaults.blocked(level, body.getUniqueId())) continue;
+      try {
+        var pipe =
+            dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem.get(level).getPipeline();
+        var facing = e.getBlockState().getValue(DriverConsoleBlock.FACING);
+        var heading =
+            new Vector3d(facing.getStepX(), 0, facing.getStepZ())
+                .rotate(
+                    pipe.readPose(body, new dev.ryanhcode.sable.companion.math.Pose3d())
+                        .orientation());
+        e.actual = pipe.getLinearVelocity(body, new Vector3d()).dot(heading);
+        for (var u : units)
+          if (u.carrier == body) {
+            e.supports++;
+            if (!u.detached) e.guided++;
+            if (Math.abs(VehicleTraction.inputRpm(u)) > .001) {
+              e.powered++;
+              double cap = e.targetSpeed(VehicleTraction.inputRpm(u));
+              e.available = e.powered == 1 ? cap : Math.min(e.available, cap);
+            }
           }
-        }
+      } catch (RuntimeException error) {
+        TrainFaults.fail(level, body.getUniqueId(), "console_pose", error);
+      }
     }
   }
 
@@ -248,36 +256,50 @@ public final class DriverControls {
 
   static void publish(ServerLevel level) {
     for (var e : CONSOLES.getOrDefault(level, Map.of()).values()) {
-      e.refreshReadout(level);
-      var body = body(e);
-      if (body == null) continue;
-      if (e.active && level.getGameTime() % 5 == 0) DriverNetwork.sync(e, true);
-      if (TrainConfig.DETAILED_LOGGING.get()
-          && (e.active || e.enabled)
-          && level.getGameTime() % 20 == 0)
-        org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
-            .info(
-                "[DriverState] body={} actual={} notch={} available={} direction={} operatorActive={} driveEnabled={} emergency={} powered={} guided={}/{}",
-                body.getUniqueId(),
-                e.actual,
-                e.notch,
-                e.available,
-                e.direction,
-                e.active,
-                e.enabled,
-                e.emergency,
-                e.powered,
-                e.guided,
-                e.supports);
+      try {
+        e.refreshReadout(level);
+        var body = body(e);
+        if (body == null) continue;
+        if (e.active && level.getGameTime() % 5 == 0) DriverNetwork.sync(e, true);
+        if (TrainConfig.DETAILED_LOGGING.get()
+            && (e.active || e.enabled)
+            && level.getGameTime() % 20 == 0)
+          org.slf4j.LoggerFactory.getLogger(PhysicalRailways.ID)
+              .info(
+                  "[DriverState] body={} actual={} notch={} available={} direction={}"
+                      + " operatorActive={} driveEnabled={} emergency={} powered={} guided={}/{}",
+                  body.getUniqueId(),
+                  e.actual,
+                  e.notch,
+                  e.available,
+                  e.direction,
+                  e.active,
+                  e.enabled,
+                  e.emergency,
+                  e.powered,
+                  e.guided,
+                  e.supports);
+      } catch (RuntimeException error) {
+        var failedBody = body(e);
+        if (failedBody != null)
+          TrainFaults.fail(level, failedBody.getUniqueId(), "console_publish", error);
+      }
     }
   }
 
   static void remote(net.minecraft.server.level.ServerPlayer player, BlockPos pos, int command) {
     if (!DriverInputPolicy.remoteCommand(command)) return;
     var level = player.serverLevel();
-    if (!level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof DriverConsoleEntity e)) return;
-    if (command == 19) { if (player.getUUID().equals(e.operator)) e.leave(); return; }
-    if (!player.mayBuild() || !level.mayInteract(player, pos) || !accessible(e, player) || !isPrimary(e)) {
+    if (!level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof DriverConsoleEntity e))
+      return;
+    if (command == 19) {
+      if (player.getUUID().equals(e.operator)) e.leave();
+      return;
+    }
+    if (!player.mayBuild()
+        || !level.mayInteract(player, pos)
+        || !accessible(e, player)
+        || !isPrimary(e)) {
       if (command == 35) DriverNetwork.sync(e, player, false);
       return;
     }
@@ -286,15 +308,23 @@ public final class DriverControls {
       var part = ConsoleInteraction.pick(e, player);
       if (!part.route() || part.command() != command) return;
       if (e.schedule.running() || e.schedule.resumePending()) {
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.physicalrailways.driver.route_automatic"), true);
+        player.displayClientMessage(
+            net.minecraft.network.chat.Component.translatable(
+                "gui.physicalrailways.driver.route_automatic"),
+            true);
         return;
       }
       if (e.active && !player.getUUID().equals(e.operator)) {
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.physicalrailways.driver.busy"), true);
+        player.displayClientMessage(
+            net.minecraft.network.chat.Component.translatable("gui.physicalrailways.driver.busy"),
+            true);
         return;
       }
       if (body(e) == null) {
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.physicalrailways.driver.install"), true);
+        player.displayClientMessage(
+            net.minecraft.network.chat.Component.translatable(
+                "gui.physicalrailways.driver.install"),
+            true);
         return;
       }
       int choice = command == 20 ? -1 : command == 21 ? 1 : 0;
@@ -303,9 +333,13 @@ public final class DriverControls {
     }
     if (command == 8 || command == 9) {
       if (ConsoleInteraction.pick(e, player) != ConsoleInteraction.Part.EMERGENCY) return;
-      if (command == 8) { e.buttonOperator = player.getUUID(); e.buttonAt = now; }
-      else {
-        if (!player.getUUID().equals(e.buttonOperator) || now - e.buttonAt < 20 || now - e.buttonAt > 60) return;
+      if (command == 8) {
+        e.buttonOperator = player.getUUID();
+        e.buttonAt = now;
+      } else {
+        if (!player.getUUID().equals(e.buttonOperator)
+            || now - e.buttonAt < 20
+            || now - e.buttonAt > 60) return;
         e.buttonOperator = null;
       }
       e.command(player, command);
@@ -313,7 +347,10 @@ public final class DriverControls {
     }
     if (command == 35) {
       if (ConsoleInteraction.pick(e, player) != ConsoleInteraction.Part.LEVER
-          || e.active && !player.getUUID().equals(e.operator)) { DriverNetwork.sync(e, player, false); return; }
+          || e.active && !player.getUUID().equals(e.operator)) {
+        DriverNetwork.sync(e, player, false);
+        return;
+      }
       e.interactionAt = now;
       e.command(player, command);
       if (!e.active || !player.getUUID().equals(e.operator)) DriverNetwork.sync(e, player, false);

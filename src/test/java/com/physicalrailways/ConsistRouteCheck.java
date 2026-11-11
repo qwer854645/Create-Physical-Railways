@@ -20,7 +20,8 @@ public final class ConsistRouteCheck {
     var empty = new RouteMemory(Set.of());
     check(
         empty.reservationIdentity(carrier).equals(carrier),
-        "fully detached consist has a stable carrier identity instead of throwing during physics tick");
+        "fully detached consist has a stable carrier identity instead of throwing during physics"
+            + " tick");
     check(empty.active().isEmpty(), "detached consist holds no switch passages");
     var guided = new RouteMemory(Set.of(a, b, c, d));
     var expected = a.bogie().compareTo(c.bogie()) < 0 ? a.bogie() : c.bogie();
@@ -128,15 +129,15 @@ public final class ConsistRouteCheck {
         straddled.preview(a, node, 30, new int[] {10, 40}, 40, true) == 10,
         "a consist still spanning the junction must retrace its active passage");
 
-    // Reported symptom: a scheduled train kept taking its previous branch at a junction and drove on
+    // Reported symptom: a scheduled train kept taking its previous branch at a junction and drove
+    // on
     // without ever reaching the destination on the other side. The repeat record outlived the
     // passage, and it outranked the planned exit.
     var trip = new RouteMemory(ids);
     check(
         trip.commit(a, node, 10, new int[] {20, 30}, 20, true) == 20,
         "the first lap takes the planned branch");
-    for (var axle : List.of(b, c, d))
-      trip.commit(axle, node, 10, new int[] {20, 30}, 20, false);
+    for (var axle : List.of(b, c, d)) trip.commit(axle, node, 10, new int[] {20, 30}, 20, false);
     check(
         trip.preview(a, node, 10, new int[] {20, 30}, 30, true) == 30,
         "a completed passage stops forcing its branch onto a new planned exit");
@@ -187,8 +188,10 @@ public final class ConsistRouteCheck {
             BranchSelect.choose(f, up, entries, BranchSelect.Steer.LEFT) == 2,
             "A selects leftmost relative to current travel direction");
       }
-    // A passage whose axles will never all arrive used to outrank every later plan, so a train kept taking
-    // the same branch while automatic navigation reported a mismatch each lap. It is now abandoned once it
+    // A passage whose axles will never all arrive used to outrank every later plan, so a train kept
+    // taking
+    // the same branch while automatic navigation reported a mismatch each lap. It is now abandoned
+    // once it
     // has contradicted that many plans.
     var stuckAxle = new RouteMemory.Axle(UUID.randomUUID(), 0);
     var absent = new RouteMemory.Axle(stuckAxle.bogie(), 1);
@@ -197,18 +200,23 @@ public final class ConsistRouteCheck {
     check(
         stuck.commit(stuckAxle, stuckNode, 9, new int[] {14, 31}, 14, true, 0) == 14,
         "first crossing takes the plan");
-    // The first axle crossed 9 -> 14; the second axle never reaches the node, so the entry stays open. While the
-    // consist may still be spanning the junction it keeps its branch, however the plan asks - that is the safety
-    // property. A passage nobody touches expires, which is what stops it from pinning the consist for ever.
+    // The first axle crossed 9 -> 14; the second axle never reaches the node, so the entry stays
+    // open. While the
+    // consist may still be spanning the junction it keeps its branch, however the plan asks - that
+    // is the safety
+    // property. A passage nobody touches expires, which is what stops it from pinning the consist
+    // for ever.
     check(
         stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true, 10) == 14,
         "a spanning consist keeps its branch against the plan");
     check(
-        stuck.preview(absent, stuckNode, 9, new int[] {14, 31}, 31, true, 10 + RouteMemory.PASSAGE_TICKS)
+        stuck.preview(
+                absent, stuckNode, 9, new int[] {14, 31}, 31, true, 10 + RouteMemory.PASSAGE_TICKS)
             == 31,
         "an untouched passage expires, so it cannot override the plan for ever");
 
-    // The same on a train with no plan: the repeat carries the old branch, and expiry is what frees it.
+    // The same on a train with no plan: the repeat carries the old branch, and expiry is what frees
+    // it.
     var repeating = new RouteMemory(Set.of(stuckAxle, absent));
     var repeatNode = new RouteMemory.Junction(UUID.randomUUID(), 31);
     check(
@@ -219,7 +227,13 @@ public final class ConsistRouteCheck {
         "the open passage outranks the plan while it is live");
     check(
         repeating.preview(
-                stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 10 + RouteMemory.PASSAGE_TICKS)
+                stuckAxle,
+                repeatNode,
+                9,
+                new int[] {14, 31},
+                14,
+                true,
+                10 + RouteMemory.PASSAGE_TICKS)
             == 14,
         "once it expires the plan wins again");
 
@@ -232,14 +246,19 @@ public final class ConsistRouteCheck {
     check(held.active(2).isEmpty(), "a completed crossing must stop refreshing its reservation");
     int next = held.preview(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 2);
     check(next == 14, "the next trip can plan a different exit after the consist clears");
-    check(held.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, next, true, 2) == 14,
+    check(
+        held.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, next, true, 2) == 14,
         "committing the selected exit preserves the new trip's plan");
-    check(held.active(2 + RouteMemory.PASSAGE_TICKS - 1).size() == 1,
+    check(
+        held.active(2 + RouteMemory.PASSAGE_TICKS - 1).size() == 1,
         "an unfinished passage stays reserved until its expiry");
-    check(held.active(2 + RouteMemory.PASSAGE_TICKS).isEmpty(),
+    check(
+        held.active(2 + RouteMemory.PASSAGE_TICKS).isEmpty(),
         "abandoned passages stop reserving a switch at the expiry boundary");
-    check(held.preview(absent, repeatNode, 9, new int[] {14, 31}, 31, true,
-        2 + RouteMemory.PASSAGE_TICKS) == 31,
+    check(
+        held.preview(
+                absent, repeatNode, 9, new int[] {14, 31}, 31, true, 2 + RouteMemory.PASSAGE_TICKS)
+            == 31,
         "reservation cleanup leaves a following axle free to use the current plan");
 
     var protectedMemory = new RouteMemory(Set.of(stuckAxle, absent));
@@ -247,15 +266,23 @@ public final class ConsistRouteCheck {
     var liveGuides = Map.of(stuckAxle, repeatNode.graph(), absent, repeatNode.graph());
     for (long now = 20; now <= 1200; now += 20) {
       protectedMemory.keepAlive(liveGuides, now);
-      check(protectedMemory.active(now).size() == 1, "live long/parked crossing retains its reservation");
+      check(
+          protectedMemory.active(now).size() == 1,
+          "live long/parked crossing retains its reservation");
     }
-    check(protectedMemory.commit(absent, repeatNode, 9, new int[] {14, 31}, 14, false, 1201) == 31,
+    check(
+        protectedMemory.commit(absent, repeatNode, 9, new int[] {14, 31}, 14, false, 1201) == 31,
         "after a minute parked over the junction, the tail still follows the leading branch");
-    check(protectedMemory.active(1201).isEmpty(), "completion releases a renewed crossing immediately");
-    check(protectedMemory.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 1202) == 14,
+    check(
+        protectedMemory.active(1201).isEmpty(),
+        "completion releases a renewed crossing immediately");
+    check(
+        protectedMemory.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 14, true, 1202) == 14,
         "renewal does not pin a later trip to the old branch");
     protectedMemory.keepAlive(Map.of(stuckAxle, repeatNode.graph()), 1210);
-    check(protectedMemory.active(1402).isEmpty(), "a missing member cannot renew an abandoned passage");
+    check(
+        protectedMemory.active(1402).isEmpty(),
+        "a missing member cannot renew an abandoned passage");
 
     var wrongGraph = new RouteMemory(Set.of(stuckAxle, absent));
     wrongGraph.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
@@ -265,6 +292,22 @@ public final class ConsistRouteCheck {
     expired.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
     expired.keepAlive(liveGuides, 200);
     check(expired.active(200).isEmpty(), "late observations cannot resurrect expired history");
+    var faultHeld = new RouteMemory(Set.of(stuckAxle, absent));
+    faultHeld.commit(stuckAxle, repeatNode, 9, new int[] {14, 31}, 31, true, 0);
+    long version = faultHeld.passageVersion();
+    for (long tick = 1; tick <= 600; tick++) {
+      faultHeld.holdForRecovery(tick);
+      check(
+          faultHeld.active(tick).size() == 1,
+          "fault braking retains the occupied crossing beyond expiry");
+    }
+    check(faultHeld.passageVersion() == version, "holding cannot create or consume a crossing");
+    check(
+        faultHeld.commit(absent, repeatNode, 9, new int[] {14, 31}, 14, true, 601) == 31,
+        "after recovery the tail still follows the original branch");
+    check(faultHeld.active(601).isEmpty(), "completion releases a fault-held reservation");
+    expired.holdForRecovery(201);
+    check(expired.active(201).isEmpty(), "fault recovery cannot resurrect an expired reservation");
 
     System.out.println("ConsistRouteCheck: " + checks + " assertions passed");
   }

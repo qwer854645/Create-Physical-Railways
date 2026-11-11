@@ -1,4 +1,7 @@
 {
+  "physicalrailways.console.runtime_fault": "Train fault — traction disabled",
+  "physicalrailways.console.restoring": "Waiting for the complete train to stabilize",
+  "gui.physicalrailways.auto.state.22": "Train fault — resume after recovery",
   "message.physicalrailways.driver_console.actual_speed": "Actual speed: %s blocks/s",
   "message.physicalrailways.driver_console.journey": "Entry: %s/%s · Remaining: %s blocks",
   "message.physicalrailways.driver_console.name": "Train: %s",

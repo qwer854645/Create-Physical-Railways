@@ -33,7 +33,8 @@ final class ScheduleController {
       DOCK_WAIT = 18,
       PACKAGE_TARGET = 19,
       PACKAGE_WAIT = 20,
-      RAIL_DOCK = 21;
+      RAIL_DOCK = 21,
+      RUNTIME_FAULT = 22;
   final DriverConsoleEntity owner;
   private ItemStack item = ItemStack.EMPTY;
   private Schedule program;
@@ -441,6 +442,10 @@ final class ScheduleController {
       DriverControls.secondaryHint(player);
       return false;
     }
+    if (id == 30 && owner.getLevel() instanceof ServerLevel level) {
+      var body = DriverControls.body(owner);
+      if (body != null) TrainFaults.acknowledge(level, body.getUniqueId());
+    }
     if (id == 41) {
       if (!present() || !DriverControls.stopped(owner)) return false;
       priority = (priority() + 1) % (SwitchQueue.MAX_PRIORITY + 1);
@@ -543,14 +548,17 @@ final class ScheduleController {
   }
 
   private void stop(int reason, DriverConsoleEntity source) {
-    RailDocks.release(this);
     running = false;
     resumePending = false;
     reloadGate = null;
     manualOverride = source != null;
     manualSource = source;
     invalidateRoute(false);
-    state(reason);
+    try {
+      RailDocks.release(this);
+    } finally {
+      state(reason);
+    }
   }
 
   boolean restore(ServerLevel level, Set<UUID> actual, boolean complete) {

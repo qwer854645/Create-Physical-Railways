@@ -1075,6 +1075,20 @@ tasks.register('checkManualRouteSelection', JavaExec) {
 }
 tasks.named('check') { dependsOn 'checkManualRouteSelection' }
 
+tasks.register('checkRecoveryWindow', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.physicalrailways.RecoveryWindowCheck'
+}
+tasks.named('check') { dependsOn 'checkRecoveryWindow' }
+
+tasks.register('checkFaultRecovery', JavaExec) {
+    dependsOn classes, persistenceCheckClasses
+    classpath = sourceSets.persistenceCheck.runtimeClasspath + configurations.compileClasspath
+    mainClass = 'com.physicalrailways.FaultRecoveryCheck'
+}
+tasks.named('check') { dependsOn 'checkFaultRecovery' }
+
 // Isolated screenshot world generator. Never included in the release artifact.
 if (project.hasProperty('showcase')) {
     sourceSets {
